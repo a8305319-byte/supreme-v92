@@ -3,138 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流 V3 - 數位總控</title>
+    <title>在地物流 - 數位營運總控</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; }
-        .v3-layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .card-glow { background: #0f172a; border-radius: 2rem; border: 1px solid #1e293b; box-shadow: 0 0 40px rgba(14, 165, 233, 0.1); }
-        .input-v3 { background: rgba(30, 41, 59, 0.6); border: 1px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #fff; text-align: center; margin-bottom: 12px; outline: none; }
-        .input-v3:focus { border-color: #0ea5e9; }
-        .btn-v3 { width: 100%; padding: 18px; border-radius: 1.2rem; background: #0ea5e9; color: #fff; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        .btn-v3:active { transform: scale(0.95); }
+        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; }
+        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
+        .id-card { width: 100%; max-width: 480px; background: #0f172a; border-radius: 2.5rem; padding: 30px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .input-box { background: rgba(30, 41, 59, 0.4); border: 1px solid #334155; border-radius: 1.2rem; padding: 18px; width: 100%; color: #ffffff; outline: none; margin-bottom: 12px; font-size: 16px; text-align: center; }
+        .input-box:focus { border-color: #0ea5e9; }
+        .btn-prime { width: 100%; padding: 18px; border-radius: 1.5rem; background: #0ea5e9; color: #ffffff; font-weight: 800; font-size: 18px; cursor: pointer; border: none; transition: 0.1s; }
+        .btn-prime:active { transform: scale(0.96); opacity: 0.8; }
         
-        /* 行政表格 */
-        .v3-table th { font-size: 11px; color: #64748b; padding: 12px; border-bottom: 1px solid #1e293b; text-transform: uppercase; }
-        .v3-table td { font-size: 12px; padding: 15px 8px; border-bottom: 1px solid #0f172a; }
+        .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .photo-slot { background: transparent; border: 2px dashed #38bdf8; border-radius: 1.5rem; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; position: relative; }
+        .photo-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; display: none; }
+        .photo-slot span { color: #38bdf8; font-size: 12px; font-weight: bold; margin-top: 8px; }
+        .divider-orange { width: 100%; height: 4px; background: #f97316; margin-bottom: 25px; border-radius: 99px; }
+        .label-blue { font-size: 13px; color: #38bdf8; font-weight: bold; margin-bottom: 8px; display: block; text-align: left; }
         
-        /* AI 燈號系統 */
-        .v3-tag { padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: 900; border: 1px solid currentColor; }
-        .v3-safe { color: #4ade80; background: rgba(22, 101, 52, 0.1); }
-        .v3-warn { color: #fbbf24; background: rgba(146, 64, 14, 0.1); }
-        .v3-risk { color: #f87171; background: rgba(153, 27, 27, 0.1); }
+        .admin-table th { font-size: 11px; padding: 10px 4px; color: #64748b; white-space: nowrap; text-align: center; }
+        .admin-table td { font-size: 11px; padding: 12px 4px; border-bottom: 1px solid #1e293b; vertical-align: middle; text-align: center; }
+        .input-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #38bdf8; text-align: center; width: 55px; font-weight: bold; padding: 2px 0; }
+        .select-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #0ea5e9; font-weight: bold; font-size: 10px; padding: 2px; outline: none; width: 105px; cursor: pointer; }
+        .btn-del { color: #ef4444; border: 1px solid #450a0a; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
+        .ai-tag { font-size: 9px; padding: 2px 8px; border-radius: 99px; background: #0c4a6e; color: #38bdf8; font-weight: bold; border: 1px solid #0ea5e9; }
+        
+        .toggle-btn { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; border: 1px solid transparent; width: 60px; }
+        .toggle-on { background: #166534; color: #4ade80; border-color: #14532d; }
+        .toggle-off { background: #450a0a; color: #f87171; border-color: #7f1d1d; }
 
-        .loading-v3 { position: fixed; inset: 0; background: #020617; z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 1); z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #1e293b; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #diag-text { color: #475569; font-size: 10px; margin-top: 20px; font-family: monospace; }
+
+        #add-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; display: none; justify-content: center; align-items: center; padding: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="loading-v3" class="loading-v3">
-        <div class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
-        <p class="mt-4 text-sky-500 font-bold tracking-widest text-sm">LOADING V3 SYSTEM...</p>
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p class="mt-4 text-sky-500 font-bold tracking-widest">在地物流 數據同步中...</p>
+        <div id="diag-text">正在校準 2026 健保口數計算邏輯...</div>
+        <button onclick="window.setLoad(false)" class="mt-8 text-[10px] text-slate-600 underline">連線過久？強制進入</button>
     </div>
 
-    <div id="v3-gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流<span class="text-sky-500 text-sm ml-2">V3</span></h1>
-        <p class="text-slate-600 text-[10px] tracking-[0.5em] mb-12 uppercase">Digital Intelligence Hub</p>
+    <!-- 快速新增人員 -->
+    <div id="add-modal">
+        <div class="id-card !mb-0 w-full max-w-[400px]">
+            <h3 class="text-white font-bold mb-6 text-xl italic border-l-4 border-orange-500 pl-3">新增現有人員資料</h3>
+            <input type="text" id="new_name" placeholder="人員姓名" class="input-box">
+            <input type="tel" id="new_phone" placeholder="手機號碼" class="input-box" maxlength="10">
+            <input type="password" id="new_pin" placeholder="登入 PIN" class="input-box" maxlength="4" value="0000">
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('add-modal').style.display='none'" class="w-1/2 py-4 rounded-xl border border-slate-700 text-slate-500 font-bold">取消</button>
+                <button onclick="window.addPartnerDirectly()" class="w-1/2 py-4 rounded-xl bg-orange-600 text-white font-bold">確認新增</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
+        <p class="text-slate-500 font-bold tracking-[0.3em] mb-10 text-xs uppercase">Digital Operations System</p>
         
-        <div class="w-full max-w-[340px] space-y-4">
-            <div class="card-glow p-8">
-                <input type="tel" id="v3_login_phone" placeholder="手機號碼" class="input-v3">
-                <input type="password" id="v3_login_pin" placeholder="PIN 碼" class="input-v3">
-                <button onclick="window.v3Boot()" class="btn-v3 shadow-lg shadow-sky-900/20">進入系統</button>
-            </div>
-            <button onclick="window.v3Show('v3-ai-interview')" class="w-full py-4 rounded-2xl border border-sky-500 text-sky-400 font-bold hover:bg-sky-500/10 transition">新夥伴：AI 職能評估入口</button>
-        </div>
-    </div>
-
-    <div id="v3-ai-interview" class="v3-layer">
-        <div class="w-full max-w-[500px] py-10">
-            <div class="card-glow p-8">
-                <h2 class="text-3xl font-black text-white italic mb-2">職能評估</h2>
-                <p class="text-slate-500 text-xs mb-8">數據將直接影響帳號權限與 AI 風險標記</p>
-                
-                <div class="space-y-4 mb-10">
-                    <input type="text" id="v3_int_name" placeholder="真實姓名" class="input-v3">
-                    <input type="tel" id="v3_int_phone" placeholder="手機號碼" class="input-v3" maxlength="10">
-                </div>
-
-                <div class="space-y-8 text-left">
-                    <div class="p-5 bg-slate-800/20 rounded-2xl border border-slate-800">
-                        <p class="text-white text-sm font-bold mb-4">1. 配送途中發生輕微擦撞，包裹無損？</p>
-                        <div class="space-y-3">
-                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q1" value="25" class="mr-2"> 立即報警、聯繫公司回報</label>
-                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q1" value="0" class="mr-2"> 沒事就先送完，不浪費時間</label>
-                        </div>
-                    </div>
-
-                    <div class="p-5 bg-slate-800/20 rounded-2xl border border-slate-800">
-                        <p class="text-white text-sm font-bold mb-4">2. 發現包裹內容物有液體滲出痕跡？</p>
-                        <div class="space-y-3">
-                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q2" value="25" class="mr-2"> 拍照並聯繫站點，告知收件人</label>
-                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q2" value="0" class="mr-2"> 裝作不知道，送達簽收為止</label>
-                        </div>
-                    </div>
-
-                    <div class="p-5 bg-slate-800/20 rounded-2xl border border-slate-800">
-                        <p class="text-white text-sm font-bold mb-4">3. 客戶不在家要求改送到隔壁條街？</p>
-                        <div class="space-y-3">
-                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q3" value="25" class="mr-2"> 請客戶聯繫客服改派，保障權益</label>
-                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q3" value="10" class="mr-2"> 為了方便直接幫他送過去</label>
-                        </div>
-                    </div>
-
-                    <div class="p-5 bg-slate-800/20 rounded-2xl border border-slate-800">
-                        <p class="text-white text-sm font-bold mb-4">4. 配送中手機突然沒電，無法回報系統？</p>
-                        <div class="space-y-3">
-                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q4" value="25" class="mr-2"> 找充電站處理，確保數據即時</label>
-                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q4" value="5" class="mr-2"> 先送完，明天再請後台補登</label>
-                        </div>
-                    </div>
-                </div>
-
-                <button onclick="window.v3SubmitInterview()" class="btn-v3 mt-10">提交資料並建立帳號</button>
-                <button onclick="window.v3Hide()" class="w-full mt-4 text-xs text-slate-600">取消</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="v3-admin" class="v3-layer !px-6">
-        <div class="w-full max-w-[1400px] py-10">
-            <div class="flex justify-between items-end mb-10">
-                <h2 class="text-white font-black text-4xl italic">老闆行政控盤</h2>
-                <button onclick="location.reload()" class="bg-slate-800 px-6 py-2 rounded-full text-xs text-slate-400">登出</button>
+        <div class="w-full max-w-[340px]">
+            <div class="bg-slate-900/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl">
+                <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box" maxlength="10">
+                <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box">
+                <button onclick="window.boot()" class="btn-prime w-full shadow-lg">進入系統</button>
+                <p id="auth-info" class="text-[9px] text-slate-700 mt-4 italic">Cloud Synced via Firebase</p>
             </div>
             
-            <div class="bg-slate-900 rounded-[2.5rem] overflow-x-auto border border-slate-800 shadow-2xl">
-                <table class="w-full v3-table text-center min-w-[1000px]">
-                    <thead>
-                        <tr>
-                            <th>狀態</th><th>夥伴</th><th>AI 風險評估</th><th>正件</th><th>逆件</th><th>加保</th><th>2026 級距</th><th>應付淨額</th><th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="v3-admin-render" class="text-white"></tbody>
-                </table>
+            <div class="pt-8 flex flex-col gap-4">
+                <button onclick="window.showLayer('interview-page')" class="w-full py-4 rounded-2xl border border-sky-500 text-sky-400 font-bold">一、營運職能實務評估</button>
+                <div id="apply-lock-box">
+                    <button disabled class="w-full py-4 rounded-2xl border border-slate-800 text-slate-700 font-bold cursor-not-allowed bg-slate-900/50">二、人事建檔 (測驗後解鎖) 🔒</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="v3-hub" class="v3-layer">
-        <div class="w-full max-w-[420px] py-20">
-            <h2 id="v3-hub-name" class="text-4xl font-black text-white italic mb-10 text-center">夥伴工作台</h2>
-            <div class="card-glow p-8 text-left">
-                <div class="grid grid-cols-2 gap-4 mb-10">
-                    <div>
-                        <span class="text-sky-500 text-[10px] font-bold block mb-2">配送正件</span>
-                        <input type="number" id="v3_rep_del" placeholder="0" class="input-v3 text-3xl font-black">
-                    </div>
-                    <div>
-                        <span class="text-orange-500 text-[10px] font-bold block mb-2">逆物流</span>
-                        <input type="number" id="v3_rep_rev" placeholder="0" class="input-v3 text-3xl font-black text-orange-400">
+    <!-- 行政總控台 -->
+    <div id="admin" class="layer !px-4">
+        <div class="w-full max-w-[1440px]">
+            <div class="flex justify-between items-end mb-10">
+                <div>
+                    <h2 class="text-white font-black text-4xl border-l-8 border-sky-500 pl-4 uppercase italic">老闆行政總控台</h2>
+                    <button onclick="document.getElementById('add-modal').style.display='flex'" class="mt-2 text-orange-500 text-[10px] font-bold border border-orange-500 px-3 py-1 rounded-full hover:bg-orange-500 hover:text-white transition">+ 快速新增人員資料</button>
+                </div>
+                <button onclick="location.reload()" class="bg-slate-800 px-6 py-2 rounded-full text-xs font-bold text-slate-400">登出系統</button>
+            </div>
+
+            <div class="bg-slate-900 p-6 rounded-[2.5rem] overflow-x-auto border border-slate-800 shadow-2xl">
+                <table class="w-full admin-table">
+                    <thead class="text-slate-500 border-b border-slate-800">
+                        <tr>
+                            <th>狀態</th><th>姓名/手機</th><th>分析</th><th>正件</th><th>逆件</th><th>正價</th><th>逆價</th><th>加保開關</th><th>2026 勞保分級</th><th>健保口數(含本人)</th><th>保費扣繳</th><th>應付淨額</th><th>管理</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-render" class="text-white">
+                        <tr><td colspan="13" class="text-center py-20 text-slate-600 font-bold italic">載入數據中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-4">
+                <div class="flex-1 min-w-[300px] p-4 bg-slate-800/30 rounded-xl text-[10px] text-slate-500 border border-slate-800 leading-relaxed">
+                    <p class="font-bold text-slate-400 mb-1">【承攬制 - 健保口數計算規則】</p>
+                    <p>● **口數 = 1**：僅本人投保（預設值）。</p>
+                    <p>● **口數 = 2~4**：本人 + N 位隨同投保眷屬（法律上限計 4 口）。</p>
+                    <p>● **計算公式**：基數 $\times$ 1.551% $\times$ 口數。系統會自動限制口數區間為 1 至 4。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 實務評估頁面 -->
+    <div id="interview-page" class="layer">
+        <div class="w-full max-w-[480px]">
+            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left flex items-center" onclick="window.hideAll()"><span class="mr-2">←</span> 返回</div>
+            <div class="id-card">
+                <h2 class="text-2xl font-black text-white mb-6 italic border-b-2 border-sky-500 pb-2">夥伴營運職能評估</h2>
+                <input type="text" id="int_name" placeholder="您的真實姓名" class="input-box">
+                <input type="tel" id="int_phone" placeholder="手機號碼" class="input-box" maxlength="10">
+                <div class="space-y-4 text-left mb-6">
+                    <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                        <p class="text-white text-sm font-bold mb-3">1. 配送途中遇事故，首要流程為何？</p>
+                        <label class="block text-xs mb-2 cursor-pointer"><input type="radio" name="q1" value="25"> 報警拍照、聯繫公司回報</label>
+                        <label class="block text-xs cursor-pointer"><input type="radio" name="q1" value="0"> 先送完，晚上再回報</label>
                     </div>
                 </div>
-                <button onclick="window.v3SubmitReport()" class="btn-v3 bg-green-600">提交今日數據</button>
-                <button onclick="location.reload()" class="w-full mt-8 text-xs text-slate-600 underline">登出帳號</button>
+                <button onclick="window.submitInterview()" class="btn-prime">提交評估資料</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 工作台 -->
+    <div id="hub" class="layer">
+        <div class="w-full max-w-[450px]">
+            <h2 id="hub-name" class="text-3xl font-black text-white italic mb-8 text-center">夥伴工作台</h2>
+            <div class="id-card">
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div><span class="label-blue">配送正件</span><input type="number" id="rep_del" placeholder="0" class="input-box"></div>
+                    <div><span class="label-blue">逆物流件</span><input type="number" id="rep_rev" placeholder="0" class="input-box"></div>
+                </div>
+                <button onclick="window.submitReport()" class="btn-prime bg-green-600 shadow-xl">提交今日回報</button>
+                <button onclick="location.reload()" class="w-full mt-4 text-[10px] text-slate-600 underline">登出帳號</button>
             </div>
         </div>
     </div>
@@ -156,103 +170,160 @@
         const app = initializeApp(config);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const partnersCol = collection(db, 'artifacts', 'logistics-master-v92', 'public', 'data', 'partners');
+        const appId = 'logistics-master-v92';
+        const partnersCol = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
 
-        const SALARY_GRADES = [0, 29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
+        const SALARY_GRADES = [
+            0, 29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800
+        ];
+
         let partners = [];
         let isReady = false;
-        let activeUser = null;
 
-        window.v3Boot = () => {
-            const ph = document.getElementById('v3_login_phone').value.trim();
-            const pi = document.getElementById('v3_login_pin').value.trim();
-            if(ph === "0976017938" && pi === "0531") return window.v3RenderAdmin();
+        window.setLoad = (s) => document.getElementById('loading').style.display = s ? 'flex' : 'none';
+        const setDiag = (t) => document.getElementById('diag-text').innerText = t;
+
+        window.boot = () => {
+            const ph = document.getElementById('login_phone').value.trim();
+            const pi = document.getElementById('login_pin').value.trim();
+            if(ph === "0976017938" && pi === "0531") return window.renderAdmin();
+            if(!isReady) return alert("系統連線中...");
             const target = partners.find(x => x.phone === ph);
-            if(target && target.status === "approved" && target.pin === pi) {
-                activeUser = target;
-                window.v3Show('v3-hub');
-                document.getElementById('v3-hub-name').innerText = target.name;
-            } else alert("帳號錯誤或尚未核准");
+            if(target) {
+                if(target.status === "approved" && target.pin === pi) {
+                    window.showLayer('hub');
+                    document.getElementById('hub-name').innerText = `夥伴 ${target.name}`;
+                } else alert("審核中或 PIN 碼錯誤。");
+            } else alert("查無人員。");
         };
 
-        window.v3RenderAdmin = () => {
-            window.v3Show('v3-admin');
-            const target = document.getElementById('v3-admin-render');
+        window.renderAdmin = () => {
+            window.showLayer('admin');
+            const target = document.getElementById('admin-render');
+            if(partners.length === 0) {
+                target.innerHTML = '<tr><td colspan="13" class="text-center py-20 text-slate-600 font-bold italic">目前無人員資料。</td></tr>';
+                return;
+            }
             let html = '';
             partners.forEach(p => {
-                const isIns = p.ins_toggle !== false;
-                const b = p.ins_base || 29500;
-                const totalIns = isIns ? Math.round(b * 0.025 + b * 0.01551 * (p.ins_fm || 1)) : 0;
-                const income = (p.total_del || 0) * 15 + (p.total_rev || 0) * 10;
-                
-                let tagStyle = "v3-safe";
-                if(p.ai_analysis.includes("風險")) tagStyle = "v3-risk";
-                if(p.ai_analysis.includes("培訓")) tagStyle = "v3-warn";
+                const dp = p.custom_del || 15; const rp = p.custom_rev || 10;
+                const income = ((p.total_del || 0) * dp) + ((p.total_rev || 0) * rp);
+                const ins_b = Number(p.ins_base) || 0; 
+                // 修正口數邏輯：預設 1 (本人)，最小 1，法律上限 4
+                const fm = Math.min(Math.max(Number(p.ins_fm) || 1, 1), 4);
+                const isInsOn = p.ins_toggle !== false;
 
-                html += `<tr>
-                    <td>${p.status==='approved'?'✅':'<span class="text-orange-500">待審</span>'}</td>
-                    <td class="text-left"><b>${p.name}</b><br><small class="text-slate-500">${p.phone}</small></td>
-                    <td><span class="v3-tag ${tagStyle}">${p.ai_analysis}</span></td>
-                    <td>${p.total_del || 0} / ${p.total_rev || 0}</td>
-                    <td><button onclick="window.v3Up('${p.id}','ins_toggle',${!isIns})">${isIns?'✔️':'❌'}</button></td>
-                    <td>${b}</td>
-                    <td class="text-sky-400 font-bold">$${income - totalIns}</td>
+                const labor_calc = isInsOn ? Math.round(ins_b * 0.025) : 0;
+                const health_calc = isInsOn ? Math.round(ins_b * 0.01551 * fm) : 0;
+                const total_ins = labor_ins_calc() + health_ins_calc();
+                
+                function labor_ins_calc() { return labor_calc; }
+                function health_ins_calc() { return health_calc; }
+
+                let actionBtn = '';
+                if(p.status === 'pending_review') actionBtn = `<button onclick="window.upField('${p.id}','status','approved')" class="bg-sky-600 px-3 py-1 rounded text-[10px] font-bold">核准</button>`;
+                else actionBtn = `<span class="text-slate-500 text-[9px] font-bold uppercase">${p.status}</span>`;
+
+                let salaryOptions = SALARY_GRADES.map((grade, idx) => 
+                    `<option value="${grade}" ${parseInt(ins_b) === grade ? 'selected' : ''}>${grade === 0 ? '不投保' : (idx) + ' 級：' + grade.toLocaleString()}</option>`
+                ).join('');
+
+                html += `<tr class="hover:bg-white/5 border-b border-slate-800/50">
+                    <td>${actionBtn}</td>
+                    <td><span class="text-xs font-bold text-white">${p.name}</span><br><span class="text-[9px] text-slate-500">${p.phone}</span></td>
+                    <td><span class="ai-tag text-[8px]">${p.ai_analysis || '分析中'}</span></td>
+                    <td class="text-sky-400 font-bold">${p.total_del || 0}</td>
+                    <td class="text-orange-400 font-bold">${p.total_rev || 0}</td>
+                    <td><input type="number" value="${dp}" onchange="window.upField('${p.id}','custom_del',this.value)" class="input-mini"></td>
+                    <td><input type="number" value="${rp}" onchange="window.upField('${p.id}','custom_rev',this.value)" class="input-mini"></td>
                     <td>
-                        <button onclick="window.v3Up('${p.id}','status','approved')" class="text-sky-500 mr-2">核准</button>
-                        <button onclick="window.v3Del('${p.id}')" class="text-red-900">🗑️</button>
+                        <button onclick="window.upField('${p.id}','ins_toggle',${!isInsOn})" 
+                                class="toggle-btn ${isInsOn ? 'toggle-on' : 'toggle-off'}">
+                            ${isInsOn ? '加保中' : '未加保'}
+                        </button>
                     </td>
+                    <td>
+                        <select onchange="window.upField('${p.id}','ins_base',this.value)" class="select-mini" ${!isInsOn ? 'disabled' : ''}>
+                            ${salaryOptions}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" value="${fm}" min="1" max="4" 
+                               onchange="window.upField('${p.id}','ins_fm',this.value)" 
+                               class="input-mini !w-12" ${!isInsOn ? 'disabled' : ''}>
+                    </td>
+                    <td class="text-red-400 font-bold">-$${total_ins}</td>
+                    <td class="text-sky-400 font-black text-sm">$${income - total_ins}</td>
+                    <td><span class="btn-del" onclick="window.delPartner('${p.id}','${p.name}')">🗑️</span></td>
                 </tr>`;
             });
             target.innerHTML = html;
         };
 
-        window.v3SubmitInterview = async () => {
-            const name = document.getElementById('v3_int_name').value.trim();
-            const ph = document.getElementById('v3_int_phone').value.trim();
-            const q = [
-                document.querySelector('input[name="v3q1"]:checked')?.value,
-                document.querySelector('input[name="v3q2"]:checked')?.value,
-                document.querySelector('input[name="v3q3"]:checked')?.value,
-                document.querySelector('input[name="v3q4"]:checked')?.value
-            ];
-            if(!name || !ph || q.includes(undefined)) return alert("請完整回答所有問題");
-
-            const score = q.reduce((a, b) => parseInt(a) + parseInt(b), 0);
-            let analysis = "✅ 穩定可靠";
-            if(score < 50) analysis = "🚫 高度風險";
-            else if(score < 80) analysis = "⚠️ 需再培訓";
-            if(q[1] === "0") analysis += " | 誠信警告";
-
-            await setDoc(doc(partnersCol, `p_${ph}`), {
-                id: `p_${ph}`, name, phone: ph, pin: "0000", status: "pending_review", 
-                ai_analysis: analysis, total_del: 0, total_rev: 0, ins_base: 29500, ins_fm: 1, createdAt: serverTimestamp()
-            });
-            alert("提交成功！請聯繫老闆開通。");
-            location.reload();
+        window.submitInterview = async () => {
+            const name = document.getElementById('int_name').value.trim();
+            const ph = document.getElementById('int_phone').value.trim();
+            const q1 = document.querySelector('input[name="q1"]:checked')?.value;
+            if(!name || !ph || !q1) return alert("請填齊。");
+            window.setLoad(true);
+            try {
+                await setDoc(doc(partnersCol, `p_${ph}`), {
+                    id: `p_${ph}`, name, phone: ph, pin: "0000", status: "pending_review", 
+                    ai_analysis: q1 === "25" ? "✅ 穩定可靠" : "⚠️ 邏輯風險",
+                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, 
+                    ins_base: 29500, ins_fm: 1, ins_toggle: true, createdAt: serverTimestamp()
+                });
+                alert("提交成功！");
+                location.reload();
+            } catch (e) { alert("連線失敗。"); }
+            window.setLoad(false);
         };
 
-        window.v3SubmitReport = async () => {
-            const d = parseInt(document.getElementById('v3_rep_del').value) || 0;
-            const r = parseInt(document.getElementById('v3_rep_rev').value) || 0;
-            await updateDoc(doc(partnersCol, activeUser.id), { total_del: increment(d), total_rev: increment(r) });
-            alert("回報完成！");
-            document.getElementById('v3_rep_del').value = ""; document.getElementById('v3_rep_rev').value = "";
+        window.addPartnerDirectly = async () => {
+            const n = document.getElementById('new_name').value.trim();
+            const p = document.getElementById('new_phone').value.trim();
+            if(!n || !p) return alert("必填。");
+            window.setLoad(true);
+            try {
+                await setDoc(doc(partnersCol, `p_${p}`), {
+                    id: `p_${p}`, name: n, phone: p, pin: "0000", status: "approved", ai_analysis: "💎 直接新增",
+                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, 
+                    ins_base: 29500, ins_fm: 1, ins_toggle: true
+                });
+                alert("新增成功！");
+                document.getElementById('add-modal').style.display='none';
+            } catch (e) { alert("失敗"); }
+            window.setLoad(false);
         };
 
-        window.v3Up = async (id, f, v) => { await updateDoc(doc(partnersCol, id), { [f]: v }); };
-        window.v3Del = async (id) => { if(confirm("確定刪除?")) await deleteDoc(doc(partnersCol, id)); };
-        window.v3Show = id => { window.v3Hide(); document.getElementById(id).style.display='flex'; };
-        window.v3Hide = () => { document.querySelectorAll('.v3-layer').forEach(l=>l.style.display='none'); document.getElementById('v3-gate').style.display='flex'; };
+        window.upField = async (id, f, v) => { 
+            const val = (typeof v === 'boolean') ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
+            await updateDoc(doc(partnersCol, id), { [f]: val }); 
+        };
 
-        (async () => {
-            await signInAnonymously(auth);
-            onSnapshot(partnersCol, s => {
-                partners = s.docs.map(d => d.data());
-                isReady = true;
-                if(document.getElementById('v3-admin').style.display === 'flex') window.v3RenderAdmin();
-                document.getElementById('loading-v3').style.display = 'none';
-            });
-        })();
+        window.delPartner = async (id, n) => { if(confirm(`確定刪除 ${n}?`)) await deleteDoc(doc(partnersCol, id)); };
+        window.showLayer = id => { window.hideAll(); document.getElementById(id).style.display='flex'; };
+        window.hideAll = () => { document.querySelectorAll('.layer').forEach(l=>l.style.display='none'); document.getElementById('gate').style.display='flex'; };
+
+        const init = async () => {
+            setDiag("身分驗證中...");
+            try {
+                await signInAnonymously(auth);
+                onAuthStateChanged(auth, user => {
+                    if(user) {
+                        setDiag("同步雲端數據...");
+                        onSnapshot(partnersCol, s => {
+                            partners = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                            isReady = true;
+                            if(document.getElementById('admin').style.display === 'flex') window.renderAdmin();
+                            window.setLoad(false); 
+                        }, err => { setDiag("連線失敗。"); });
+                    }
+                });
+            } catch (err) { setDiag("連線異常。"); }
+            setTimeout(() => window.setLoad(false), 5000);
+        };
+        init();
     </script>
 </body>
 </html>
