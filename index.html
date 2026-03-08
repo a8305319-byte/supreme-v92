@@ -255,12 +255,18 @@
                 <div class="slip-row" style="color:red"><span>代扣勞保費用</span><span>-$${(p.labor_fee||1500).toLocaleString()}</span></div>
                 <div class="slip-row" style="color:red"><span>代扣健保費用</span><span>-$${((p.health_cnt||1)*(p.health_fee||800)).toLocaleString()}</span></div>`;
             document.getElementById('slip-total-val').innerText = "TWD $ " + net.toLocaleString();
-            const s = document.getElementById('slip-box'); 
-            s.style.left = "0";
-            const canvas = await html2canvas(s, { scale: 3 }); 
-            s.style.left = "-9999px";
-            const a = document.createElement('a'); 
-            a.download = `SUPREME_SLIP_${p.name}.png`; 
+           function renderHub(p) {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('main').style.display = 'flex';
+            document.getElementById('render-target').innerHTML = `
+                <div class="id-card">
+                    <h2 class="text-6xl font-black text-white italic underline mb-4">${p.name} 夥伴</h2>
+                    <p class="text-slate-500 text-xs font-black uppercase tracking-[0.4em] mb-12">Operational Center</p>
+                    <label class="label-sky">回報今日配送件數</label>
+                    <input type="number" id="v_del" class="input-box text-center text-7xl h-36 font-black text-sky-400" placeholder="0">
+                    <button onclick="commitJob('${p.id}')" class="btn-prime mt-10">確認數據並同步至雲端</button>
+                </div>`;
+        }
             a.href = canvas.toDataURL(); 
             a.click();
         };
