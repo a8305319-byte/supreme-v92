@@ -3,48 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流 - 報表影像存證系統</title>
+    <title>在地物流 - 下班報表系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 500px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 2.5rem; padding: 30px; border: 1px solid #334155; margin-bottom: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .input-box { background: #0f172a; border: 2px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #fff; outline: none; margin-bottom: 15px; font-size: 18px; text-align: center; }
-        .btn-prime { width: 100%; padding: 20px; border-radius: 1.2rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 18px; cursor: pointer; border: none; }
-        .label-sky { font-size: 12px; color: #38bdf8; font-weight: 900; margin-bottom: 8px; display: block; letter-spacing: 2px; text-transform: uppercase; }
+        .id-card { width: 100%; max-width: 480px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 30px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .input-box { background: rgba(15, 23, 42, 0.9); border: 2px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #fff; outline: none; margin-bottom: 15px; font-size: 20px; text-align: center; }
+        .btn-prime { width: 100%; padding: 20px; border-radius: 1.2rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 20px; cursor: pointer; border: none; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); }
+        .btn-prime:active { transform: scale(0.95); }
+        .label-sky { font-size: 14px; color: #38bdf8; font-weight: 900; margin-bottom: 10px; display: block; letter-spacing: 2px; text-transform: uppercase; }
         
         /* 報表影像牆 */
-        .report-grid { display: grid; grid-template-cols: repeat(2, 1fr); gap: 10px; width: 100%; margin-bottom: 30px; }
-        .report-item { background: #1e293b; border-radius: 15px; overflow: hidden; border: 1px solid #334155; position: relative; aspect-ratio: 3/4; }
+        .report-grid { display: grid; grid-template-cols: repeat(2, 1fr); gap: 12px; width: 100%; margin-bottom: 30px; }
+        .report-item { background: #0f172a; border-radius: 15px; overflow: hidden; border: 1px solid #334155; position: relative; aspect-ratio: 3/4; }
         .report-item img { width: 100%; height: 100%; object-fit: cover; }
-        .report-info { position: absolute; bottom: 0; background: rgba(0,0,0,0.8); width: 100%; padding: 5px; font-size: 10px; color: #fff; text-align: center; }
+        .report-tag { position: absolute; bottom: 0; background: rgba(0,0,0,0.8); width: 100%; padding: 6px; font-size: 11px; color: #fff; text-align: center; font-weight: bold; }
         
-        /* 拍照區域 */
-        .camera-box { width: 100%; height: 200px; background: #0f172a; border: 3px dashed #334155; border-radius: 1.5rem; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; margin-bottom: 20px; overflow: hidden; }
-        .camera-box img { width: 100%; height: 100%; object-fit: contain; display: none; }
+        /* 拍照區 */
+        .cam-trigger { width: 100%; height: 220px; background: #020617; border: 3px dashed #1e293b; border-radius: 1.5rem; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; margin-bottom: 25px; overflow: hidden; }
+        .cam-trigger img { width: 100%; height: 100%; object-fit: contain; display: none; }
     </style>
 </head>
 <body>
 
-    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6">
-        <h1 class="text-5xl font-black text-white italic mb-2">在地物流</h1>
-        <p class="text-sky-500 text-xs font-bold tracking-[0.3em] mb-12 italic">DAILY REPORT SYSTEM</p>
+    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="text-5xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
+        <p class="text-sky-500 text-xs font-black tracking-[0.4em] mb-12 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">每日報表上傳系統</p>
         <div class="w-full max-w-[320px]">
-            <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box">
-            <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box">
-            <button onclick="boot()" class="btn-prime">進入報表系統</button>
+            <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box shadow-2xl">
+            <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box shadow-2xl">
+            <button onclick="boot()" class="btn-prime">進入報表拍照</button>
         </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-10 mb-10 text-slate-600 text-xs underline font-bold uppercase">安全登出系統</button>
+        <button onclick="location.reload()" class="mt-10 mb-10 text-slate-700 text-xs underline font-black uppercase tracking-widest">安全登出系統</button>
     </div>
 
-    <div id="img-modal" class="layer !bg-black/95 flex justify-center items-center" onclick="this.style.display='none'">
-        <img id="modal-img" class="max-w-full max-h-full rounded-lg">
-        <p class="text-white mt-4 font-bold">點擊任何地方關閉</p>
+    <div id="img-viewer" class="layer !bg-black/95 flex justify-center items-center" onclick="this.style.display='none'">
+        <img id="modal-img" class="max-w-full max-h-[85vh] rounded-lg shadow-2xl">
+        <p class="text-white mt-6 font-black text-lg">點擊任何地方關閉</p>
     </div>
 
     <script type="module">
@@ -62,7 +62,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let partners = [], logs = [], reportPhoto = null;
+        let partners = [], logs = [], currentPhoto = null;
 
         // 監聽數據
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({ id: d.id, ...d.data() })); });
@@ -71,7 +71,7 @@
             if(document.getElementById('main').style.display === 'flex') boot(); 
         });
 
-        // 圖片壓縮邏輯
+        // 圖片壓縮邏輯 
         async function compressImg(base64) {
             return new Promise(res => {
                 const img = new Image(); img.src = base64;
@@ -92,92 +92,95 @@
             if(ph === "0976017938" && pi === "0531") return renderAdmin();
             const p = partners.find(x => x.phone === ph && x.uid === pi && x.status === "approved");
             if(p) return renderHub(p);
-            if(ph && pi) alert("登入資料錯誤或尚未開通");
+            if(ph && pi) alert("登入失敗：帳號錯誤或審核中");
         };
 
+        // 老闆後台：只看報表照片與總數
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             
-            let html = `<div class="w-full max-w-[500px]">
-                <h2 class="text-white font-black text-3xl mb-6 italic border-l-4 border-sky-500 pl-4">每日報表審核牆</h2>
+            let html = `<div class="w-full max-w-[480px]">
+                <h2 class="text-white font-black text-3xl mb-8 italic border-l-8 border-sky-500 pl-4 uppercase">今日下班報表牆</h2>
                 <div class="report-grid">`;
             
             logs.forEach(l => {
                 const pname = partners.find(x => x.id === l.driverId)?.name || '未知';
-                html += `<div class="report-item" onclick="viewBigImg('${l.photo}')">
+                html += `<div class="report-item" onclick="viewPhoto('${l.photo}')">
                     <img src="${l.photo}">
-                    <div class="report-info">${pname} | ${l.del}件</div>
+                    <div class="report-tag">${pname} | ${l.del}件</div>
                 </div>`;
             });
 
-            html += `</div><p class="label-sky">夥伴即時數據</p>`;
+            html += `</div><p class="label-sky">夥伴當月累計數據</p>`;
             partners.filter(x => x.status === "approved").forEach(p => {
-                html += `<div class="id-card !p-6 flex justify-between items-center mb-4">
-                    <div><p class="text-white font-black">${p.name}</p><p class="text-[10px] text-slate-500 italic">${p.phone}</p></div>
-                    <div class="text-right"><p class="text-sky-400 font-black text-2xl">${p.total_del || 0} 件</p></div>
+                html += `<div class="id-card !p-5 flex justify-between items-center mb-4 !mb-2 border-slate-800">
+                    <p class="text-white font-bold">${p.name}</p>
+                    <p class="text-sky-400 font-black text-xl">${p.total_del || 0} 件</p>
                 </div>`;
             });
             document.getElementById('render-target').innerHTML = html + `</div>`;
         }
 
+        // 夥伴介面：只要拍照 + 輸入數字
         function renderHub(p) {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `
                 <div class="id-card">
                     <h2 class="text-4xl font-black text-white italic mb-2">${p.name}</h2>
-                    <p class="text-sky-500 text-xs font-bold mb-10 tracking-widest uppercase italic">Report Submission</p>
+                    <p class="text-sky-500 text-xs font-black mb-10 tracking-widest uppercase">Daily Report Sign-off</p>
                     
-                    <span class="label-sky">第一步：拍攝今日報表照片 (必填)</span>
-                    <div class="camera-box" id="cam-trigger" onclick="document.getElementById('hidden-cam').click()">
-                        <p id="cam-tip" class="text-slate-500 font-bold">點擊啟動相機</p>
+                    <span class="label-sky">1. 拍攝今日報表 (簽單/系統畫面)</span>
+                    <div class="cam-trigger" id="cam-area" onclick="document.getElementById('hidden-cam').click()">
+                        <p id="cam-tip" class="text-slate-500 font-black">點擊啟動相機拍照</p>
                         <img id="preview-img">
                     </div>
-                    <input type="file" id="hidden-cam" accept="image/*" capture="camera" class="hidden" onchange="handleReport(this)">
+                    <input type="file" id="hidden-cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
 
-                    <span class="label-sky">第二步：輸入今日配送總數</span>
-                    <input type="number" id="num_del" class="input-box !text-5xl h-24 font-black text-sky-400" placeholder="0">
+                    <span class="label-sky">2. 輸入今日配送總件數</span>
+                    <input type="number" id="input_num" class="input-box !text-6xl h-28 font-black text-sky-400" placeholder="0">
                     
-                    <button onclick="submitReport('${p.id}')" class="btn-prime mt-6 shadow-lg shadow-sky-500/20">上傳報表並簽退</button>
+                    <button onclick="submitReport('${p.id}')" class="btn-prime mt-6">上傳報表並下班</button>
                 </div>`;
         }
 
-        window.handleReport = async input => {
+        window.handleFile = async input => {
             if (!input.files[0]) return;
             const reader = new FileReader();
             reader.onload = async e => {
-                reportPhoto = await compressImg(e.target.result);
-                document.getElementById('preview-img').src = reportPhoto;
-                document.getElementById('preview-img').style.display = 'block';
+                currentPhoto = await compressImg(e.target.result);
+                const pre = document.getElementById('preview-img');
+                pre.src = currentPhoto;
+                pre.style.display = 'block';
                 document.getElementById('cam-tip').style.display = 'none';
-                document.getElementById('cam-trigger').style.border = '2px solid #0ea5e9';
+                document.getElementById('cam-area').style.border = '2px solid #0ea5e9';
             };
             reader.readAsDataURL(input.files[0]);
         };
 
         window.submitReport = async id => {
-            const d = parseInt(document.getElementById('num_del').value) || 0;
-            if(!reportPhoto) return alert("請拍攝報表照片！");
-            if(d <= 0) return alert("請輸入正確件數！");
+            const num = parseInt(document.getElementById('input_num').value) || 0;
+            if(!currentPhoto) return alert("必須拍攝報表照片才能下班！");
+            if(num <= 0) return alert("請輸入今日配送件數！");
 
             try {
-                // 更新總量 + 寫入詳細 Log
-                await updateDoc(doc(db, 'partners', id), { total_del: increment(d) });
+                // 更新夥伴當月累計 + 寫入每日 Log
+                await updateDoc(doc(db, 'partners', id), { total_del: increment(num) });
                 await addDoc(collection(db, 'logs'), {
                     driverId: id,
-                    del: d,
-                    photo: reportPhoto,
+                    del: num,
+                    photo: currentPhoto,
                     time: serverTimestamp()
                 });
-                alert("報表上傳成功！照片已存檔。");
+                alert("今日報表已同步，辛苦了，準時下班！");
                 location.reload();
-            } catch(e) { alert("上傳失敗，請檢查網路。"); }
+            } catch(e) { alert("系統繁忙中，請檢查網路。"); }
         };
 
-        window.viewBigImg = src => {
+        window.viewPhoto = src => {
             document.getElementById('modal-img').src = src;
-            document.getElementById('img-modal').style.display = 'flex';
+            document.getElementById('img-viewer').style.display = 'flex';
         };
     </script>
 </body>
