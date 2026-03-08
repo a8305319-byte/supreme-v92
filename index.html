@@ -3,78 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME 物流管理系統</title>
+    <title>SUPREME 老闆決策後台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; user-select: none; }
+        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; }
         .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 15px; }
-        .select-box { background: #1e293b; border: 1px solid #38bdf8; color: white; border-radius: 0.8rem; padding: 12px; width: 100%; margin-bottom: 15px; font-size: 15px; }
-        .label-sky { font-size: 13px; color: #38bdf8; font-weight: bold; margin-bottom: 6px; display: block; margin-top: 10px; }
-        .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .photo-slot { background: #0f172a; border: 1px dashed #334155; border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
-        .photo-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: none; }
         .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; border: none; }
-        .btn-prime:active { scale: 0.96; }
-        .v-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #334155; color: #38bdf8; margin-left: 5px; border: 1px solid #38bdf8; }
+        .stat-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 1rem; padding: 15px; text-align: center; }
+        .v-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #38bdf8; color: #38bdf8; margin-left: 5px; }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-4xl font-black text-white italic mb-2">SUPREME</h1>
-        <p class="text-slate-500 text-sm mb-10 tracking-widest">物流管理系統</p>
+        <p class="text-slate-500 text-sm mb-10">老闆管理端</p>
         <div class="w-full max-w-[320px]">
-            <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center">
-            <input type="password" id="login_pin" placeholder="密碼 (PIN)" class="input-box text-center">
+            <input type="tel" id="login_phone" placeholder="管理員手機" class="input-box text-center">
+            <input type="password" id="login_pin" placeholder="管理員密碼" class="input-box text-center">
             <div class="flex items-center gap-2 mb-4 text-xs text-slate-500 justify-start px-1">
-                <input type="checkbox" id="remember_me"> <label for="remember_me">記住我</label>
+                <input type="checkbox" id="remember_me"> <label for="remember_me">記住管理員資訊</label>
             </div>
-            <button onclick="boot()" class="btn-prime">確認登入</button>
-            <button onclick="showApply()" class="text-sm text-slate-600 underline mt-12 block mx-auto">夥伴入職申請</button>
+            <button onclick="boot()" class="btn-prime">進入管理後台</button>
+            <button onclick="showApply()" class="text-sm text-slate-600 underline mt-12 block mx-auto">夥伴入職入口</button>
         </div>
     </div>
 
     <div id="apply-page" class="layer">
         <div class="id-card">
-            <h2 class="text-xl font-bold text-white mb-6 text-center">詳細入職申請</h2>
-            
-            <span class="label-sky">第一步：證件影像</span>
-            <div class="photo-grid">
-                <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f" class="text-xs">身分證正面</span><img id="p_id_f"></div>
-                <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b" class="text-xs">身分證反面</span><img id="p_id_b"></div>
-                <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic" class="text-xs">駕駛執照</span><img id="p_lic"></div>
-                <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car" class="text-xs">行車執照</span><img id="p_car"></div>
-                <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
-            </div>
-
-            <span class="label-sky">第二步：基本資料</span>
-            <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
+            <h2 class="text-xl font-bold text-white mb-6 text-center">夥伴資料建檔</h2>
+            <input type="text" id="app_name" placeholder="姓名" class="input-box">
             <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
-            <input type="tel" id="app_phone" placeholder="手機號碼 (登入帳號)" class="input-box">
-            <input type="password" id="app_pin" placeholder="自訂登入密碼 (4位數)" maxlength="4" class="input-box">
-            
-            <span class="label-sky">第三步：聯繫與地址</span>
-            <input type="text" id="app_h_addr" placeholder="戶籍地址" class="input-box">
-            <input type="text" id="app_c_addr" placeholder="通訊地址 (同上免填)" class="input-box">
-            <input type="text" id="app_emergency" placeholder="緊急聯絡人 / 電話" class="input-box">
-            
-            <span class="label-sky">第四步：車輛類型</span>
-            <select id="app_vehicle" class="select-box">
+            <input type="tel" id="app_phone" placeholder="手機" class="input-box">
+            <input type="password" id="app_pin" placeholder="自訂密碼" maxlength="4" class="input-box">
+            <input type="text" id="app_emergency" placeholder="緊急聯絡人/電話" class="input-box">
+            <select id="app_vehicle" class="input-box bg-[#1e293b]">
                 <option value="A機車">A 機車</option>
                 <option value="B自有車">B 自有車</option>
                 <option value="C公司車">C 公司車</option>
             </select>
-
-            <button onclick="submitApply()" class="btn-prime mt-4">提交申請資料</button>
-            <button onclick="location.reload()" class="w-full mt-4 text-sm text-slate-500">返回登入</button>
+            <button onclick="submitApply()" class="btn-prime mt-4">提交申請</button>
+            <button onclick="location.reload()" class="w-full mt-4 text-sm text-slate-500">返回</button>
         </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-600 font-bold text-sm underline">登出系統</button>
+        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-600 font-bold text-sm underline">登出後台</button>
     </div>
 
     <script type="module">
@@ -93,8 +70,6 @@
         const db = getFirestore(app);
 
         let partners = [];
-        let currentF = '';
-        const photos = {};
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -112,39 +87,20 @@
             if(phone === "0976017938" && pin === "0531") return renderAdmin();
             const p = partners.find(x => x.phone === phone && x.uid === pin && x.status === "approved");
             if(p) return renderPartnerUI(p);
-            alert("登入失敗：請確認資料或等待核准");
+            alert("權限不足或密碼錯誤");
         };
 
         window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
-        window.triggerCam = (f) => { currentF = f; document.getElementById('cam').click(); };
-        window.handleFile = (input) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                photos[currentF] = e.target.result;
-                const prev = document.getElementById('p_' + currentF);
-                prev.src = e.target.result; prev.style.display = 'block';
-                document.getElementById('t_' + currentF).style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
-        };
-
         window.submitApply = async () => {
-            const data = {
+            await addDoc(collection(db, 'partners'), {
                 name: document.getElementById('app_name').value,
                 id_num: document.getElementById('app_idnum').value,
                 phone: document.getElementById('app_phone').value,
                 uid: document.getElementById('app_pin').value,
-                h_addr: document.getElementById('app_h_addr').value,
-                c_addr: document.getElementById('app_c_addr').value || document.getElementById('app_h_addr').value,
-                emergency: document.getElementById('app_emergency').value,
                 v_type: document.getElementById('app_vehicle').value,
-                docs: photos, status: "pending", 
-                rate_del: 50, rate_ret: 20, labor: 1500, health: 800, h_cnt: 1,
-                total_del: 0, total_ret: 0, time: serverTimestamp()
-            };
-            if(!data.name || !data.phone || !data.uid || !data.id_num) return alert("前四項基本資料為必填");
-            await addDoc(collection(db, 'partners'), data);
-            alert("申請已提交，請靜候核准"); location.reload();
+                status: "pending", rate_del: 50, rate_ret: 20, labor: 1500, health: 800, h_cnt: 1, total_del: 0, total_ret: 0, time: serverTimestamp()
+            });
+            alert("資料已上傳"); location.reload();
         };
 
         function renderPartnerUI(p) {
@@ -152,11 +108,11 @@
             document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `
                 <div class="id-card">
-                    <h2 class="text-2xl font-bold text-white mb-2">${p.name} <span class="v-badge">${p.v_type}</span></h2>
-                    <div class="space-y-4 mt-8">
-                        <div><span class="label-sky">配送件數</span><input type="number" id="dc" placeholder="0" class="input-box text-center text-2xl font-black text-sky-400"></div>
-                        <div><span class="label-sky">逆物流量</span><input type="number" id="rc" placeholder="0" class="input-box text-center text-2xl font-black text-orange-400"></div>
-                        <button onclick="window.sendJob('${p.id}')" class="btn-prime">同步作業數據</button>
+                    <h2 class="text-2xl font-bold text-white mb-8">${p.name} 夥伴作業中</h2>
+                    <div class="space-y-4">
+                        <input type="number" id="dc" placeholder="當次配送件數" class="input-box text-center text-2xl font-black text-sky-400">
+                        <input type="number" id="rc" placeholder="當次逆物流量" class="input-box text-center text-2xl font-black text-orange-400">
+                        <button onclick="window.sendJob('${p.id}')" class="btn-prime">同步數據到後台</button>
                     </div>
                 </div>`;
         }
@@ -164,48 +120,78 @@
         window.sendJob = async (id) => {
             const d = parseInt(document.getElementById('dc').value) || 0, r = parseInt(document.getElementById('rc').value) || 0;
             await updateDoc(doc(db, 'partners', id), { total_del: increment(d), total_ret: increment(r) });
-            alert("數據已同步"); location.reload();
+            alert("數據同步成功"); location.reload();
         };
 
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             const approved = partners.filter(x => x.status === "approved"), pending = partners.filter(x => x.status === "pending");
-            let html = `<div class="w-full max-w-[480px]"><h2 class="text-white font-bold text-xl mb-6">管理中心</h2>`;
+            
+            // 老闆看板：計算總額
+            const totalDel = approved.reduce((s, p) => s + p.total_del, 0);
+            const totalPay = approved.reduce((s, p) => s + ((p.total_del * p.rate_del) + (p.total_ret * p.rate_ret) - p.labor - (p.h_cnt * p.health)), 0);
+
+            let html = `
+                <div class="w-full max-w-[480px]">
+                    <h2 class="text-white font-bold text-xl mb-6">老闆經營儀表板</h2>
+                    <div class="grid grid-cols-2 gap-3 mb-8">
+                        <div class="stat-card"><p class="text-[10px] text-slate-500">當月總件數</p><p class="text-2xl font-black text-sky-400">${totalDel}</p></div>
+                        <div class="stat-card"><p class="text-[10px] text-slate-500">總薪資支出</p><p class="text-2xl font-black text-green-400">$${totalPay.toLocaleString()}</p></div>
+                    </div>`;
+
             if(pending.length > 0) {
-                html += pending.map(p => `
-                    <div class="id-card !p-4 !bg-slate-900 mb-4">
-                        <p class="text-white font-bold">${p.name} (${p.v_type})</p>
-                        <p class="text-[10px] text-slate-500">證號: ${p.id_num} | 電話: ${p.phone}</p>
-                        <button onclick="window.finalApprove('${p.id}')" class="btn-prime !py-2 !text-xs mt-3">核准入職</button>
-                    </div>`).join('');
+                html += `<p class="text-orange-500 font-bold mb-3 text-sm">待核准入職 (${pending.length})</p>`;
+                html += pending.map(p => `<div class="id-card !p-4 !bg-slate-900 mb-4 flex justify-between items-center"><p class="text-white font-bold">${p.name}</p><button onclick="window.finalApprove('${p.id}')" class="bg-sky-600 text-white px-4 py-1 rounded text-xs">核准</button></div>`).join('');
             }
+
+            html += `<div class="flex justify-between items-center mb-4"><p class="text-slate-500 font-bold text-sm">夥伴名冊與個別費率</p><button onclick="window.exportCSV()" class="text-sky-500 text-xs font-bold underline">下載報表</button></div>`;
             html += approved.map(p => {
                 const pay = (p.total_del * p.rate_del) + (p.total_ret * p.rate_ret) - p.labor - (p.h_cnt * p.health);
                 return `
                 <div class="id-card !p-5 !bg-slate-900/40 border-slate-800">
-                    <div class="flex justify-between items-start border-b border-slate-800 pb-3 mb-3">
-                        <div><p class="text-white font-bold">${p.name} <span class="v-badge">${p.v_type}</span></p></div>
-                        <p class="text-sky-400 font-black text-xl">$${pay.toLocaleString()}</p>
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-white font-bold">${p.name} <span class="v-badge">${p.v_type}</span></p>
+                        <p class="text-green-400 font-black text-xl">$${pay.toLocaleString()}</p>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
-                        <div><label class="text-[9px]">配送單價</label><input id="rd_${p.id}" type="number" value="${p.rate_del}" class="input-box !py-1 !text-xs"></div>
-                        <div><label class="text-[9px]">逆物單價</label><input id="rr_${p.id}" type="number" value="${p.rate_ret}" class="input-box !py-1 !text-xs"></div>
+                        <div><label class="text-[9px] text-slate-600">配送費率</label><input id="rd_${p.id}" type="number" value="${p.rate_del}" class="input-box !py-1 !text-xs !mb-0"></div>
+                        <div><label class="text-[9px] text-slate-600">逆物費率</label><input id="rr_${p.id}" type="number" value="${p.rate_ret}" class="input-box !py-1 !text-xs !mb-0"></div>
+                        <div><label class="text-[9px] text-slate-600">勞保扣款</label><input id="rl_${p.id}" type="number" value="${p.labor}" class="input-box !py-1 !text-xs !mb-0"></div>
+                        <div><label class="text-[9px] text-slate-600">健保人數</label><input id="rh_${p.id}" type="number" value="${p.h_cnt}" class="input-box !py-1 !text-xs !mb-0"></div>
                     </div>
-                    <button onclick="window.updateRate('${p.id}')" class="w-full bg-sky-900 text-sky-200 py-1 rounded text-[10px] mt-2">儲存費率</button>
-                    <button onclick="window.delPartner('${p.id}')" class="w-full text-red-900 text-[9px] mt-2 underline">刪除夥伴資料</button>
+                    <button onclick="window.updateBoss('${p.id}')" class="w-full bg-slate-800 text-sky-400 py-1 rounded text-[10px] mt-4 font-bold border border-sky-900">更新此夥伴參數</button>
+                    <button onclick="window.delPartner('${p.id}')" class="w-full text-red-900 text-[9px] mt-2 underline">移除此帳號</button>
                 </div>`;
             }).join('');
+            
             document.getElementById('render-target').innerHTML = html + `</div>`;
         }
 
-        window.updateRate = async (id) => {
-            const d = parseInt(document.getElementById('rd_'+id).value), r = parseInt(document.getElementById('rr_'+id).value);
-            await updateDoc(doc(db, 'partners', id), { rate_del: d, rate_ret: r });
-            alert("費率更新成功"); renderAdmin();
+        window.updateBoss = async (id) => {
+            await updateDoc(doc(db, 'partners', id), {
+                rate_del: parseInt(document.getElementById('rd_'+id).value),
+                rate_ret: parseInt(document.getElementById('rr_'+id).value),
+                labor: parseInt(document.getElementById('rl_'+id).value),
+                h_cnt: parseInt(document.getElementById('rh_'+id).value)
+            });
+            alert("參數已更新"); renderAdmin();
         };
 
-        window.delPartner = async (id) => { if(confirm("確定刪除夥伴資料？")) { await deleteDoc(doc(db, 'partners', id)); renderAdmin(); } };
+        window.exportCSV = () => {
+            let csv = "\ufeff夥伴,電話,件數,實領\n";
+            partners.filter(x => x.status === "approved").forEach(p => {
+                const pay = (p.total_del * p.rate_del) + (p.total_ret * p.rate_ret) - p.labor - (p.h_cnt * p.health);
+                csv += `${p.name},${p.phone},${p.total_del},${pay}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `SUPREME經營報表_${new Date().toLocaleDateString()}.csv`;
+            link.click();
+        };
+
+        window.delPartner = async (id) => { if(confirm("確定刪除？")) { await deleteDoc(doc(db, 'partners', id)); renderAdmin(); } };
         window.finalApprove = async (id) => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); renderAdmin(); };
     </script>
 </body>
