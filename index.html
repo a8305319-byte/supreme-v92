@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME V92</title>
+    <title>SUPREME V92 ADMIN</title>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,80 +11,107 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; user-select: none; }
-        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 60px 20px; }
+        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 60px 20px; overflow-y: auto; }
         .id-card { width: 100%; max-width: 400px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2.5rem; padding: 40px; border: 1px solid #1e293b; }
+        input { background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 12px; padding: 12px; color: white; outline: none; text-align: center; width: 100%; }
     </style>
 </head>
 <body>
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-3xl font-black text-white tracking-widest italic mb-2">SUPREME</h1>
-        <p class="text-[9px] text-slate-600 tracking-[0.5em] uppercase mb-12">Logistics Terminal V92</p>
-        <input type="password" id="pin" placeholder="••••" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 p-4 text-center text-3xl text-sky-400 outline-none w-60 font-mono">
+        <h1 class="text-3xl font-black text-white tracking-widest italic mb-2 uppercase">Supreme</h1>
+        <p class="text-[9px] text-slate-600 tracking-[0.5em] uppercase mb-12">Logistics Control</p>
+        <input type="password" id="pin" placeholder="••••" inputmode="numeric" style="background:transparent; border:none; border-bottom:2px solid #1e293b; border-radius:0; font-size:2rem; color:#38bdf8; width:200px;">
         <button onclick="boot()" class="mt-16 px-16 py-4 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] tracking-widest uppercase active:bg-white active:text-black transition">Authenticate</button>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-20 text-slate-800 font-bold text-[9px] uppercase border-b border-slate-900 pb-1">Exit Terminal</button>
+        <button onclick="location.reload()" class="mt-20 mb-10 text-slate-800 font-bold text-[9px] uppercase border-b border-slate-900 pb-1">System Exit</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // 已填入你剛才提供的專屬金鑰
+        // 使用你目前的 Firebase 配置
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
             authDomain: "supreme-v92.firebaseapp.com",
             projectId: "supreme-v92",
             storageBucket: "supreme-v92.firebasestorage.app",
             messagingSenderId: "485530156296",
-            appId: "1:485530156296:web:6728c0ee08b98dedd800bd",
-            measurementId: "G-JF36CHXE9Z"
+            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
         let partners = [];
-        onSnapshot(collection(db, 'partners'), s => { 
+
+        onSnapshot(query(collection(db, 'partners'), orderBy('name')), s => { 
             partners = s.docs.map(d => ({id: d.id, ...d.data()})); 
+            if(document.getElementById('driver-list')) renderList();
         });
 
         window.boot = () => {
             const entry = document.getElementById('pin').value;
+            if(entry === "9999") return renderAdmin(); 
             const p = partners.find(x => x.uid === entry);
-            if(entry === "9999") return renderBoss(); // 管理員 PIN
-            if(p) {
-                document.getElementById('gate').style.display = 'none';
-                document.getElementById('main').style.display = 'flex';
-                document.getElementById('render-target').innerHTML = `
-                    <div class="id-card">
-                        <p class="text-[10px] text-sky-500 font-black mb-1 tracking-widest">OPERATOR</p>
-                        <h2 class="text-3xl font-black text-white italic mb-10">${p.name}</h2>
-                        <button onclick="report('${p.id}')" class="w-full py-10 bg-sky-600 text-slate-900 font-black rounded-3xl text-xl uppercase shadow-xl shadow-sky-900/40 active:scale-95 transition">確認送達回報</button>
-                    </div>`;
-            } else { alert("驗證碼無效"); }
+            if(p) return renderDriver(p);
+            alert("驗證失敗");
         };
 
-        function renderBoss() {
+        function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `
-                <div class="id-card text-center text-white">
-                    <h2 class="font-black italic mb-4">ADMIN MASTER</h2>
-                    <p class="text-xs text-slate-500 uppercase">System Linked</p>
-                </div>`;
+                <div class="id-card mb-6">
+                    <h2 class="text-white font-black italic mb-6 text-center uppercase tracking-widest">Admin Matrix</h2>
+                    <div class="flex flex-col gap-4">
+                        <input type="text" id="newName" placeholder="司機姓名">
+                        <input type="text" id="newUid" placeholder="自訂 PIN 碼" inputmode="numeric">
+                        <button id="addBtn" class="bg-white text-black font-bold py-3 rounded-xl uppercase text-xs active:scale-95 transition">新增司機</button>
+                    </div>
+                </div>
+                <div id="driver-list" class="w-full max-w-[400px] flex flex-col gap-2"></div>`;
+            
+            document.getElementById('addBtn').onclick = async () => {
+                const n = document.getElementById('newName').value;
+                const u = document.getElementById('newUid').value;
+                if(!n || !u) return alert("請填寫姓名與 PIN");
+                try {
+                    await addDoc(collection(db, 'partners'), { name: n, uid: u, count: 0, lastSync: serverTimestamp() });
+                    document.getElementById('newName').value = ""; document.getElementById('newUid').value = "";
+                    alert("司機已成功加入系統");
+                } catch(e) { alert("儲存失敗，請檢查資料庫規則"); }
+            };
+            renderList();
         }
 
-        window.report = async (id) => {
-            try {
-                await updateDoc(doc(db, 'partners', id), { count: increment(1), lastSync: serverTimestamp() });
-                alert("回報成功！");
-            } catch (e) {
-                alert("回報失敗，請確認資料庫已開啟「測試模式」");
-            }
-        };
+        function renderList() {
+            const list = document.getElementById('driver-list');
+            list.innerHTML = `<p class="text-[10px] mb-2 text-slate-500 font-bold uppercase tracking-widest text-center">目前車隊清單</p>`;
+            partners.forEach(p => {
+                list.innerHTML += `<div class="bg-slate-900/50 p-4 rounded-2xl flex justify-between items-center border border-slate-800 mb-2">
+                    <div><p class="text-white font-bold text-sm">${p.name}</p><p class="text-[9px] text-slate-500">PIN: ${p.uid}</p></div>
+                    <p class="text-sky-400 font-black text-xl">${p.count || 0}</p>
+                </div>`;
+            });
+        }
+
+        function renderDriver(p) {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('main').style.display = 'flex';
+            document.getElementById('render-target').innerHTML = `
+                <div class="id-card">
+                    <p class="text-[10px] text-sky-500 font-black mb-1 uppercase tracking-widest">Operator</p>
+                    <h2 class="text-3xl font-black text-white italic mb-10">${p.name}</h2>
+                    <button id="reportBtn" class="w-full py-12 bg-sky-600 text-slate-900 font-black rounded-[2.5rem] text-2xl active:scale-95 transition shadow-2xl shadow-sky-900/40 uppercase">確認送達</button>
+                </div>`;
+            document.getElementById('reportBtn').onclick = async () => {
+                await updateDoc(doc(db, 'partners', p.id), { count: increment(1), lastSync: serverTimestamp() });
+                alert("回報成功");
+            };
+        }
     </script>
 </body>
 </html>
