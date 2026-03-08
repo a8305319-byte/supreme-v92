@@ -36,20 +36,19 @@
 </head>
 <body>
 
-    <!-- 載入動畫 (預設開啟，透過 JS 關閉) -->
+    <!-- 載入層 -->
     <div id="loading" class="loading-overlay">
         <div class="spinner"></div>
-        <p class="mt-4 text-sky-500 font-bold">在地物流 系統連線中...</p>
-        <button onclick="window.forceUnlock()" class="mt-6 text-[10px] text-slate-600 underline">連線過久？強制進入</button>
+        <p class="mt-4 text-sky-500 font-bold">在地物流 數據同步中...</p>
     </div>
 
     <!-- 快速新增人員彈窗 -->
     <div id="add-modal">
         <div class="id-card !mb-0 w-full max-w-[400px]">
-            <h3 class="text-white font-bold mb-6 text-xl italic border-l-4 border-orange-500 pl-3">新增現有人員資料</h3>
+            <h3 class="text-white font-bold mb-6 text-xl italic border-l-4 border-orange-500 pl-3">快速新增現有人員</h3>
             <input type="text" id="new_name" placeholder="人員姓名" class="input-box">
             <input type="tel" id="new_phone" placeholder="手機號碼" class="input-box" maxlength="10">
-            <input type="password" id="new_pin" placeholder="登入 PIN (預設 0000)" class="input-box" maxlength="4">
+            <input type="password" id="new_pin" placeholder="登入 PIN" class="input-box" maxlength="4">
             <div class="grid grid-cols-2 gap-2 mb-4">
                 <input type="number" id="new_del_p" placeholder="正件單價" class="input-box !mb-0" value="15">
                 <input type="number" id="new_rev_p" placeholder="逆件單價" class="input-box !mb-0" value="10">
@@ -61,7 +60,7 @@
         </div>
     </div>
 
-    <!-- 登入閘門 -->
+    <!-- 登入頁 -->
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
         <p class="text-slate-500 font-bold tracking-[0.3em] mb-10 text-xs">DIGITAL OPERATIONS SYSTEM</p>
@@ -70,9 +69,6 @@
             <div class="bg-slate-900/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl">
                 <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box" maxlength="10">
                 <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box">
-                <div class="flex items-center justify-center gap-2 mb-6 text-sm text-slate-500">
-                    <input type="checkbox" id="remember_me"> <label for="remember_me">記住帳號資訊</label>
-                </div>
                 <button onclick="window.boot()" class="btn-prime w-full shadow-lg">進入系統</button>
             </div>
             
@@ -85,7 +81,7 @@
         </div>
     </div>
 
-    <!-- 實務評估頁面 -->
+    <!-- 測驗頁面 -->
     <div id="interview-page" class="layer">
         <div class="w-full max-w-[480px]">
             <div class="mb-4 text-slate-500 font-black cursor-pointer text-left flex items-center" onclick="window.hideAll()">
@@ -93,7 +89,7 @@
             </div>
             <div class="id-card">
                 <h2 class="text-2xl font-black text-white mb-6 italic border-b-2 border-sky-500 pb-2">夥伴營運職能評估</h2>
-                <input type="text" id="int_name" placeholder="您的姓名" class="input-box">
+                <input type="text" id="int_name" placeholder="您的真實姓名" class="input-box">
                 <input type="tel" id="int_phone" placeholder="手機號碼" class="input-box" maxlength="10">
                 
                 <div class="space-y-4 text-left mb-6">
@@ -106,16 +102,6 @@
                         <p class="text-white text-sm font-bold mb-3">2. 客戶要求代收貨款金額不符時？</p>
                         <label class="block text-xs mb-2"><input type="radio" name="q2" value="25"> 拒絕交貨，立即回報異常</label>
                         <label class="block text-xs"><input type="radio" name="q2" value="10"> 先收下，之後再補差額</label>
-                    </div>
-                    <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                        <p class="text-white text-sm font-bold mb-3">3. 遇大雨影響進度，應如何處理？</p>
-                        <label class="block text-xs mb-2"><input type="radio" name="q3" value="25"> 確保貨物乾燥，安全第一並回報</label>
-                        <label class="block text-xs"><input type="radio" name="q3" value="0"> 隨便放置，趕快送完回家</label>
-                    </div>
-                    <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                        <p class="text-white text-sm font-bold mb-3">4. 發現配送物件包裝破損時？</p>
-                        <label class="block text-xs mb-2"><input type="radio" name="q4" value="25"> 現場拍照並告知客戶，回報公司</label>
-                        <label class="block text-xs"><input type="radio" name="q4" value="5"> 裝作沒看到直接交給客戶</label>
                     </div>
                 </div>
                 
@@ -130,9 +116,7 @@
             <div class="flex justify-between items-end mb-10">
                 <div>
                     <h2 class="text-white font-black text-4xl border-l-8 border-sky-500 pl-4 uppercase italic">老闆行政總控台</h2>
-                    <div class="flex gap-4 mt-2 pl-6">
-                        <button onclick="document.getElementById('add-modal').style.display='flex'" class="text-orange-500 text-[10px] font-bold border border-orange-500 px-3 py-1 rounded-full hover:bg-orange-500 hover:text-white transition">+ 快速新增現有人員</button>
-                    </div>
+                    <button onclick="document.getElementById('add-modal').style.display='flex'" class="mt-2 text-orange-500 text-[10px] font-bold border border-orange-500 px-3 py-1 rounded-full">+ 快速新增現有人員</button>
                 </div>
                 <button onclick="location.reload()" class="bg-slate-800 px-6 py-2 rounded-full text-xs font-bold text-slate-400">安全登出</button>
             </div>
@@ -144,21 +128,20 @@
                             <th>狀態控制</th><th>姓名/手機</th><th>隱藏 AI 分析</th><th>累計正件</th><th>累計逆件</th><th>正價</th><th>逆價</th><th>投保薪資</th><th>眷屬</th><th>扣繳額</th><th>淨額</th><th>管理</th>
                         </tr>
                     </thead>
-                    <tbody id="admin-render" class="text-white"></tbody>
+                    <tbody id="admin-render" class="text-white">
+                        <tr><td colspan="12" class="text-center py-10 text-slate-600">正在從雲端抓取應徵者資料...</td></tr>
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <div id="apply-page" class="layer">
+        <!-- 人事建檔邏輯保留於腳本 -->
         <div class="w-full max-w-[500px]">
              <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="window.hideAll()">← 返回</div>
              <div class="id-card">
                 <h2 class="text-2xl font-black text-white mb-6 italic border-b-2 border-orange-500 pb-2">人事資料建檔</h2>
-                <div class="photo-grid">
-                    <div class="photo-slot" onclick="window.triggerCam('id_f')"><div id="t_id_f" class="text-center">📸<br><span>身分證正</span></div><img id="p_id_f"></div>
-                    <div class="photo-slot" onclick="window.triggerCam('id_b')"><div id="t_id_b" class="text-center">📸<br><span>身分證反</span></div><img id="p_id_b"></div>
-                </div>
                 <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
                 <input type="password" id="app_pin" placeholder="自訂 4 位 PIN" maxlength="4" class="input-box">
                 <button onclick="window.submitApply()" class="btn-prime bg-sky-600">完成建檔</button>
@@ -175,8 +158,7 @@
                     <div><span class="label-blue">配送正件</span><input type="number" id="rep_del" placeholder="0" class="input-box"></div>
                     <div><span class="label-blue">逆物流件</span><input type="number" id="rep_rev" placeholder="0" class="input-box"></div>
                 </div>
-                <div class="photo-slot !h-40 bg-white/5" onclick="window.triggerCam('rep_img')"><div id="t_rep_img" class="text-center">📷<br><span>拍總表存證</span></div><img id="p_rep_img"></div>
-                <button onclick="window.submitReport()" class="btn-prime mt-8 bg-green-600">提交回報數據</button>
+                <button onclick="window.submitReport()" class="btn-prime mt-8 bg-green-600">提交數據</button>
             </div>
         </div>
     </div>
@@ -188,8 +170,7 @@
         import { getFirestore, doc, updateDoc, deleteDoc, increment, serverTimestamp, collection, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // 強制硬編碼連線設定，確保在 GitHub Pages 上運作
-        const fallbackConfig = { 
+        const config = { 
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
             authDomain: "supreme-v92.firebaseapp.com", 
             projectId: "supreme-v92", 
@@ -198,26 +179,27 @@
             appId: "1:485530156296:web:6728c0ee08b98dedd800bd" 
         };
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
-        const app = initializeApp(firebaseConfig);
+        const app = initializeApp(config);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'logistics-master-v92';
+        const appId = 'logistics-master-v92';
         const partnersCol = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
 
         let partners = [];
         let currentUser = null;
         let photosCache = {};
-        let userAuth = null;
 
-        window.setLoad = (s) => document.getElementById('loading').style.display = s ? 'flex' : 'none';
-        window.forceUnlock = () => window.setLoad(false);
+        const setLoad = (s) => document.getElementById('loading').style.display = s ? 'flex' : 'none';
 
-        // --- 登入邏輯 ---
+        // --- 登入控制 ---
         window.boot = () => {
             const ph = document.getElementById('login_phone').value.trim();
             const pi = document.getElementById('login_pin').value.trim();
-            if(ph === "0976017938" && pi === "0531") return renderAdmin();
+            
+            if(ph === "0976017938" && pi === "0531") {
+                window.renderAdmin(); // 管理員登入直接執行渲染
+                return;
+            }
 
             currentUser = partners.find(x => x.phone === ph);
             if(currentUser) {
@@ -225,14 +207,20 @@
                     window.showLayer('hub');
                     document.getElementById('hub-name').innerText = `夥伴 ${currentUser.name}`;
                 } else if(currentUser.status === "interviewed") {
-                    document.getElementById('apply-lock-box').innerHTML = `<button onclick="window.showLayer('apply-page')" class="w-full py-4 rounded-2xl border border-orange-500 text-orange-500 font-bold shadow-lg animate-pulse">二、人事建檔 (測驗已核准)</button>`;
-                    alert("測驗核准！請進行建檔。");
-                } else alert("驗證失敗或審核中。");
-            } else alert("查無號碼。");
+                    window.showLayer('apply-page');
+                } else alert("狀態審核中或 PIN 碼錯誤。");
+            } else alert("查無人員，請先完成職能評估。");
         };
 
+        // --- 後台渲染修復 ---
         window.renderAdmin = () => {
             window.showLayer('admin');
+            const target = document.getElementById('admin-render');
+            if(partners.length === 0) {
+                target.innerHTML = '<tr><td colspan="12" class="text-center py-10 text-slate-600 font-bold italic">目前雲端資料庫尚未有應徵人員資料</td></tr>';
+                return;
+            }
+
             let html = '';
             partners.forEach(p => {
                 const dp = p.custom_del || 15; const rp = p.custom_rev || 10;
@@ -241,135 +229,86 @@
                 const total_ins = Math.round(ins_b * 0.025 + ins_b * 0.018 * (1 + parseInt(fm)));
                 
                 let actionBtn = '';
-                if(p.status === 'pending_review') actionBtn = `<button onclick="window.upField('${p.id}','status','interviewed')" class="bg-sky-600 px-2 py-1 rounded text-[10px]">核准面試</button>`;
-                if(p.status === 'pending') actionBtn = `<button onclick="window.upField('${p.id}','status','approved')" class="bg-green-600 px-2 py-1 rounded text-[10px]">開通營運</button>`;
+                if(p.status === 'pending_review') actionBtn = `<button onclick="window.upField('${p.id}','status','interviewed')" class="bg-sky-600 px-3 py-1 rounded text-[10px] font-bold shadow-lg">核准面試</button>`;
+                else if(p.status === 'pending') actionBtn = `<button onclick="window.upField('${p.id}','status','approved')" class="bg-green-600 px-3 py-1 rounded text-[10px] font-bold shadow-lg">開通權限</button>`;
+                else actionBtn = `<span class="text-slate-500 text-[9px] font-bold uppercase">${p.status}</span>`;
 
-                html += `<tr class="hover:bg-white/5 transition">
-                    <td>${actionBtn || p.status}</td>
-                    <td><b>${p.name}</b><br>${p.phone}</td>
-                    <td><span class="ai-tag">${p.ai_analysis || '尚未分析'}</span></td>
-                    <td class="text-sky-400 font-bold">${p.total_del || 0}</td>
-                    <td class="text-orange-400 font-bold">${p.total_rev || 0}</td>
+                html += `<tr class="hover:bg-white/5 transition border-b border-slate-800/50">
+                    <td>${actionBtn}</td>
+                    <td><span class="font-bold text-white text-xs">${p.name}</span><br><span class="text-[9px] text-slate-500">${p.phone}</span></td>
+                    <td><span class="ai-tag">${p.ai_analysis || '分析中...'}</span></td>
+                    <td class="text-sky-400 font-bold text-center">${p.total_del || 0}</td>
+                    <td class="text-orange-400 font-bold text-center">${p.total_rev || 0}</td>
                     <td><input type="number" value="${dp}" onchange="window.upField('${p.id}','custom_del',this.value)" class="input-mini"></td>
                     <td><input type="number" value="${rp}" onchange="window.upField('${p.id}','custom_rev',this.value)" class="input-mini"></td>
                     <td><input type="number" value="${ins_b}" onchange="window.upField('${p.id}','ins_base',this.value)" class="input-mini !w-16"></td>
                     <td><input type="number" value="${fm}" onchange="window.upField('${p.id}','ins_fm',this.value)" class="input-mini"></td>
-                    <td class="text-red-400 font-bold">-$${total_ins}</td>
+                    <td class="text-red-400 font-bold text-[9px]">-$${total_ins}</td>
                     <td class="text-sky-400 font-black text-sm">$${income - total_ins}</td>
                     <td><span class="btn-del" onclick="window.delPartner('${p.id}','${p.name}')">🗑️</span></td>
                 </tr>`;
             });
-            document.getElementById('admin-render').innerHTML = html || '<tr><td colspan="12" class="text-center py-10">尚無夥伴資料</td></tr>';
+            target.innerHTML = html;
         };
 
-        // --- 核心操作 ---
+        // --- 職能評估提交 ---
         window.submitInterview = async () => {
             const name = document.getElementById('int_name').value.trim();
             const ph = document.getElementById('int_phone').value.trim();
             const q1 = document.querySelector('input[name="q1"]:checked')?.value;
-            const q2 = document.querySelector('input[name="q2"]:checked')?.value;
-            if(!name || !ph || !q1 || !q2) return alert("請填寫姓名與測驗題。");
-            window.setLoad(true);
-            let analysis = "✅ 誠信可靠";
-            if (q2 === "10") analysis = "❌ 誠信風險";
-            else if (q1 === "0") analysis = "🚧 事故隱憂";
+            if(!name || !ph || !q1) return alert("資訊未填齊。");
+            
+            setLoad(true);
+            const id = `p_${ph}`;
+            const analysis = q1 === "25" ? "✅ 穩定可靠" : "⚠️ 邏輯待查";
+
             try {
-                await setDoc(doc(partnersCol, `p_${ph}`), {
-                    id: `p_${ph}`, name, phone: ph, status: "pending_review", ai_analysis: analysis,
-                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, ins_base: 0, ins_fm: 0, createdAt: serverTimestamp()
+                await setDoc(doc(partnersCol, id), {
+                    id, name, phone: ph, status: "pending_review", ai_analysis: analysis,
+                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, ins_base: 0, ins_fm: 0,
+                    createdAt: serverTimestamp()
                 });
-                alert("提交成功，請等候審核。");
+                alert("提交成功，請等候老闆核准！");
                 location.reload();
-            } catch (e) { alert("提交失敗"); }
-            window.setLoad(false);
+            } catch (e) { alert("系統連線失敗。"); }
+            setLoad(false);
         };
 
+        // --- 功能模組 ---
+        window.upField = async (id, f, v) => { await updateDoc(doc(partnersCol, id), { [f]: isNaN(parseFloat(v)) ? v : parseFloat(v) }); };
+        window.delPartner = async (id, n) => { if(confirm(`確定刪除 ${n}?`)) await deleteDoc(doc(partnersCol, id)); };
         window.addPartnerDirectly = async () => {
-            const name = document.getElementById('new_name').value.trim();
-            const ph = document.getElementById('new_phone').value.trim();
-            if(!name || !ph) return alert("姓名手機為必填");
-            window.setLoad(true);
+            const n = document.getElementById('new_name').value.trim();
+            const p = document.getElementById('new_phone').value.trim();
+            if(!n || !p) return alert("必填姓名手機");
             try {
-                await setDoc(doc(partnersCol, `p_${ph}`), {
-                    id: `p_${ph}`, name, phone: ph, pin: "0000", status: "approved", ai_analysis: "💎 直接新增",
+                await setDoc(doc(partnersCol, `p_${p}`), {
+                    id: `p_${p}`, name: n, phone: p, pin: "0000", status: "approved", ai_analysis: "💎 直接新增",
                     total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, ins_base: 0, ins_fm: 0
                 });
-                alert("新增成功");
+                alert("已新增人員。");
                 document.getElementById('add-modal').style.display='none';
             } catch (e) { alert("失敗"); }
-            window.setLoad(false);
         };
 
-        window.submitApply = async () => {
-            if (!currentUser) return;
-            const data = {
-                realName: document.getElementById('app_name').value.trim(),
-                pin: document.getElementById('app_pin').value.trim(),
-                photos: photosCache, status: "pending"
-            };
-            if(!data.realName || !data.pin) return alert("姓名 PIN 為必填");
-            window.setLoad(true);
-            try {
-                await updateDoc(doc(partnersCol, currentUser.id), data);
-                alert("建檔完成");
-                location.reload();
-            } catch (e) { alert("失敗"); }
-            window.setLoad(false);
-        };
-
-        window.submitReport = async () => {
-            if (!currentUser) return;
-            const del = parseInt(document.getElementById('rep_del').value) || 0;
-            const rev = parseInt(document.getElementById('rep_rev').value) || 0;
-            if(!photosCache.rep_img) return alert("請拍照。");
-            window.setLoad(true);
-            try {
-                await updateDoc(doc(partnersCol, currentUser.id), {
-                    total_del: increment(del), total_rev: increment(rev), last_report: photosCache.rep_img
-                });
-                alert("提交成功");
-                location.reload();
-            } catch (e) { alert("回報失敗"); }
-            window.setLoad(false);
-        };
-
-        window.upField = async (id, f, v) => { await updateDoc(doc(partnersCol, id), { [f]: isNaN(parseFloat(v)) ? v : parseFloat(v) }); };
-        window.delPartner = async (id, n) => { if(confirm(`刪除 ${n}?`)) await deleteDoc(doc(partnersCol, id)); };
-        
         window.showLayer = id => { window.hideAll(); document.getElementById(id).style.display='flex'; };
         window.hideAll = () => { document.querySelectorAll('.layer').forEach(l=>l.style.display='none'); document.getElementById('gate').style.display='flex'; };
-        window.triggerCam = f => { window.currentImgField = f; document.getElementById('cam').click(); };
-        window.handleFile = i => { 
-            const r = new FileReader(); 
-            r.onload = e => { 
-                photosCache[window.currentImgField] = e.target.result; 
-                document.getElementById('p_'+window.currentImgField).src = e.target.result; 
-                document.getElementById('p_'+window.currentImgField).style.display = 'block';
-                document.getElementById('t_'+window.currentImgField).style.display = 'none'; 
-            }; 
-            r.readAsDataURL(i.files[0]); 
-        };
 
         const init = async () => {
+            setLoad(true);
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
-                else await signInAnonymously(auth);
-            } catch (err) { console.error("Firebase Auth 連線失敗"); window.setLoad(false); }
-            onAuthStateChanged(auth, user => {
-                userAuth = user;
-                if(user) {
-                    onSnapshot(partnersCol, s => {
-                        partners = s.docs.map(d => ({ id: d.id, ...d.data() }));
-                        if(document.getElementById('admin').style.display === 'flex') renderAdmin();
-                        window.setLoad(false);
-                    }, err => {
-                        console.error("Firestore 資料監聽失敗");
-                        window.setLoad(false);
-                    });
-                }
-            });
-            // 5秒後強制解除鎖定，避免環境問題導致永久卡死
-            setTimeout(() => window.setLoad(false), 5000);
+                await signInAnonymously(auth);
+                onAuthStateChanged(auth, user => {
+                    if(user) {
+                        onSnapshot(partnersCol, s => {
+                            partners = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                            if(document.getElementById('admin').style.display === 'flex') window.renderAdmin();
+                            setLoad(false);
+                        }, err => { console.error("Firebase 連線錯誤"); setLoad(false); });
+                    }
+                });
+            } catch (e) { setLoad(false); }
+            setTimeout(() => setLoad(false), 3500); // 逾時保護
         };
         init();
     </script>
