@@ -8,14 +8,14 @@
     <style>
         body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; }
         .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 16px; }
         .label-sky { font-size: 14px; color: #38bdf8; font-weight: bold; margin-bottom: 8px; display: block; }
         .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .photo-slot { background: #0f172a; border: 1px dashed #334155; border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
         .photo-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: none; }
         .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; transition: all 0.2s; border: none; }
-        .btn-prime:active { scale: 0.96; }
+        .btn-export { background: #10b981; color: white; padding: 10px 20px; border-radius: 0.8rem; font-weight: bold; font-size: 14px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -25,7 +25,7 @@
         <p class="text-slate-500 text-sm mb-10">物流管理系統</p>
         <div class="w-full max-w-[320px] space-y-4">
             <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center">
-            <input type="password" id="login_pin" placeholder="登密密碼 (PIN)" inputmode="numeric" class="input-box text-center">
+            <input type="password" id="login_pin" placeholder="登密密碼 (PIN)" class="input-box text-center">
             <button onclick="boot()" class="btn-prime">確認登入</button>
             <button onclick="showApply()" class="text-sm text-slate-500 underline mt-6 block mx-auto">司機入職申請</button>
         </div>
@@ -34,7 +34,6 @@
     <div id="apply-page" class="layer">
         <div class="id-card">
             <h2 class="text-xl font-bold text-white mb-6 text-center">入職申請</h2>
-            
             <span class="label-sky">證件影像</span>
             <div class="photo-grid">
                 <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f">身分證正面</span><img id="p_id_f"></div>
@@ -43,17 +42,14 @@
                 <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car">行車執照</span><img id="p_car"></div>
                 <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
             </div>
-
             <span class="label-sky">基本資料</span>
             <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
             <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
             <input type="tel" id="app_phone" placeholder="手機號碼" class="input-box">
             <input type="password" id="app_pin" placeholder="自訂密碼 (4位數)" maxlength="4" class="input-box">
-
             <span class="label-sky">聯絡地址</span>
             <input type="text" id="app_h_addr" placeholder="戶籍地址" class="input-box">
             <input type="text" id="app_c_addr" placeholder="通訊地址 (同上免填)" class="input-box">
-
             <button onclick="submitApply()" id="subBtn" class="btn-prime mt-4">提交申請</button>
             <button onclick="location.reload()" class="w-full mt-4 text-sm text-slate-500">返回</button>
         </div>
@@ -113,7 +109,6 @@
         window.submitApply = async () => {
             const phone = document.getElementById('app_phone').value;
             if(partners.some(x => x.phone === phone)) return alert("手機已註冊");
-
             const data = {
                 name: document.getElementById('app_name').value,
                 phone: phone,
@@ -141,14 +136,8 @@
                         📷 任務拍照回報 <input type="file" accept="image/*" capture="camera" class="hidden" onchange="window.handleJob(this)">
                     </label>
                     <div class="space-y-4">
-                        <div>
-                            <span class="label-sky">配送件數</span>
-                            <input type="number" id="dc" placeholder="0" class="input-box text-center text-2xl font-black text-sky-400">
-                        </div>
-                        <div>
-                            <span class="label-sky">逆物流量</span>
-                            <input type="number" id="rc" placeholder="0" class="input-box text-center text-2xl font-black text-orange-400">
-                        </div>
+                        <div><span class="label-sky">配送件數</span><input type="number" id="dc" placeholder="0" class="input-box text-center text-2xl font-black text-sky-400"></div>
+                        <div><span class="label-sky">逆物流量</span><input type="number" id="rc" placeholder="0" class="input-box text-center text-2xl font-black text-orange-400"></div>
                         <button onclick="window.sendJob('${p.id}')" class="btn-prime">同步數據</button>
                     </div>
                 </div>`;
@@ -177,13 +166,18 @@
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
-            const pending = partners.filter(x => x.status === "pending");
             const approved = partners.filter(x => x.status === "approved");
+            const pending = partners.filter(x => x.status === "pending");
 
-            let html = `<h2 class="text-white font-bold text-xl mb-6 w-full max-w-[480px]">後台管理</h2>`;
+            let html = `
+                <div class="w-full max-w-[480px]">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-white font-bold text-xl">後台管理</h2>
+                        <button onclick="window.exportCSV()" class="btn-export">匯出薪資報表</button>
+                    </div>`;
             
             if(pending.length > 0) {
-                html += `<p class="text-orange-500 font-bold mb-3 w-full max-w-[480px]">待核准</p>`;
+                html += `<p class="text-orange-500 font-bold mb-3">待核准</p>`;
                 html += pending.map(p => `
                     <div class="id-card !bg-slate-900">
                         <p class="text-white font-bold mb-3">${p.name}</p>
@@ -191,16 +185,12 @@
                             <label class="text-xs">勞保: <select id="l_${p.id}" class="bg-slate-800 rounded"><option value="1">1</option><option value="2">2</option></select></label>
                             <label class="text-xs">健保: <select id="h_${p.id}" class="bg-slate-800 rounded"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
                         </div>
-                        <div class="flex gap-2 mb-6">
-                            <img src="${p.docs.id_f}" class="h-10 w-full object-cover rounded" onclick="window.open(this.src)">
-                            <img src="${p.docs.lic}" class="h-10 w-full object-cover rounded" onclick="window.open(this.src)">
-                        </div>
                         <button onclick="window.finalApprove('${p.id}')" class="btn-prime h-10 py-0 text-sm">核准</button>
                     </div>
                 `).join('');
             }
 
-            html += `<p class="text-slate-500 font-bold mb-3 w-full max-w-[480px]">薪資結算</p>`;
+            html += `<p class="text-slate-500 font-bold mb-3">薪資結算</p>`;
             html += approved.map(p => {
                 const pay = (p.total_del * rates.del) + (p.total_ret * rates.ret) - rates.labor - (p.h_cnt * rates.health);
                 return `
@@ -212,8 +202,30 @@
                 </div>`;
             }).join('');
 
+            html += `</div>`;
             document.getElementById('render-target').innerHTML = html;
         }
+
+        window.exportCSV = () => {
+            const approved = partners.filter(x => x.status === "approved");
+            let csv = "\ufeff司機姓名,手機,配送件數,逆物流量,勞保扣款,健保人數,健保扣款,實領金額\n";
+            
+            approved.forEach(p => {
+                const labor_fee = rates.labor;
+                const health_fee = p.h_cnt * rates.health;
+                const pay = (p.total_del * rates.del) + (p.total_ret * rates.ret) - labor_fee - health_fee;
+                csv += `${p.name},${p.phone},${p.total_del},${p.total_ret},${labor_fee},${p.h_cnt},${health_fee},${pay}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `SUPREME_薪資報表_${new Date().toLocaleDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
 
         window.finalApprove = async (id) => {
             const l = parseInt(document.getElementById('l_'+id).value);
