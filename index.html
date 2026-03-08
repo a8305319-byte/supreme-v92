@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流 - 職業夥伴中心</title>
+    <title>在地物流 - 夥伴數位中心</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -12,6 +12,7 @@
         .input-box { background: rgba(15, 23, 42, 0.9); border: 2px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #ffffff; outline: none; margin-bottom: 12px; font-size: 16px; }
         .input-box::placeholder { color: #64748b; }
         .btn-prime { width: 100%; padding: 18px; border-radius: 1.2rem; background: #0ea5e9; color: #020617; font-weight: 950; font-size: 18px; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-prime:active { transform: scale(0.98); background: #38bdf8; }
         .label-sky { font-size: 13px; color: #38bdf8; font-weight: 900; margin-bottom: 8px; display: block; border-left: 4px solid #0ea5e9; padding-left: 8px; margin-top: 15px; text-align: left; }
         .q-box { background: rgba(255,255,255,0.03); border: 1px solid #1e293b; padding: 15px; border-radius: 1.5rem; margin-bottom: 10px; text-align: left; }
         .opt-label { display: flex; align-items: center; gap: 12px; padding: 10px; cursor: pointer; border-radius: 12px; font-size: 14px; color: #e2e8f0; }
@@ -25,55 +26,62 @@
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
-        <p class="text-sky-500 text-sm font-black tracking-[0.4em] mb-12 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">夥伴共榮管理系統</p>
+        <p class="text-sky-500 text-sm font-black tracking-[0.4em] mb-12 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">夥伴數位營運中心</p>
         
         <div class="w-full max-w-[340px] space-y-4">
-            <button onclick="showLayer('interview-page')" class="btn-prime">一、AI 職能實務評估</button>
-            <button onclick="showLayer('apply-page')" class="w-full py-4 rounded-2xl border-2 border-slate-700 text-slate-500 font-black">二、正式入職資料補件</button>
-            <button onclick="alert('請先聯繫管理員開通帳號')" class="mt-8 text-slate-500 text-xs underline">已有帳號？登入工作台</button>
+            <button onclick="showLayer('interview-page')" class="btn-prime">一、營運職能評估測驗</button>
+            <button onclick="showLayer('apply-page')" class="w-full py-4 rounded-2xl border-2 border-slate-700 text-slate-500 font-black">二、正式入職資料建檔</button>
+            <div class="pt-10">
+                <input type="tel" id="login_phone" placeholder="手機號碼登入" class="input-box text-center !mb-2 !bg-transparent border-slate-800">
+                <button onclick="alert('請先聯繫管理員核准帳號')" class="text-slate-600 text-xs underline">已有帳號？登入工作台</button>
+            </div>
         </div>
     </div>
 
     <div id="interview-page" class="layer">
         <div class="w-full max-w-[500px]">
-            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="hideAll()">← 返回</div>
+            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="hideAll()">← 返回主頁</div>
             <div class="id-card">
-                <h2 class="text-3xl font-black text-white mb-6 italic border-b-4 border-sky-500 pb-2">AI 職能評估</h2>
+                <h2 class="text-3xl font-black text-white mb-6 italic border-b-4 border-sky-500 pb-2">營運職能評估</h2>
+                <p class="text-[11px] text-slate-400 mb-6 leading-relaxed">為了確保配送安全與效率，請完成以下 4 題實務情境評估。</p>
+                
                 <input type="text" id="int_name" placeholder="您的姓名" class="input-box">
                 <input type="tel" id="int_phone" placeholder="聯絡電話" class="input-box">
-                
-                <span class="label-sky">情境測驗 (共4題)</span>
+
+                <span class="label-sky">1. 安全：配送途中遇輕微擦撞，你會？</span>
                 <div class="q-box">
-                    <p class="text-white text-sm mb-2 font-bold">1. 配送途中遇輕微擦撞，你會？</p>
-                    <label class="opt-label"><input type="radio" name="q1" value="1"> 報警、拍照並即時回報公司</label>
+                    <label class="opt-label"><input type="radio" name="q1" value="1"> 報警、拍照並同步回報公司</label>
                     <label class="opt-label"><input type="radio" name="q1" value="0"> 趕快送完，事後再自行處理</label>
                 </div>
+
+                <span class="label-sky">2. 責任：遇大雨且貨多怕濕，你會？</span>
                 <div class="q-box">
-                    <p class="text-white text-sm mb-2 font-bold">2. 遇大雨且貨多怕濕，你會？</p>
-                    <label class="opt-label"><input type="radio" name="q2" value="1"> 確實蓋好雨布繼續配送</label>
+                    <label class="opt-label"><input type="radio" name="q2" value="1"> 確實蓋好雨布，穿雨衣繼續配送</label>
                     <label class="opt-label"><input type="radio" name="q2" value="0"> 找地方躲雨，等雨停再送</label>
                 </div>
+
+                <span class="label-sky">3. 誠信：結帳多出代收款但不確定來源？</span>
                 <div class="q-box">
-                    <p class="text-white text-sm mb-2 font-bold">3. 結帳多出代收款但不確定來源？</p>
-                    <label class="opt-label"><input type="radio" name="q3" value="1"> 主動回報公司並上繳</label>
+                    <label class="opt-label"><input type="radio" name="q3" value="1"> 主動聯繫回報公司並上繳</label>
                     <label class="opt-label"><input type="radio" name="q3" value="0"> 先收著，沒人發現就當小費</label>
                 </div>
+
+                <span class="label-sky">4. 危機：還有急件但車輛突然故障？</span>
                 <div class="q-box">
-                    <p class="text-white text-sm mb-2 font-bold">4. 還有急件但車輛突然故障？</p>
                     <label class="opt-label"><input type="radio" name="q4" value="1"> 第一時間回報尋求支援</label>
                     <label class="opt-label"><input type="radio" name="q4" value="0"> 攔計程車去送，晚點再修車</label>
                 </div>
 
-                <button onclick="submitInterview()" id="sub_btn" class="btn-prime mt-6">送出 AI 評估</button>
+                <button onclick="submitInterview()" id="sub_btn" class="btn-prime mt-6 shadow-xl">提交評估結果</button>
             </div>
         </div>
     </div>
 
     <div id="apply-page" class="layer">
         <div class="w-full max-w-[500px]">
-            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="hideAll()">← 返回</div>
+            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="hideAll()">← 返回主頁</div>
             <div class="id-card">
-                <h2 class="text-3xl font-black text-white mb-6 border-b-4 border-orange-500 pb-2 italic text-left">正式入職資料</h2>
+                <h2 class="text-3xl font-black text-white mb-6 border-b-4 border-orange-500 pb-2 italic text-left">正式入職建檔</h2>
                 
                 <span class="label-sky">證件與車輛影像</span>
                 <div class="photo-grid">
@@ -88,9 +96,9 @@
                 <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
                 <input type="tel" id="app_phone" placeholder="行動電話" class="input-box">
                 <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
-                <input type="text" id="app_h_addr" placeholder="戶籍地址" class="input-box">
+                <input type="text" id="app_h_addr" placeholder="完整戶籍地址" class="input-box">
                 
-                <span class="label-sky">營運與薪資資訊</span>
+                <span class="label-sky">營運車輛類型</span>
                 <select id="app_vehicle" class="input-box bg-slate-900 text-white font-bold" onchange="togglePlate(this.value)">
                     <option value="機車">個人機車</option>
                     <option value="貨車">個人貨車</option>
@@ -101,12 +109,12 @@
                 </div>
 
                 <div class="flex gap-2">
-                    <input type="text" id="app_bank_code" placeholder="銀行代碼" class="input-box w-1/3">
-                    <input type="text" id="app_bank_acc" placeholder="匯款帳號" class="input-box w-2/3">
+                    <input type="text" id="app_bank_code" placeholder="代碼" class="input-box w-1/3">
+                    <input type="text" id="app_bank_acc" placeholder="發薪銀行帳號" class="input-box w-2/3">
                 </div>
-                <input type="password" id="app_pin" placeholder="自訂 4 位數 PIN 碼" maxlength="4" class="input-box">
+                <input type="password" id="app_pin" placeholder="設定 4 位登入 PIN 碼" maxlength="4" class="input-box">
 
-                <button onclick="submitApply()" id="app_btn" class="btn-prime bg-orange-600 mt-6">確認提交資料</button>
+                <button onclick="submitApply()" id="app_btn" class="btn-prime bg-orange-600 mt-6 shadow-xl">確認提交入職資料</button>
             </div>
         </div>
     </div>
@@ -115,7 +123,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // 🔥 Firebase Config
+        // 🔥 請務必確認 Firebase Config 正確
         const firebaseConfig = { 
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
             authDomain: "supreme-v92.firebaseapp.com", 
@@ -132,10 +140,15 @@
 
         // 邏輯：公司車免填車牌
         window.togglePlate = (val) => {
-            document.getElementById('plate_box').style.display = (val === '公司車') ? 'none' : 'block';
+            const box = document.getElementById('plate_box');
+            if (val === '公司車') {
+                box.style.display = 'none';
+            } else {
+                box.style.display = 'block';
+            }
         };
 
-        // 提交 AI 面試
+        // 提交第一階段：評估
         window.submitInterview = async () => {
             const name = document.getElementById('int_name').value;
             const phone = document.getElementById('int_phone').value;
@@ -146,34 +159,54 @@
                 document.querySelector('input[name="q4"]:checked')?.value
             ];
 
-            if(!name || !phone || q.includes(undefined)) return alert("請完成所有情境測驗題目！");
+            if(!name || !phone || q.includes(undefined)) return alert("請完整填寫姓名、電話並回答所有題目！");
 
-            const score = q.reduce((a, b) => a + parseInt(b), 0) * 25;
+            const btn = document.getElementById('sub_btn');
+            btn.innerText = "正在傳送評估..."; btn.disabled = true;
+
             try {
-                await addDoc(collection(db, 'partners'), { name, phone, ai_score: score, status: "interviewing", time: serverTimestamp() });
-                alert("AI 評估完成！請繼續完成第二步資料補件。");
-                showLayer('apply-page');
-            } catch(e) { alert("傳送失敗"); }
+                const score = q.reduce((a, b) => a + parseInt(b), 0) * 25;
+                await addDoc(collection(db, 'partners'), {
+                    name, phone, score, status: "interviewed", time: serverTimestamp()
+                });
+                alert("營運評估完成！請點擊『第二階段』填寫正式資料。");
+                location.reload();
+            } catch(e) { 
+                alert("系統繁忙，請稍後再試"); 
+                btn.disabled = false; btn.innerText = "提交評估結果";
+            }
         };
 
-        // 提交正式入職
+        // 提交第二階段：正式入職
         window.submitApply = async () => {
             const name = document.getElementById('app_name').value;
             const pin = document.getElementById('app_pin').value;
-            if(!name || !pin) return alert("請完整填寫姓名與 PIN 碼！");
+            const vType = document.getElementById('app_vehicle').value;
+            const plate = (vType === '公司車') ? "公司配車" : document.getElementById('app_plate').value;
+
+            if(!name || !pin) return alert("請填寫姓名與登入密碼！");
+
+            const btn = document.getElementById('app_btn');
+            btn.innerText = "正在上傳證件..."; btn.disabled = true;
 
             try {
                 await addDoc(collection(db, 'partners'), {
                     name, phone: document.getElementById('app_phone').value,
-                    v_type: document.getElementById('app_vehicle').value,
-                    plate: document.getElementById('app_vehicle').value === '公司車' ? "公司配車" : document.getElementById('app_plate').value,
+                    v_type: vType, plate: plate, uid: pin,
+                    id_num: document.getElementById('app_idnum').value,
+                    h_addr: document.getElementById('app_h_addr').value,
                     bank: document.getElementById('app_bank_acc').value,
-                    uid: pin, docs: photosCache, status: "pending", time: serverTimestamp()
+                    docs: photosCache, status: "pending", time: serverTimestamp()
                 });
-                alert("入職建檔成功！"); location.reload();
-            } catch(e) { alert("上傳失敗"); }
+                alert("資料建檔成功！請通知管理員審核。");
+                location.reload();
+            } catch(e) { 
+                alert("上傳失敗"); 
+                btn.disabled = false; btn.innerText = "確認提交入職資料";
+            }
         };
 
+        // UI 核心邏輯
         window.showLayer = id => { hideAll(); document.getElementById(id).style.display = 'flex'; };
         window.hideAll = () => { document.querySelectorAll('.layer').forEach(l => l.style.display='none'); };
         window.triggerCam = f => { currentImgField = f; document.getElementById('cam').click(); };
