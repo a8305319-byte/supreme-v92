@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME V92 FLOW</title>
+    <title>SUPREME V92 LOGISTICS</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,18 +11,19 @@
         body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; user-select: none; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; }
         .id-card { width: 100%; max-width: 400px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 30px; border: 1px solid #1e293b; }
-        .btn-action { width: 100%; padding: 22px; border-radius: 1.2rem; font-weight: 900; text-transform: uppercase; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; }
-        #preview { width: 100%; height: 220px; object-fit: cover; border-radius: 1rem; margin-bottom: 20px; display: none; border: 2px solid #334155; }
-        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .btn-action { width: 100%; padding: 20px; border-radius: 1.2rem; font-weight: 900; text-transform: uppercase; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; }
+        input[type="number"] { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 12px; color: #38bdf8; text-align: center; font-size: 1.2rem; font-weight: bold; width: 80px; outline: none; }
+        #preview { width: 100%; height: 200px; object-fit: cover; border-radius: 1rem; margin-bottom: 20px; display: none; border: 2px solid #334155; }
+        .loading { animation: pulse 2s infinite; }
+        @keyframes pulse { 50% { opacity: .5; } }
     </style>
 </head>
 <body>
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-3xl font-black text-white tracking-widest italic mb-2 uppercase">Supreme</h1>
-        <p class="text-[9px] text-slate-600 tracking-[0.5em] mb-12 uppercase">Logistics Matrix</p>
+        <h1 class="text-3xl font-black text-white tracking-widest italic mb-2">SUPREME</h1>
+        <p class="text-[9px] text-slate-600 tracking-[0.5em] mb-12 uppercase">Digital Hub</p>
         <input type="password" id="pin" placeholder="••••" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-3xl text-sky-400 w-48 outline-none pb-2">
-        <button onclick="boot()" class="mt-16 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] tracking-widest uppercase active:bg-white active:text-black transition">Authenticate</button>
+        <button onclick="boot()" class="mt-16 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] tracking-widest uppercase active:bg-white active:text-black transition">Verify</button>
     </div>
 
     <div id="main" class="layer">
@@ -62,19 +63,26 @@
             document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `
                 <div class="id-card">
-                    <p class="text-[10px] text-sky-500 font-black mb-1 tracking-widest">DRIVER UNIT</p>
-                    <h2 class="text-3xl font-black text-white italic mb-8 uppercase">${p.name}</h2>
+                    <p class="text-[10px] text-sky-500 font-black mb-1 tracking-widest uppercase">Operator Unit</p>
+                    <h2 class="text-2xl font-black text-white italic mb-6">${p.name}</h2>
                     
                     <img id="preview" src="">
                     
                     <label class="btn-action bg-slate-800 text-white border border-slate-700 cursor-pointer mb-6">
-                        📷 啟動相機拍攝憑證
+                        📷 拍照存證
                         <input type="file" accept="image/*" capture="camera" class="hidden" onchange="window.processImg(this)">
                     </label>
                     
-                    <div id="actions" class="hidden flex flex-col">
-                        <button onclick="window.send('${p.id}', 'DELIVERY')" class="btn-action bg-sky-600 text-slate-900">📦 正向配送完成</button>
-                        <button onclick="window.send('${p.id}', 'RETURN')" class="btn-action bg-orange-600 text-white">🔄 逆物流回收回報</button>
+                    <div id="form-area" class="hidden">
+                        <div class="flex justify-between items-center mb-4 bg-slate-900/50 p-4 rounded-xl">
+                            <span class="text-sm font-bold text-slate-300 italic">📦 配送件數</span>
+                            <input type="number" id="delCount" value="0" min="0" onfocus="this.select()">
+                        </div>
+                        <div class="flex justify-between items-center mb-6 bg-slate-900/50 p-4 rounded-xl">
+                            <span class="text-sm font-bold text-orange-400 italic">🔄 逆物流量</span>
+                            <input type="number" id="retCount" value="0" min="0" onfocus="this.select()">
+                        </div>
+                        <button onclick="window.sendData('${p.id}')" class="btn-action bg-sky-600 text-slate-900">確認並上傳數據</button>
                     </div>
                 </div>`;
         }
@@ -87,51 +95,51 @@
                     img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        // 壓縮圖片大小
                         const scale = Math.min(600 / img.width, 600 / img.height);
                         canvas.width = img.width * scale;
                         canvas.height = img.height * scale;
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        base64Photo = canvas.toDataURL('image/jpeg', 0.6); // 60% 質量壓縮
-                        
-                        const pre = document.getElementById('preview');
-                        pre.src = base64Photo;
-                        pre.style.display = 'block';
-                        document.getElementById('actions').classList.remove('hidden');
+                        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                        base64Photo = canvas.toDataURL('image/jpeg', 0.6);
+                        document.getElementById('preview').src = base64Photo;
+                        document.getElementById('preview').style.display = 'block';
+                        document.getElementById('form-area').classList.remove('hidden');
                     };
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         };
 
-        window.send = async (id, type) => {
+        window.sendData = async (id) => {
+            const dc = parseInt(document.getElementById('delCount').value) || 0;
+            const rc = parseInt(document.getElementById('retCount').value) || 0;
             const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = "SYSTEM SYNCING...";
+            
+            btn.innerHTML = "SYNCING...";
             btn.classList.add('loading');
             btn.disabled = true;
 
             try {
-                // 1. 寫入任務日誌
+                // 1. 存入詳細日誌 (含照片、當次件數)
                 await addDoc(collection(db, 'logs'), {
                     driverId: id,
-                    task: type,
-                    photoData: base64Photo, // 直接存入 Base64 字串
+                    delivery_count: dc,
+                    return_count: rc,
+                    photo: base64Photo,
                     time: serverTimestamp()
                 });
 
-                // 2. 增加司機績效
+                // 2. 更新司機總計 (用於排名或月統計)
                 await updateDoc(doc(db, 'partners', id), { 
-                    count: increment(1),
+                    total_delivery: increment(dc),
+                    total_return: increment(rc),
                     lastSync: serverTimestamp() 
                 });
 
-                alert("任務已上傳！");
+                alert("數據已成功回報！");
                 location.reload();
             } catch (e) {
-                alert("連線中斷，請稍後再試");
-                btn.innerHTML = originalText;
+                alert("傳輸失敗，請檢查網路");
+                btn.innerHTML = "確認並上傳數據";
                 btn.classList.remove('loading');
                 btn.disabled = false;
             }
