@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME 旗艦中控台 V92</title>
+    <title>SUPREME 旗艦經營中控台 V92</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        /* 核心介面定義 */
+        /* 基礎樣式定義 */
         body { 
             background-color: #020617; 
             color: #94a3b8; 
             font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; 
             -webkit-tap-highlight-color: transparent;
-            margin: 0;
+            overflow-x: hidden;
         }
-        
+
         .layer { 
             display: none; 
             position: fixed; 
@@ -29,473 +30,667 @@
             overflow-y: auto; 
         }
 
-        /* 老闆專用卡片樣式 */
+        /* 旗艦級卡片設計 */
         .id-card { 
             width: 100%; 
-            max-width: 520px; 
+            max-width: 540px; 
             background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); 
-            border-radius: 2rem; 
-            padding: 28px; 
+            border-radius: 2.5rem; 
+            padding: 32px; 
             border: 1px solid #1e293b; 
-            margin-bottom: 24px; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            margin-bottom: 28px; 
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.8);
         }
 
-        /* 專業輸入框定義 */
+        /* 輸入框體系 */
         .input-box { 
-            background-color: rgba(15, 23, 42, 0.9); 
+            background-color: rgba(15, 23, 42, 0.95); 
             border: 1px solid #334155; 
-            border-radius: 1rem; 
-            padding: 14px; 
+            border-radius: 1.2rem; 
+            padding: 16px; 
             width: 100%; 
             color: #ffffff; 
             outline: none; 
-            margin-bottom: 12px; 
-            font-size: 15px; 
-            transition: border 0.3s;
+            margin-bottom: 15px; 
+            font-size: 16px; 
+            transition: all 0.3s;
         }
-        .input-box:focus { border-color: #0ea5e9; }
+        .input-box:focus { border-color: #0ea5e9; box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2); }
 
-        /* 會計參數標籤 */
+        /* 字體與標籤 */
         .label-sky { 
-            font-size: 13px; 
+            font-size: 14px; 
             color: #38bdf8; 
             font-weight: 800; 
-            margin-bottom: 8px; 
+            margin-bottom: 10px; 
             display: block; 
-            margin-top: 14px;
-            letter-spacing: 1px;
+            margin-top: 18px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
         }
 
-        /* 旗艦按鈕 */
         .btn-prime { 
             width: 100%; 
-            padding: 18px; 
-            border-radius: 1.2rem; 
+            padding: 20px; 
+            border-radius: 1.5rem; 
             background: #0ea5e9; 
             color: #020617; 
             font-weight: 900; 
-            font-size: 17px; 
+            font-size: 18px; 
             cursor: pointer; 
             border: none;
-            box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);
+            box-shadow: 0 12px 20px -5px rgba(14, 165, 233, 0.4);
+            transition: all 0.2s;
         }
-        .btn-prime:active { transform: scale(0.97); opacity: 0.9; }
+        .btn-prime:active { transform: scale(0.96); opacity: 0.95; }
 
-        /* 記住我選項 */
+        /* 記住我組件 */
         .remember-wrap { 
             display: flex; 
             align-items: center; 
-            gap: 10px; 
-            margin-bottom: 24px; 
+            gap: 12px; 
+            margin-bottom: 28px; 
             width: 100%; 
-            padding-left: 8px; 
+            padding-left: 10px; 
         }
-        .remember-wrap input { width: 20px; height: 20px; accent-color: #0ea5e9; cursor: pointer; }
-        .remember-wrap label { font-size: 14px; color: #64748b; cursor: pointer; }
+        .remember-wrap input { width: 22px; height: 22px; accent-color: #0ea5e9; cursor: pointer; }
+        .remember-wrap label { font-size: 15px; color: #64748b; cursor: pointer; user-select: none; }
 
-        /* 入職拍照網格 */
-        .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        /* 入職影像網格 (全部展開) */
+        .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 28px; }
         .photo-slot { 
             background-color: #0f172a; 
             border: 2px dashed #334155; 
-            border-radius: 16px; 
-            height: 110px; 
+            border-radius: 20px; 
+            height: 125px; 
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
             align-items: center; 
             cursor: pointer;
             overflow: hidden;
-            transition: all 0.3s;
+            transition: border 0.3s, background 0.3s;
         }
-        .photo-slot:hover { border-color: #0ea5e9; background-color: #1e293b; }
+        .photo-slot:active { background-color: #1e293b; }
         .photo-slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
 
-        /* 照片審核牆 */
-        .photo-wall { display: grid; grid-template-cols: repeat(3, 1fr); gap: 10px; width: 100%; margin-bottom: 32px; }
+        /* 任務查核牆 */
+        .photo-wall { display: grid; grid-template-cols: repeat(3, 1fr); gap: 12px; width: 100%; margin-bottom: 35px; }
         .photo-item { 
             position: relative; 
             aspect-ratio: 1; 
-            border-radius: 10px; 
+            border-radius: 12px; 
             overflow: hidden; 
             border: 1px solid #1e293b;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .del-badge { 
             position: absolute; 
-            top: 5px; 
-            right: 5px; 
-            background: rgba(239, 68, 68, 0.95); 
-            color: #fff; 
-            font-size: 10px; 
-            padding: 3px 7px; 
-            border-radius: 6px; 
+            top: 6px; 
+            right: 6px; 
+            background: rgba(220, 38, 38, 0.9); 
+            color: #ffffff; 
+            font-size: 11px; 
+            padding: 4px 8px; 
+            border-radius: 8px; 
             cursor: pointer; 
             font-weight: 900;
+            z-index: 10;
         }
 
-        /* 薪資條模板 */
+        /* 高清薪資條樣式 */
         #slip-box { 
             position: absolute; 
             left: -9999px; 
             background: #ffffff; 
             color: #000000; 
-            padding: 45px; 
-            width: 420px; 
-            border: 1px solid #eee; 
+            padding: 50px; 
+            width: 450px; 
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
-        .slip-header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 25px; }
-        .slip-row { display: flex; justify-content: space-between; border-bottom: 1px solid #f0f0f0; padding: 12px 0; font-size: 15px; }
-        .v-badge { font-size: 10px; padding: 2px 8px; border-radius: 99px; border: 1px solid #0ea5e9; color: #0ea5e9; margin-left: 6px; text-transform: uppercase; font-weight: bold; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.98); z-index: 300; padding: 20px; overflow-y: auto; }
+        .slip-header { text-align: center; border-bottom: 4px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+        .slip-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eeeeee; padding: 14px 0; font-size: 16px; }
+        .slip-footer { text-align: center; margin-top: 50px; font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 15px; }
+
+        /* 小徽章樣式 */
+        .v-badge { font-size: 11px; padding: 3px 10px; border-radius: 99px; border: 1px solid #0ea5e9; color: #0ea5e9; margin-left: 8px; font-weight: bold; background: rgba(14,165,233,0.1); }
+        
+        .modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0, 0, 0, 0.98); 
+            z-index: 500; 
+            padding: 20px; 
+            overflow-y: auto; 
+        }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-6xl font-black text-white italic mb-3 tracking-tighter">SUPREME</h1>
-        <p class="text-sky-500 text-xs font-black tracking-[0.4em] mb-14 uppercase">Enterprise Management V92</p>
+        <h1 class="text-7xl font-black text-white italic mb-4 tracking-tighter">SUPREME</h1>
+        <p class="text-sky-500 text-sm font-black tracking-[0.5em] mb-16 uppercase">Enterprise Hub V92-Elite</p>
         
-        <div class="w-full max-w-[340px]">
-            <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center shadow-inner">
-            <input type="password" id="login_pin" placeholder="登 入 密 碼 (PIN)" class="input-box text-center shadow-inner">
+        <div class="w-full max-w-[360px]">
+            <input type="tel" id="login_phone" placeholder="登 入 手 機 號 碼" class="input-box text-center shadow-inner">
+            <input type="password" id="login_pin" placeholder="登 入 PIN 碼 (4位數)" class="input-box text-center shadow-inner">
             
             <div class="remember-wrap">
                 <input type="checkbox" id="remember_me">
-                <label for="remember_me">記住帳號資訊 (下次自動填入)</label>
+                <label for="remember_me">記住我的登入資訊 (下次自動填入)</label>
             </div>
 
-            <button onclick="boot()" class="btn-prime">進入管理中控台</button>
+            <button onclick="boot()" class="btn-prime">進入 SUPREME 管理中控台</button>
             
-            <button onclick="showApply()" class="text-xs text-slate-700 underline mt-12 block mx-auto uppercase font-bold tracking-widest hover:text-sky-500 transition-colors">
-                Partner Registration / 夥伴入職申請入口
+            <button onclick="showApply()" class="text-sm text-slate-700 underline mt-14 block mx-auto uppercase font-black tracking-widest hover:text-sky-400 transition-colors">
+                Partner Onboarding / 夥伴詳細入職申請
             </button>
         </div>
     </div>
 
     <div id="apply-page" class="layer">
         <div class="id-card">
-            <h2 class="text-2xl font-black text-white mb-8 text-center italic tracking-tight">夥伴詳細入職申請表單</h2>
+            <h2 class="text-3xl font-black text-white mb-10 text-center italic tracking-tight underline decoration-sky-500 decoration-4">詳細入職申請表單</h2>
             
-            <span class="label-sky">SECTION 1: 證件影像拍照上傳</span>
+            <span class="label-sky">第一階段：證件影像拍照上傳</span>
             <div class="photo-grid">
-                <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f" class="text-xs text-slate-500">身分證正面</span><img id="p_id_f"></div>
-                <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b" class="text-xs text-slate-500">身分證反面</span><img id="p_id_b"></div>
-                <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic" class="text-xs text-slate-500">駕駛執照</span><img id="p_lic"></div>
-                <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car" class="text-xs text-slate-500">行車執照</span><img id="p_car"></div>
+                <div class="photo-slot" id="slot_id_f" onclick="triggerCam('id_f')">
+                    <span id="t_id_f" class="text-xs text-slate-500 font-bold">身分證正面</span>
+                    <img id="p_id_f">
+                </div>
+                <div class="photo-slot" id="slot_id_b" onclick="triggerCam('id_b')">
+                    <span id="t_id_b" class="text-xs text-slate-500 font-bold">身分證反面</span>
+                    <img id="p_id_b">
+                </div>
+                <div class="photo-slot" id="slot_lic" onclick="triggerCam('lic')">
+                    <span id="t_lic" class="text-xs text-slate-500 font-bold">駕駛執照</span>
+                    <img id="p_lic">
+                </div>
+                <div class="photo-slot" id="slot_car" onclick="triggerCam('car')">
+                    <span id="t_car" class="text-xs text-slate-500 font-bold">車輛行照</span>
+                    <img id="p_car">
+                </div>
                 <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
             </div>
 
-            <span class="label-sky">SECTION 2: 基本人事資料填寫</span>
-            <input type="text" id="app_name" placeholder="真實姓名 (需與證件相符)" class="input-box">
-            <input type="text" id="app_idnum" placeholder="身分證字號 (用於勞健保)" class="input-box">
-            <input type="tel" id="app_phone" placeholder="聯絡手機號碼 (登入帳號)" class="input-box">
-            <input type="password" id="app_pin" placeholder="自訂登入密碼 (建議4位數)" maxlength="4" class="input-box">
+            <span class="label-sky">第二階段：核心人事資料</span>
+            <input type="text" id="app_name" placeholder="中文姓名全名 (必填)" class="input-box">
+            <input type="text" id="app_idnum" placeholder="身分證字號 (用於報稅與保險)" class="input-box">
+            <input type="tel" id="app_phone" placeholder="聯絡手機號碼 (即為登入帳號)" class="input-box">
+            <input type="password" id="app_pin" placeholder="自訂登入 PIN 碼 (建議 4 位數字)" maxlength="4" class="input-box">
             
-            <span class="label-sky">SECTION 3: 詳細聯繫資訊</span>
-            <input type="text" id="app_h_addr" placeholder="戶籍完整地址" class="input-box">
-            <input type="text" id="app_c_addr" placeholder="通訊地址 (若與戶籍相同免填)" class="input-box">
-            <input type="text" id="app_emergency" placeholder="緊急聯絡人姓名與聯絡電話" class="input-box">
+            <span class="label-sky">第三階段：通訊與緊急聯繫</span>
+            <input type="text" id="app_h_addr" placeholder="戶籍完整地址 (依身分證記載)" class="input-box">
+            <input type="text" id="app_c_addr" placeholder="通訊完整地址 (若與戶籍相同免填)" class="input-box">
+            <input type="text" id="app_emergency" placeholder="緊急聯絡人姓名與聯繫電話" class="input-box">
             
-            <span class="label-sky">SECTION 4: 營運車種選擇</span>
-            <select id="app_vehicle" class="input-box bg-[#0f172a] appearance-none">
-                <option value="A機車">類型 A: 夥伴自有機車</option>
-                <option value="B自有車">類型 B: 夥伴自有貨車/轎車</option>
-                <option value="C公司車">類型 C: 公司提供租賃車</option>
+            <span class="label-sky">第四階段：作業車種選擇</span>
+            <select id="app_vehicle" class="input-box bg-[#0f172a] appearance-none font-bold">
+                <option value="A機車">類型 A：夥伴自有機車</option>
+                <option value="B自有車">類型 B：夥伴自有貨車/轎車</option>
+                <option value="C公司車">類型 C：公司提供租賃車</option>
             </select>
             
-            <button onclick="submitApply()" class="btn-prime mt-6 shadow-sky-500/20 shadow-lg">提交所有入職資料</button>
-            <button onclick="location.reload()" class="w-full mt-6 text-sm text-slate-500 text-center font-bold">返回登入介面</button>
+            <div class="mt-8 pt-4 border-t border-slate-800">
+                <button onclick="submitApply()" class="btn-prime shadow-sky-500/20 shadow-xl">確認提交所有申請資料</button>
+                <button onclick="location.reload()" class="w-full mt-8 text-sm text-slate-500 text-center font-black tracking-widest">返回系統登入</button>
+            </div>
         </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-12 mb-16 text-slate-700 font-black text-xs underline uppercase tracking-[0.3em]">Sign Out / 登出管理系統</button>
+        <button onclick="location.reload()" class="mt-16 mb-24 text-slate-700 font-black text-xs underline uppercase tracking-[0.5em] hover:text-red-500 transition-colors">Terminate Session / 登出管理系統</button>
     </div>
 
     <div id="detail-modal" class="modal">
-        <div class="id-card mx-auto mt-10" id="detail-content"></div>
-        <button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-4 max-w-[520px] mx-auto block">關閉檔案</button>
+        <div class="id-card mx-auto mt-12" id="detail-content"></div>
+        <button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-6 max-w-[540px] mx-auto block shadow-none">關閉人事詳情</button>
     </div>
 
     <div id="slip-box">
         <div class="slip-header">
-            <h2 style="margin:0; font-size: 24px; letter-spacing: 2px;">SUPREME 夥伴酬勞明細</h2>
-            <p id="slip-date" style="margin:8px 0; font-size:12px; color:#555;"></p>
+            <h2 style="margin:0; font-size: 26px; font-weight: 900; letter-spacing: 4px;">SUPREME 酬勞結算明細條</h2>
+            <p id="slip-date" style="margin:10px 0; font-size:14px; color:#444; font-weight: bold;"></p>
         </div>
-        <div id="slip-body" style="margin-bottom: 20px;"></div>
-        <div style="margin-top:20px; border-top: 3px solid #000; padding-top:15px; font-size:20px; font-weight:900; display:flex; justify-content:space-between; color: #000;">
-            <span>本月實領金額總結</span>
+        <div id="slip-body">
+            </div>
+        <div style="margin-top:30px; border-top: 4px solid #000; padding-top:20px; font-size:22px; font-weight:900; display:flex; justify-content:space-between; color: #000;">
+            <span>本月應領實發總額</span>
             <span id="slip-total-val"></span>
         </div>
-        <div style="text-align:center; margin-top:40px; font-size:10px; color:#aaa; border-top: 1px solid #eee; padding-top:10px;">
-            SUPREME V92 智慧管理系統自動結算
+        <div class="slip-footer">
+            <p>數位驗證碼：SUPREME-V92-SECURED-LOGISTICS</p>
+            <p style="margin-top: 5px;">本表由系統自動結算產出，如有異議請洽會計部門。</p>
         </div>
     </div>
 
     <script type="module">
+        // 模組化 Firebase 邏輯
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // 資料庫初始化
+        // 配置初始化
         const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92", storageBucket: "supreme-v92.firebasestorage.app", messagingSenderId: "485530156296", appId: "1:485530156296:web:6728c0ee08b98dedd800bd" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let partners = [], taskLogs = [], currentF = '', photos = {};
-        
-        // 即時資料監聽 (功能穩定度核心)
-        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
-        onSnapshot(collection(db, 'logs'), s => { taskLogs = s.docs.map(d => ({id: d.id, ...d.data()})); });
+        // 全域變數定義 (不使用簡寫，完整定義)
+        let partners = [];
+        let taskLogs = [];
+        let currentField = '';
+        let photosCache = { id_f: null, id_b: null, lic: null, car: null };
 
-        // 記住我：初始化帶入
+        // 即時資料流監聽
+        onSnapshot(collection(db, 'partners'), snapshot => {
+            partners = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            console.log("Partners Sync Done");
+        });
+        onSnapshot(collection(db, 'logs'), snapshot => {
+            taskLogs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        });
+
+        // 記住我：初始化檢索
         window.addEventListener('DOMContentLoaded', () => {
-            const sp = localStorage.getItem('s_phone'), si = localStorage.getItem('s_pin');
-            if(sp && si) {
-                document.getElementById('login_phone').value = sp;
-                document.getElementById('login_pin').value = atob(si);
+            const savedPhone = localStorage.getItem('supreme_elite_phone');
+            const savedPinEnc = localStorage.getItem('supreme_elite_pin');
+            if(savedPhone && savedPinEnc) {
+                document.getElementById('login_phone').value = savedPhone;
+                document.getElementById('login_pin').value = atob(savedPinEnc);
                 document.getElementById('remember_me').checked = true;
             }
         });
 
-        // 登入邏輯
+        // 登入中控邏輯
         window.boot = () => {
-            const phone = document.getElementById('login_phone').value, pin = document.getElementById('login_pin').value;
-            const isRem = document.getElementById('remember_me').checked;
+            const phone = document.getElementById('login_phone').value;
+            const pin = document.getElementById('login_pin').value;
+            const checkRem = document.getElementById('remember_me').checked;
 
-            if(isRem) { localStorage.setItem('s_phone', phone); localStorage.setItem('s_pin', btoa(pin)); }
-            else { localStorage.removeItem('s_phone'); localStorage.removeItem('s_pin'); }
+            if(checkRem) {
+                localStorage.setItem('supreme_elite_phone', phone);
+                localStorage.setItem('supreme_elite_pin', btoa(pin));
+            } else {
+                localStorage.removeItem('supreme_elite_phone');
+                localStorage.removeItem('supreme_elite_pin');
+            }
 
-            // 老闆權限判斷
-            if(phone === "0976017938" && pin === "0531") return renderAdmin();
+            // 最高權限判斷 (老闆帳號)
+            if(phone === "0976017938" && pin === "0531") {
+                return renderAdminDashboard();
+            }
             
             // 夥伴權限判斷
-            const p = partners.find(x => x.phone === phone && x.uid === pin && x.status === "approved");
-            if(p) return renderPartnerUI(p);
+            const partnerFound = partners.find(x => x.phone === phone && x.uid === pin);
             
-            alert("驗證失敗：手機號碼或 PIN 不正確，或帳號正等待老闆審核核准。");
+            if(partnerFound) {
+                if(partnerFound.status === "approved") {
+                    return renderPartnerInterface(partnerFound);
+                } else {
+                    return alert("您的帳號尚未核准，請聯繫老闆進行入職審核。");
+                }
+            }
+            
+            alert("驗證失敗：請確認輸入之手機號碼或 PIN 碼是否正確。");
         };
 
-        // 入職影像處理函數
-        window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
-        window.triggerCam = (f) => { currentF = f; document.getElementById('cam').click(); };
+        // 入職流程專用函數
+        window.showApply = () => {
+            document.getElementById('apply-page').style.display = 'flex';
+        };
+
+        window.triggerCam = (field) => {
+            currentField = field;
+            document.getElementById('cam').click();
+        };
+
         window.handleFile = (input) => {
+            if (!input.files || !input.files[0]) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                photos[currentF] = e.target.result;
-                const prev = document.getElementById('p_' + currentF);
-                prev.src = e.target.result; 
-                prev.style.display = 'block';
-                document.getElementById('t_' + currentF).style.display = 'none';
+                const base64Data = e.target.result;
+                photosCache[currentField] = base64Data;
+                const prevImg = document.getElementById('p_' + currentField);
+                prevImg.src = base64Data;
+                prevImg.style.display = 'block';
+                document.getElementById('t_' + currentField).style.display = 'none';
+                console.log("Photo Processed: " + currentField);
             };
             reader.readAsDataURL(input.files[0]);
         };
 
-        // 提交詳細入職申請
         window.submitApply = async () => {
-            const data = {
-                name: document.getElementById('app_name').value, 
-                phone: document.getElementById('app_phone').value,
-                uid: document.getElementById('app_pin').value, 
-                id_num: document.getElementById('app_idnum').value,
-                emergency: document.getElementById('app_emergency').value, 
-                v_type: document.getElementById('app_vehicle').value,
-                h_addr: document.getElementById('app_h_addr').value, 
-                c_addr: document.getElementById('app_c_addr').value || document.getElementById('app_h_addr').value,
-                docs: photos, 
-                status: "pending", 
-                rate_del: 50, rate_ret: 20, labor: 1500, health: 800, h_cnt: 1, 
-                bonus: 0, penalty: 0, total_del: 0, total_ret: 0, 
-                time: serverTimestamp()
-            };
-            if(!data.name || !data.phone || !data.id_num) return alert("請填寫姓名、身分證字號與手機號碼");
-            await addDoc(collection(db, 'partners'), data);
-            alert("申請資料已成功傳送至老闆中控台，請靜候核准。"); 
-            location.reload();
-        };
+            const nameVal = document.getElementById('app_name').value;
+            const phoneVal = document.getElementById('app_phone').value;
+            const pinVal = document.getElementById('app_pin').value;
+            const idNumVal = document.getElementById('app_idnum').value;
+            const hAddrVal = document.getElementById('app_h_addr').value;
+            const cAddrVal = document.getElementById('app_c_addr').value;
+            const emerVal = document.getElementById('app_emergency').value;
+            const vTypeVal = document.getElementById('app_vehicle').value;
 
-        // 老闆旗艦中控台渲染 (行數精華區)
-        function renderAdmin() {
-            document.getElementById('gate').style.display = 'none';
-            document.getElementById('main').style.display = 'flex';
-            const approved = partners.filter(x => x.status === "approved"), pending = partners.filter(x => x.status === "pending");
-            
-            let html = `<div class="w-full max-w-[520px] px-2"><h2 class="text-white font-black text-3xl mb-10 uppercase italic tracking-tighter">Boss Control Center</h2>`;
-            
-            // 影像牆模組
-            html += `<p class="text-sky-500 font-bold text-[11px] mb-4 uppercase tracking-[0.2em]">影像審核中心 (點擊右上角刪除)</p>`;
-            html += `<div class="photo-wall">${taskLogs.slice(-9).reverse().map(l => `
-                <div class="photo-item">
-                    <img src="${l.photo}" class="w-full h-full object-cover">
-                    <div class="del-badge" onclick="window.delPhoto('${l.id}')">刪除影像</div>
-                </div>`).join('')}</div>`;
-
-            // 功能操作模組
-            html += `<div class="flex gap-3 mb-12">
-                <button onclick="window.monthlyReset()" class="flex-1 bg-red-900/20 text-red-500 border border-red-900/50 py-4 rounded-2xl text-[11px] font-black uppercase shadow-lg">月底結算歸零數據</button>
-            </div>`;
-
-            // 待審核列表
-            if(pending.length > 0) {
-                html += `<p class="text-orange-500 font-bold mb-4 text-xs uppercase tracking-widest">新入職待核准夥伴 (${pending.length})</p>`;
-                html += pending.map(p => `
-                    <div class="id-card !p-5 !bg-slate-900 mb-6 flex justify-between items-center border-orange-500/20">
-                        <div><p class="text-white font-bold">${p.name}</p><p class="text-[10px] text-slate-500">${p.phone}</p></div>
-                        <button onclick="window.finalApprove('${p.id}')" class="bg-sky-600 text-white px-6 py-2 rounded-xl text-xs font-bold shadow-sky-600/20 shadow-md">核准入職</button>
-                    </div>`).join('');
+            if(!nameVal || !phoneVal || !pinVal || !idNumVal) {
+                return alert("基本資料區塊之真實姓名、手機、密碼、身分證號為必填欄位。");
             }
 
-            // 會計與薪資明細列表 (補回缺失的勞健保欄位)
-            html += `<p class="text-slate-600 font-bold text-[11px] uppercase mb-5 tracking-[0.2em]">夥伴會計結算明細與勞健保個別參數</p>`;
-            html += approved.map(p => {
-                const bonus = p.bonus || 0, penalty = p.penalty || 0;
-                const r_del = p.rate_del || 50, r_ret = p.rate_ret || 20;
-                const lab = p.labor || 1500, hea_u = p.health || 800, h_cnt = p.h_cnt || 1;
-                const pay = (p.total_del * r_del) + (p.total_ret * r_ret) - lab - (h_cnt * hea_u) + bonus - penalty;
+            const payload = {
+                name: nameVal, phone: phoneVal, uid: pinVal, id_num: idNumVal,
+                h_addr: hAddrVal, c_addr: cAddrVal || hAddrVal, emergency: emerVal,
+                v_type: vTypeVal, docs: photosCache, status: "pending", 
+                rate_del: 50, rate_ret: 20, labor: 1500, health: 800, h_cnt: 1, 
+                bonus: 0, penalty: 0, total_del: 0, total_ret: 0, 
+                apply_time: serverTimestamp()
+            };
+
+            try {
+                await addDoc(collection(db, 'partners'), payload);
+                alert("入職申請資料已成功傳送至資料庫，請靜候老闆核准。"); 
+                location.reload();
+            } catch (err) {
+                alert("傳送失敗，請檢查網路連線或重試。");
+            }
+        };
+
+        // 老闆後台渲染 (核心展開區)
+        function renderAdminDashboard() {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('main').style.display = 'flex';
+            
+            const approvedList = partners.filter(x => x.status === "approved");
+            const pendingList = partners.filter(x => x.status === "pending");
+            
+            let htmlContent = `
+                <div class="w-full max-w-[540px] px-2">
+                    <h2 class="text-white font-black text-4xl mb-12 uppercase italic tracking-tighter border-l-8 border-sky-500 pl-4">Elite Control Center</h2>`;
+            
+            // 任務影像模組
+            htmlContent += `<p class="text-sky-500 font-black text-[12px] mb-4 uppercase tracking-[0.3em] flex items-center">
+                <span class="mr-2">●</span> LIVE TASK AUDIT / 任務影像審核牆
+            </p>`;
+            
+            htmlContent += `<div class="photo-wall">`;
+            taskLogs.slice(-9).reverse().forEach(log => {
+                htmlContent += `
+                    <div class="photo-item">
+                        <img src="${log.photo}" class="w-full h-full object-cover">
+                        <div class="del-badge" onclick="window.deleteTaskImage('${log.id}')">移除</div>
+                    </div>`;
+            });
+            htmlContent += `</div>`;
+
+            // 行政功能按鈕
+            htmlContent += `
+                <div class="flex gap-4 mb-14">
+                    <button onclick="window.initMonthlyReset()" class="flex-1 bg-red-900/30 text-red-500 border border-red-900/60 py-5 rounded-2xl text-[12px] font-black uppercase shadow-2xl transition-all active:scale-95">月底數據清零歸零</button>
+                    <button onclick="window.downloadMasterReport()" class="flex-1 bg-sky-900/30 text-sky-400 border border-sky-900/60 py-5 rounded-2xl text-[12px] font-black uppercase shadow-2xl transition-all active:scale-95">匯出經營總表</button>
+                </div>`;
+
+            // 待審核名單
+            if(pendingList.length > 0) {
+                htmlContent += `<p class="text-orange-500 font-black mb-5 text-sm uppercase tracking-widest">Pending Approval / 待核准入職清單 (${pendingList.length})</p>`;
+                pendingList.forEach(p => {
+                    htmlContent += `
+                        <div class="id-card !p-6 !bg-slate-900 mb-8 flex justify-between items-center border-orange-500/30">
+                            <div>
+                                <p class="text-white font-bold text-lg">${p.name}</p>
+                                <p class="text-xs text-slate-500 mt-1">${p.phone}</p>
+                            </div>
+                            <button onclick="window.approveNewPartner('${p.id}')" class="bg-sky-600 text-white px-8 py-3 rounded-2xl text-sm font-black shadow-lg hover:bg-sky-500">核准入職</button>
+                        </div>`;
+                });
+            }
+
+            // 夥伴會計詳細列表 (補回所有缺失欄位)
+            htmlContent += `<p class="text-slate-600 font-black text-[12px] uppercase mb-6 tracking-[0.3em]">Partner Management & Accounting / 夥伴財務管理</p>`;
+            
+            approvedList.forEach(p => {
+                const rDel = p.rate_del || 50;
+                const rRet = p.rate_ret || 20;
+                const laborFee = p.labor || 1500;
+                const healthPrice = 800; // 健保單價
+                const healthCnt = p.h_cnt || 1;
+                const bonus = p.bonus || 0;
+                const penalty = p.penalty || 0;
                 
-                return `
-                <div class="id-card !p-6 !bg-slate-900/40 border-slate-800 mb-8">
-                    <div class="flex justify-between items-start mb-6">
-                        <div onclick="window.showPartnerDetail('${p.id}')" class="cursor-pointer">
-                            <p class="text-white font-bold text-xl">${p.name} <span class="v-badge">${p.v_type}</span></p>
-                            <p class="text-[11px] text-slate-500 underline mt-2">點擊查閱詳細人事檔案與證件</p>
+                // 核心計算公式
+                const grossPay = (p.total_del * rDel) + (p.total_ret * rRet);
+                const deductions = laborFee + (healthCnt * healthPrice) + penalty;
+                const netPay = grossPay + bonus - deductions;
+                
+                htmlContent += `
+                <div class="id-card !p-7 !bg-slate-900/50 border-slate-800 mb-10">
+                    <div class="flex justify-between items-start mb-8">
+                        <div onclick="window.viewPersonnelProfile('${p.id}')" class="cursor-pointer group">
+                            <p class="text-white font-black text-2xl group-hover:text-sky-400 transition-colors">${p.name} <span class="v-badge">${p.v_type}</span></p>
+                            <p class="text-[11px] text-slate-500 underline mt-2 font-bold italic tracking-wide">VIEW HR DOCUMENTS / 點擊查閱證件詳情</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-sky-400 font-black text-2xl tracking-tighter">$${pay.toLocaleString()}</p>
-                            <button onclick='window.downloadSlip(${JSON.stringify(p)})' class="text-[11px] text-sky-600 underline font-black uppercase mt-1">製作下載薪資單</button>
+                            <p class="text-sky-400 font-black text-3xl tracking-tighter">$${netPay.toLocaleString()}</p>
+                            <button onclick='window.generatePayslip(${JSON.stringify(p)})' class="text-[11px] text-sky-600 underline font-black uppercase mt-2 hover:text-sky-300">Produce Payslip / 下載薪資單</button>
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] text-slate-600 uppercase font-bold">配送費率</label><input id="rd_${p.id}" type="number" value="${r_del}" class="input-box !py-2 !text-xs !mb-0 shadow-inner"></div>
-                        <div><label class="text-[10px] text-slate-600 uppercase font-bold">逆物費率</label><input id="rr_${p.id}" type="number" value="${r_ret}" class="input-box !py-2 !text-xs !mb-0 shadow-inner"></div>
-                        <div><label class="text-[10px] text-orange-600 uppercase font-bold">勞保扣款金額</label><input id="rl_${p.id}" type="number" value="${lab}" class="input-box !py-2 !text-xs !mb-0 shadow-inner"></div>
-                        <div><label class="text-[10px] text-orange-600 uppercase font-bold">健保眷屬人數</label><input id="rh_${p.id}" type="number" value="${h_cnt}" class="input-box !py-2 !text-xs !mb-0 shadow-inner"></div>
-                        <div><label class="text-[10px] text-green-600 uppercase font-bold">本月獎金/補貼</label><input id="bo_${p.id}" type="number" value="${bonus}" class="input-box !py-2 !text-xs !mb-0 shadow-inner"></div>
-                        <div><label class="text-[10px] text-red-600 uppercase font-bold">本月扣處罰款</label><input id="pe_${p.id}" type="number" value="${penalty}" class="input-box !py-2 !text-xs !mb-0 shadow-inner"></div>
+                    <div class="grid grid-cols-2 gap-5">
+                        <div class="col-span-1">
+                            <label class="text-[10px] text-slate-600 font-black uppercase mb-1 block">配送費率設定</label>
+                            <input id="rate_d_${p.id}" type="number" value="${rDel}" class="input-box !py-3 !text-sm !mb-0 shadow-inner">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="text-[10px] text-slate-600 font-black uppercase mb-1 block">逆物費率設定</label>
+                            <input id="rate_r_${p.id}" type="number" value="${rRet}" class="input-box !py-3 !text-sm !mb-0 shadow-inner">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="text-[10px] text-orange-700 font-black uppercase mb-1 block">勞保個別扣額</label>
+                            <input id="acc_lab_${p.id}" type="number" value="${laborFee}" class="input-box !py-3 !text-sm !mb-0 shadow-inner">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="text-[10px] text-orange-700 font-black uppercase mb-1 block">健保眷屬人數</label>
+                            <input id="acc_hea_${p.id}" type="number" value="${healthCnt}" class="input-box !py-3 !text-sm !mb-0 shadow-inner">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="text-[10px] text-green-700 font-black uppercase mb-1 block">本月加給補貼</label>
+                            <input id="adj_bon_${p.id}" type="number" value="${bonus}" class="input-box !py-3 !text-sm !mb-0 shadow-inner">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="text-[10px] text-red-700 font-black uppercase mb-1 block">本月扣處罰金</label>
+                            <input id="adj_pen_${p.id}" type="number" value="${penalty}" class="input-box !py-3 !text-sm !mb-0 shadow-inner">
+                        </div>
                     </div>
 
-                    <div class="flex gap-2 mt-6">
-                        <button onclick="window.updateFinance('${p.id}')" class="flex-1 bg-slate-800 text-sky-500 py-3 rounded-xl text-[11px] font-black border border-sky-900/50 uppercase">同步儲存會計參數</button>
-                        <button onclick="window.delPartner('${p.id}')" class="px-3 text-red-900 text-[10px] underline uppercase">移除</button>
+                    <div class="flex gap-3 mt-8 pt-4 border-t border-slate-800">
+                        <button onclick="window.commitAccountSettings('${p.id}')" class="flex-1 bg-slate-800 text-sky-500 py-4 rounded-2xl text-[12px] font-black border border-sky-900/50 uppercase tracking-widest shadow-xl">同步更新會計參數</button>
+                        <button onclick="window.removePartnerAccount('${p.id}')" class="px-5 text-red-900 text-[11px] font-bold underline uppercase">移除帳號</button>
                     </div>
                 </div>`;
-            }).join('');
+            });
             
-            document.getElementById('render-target').innerHTML = html + `</div>`;
+            document.getElementById('render-target').innerHTML = htmlContent + `</div>`;
         }
 
         // 行政管理核心功能 (刪除影像、移除夥伴、更新會計)
-        window.delPhoto = async (id) => { if(confirm("確定要永久刪除此任務影像記錄嗎？")) await deleteDoc(doc(db, 'logs', id)); };
-        window.delPartner = async (id) => { if(confirm("警告：此操作將永久刪除夥伴帳號、個人資料與薪資數據且無法恢復！")) await deleteDoc(doc(db, 'partners', id)); };
-        
-        window.updateFinance = async (id) => {
-            await updateDoc(doc(db, 'partners', id), {
-                rate_del: parseInt(document.getElementById('rd_'+id).value),
-                rate_ret: parseInt(document.getElementById('rr_'+id).value),
-                labor: parseInt(document.getElementById('rl_'+id).value),
-                h_cnt: parseInt(document.getElementById('rh_'+id).value),
-                bonus: parseInt(document.getElementById('bo_'+id).value),
-                penalty: parseInt(document.getElementById('pe_'+id).value)
-            });
-            alert("會計數據更新成功，全系統已即時同步。"); 
-            renderAdmin();
+        window.deleteTaskImage = async (id) => {
+            if(confirm("確定要永久刪除此項任務回報影像嗎？這不會影響數據統計，僅移除照片。")) {
+                await deleteDoc(doc(db, 'logs', id));
+                alert("影像已成功移除。");
+            }
         };
 
-        window.monthlyReset = async () => { 
-            if(confirm("警告：月底結算歸零將清空所有夥伴的配送/逆物數據與本月獎懲。請確認已下載報表備份。")) {
-                for(let p of partners) { await updateDoc(doc(db, 'partners', p.id), { total_del: 0, total_ret: 0, bonus: 0, penalty: 0 }); }
-                alert("結算歸零完成，新月份數據統計已重置。"); 
+        window.removePartnerAccount = async (id) => {
+            if(confirm("極度警告：此操作將永久移除該夥伴帳號及其所有歷史薪資、影像記錄且不可還原！確定執行？")) {
+                await deleteDoc(doc(db, 'partners', id));
+                alert("夥伴帳號已永久從系統註銷。");
+            }
+        };
+        
+        window.commitAccountSettings = async (id) => {
+            const upd = {
+                rate_del: parseInt(document.getElementById('rate_d_'+id).value) || 0,
+                rate_ret: parseInt(document.getElementById('rate_r_'+id).value) || 0,
+                labor: parseInt(document.getElementById('acc_lab_'+id).value) || 0,
+                h_cnt: parseInt(document.getElementById('acc_hea_'+id).value) || 0,
+                bonus: parseInt(document.getElementById('adj_bon_'+id).value) || 0,
+                penalty: parseInt(document.getElementById('adj_pen_'+id).value) || 0
+            };
+            await updateDoc(doc(db, 'partners', id), upd);
+            alert("該夥伴之財務與費率參數已更新並即時生效。"); 
+            renderAdminDashboard();
+        };
+
+        window.initMonthlyReset = async () => {
+            if(confirm("確定進行月底結算歸零嗎？這將會把所有夥伴的件數與獎懲金額清空，請務必先匯出總表備份！")) {
+                for(let p of partners) {
+                    await updateDoc(doc(db, 'partners', p.id), { 
+                        total_del: 0, total_ret: 0, 
+                        bonus: 0, penalty: 0 
+                    });
+                }
+                alert("結算重置完成，新月份數據統計已開始。"); 
                 location.reload(); 
             }
         };
 
-        // 人事詳細檔案展示
-        window.showPartnerDetail = (id) => {
+        // 人事詳細檔案與影像展示
+        window.viewPersonnelProfile = (id) => {
             const p = partners.find(x => x.id === id);
-            document.getElementById('detail-modal').style.display = 'block';
+            const modalBox = document.getElementById('detail-modal');
+            modalBox.style.display = 'block';
+            
             document.getElementById('detail-content').innerHTML = `
-                <h3 class="text-white font-black mb-6 border-b border-slate-800 pb-3 text-sm uppercase italic tracking-[0.2em]">Partner Personnel File</h3>
-                <div class="text-xs text-slate-400 space-y-3 mb-10 leading-relaxed">
-                    <p>姓名：<span class="text-white ml-2">${p.name}</span></p>
-                    <p>證號：<span class="text-white ml-2">${p.id_num}</span></p>
-                    <p>手機：<span class="text-white ml-2">${p.phone}</span></p>
-                    <p>緊急聯繫：<span class="text-white ml-2">${p.emergency}</span></p>
-                    <p>戶籍地址：<span class="text-white ml-2">${p.h_addr}</span></p>
-                    <p>通訊地址：<span class="text-white ml-2">${p.c_addr}</span></p>
+                <h3 class="text-white font-black mb-8 border-b border-slate-800 pb-4 text-sm uppercase italic tracking-[0.3em] flex justify-between">
+                    <span>Partner HR Profile / 人事電子檔案</span>
+                    <span class="text-sky-500">${p.id.substring(0,6)}</span>
+                </h3>
+                <div class="grid grid-cols-2 gap-y-4 text-xs text-slate-400 mb-10 leading-loose">
+                    <p>真實姓名：<span class="text-white ml-2">${p.name}</span></p>
+                    <p>營運車種：<span class="text-white ml-2">${p.v_type}</span></p>
+                    <p>身分證號：<span class="text-white ml-2">${p.id_num}</span></p>
+                    <p>聯絡手機：<span class="text-white ml-2">${p.phone}</span></p>
+                    <p class="col-span-2">戶籍地址：<span class="text-white ml-2">${p.h_addr}</span></p>
+                    <p class="col-span-2">通訊地址：<span class="text-white ml-2">${p.c_addr}</span></p>
+                    <p class="col-span-2">緊急聯繫：<span class="text-white ml-2">${p.emergency}</span></p>
                 </div>
-                <p class="text-sky-500 font-black text-[10px] mb-3 uppercase italic">Digital Documents / 證件電子檔</p>
-                <div class="grid grid-cols-2 gap-3">
-                    <img src="${p.docs?.id_f}" class="rounded-xl border border-slate-800" onclick="window.open(this.src)" title="點擊放大">
-                    <img src="${p.docs?.id_b}" class="rounded-xl border border-slate-800" onclick="window.open(this.src)" title="點擊放大">
-                    <img src="${p.docs?.lic}" class="rounded-xl border border-slate-800" onclick="window.open(this.src)" title="點擊放大">
-                    <img src="${p.docs?.car}" class="rounded-xl border border-slate-800" onclick="window.open(this.src)" title="點擊放大">
+                <p class="text-sky-500 font-black text-[11px] mb-4 uppercase italic tracking-widest">Digital Identification Documents / 證件影像存檔</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center"><img src="${p.docs?.id_f}" class="rounded-2xl border border-slate-800 mb-1" onclick="window.open(this.src)"><span class="text-[9px]">身分證正面</span></div>
+                    <div class="text-center"><img src="${p.docs?.id_b}" class="rounded-2xl border border-slate-800 mb-1" onclick="window.open(this.src)"><span class="text-[9px]">身分證反面</span></div>
+                    <div class="text-center"><img src="${p.docs?.lic}" class="rounded-2xl border border-slate-800 mb-1" onclick="window.open(this.src)"><span class="text-[9px]">駕駛執照</span></div>
+                    <div class="text-center"><img src="${p.docs?.car}" class="rounded-2xl border border-slate-800 mb-1" onclick="window.open(this.src)"><span class="text-[9px]">車輛行照</span></div>
                 </div>
             `;
         };
 
-        // 下載電子薪資條圖片
-        window.downloadSlip = async (p) => {
-            const r_d = p.rate_del || 50, r_r = p.rate_ret || 20, lab = p.labor || 1500, hea = (p.h_cnt || 1) * (p.health || 800);
-            const total = (p.total_del * r_d) + (p.total_ret * r_r) - lab - hea + (p.bonus || 0) - (p.penalty || 0);
+        // 下載電子薪資單專用函數
+        window.generatePayslip = async (p) => {
+            const rd = p.rate_del || 50;
+            const rr = p.rate_ret || 20;
+            const lb = p.labor || 1500;
+            const hc = p.h_cnt || 1;
+            const hf = hc * 800;
+            const bn = p.bonus || 0;
+            const pe = p.penalty || 0;
+            const totalVal = (p.total_del * rd) + (p.total_ret * rr) - lb - hf + bn - pe;
             
-            document.getElementById('slip-date').innerText = "結算期間：" + new Date().toLocaleDateString();
-            document.getElementById('slip-body').innerHTML = `
-                <div class="slip-row"><span>夥伴姓名</span><b>${p.name}</b></div>
-                <div class="slip-row"><span>配送件數報酬</span><span>$${(p.total_del * r_d).toLocaleString()} (${p.total_del}件)</span></div>
-                <div class="slip-row"><span>逆物件數報酬</span><span>$${(p.total_ret * r_r).toLocaleString()} (${p.total_ret}件)</span></div>
-                <div class="slip-row"><span>本月加給/津貼</span><span>+$${(p.bonus || 0).toLocaleString()}</span></div>
-                <div class="slip-row" style="color:#d00"><span>勞保費扣額項目</span><span>-$${lab.toLocaleString()}</span></div>
-                <div class="slip-row" style="color:#d00"><span>健保費扣額項目</span><span>-$${hea.toLocaleString()}</span></div>
-                <div class="slip-row" style="color:#d00"><span>其他扣處與罰金</span><span>-$${(p.penalty || 0).toLocaleString()}</span></div>
+            document.getElementById('slip-date').innerText = "結算期間(月份)：" + (new Date().getMonth() + 1) + " 月份";
+            
+            let bodyHtml = `
+                <div class="slip-row" style="font-weight:900; background:#f9f9f9; padding:15px 5px;"><span>夥伴(受款人)姓名</span><b>${p.name}</b></div>
+                <div class="slip-row"><span>配送件數報酬 ($${rd}/件)</span><span>$${(p.total_del * rd).toLocaleString()} (${p.total_del}件)</span></div>
+                <div class="slip-row"><span>逆物件數報酬 ($${rr}/件)</span><span>$${(p.total_ret * rr).toLocaleString()} (${p.total_ret}件)</span></div>
+                <div class="slip-row"><span>本月加給/行政津貼項目</span><span style="color:green">+$${bn.toLocaleString()}</span></div>
+                <div class="slip-row" style="color:#d00; border-top:1px solid #000; margin-top:10px;"><span>勞工保險費自付額</span><span>-$${lb.toLocaleString()}</span></div>
+                <div class="slip-row" style="color:#d00"><span>全民健康保險費 (共${hc}人)</span><span>-$${hf.toLocaleString()}</span></div>
+                <div class="slip-row" style="color:#d00"><span>其他違規扣處或代扣款</span><span>-$${pe.toLocaleString()}</span></div>
             `;
-            document.getElementById('slip-total-val').innerText = "$" + total.toLocaleString();
             
-            const box = document.getElementById('slip-box');
-            box.style.left = "0"; 
-            const canvas = await html2canvas(box, { scale: 3, backgroundColor: "#fff" }); 
-            box.style.left = "-9999px";
+            document.getElementById('slip-body').innerHTML = bodyHtml;
+            document.getElementById('slip-total-val').innerText = "$" + totalVal.toLocaleString();
             
-            const link = document.createElement('a'); 
-            link.download = `SUPREME薪資條_${p.name}_${new Date().getMonth()+1}月.png`; 
-            link.href = canvas.toDataURL("image/png"); 
-            link.click();
+            const slipContainer = document.getElementById('slip-box');
+            slipContainer.style.left = "0"; 
+            const slipCanvas = await html2canvas(slipContainer, { scale: 3, backgroundColor: "#ffffff" }); 
+            slipContainer.style.left = "-9999px";
+            
+            const slipAnchor = document.createElement('a'); 
+            slipAnchor.download = `SUPREME_P_SLIP_${p.name}_${new Date().getMonth()+1}月.png`; 
+            slipAnchor.href = slipCanvas.toDataURL("image/png"); 
+            slipAnchor.click();
+            console.log("Payslip Exported Successfully");
         };
 
-        // 夥伴介面
-        function renderPartnerUI(p) {
+        // 夥伴介面渲染
+        function renderPartnerInterface(p) {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
+            
             document.getElementById('render-target').innerHTML = `
                 <div class="id-card">
-                    <h2 class="text-3xl font-black text-white mb-1">${p.name}</h2>
-                    <p class="text-[11px] text-slate-500 uppercase italic tracking-widest mb-10">Operational Partner Hub</p>
+                    <h2 class="text-4xl font-black text-white mb-2">${p.name} 夥伴</h2>
+                    <p class="text-[11px] text-slate-500 uppercase italic tracking-widest mb-10">Elite Logistic Hub / 夥伴作業中心</p>
                     
-                    <div class="space-y-6">
-                        <div><label class="label-sky">填寫今日配送件數</label><input type="number" id="dc" placeholder="0" class="input-box text-center text-2xl font-black text-sky-400"></div>
-                        <div><label class="label-sky">填寫今日逆物流量</label><input type="number" id="rc" placeholder="0" class="input-box text-center text-2xl font-black text-orange-400"></div>
+                    <div class="space-y-8">
+                        <div>
+                            <label class="label-sky">回報今日配送成功件數</label>
+                            <input type="number" id="input_del_count" placeholder="0" class="input-box text-center text-4xl font-black text-sky-400 h-24">
+                        </div>
+                        <div>
+                            <label class="label-sky">回報今日逆物回件數量</label>
+                            <input type="number" id="input_ret_count" placeholder="0" class="input-box text-center text-4xl font-black text-orange-400 h-24">
+                        </div>
                         
-                        <div class="pt-6 border-t border-slate-800">
-                            <button onclick="window.sendJob('${p.id}')" class="btn-prime">確認回報並同步數據</button>
+                        <div class="pt-10 border-t border-slate-800">
+                            <button onclick="window.commitJobData('${p.id}')" class="btn-prime">確認回報並同步數據至雲端</button>
+                            <p class="text-[10px] text-slate-600 mt-8 text-center italic">數據傳輸受 SUPREME V92 端對端加密保護</p>
                         </div>
                     </div>
                 </div>`;
         }
 
-        window.sendJob = async (id) => {
-            const d = parseInt(document.getElementById('dc').value) || 0, r = parseInt(document.getElementById('rc').value) || 0;
-            const dummy = "https://via.placeholder.com/600/0ea5e9/ffffff?text=SUPREME+LOG+SUCCESS";
-            await addDoc(collection(db, 'logs'), { driverId: id, photo: dummy, time: serverTimestamp() });
-            await updateDoc(doc(db, 'partners', id), { total_del: increment(d), total_ret: increment(r) });
-            alert("今天的數據已成功同步至系統中控台。"); 
+        window.commitJobData = async (partnerId) => {
+            const delVal = parseInt(document.getElementById('input_del_count').value) || 0;
+            const retVal = parseInt(document.getElementById('input_ret_count').value) || 0;
+            
+            if(delVal === 0 && retVal === 0) return alert("請輸入至少一項作業數據。");
+
+            // 同步至日誌
+            const logEntry = {
+                driverId: partnerId,
+                del_cnt: delVal,
+                ret_cnt: retVal,
+                photo: "https://via.placeholder.com/600/0ea5e9/ffffff?text=SUPREME+V92+SUCCESS", // 實際應用可擴充拍照
+                time: serverTimestamp()
+            };
+
+            await addDoc(collection(db, 'logs'), logEntry);
+            await updateDoc(doc(db, 'partners', partnerId), { 
+                total_del: increment(delVal), 
+                total_ret: increment(retVal) 
+            });
+            
+            alert("今天的作業數據已成功同步。"); 
             location.reload();
         };
-        
-        window.finalApprove = async (id) => { 
-            await updateDoc(doc(db, 'partners', id), { status: "approved" }); 
-            alert("夥伴入職核准完成。");
-            renderAdmin(); 
+
+        window.approveNewPartner = async (partnerId) => { 
+            await updateDoc(doc(db, 'partners', partnerId), { status: "approved" }); 
+            alert("已成功核准該夥伴之入職資格。");
+            renderAdminDashboard(); 
+        };
+
+        window.downloadMasterReport = () => {
+            // CSV 報表匯出邏輯
+            let csvContent = "\ufeff夥伴姓名,車種,身分證號,配送總件數,逆物總件數,本月薪資實領\n";
+            partners.filter(x => x.status === "approved").forEach(p => {
+                const pay = (p.total_del * (p.rate_del||50)) + (p.total_ret * (p.rate_ret||20)) - (p.labor||1500) - ((p.h_cnt||1)*800) + (p.bonus||0) - (p.penalty||0);
+                csvContent += `${p.name},${p.v_type},${p.id_num},${p.total_del},${p.total_ret},${pay}\n`;
+            });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `SUPREME_Elite_Report_${new Date().toLocaleDateString()}.csv`;
+            a.click();
         };
     </script>
 </body>
