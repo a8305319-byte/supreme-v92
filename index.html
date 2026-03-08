@@ -13,8 +13,8 @@
         .input-box:focus { border-color: #0ea5e9; }
         .btn-prime { width: 100%; padding: 18px; border-radius: 1.5rem; background: #0ea5e9; color: #ffffff; font-weight: 800; font-size: 18px; cursor: pointer; border: none; transition: 0.1s; }
         .btn-prime:active { transform: scale(0.96); opacity: 0.8; }
-        .btn-prime:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
         
+        /* 視覺還原：藍色虛線拍照框 */
         .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         .photo-slot { background: transparent; border: 2px dashed #38bdf8; border-radius: 1.5rem; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; position: relative; }
         .photo-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; display: none; }
@@ -22,11 +22,12 @@
         .divider-orange { width: 100%; height: 4px; background: #f97316; margin-bottom: 25px; border-radius: 99px; }
         .label-blue { font-size: 13px; color: #38bdf8; font-weight: bold; margin-bottom: 8px; display: block; text-align: left; }
         
+        /* 行政總控台樣式 */
         .admin-table th { font-size: 11px; padding: 10px 4px; color: #64748b; white-space: nowrap; }
         .admin-table td { font-size: 11px; padding: 12px 4px; border-bottom: 1px solid #1e293b; vertical-align: middle; }
-        .input-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #38bdf8; text-align: center; width: 60px; font-weight: bold; padding: 2px 0; }
+        .input-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #38bdf8; text-align: center; width: 55px; font-weight: bold; padding: 2px 0; }
         .btn-del { color: #ef4444; border: 1px solid #450a0a; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
-        .ai-tag { font-size: 9px; padding: 2px 8px; border-radius: 99px; background: #0c4a6e; color: #38bdf8; font-weight: bold; border: 1px solid #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.3); }
+        .ai-tag { font-size: 9px; padding: 2px 8px; border-radius: 99px; background: #0c4a6e; color: #38bdf8; font-weight: bold; border: 1px solid #0ea5e9; }
         
         .loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); z-index: 1000; display: none; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #1e293b; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 1s linear infinite; }
@@ -37,11 +38,12 @@
 </head>
 <body>
 
-    <div id="loading" class="loading-overlay"><div class="spinner"></div><p class="mt-4 text-sky-500 font-bold">系統正在運算中...</p></div>
+    <div id="loading" class="loading-overlay"><div class="spinner"></div><p class="mt-4 text-sky-500 font-bold">系統正在處理數據...</p></div>
 
+    <!-- 快速新增人員彈窗 -->
     <div id="add-modal">
         <div class="id-card !mb-0 w-full max-w-[400px]">
-            <h3 class="text-white font-bold mb-6 text-xl italic border-l-4 border-orange-500 pl-3">新增現有人員</h3>
+            <h3 class="text-white font-bold mb-6 text-xl italic border-l-4 border-orange-500 pl-3">新增現有人員資料</h3>
             <input type="text" id="new_name" placeholder="人員姓名" class="input-box">
             <input type="tel" id="new_phone" placeholder="手機號碼" class="input-box" maxlength="10">
             <input type="password" id="new_pin" placeholder="登入 PIN (預設 0000)" class="input-box" maxlength="4">
@@ -56,16 +58,17 @@
         </div>
     </div>
 
+    <!-- 登入閘門 -->
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
-        <p class="text-slate-500 font-bold tracking-[0.3em] mb-10 text-xs">DIGITAL OPERATIONS</p>
+        <p class="text-slate-500 font-bold tracking-[0.3em] mb-10 text-xs">DIGITAL OPERATIONS SYSTEM</p>
         
         <div class="w-full max-w-[340px]">
             <div class="bg-slate-900/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl">
                 <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box" maxlength="10">
                 <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box">
                 <div class="flex items-center justify-center gap-2 mb-6 text-sm text-slate-500">
-                    <input type="checkbox" id="remember_me"> <label for="remember_me">記住我的帳號</label>
+                    <input type="checkbox" id="remember_me"> <label for="remember_me">記住帳號資訊</label>
                 </div>
                 <button onclick="window.boot()" class="btn-prime w-full shadow-lg">進入系統</button>
             </div>
@@ -79,13 +82,15 @@
         </div>
     </div>
 
-    <!-- 職能測驗：應徵者端隱藏 AI 字樣 -->
+    <!-- 面試測驗：隱藏 AI 字樣 -->
     <div id="interview-page" class="layer">
         <div class="w-full max-w-[480px]">
-            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="window.hideAll()">← 返回首頁</div>
+            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left flex items-center" onclick="window.hideAll()">
+                <span class="mr-2">←</span> 返回
+            </div>
             <div class="id-card">
                 <h2 class="text-2xl font-black text-white mb-6 italic border-b-2 border-sky-500 pb-2">夥伴營運職能評估</h2>
-                <input type="text" id="int_name" placeholder="您的真實姓名" class="input-box">
+                <input type="text" id="int_name" placeholder="您的姓名" class="input-box">
                 <input type="tel" id="int_phone" placeholder="手機號碼" class="input-box" maxlength="10">
                 
                 <div class="space-y-4 text-left mb-6">
@@ -116,10 +121,10 @@
         </div>
     </div>
 
-    <!-- 人事建檔頁面 -->
+    <!-- 人事建檔 -->
     <div id="apply-page" class="layer">
         <div class="w-full max-w-[500px]">
-            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="window.hideAll()">← 取消並返回</div>
+            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="window.hideAll()">← 取消返回</div>
             <div class="id-card">
                 <h2 class="text-2xl font-black text-white mb-2 italic">入職與勞資建檔</h2>
                 <p class="text-sky-500 text-[10px] font-black tracking-widest mb-6 uppercase">Legal Compliance Registration</p>
@@ -150,18 +155,18 @@
         </div>
     </div>
 
-    <!-- 工作台回報 -->
+    <!-- 夥伴工作台回報 -->
     <div id="hub" class="layer">
         <div class="w-full max-w-[450px]">
             <div class="flex justify-between w-full items-center mb-8">
                 <h2 id="hub-name" class="text-3xl font-black text-white italic">夥伴工作台</h2>
-                <button onclick="location.reload()" class="text-xs text-slate-500 underline">登出</button>
+                <button onclick="location.reload()" class="text-xs text-slate-500 underline">安全登出</button>
             </div>
             
             <div class="id-card">
                 <h3 class="text-sky-400 font-black mb-6 border-b border-sky-900 pb-2 italic flex justify-between">
                     <span>每日營運回報</span>
-                    <span class="text-[10px] text-slate-500">今日日期：<span id="date-today"></span></span>
+                    <span class="text-[10px] text-slate-500">日期：<span id="date-today"></span></span>
                 </h3>
                 <div class="grid grid-cols-2 gap-4 mb-6">
                     <div><span class="label-blue">配送件數 (正)</span><input type="number" id="rep_del" placeholder="0" class="input-box !py-6 !text-2xl"></div>
@@ -170,24 +175,23 @@
                 
                 <span class="label-blue">拍下「配送總表」影像存證</span>
                 <div class="photo-slot !h-40 !border-white/20 bg-white/5" onclick="window.triggerCam('rep_img')">
-                    <div id="t_rep_img" class="text-center">📷<br><span>點擊開啟相機</span></div>
+                    <div id="t_rep_img" class="text-center">📷<br><span>開啟相機拍照</span></div>
                     <img id="p_rep_img">
                 </div>
                 
-                <button id="rep_btn" onclick="window.submitReport()" class="btn-prime mt-8 bg-green-600 shadow-xl">提交數據並歸檔</button>
+                <button onclick="window.submitReport()" class="btn-prime mt-8 bg-green-600 shadow-xl">提交數據回報</button>
             </div>
         </div>
     </div>
 
     <!-- 老闆行政總控台 -->
     <div id="admin" class="layer !px-4">
-        <div class="w-full max-w-[1300px]">
+        <div class="w-full max-w-[1350px]">
             <div class="flex justify-between items-end mb-10">
                 <div>
                     <h2 class="text-white font-black text-4xl border-l-8 border-sky-500 pl-4 uppercase italic">老闆行政總控台</h2>
                     <div class="flex gap-4 mt-2 pl-6">
-                        <p class="text-slate-500 text-[10px] tracking-widest uppercase">Personnel & Operations Master Control</p>
-                        <button onclick="document.getElementById('add-modal').style.display='flex'" class="text-orange-500 text-[10px] font-bold border border-orange-500 px-3 py-1 rounded-full hover:bg-orange-500 hover:text-white transition">+ 快速新增人員資料</button>
+                        <button onclick="document.getElementById('add-modal').style.display='flex'" class="text-orange-500 text-[10px] font-bold border border-orange-500 px-3 py-1 rounded-full hover:bg-orange-500 hover:text-white transition">+ 快速新增現有人員</button>
                     </div>
                 </div>
                 <button onclick="location.reload()" class="bg-slate-800 px-6 py-2 rounded-full text-xs font-bold text-slate-400">安全登出</button>
@@ -197,12 +201,13 @@
                 <table class="w-full text-left admin-table">
                     <thead class="text-slate-500 border-b border-slate-800">
                         <tr>
-                            <th>狀態控制</th><th>姓名/手機</th><th>隱藏 AI 分析標籤</th><th>累計正件</th><th>累計逆件</th><th>正價</th><th>逆價</th><th>投保額</th><th>眷屬</th><th>扣繳額</th><th>淨額</th><th>管理</th>
+                            <th>狀態控制</th><th>姓名/手機</th><th>隱藏 AI 分析</th><th>累計正件</th><th>累計逆件</th><th>正件單價</th><th>逆件單價</th><th>投保薪資</th><th>眷屬</th><th>扣繳額</th><th>淨額</th><th>管理</th>
                         </tr>
                     </thead>
                     <tbody id="admin-render" class="text-white"></tbody>
                 </table>
             </div>
+            <p class="mt-6 text-[10px] text-slate-600 text-center">※ 勞健保公式：勞(基數x2.5%) + 健(基數x1.8%x(1+眷屬))</p>
         </div>
     </div>
 
@@ -213,13 +218,14 @@
         import { getFirestore, doc, updateDoc, deleteDoc, increment, serverTimestamp, collection, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // Firebase 初始化
+        // Firebase 初始化與環境變數處理
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{"apiKey":"","projectId":"supreme-v92"}');
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'delivery-local-system';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'logistics-master-v92';
         
+        // 符合 Rule 1 的資料路徑
         const partnersCol = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
 
         let partners = [];
@@ -229,18 +235,19 @@
 
         const setLoad = (s) => document.getElementById('loading').style.display = s ? 'flex' : 'none';
 
-        // --- 核心邏輯 ---
-
+        // --- 登入與導向 ---
         window.boot = () => {
-            if (!userAuth) return;
+            if (!userAuth) return alert("系統初始化中，請稍候。");
             const ph = document.getElementById('login_phone').value.trim();
             const pi = document.getElementById('login_pin').value;
             
             if(document.getElementById('remember_me').checked) localStorage.setItem('del_ph', ph);
             else localStorage.removeItem('del_ph');
 
+            // 老闆特殊登入
             if(ph === "0976017938" && pi === "0531") return renderAdmin();
 
+            // 夥伴登入
             currentUser = partners.find(x => x.phone === ph);
             if(currentUser) {
                 if(currentUser.status === "approved" && currentUser.pin === pi) {
@@ -249,17 +256,18 @@
                     document.getElementById('date-today').innerText = new Date().toLocaleDateString();
                 } else if(currentUser.status === "interviewed") {
                     document.getElementById('apply-lock-box').innerHTML = `<button onclick="window.showLayer('apply-page')" class="w-full py-4 rounded-2xl border border-orange-500 text-orange-500 font-bold shadow-lg animate-pulse">二、人事建檔 (測驗通過已解鎖)</button>`;
-                    alert("實務測驗核准！請點擊橘色按鈕進行人事建檔。");
+                    alert("實務測驗核准！請點擊橘色按鈕進行人事資料建檔。");
                 } else if(currentUser.status === "pending_review") {
-                    alert("測驗審核中，請靜候通知。");
+                    alert("測驗正在審核中，請靜候通知。");
                 } else {
-                    alert("登入資訊錯誤或帳號未開通。");
+                    alert("PIN 碼錯誤或尚未通過審核。");
                 }
             } else {
-                alert("查無此手機號碼，請先完成第一階段測驗。");
+                alert("查無此號碼，請先完成第一階段實務評估。");
             }
         };
 
+        // --- 行政總控台渲染 ---
         window.renderAdmin = () => {
             window.showLayer('admin');
             let html = '';
@@ -267,43 +275,48 @@
                 const dp = p.custom_del || 15;
                 const rp = p.custom_rev || 10;
                 const income = ((p.total_del || 0) * dp) + ((p.total_rev || 0) * rp);
+                
+                // 勞健保公式計算
                 const ins_b = p.ins_base || 0; 
                 const fm = p.ins_fm || 0;     
                 const labor_ins = Math.round(ins_b * 0.025);
                 const health_ins = Math.round(ins_b * 0.018 * (1 + parseInt(fm)));
                 const total_ins = labor_ins + health_ins;
-                const net_income = income - total_ins;
+                const net = income - total_ins;
 
                 let actionBtn = '';
-                if(p.status === 'pending_review') actionBtn = `<button onclick="window.upS('${p.id}','interviewed')" class="bg-sky-600 px-2 py-1 rounded text-[10px]">核准面試</button>`;
-                if(p.status === 'pending') actionBtn = `<button onclick="window.upS('${p.id}','approved')" class="bg-green-600 px-2 py-1 rounded text-[10px]">開通營運</button>`;
+                if(p.status === 'pending_review') actionBtn = `<button onclick="window.upStatus('${p.id}','interviewed')" class="bg-sky-600 px-2 py-1 rounded text-[10px]">核准面試</button>`;
+                if(p.status === 'pending') actionBtn = `<button onclick="window.upStatus('${p.id}','approved')" class="bg-green-600 px-2 py-1 rounded text-[10px]">開通營運</button>`;
 
                 const aiLabel = p.ai_analysis || (p.score !== undefined ? "⏳ 分析中" : "📋 尚未評估");
 
                 html += `
-                <tr class="hover:bg-white/5">
+                <tr class="hover:bg-white/5 transition">
                     <td>${actionBtn || `<span class="text-slate-500 text-[9px] uppercase font-bold">${p.status}</span>`}</td>
                     <td><span class="font-bold text-white">${p.name}</span><br><span class="text-[9px] text-slate-500">${p.phone}</span></td>
                     <td><span class="ai-tag">${aiLabel}</span></td>
                     <td class="text-center font-bold text-sky-400">${p.total_del || 0}</td>
                     <td class="text-center font-bold text-orange-400">${p.total_rev || 0}</td>
-                    <td><input type="number" value="${dp}" onchange="window.upD('${p.id}','custom_del',this.value)" class="input-mini"></td>
-                    <td><input type="number" value="${rp}" onchange="window.upD('${p.id}','custom_rev',this.value)" class="input-mini"></td>
-                    <td><input type="number" value="${ins_b}" onchange="window.upD('${p.id}','ins_base',this.value)" class="input-mini !w-16"></td>
-                    <td><input type="number" value="${fm}" onchange="window.upD('${p.id}','ins_fm',this.value)" class="input-mini"></td>
+                    <td><input type="number" value="${dp}" onchange="window.upField('${p.id}','custom_del',this.value)" class="input-mini"></td>
+                    <td><input type="number" value="${rp}" onchange="window.upField('${p.id}','custom_rev',this.value)" class="input-mini"></td>
+                    <td><input type="number" value="${ins_b}" onchange="window.upField('${p.id}','ins_base',this.value)" class="input-mini !w-16"></td>
+                    <td><input type="number" value="${fm}" onchange="window.upField('${p.id}','ins_fm',this.value)" class="input-mini"></td>
                     <td class="text-red-400 font-bold">-$${total_ins}</td>
-                    <td class="text-sky-400 font-black text-sm">$${net_income}</td>
+                    <td class="text-sky-400 font-black text-sm">$${net}</td>
                     <td>
                         <div class="flex items-center gap-2">
                             ${p.last_report ? `<img src="${p.last_report}" class="w-6 h-6 rounded border border-slate-700 cursor-pointer" onclick="window.openPreview('${p.last_report}')">` : '<span class="text-slate-700">無</span>'}
-                            <span class="btn-del" onclick="window.delP('${p.id}','${p.name}')">🗑️</span>
+                            <span class="btn-del" onclick="window.delPartner('${p.id}','${p.name}')">🗑️</span>
                         </div>
                     </td>
                 </tr>`;
             });
-            document.getElementById('admin-render').innerHTML = html || '<tr><td colspan="12" class="text-center py-10">尚無人員資料</td></tr>';
+            document.getElementById('admin-render').innerHTML = html || '<tr><td colspan="12" class="text-center py-10 text-slate-700">尚無夥伴資料</td></tr>';
         };
 
+        // --- 核心功能操作 ---
+
+        // 老闆手動新增人員
         window.addPartnerDirectly = async () => {
             if (!userAuth) return;
             const name = document.getElementById('new_name').value;
@@ -311,7 +324,7 @@
             const pin = document.getElementById('new_pin').value || "0000";
             const dp = parseFloat(document.getElementById('new_del_p').value) || 15;
             const rp = parseFloat(document.getElementById('new_rev_p').value) || 10;
-            if(!name || !phone) return alert("姓名與手機為必填");
+            if(!name || !phone) return alert("請填寫姓名與手機號碼");
             setLoad(true);
             const id = `p_${phone}`;
             try {
@@ -322,14 +335,15 @@
                     total_del: 0, total_rev: 0,
                     custom_del: dp, custom_rev: rp,
                     ins_base: 0, ins_fm: 0,
-                    ai_analysis: "💎 直接新增"
+                    ai_analysis: "📋 現有人員"
                 });
-                alert("已成功新增現有人員");
+                alert(`已直接新增夥伴：${name}`);
                 document.getElementById('add-modal').style.display = 'none';
-            } catch (e) { alert("新增失敗"); }
+            } catch (e) { alert("新增失敗，請檢查權限或手機號碼是否重複。"); }
             setLoad(false);
         };
 
+        // 第一階段：實務評估 (AI 分析隱藏於後台)
         window.submitInterview = async () => {
             if (!userAuth) return;
             const name = document.getElementById('int_name').value;
@@ -338,19 +352,18 @@
             const q2 = document.querySelector('input[name="q2"]:checked')?.value;
             const q3 = document.querySelector('input[name="q3"]:checked')?.value;
             const q4 = document.querySelector('input[name="q4"]:checked')?.value;
-            if(!name || !ph || !q1 || !q2 || !q3 || !q4) return alert("請完成所有情境評估題目。");
+            if(!name || !ph || !q1 || !q2 || !q3 || !q4) return alert("請完成所有情境評估測驗。");
             
             setLoad(true);
-            
-            // --- 強化 AI 分析引擎 ---
+            // --- 隱藏式 AI 演算 ---
             const score = parseInt(q1) + parseInt(q2) + parseInt(q3) + parseInt(q4);
             let analysis = "✅ 誠信可靠";
-            if (q2 === "10") analysis = "❌ 誠信風險"; // 代收金錢誠信問題
-            else if (q1 === "0") analysis = "🚧 事故隱憂"; // 事故處理邏輯錯誤
-            else if (q4 === "5") analysis = "⚠️ 隱匿風險"; // 破損不回報，隱匿風險高
-            else if (score < 100) analysis = "💡 觀念待強"; // 觀念未達頂標
-            if (score === 100) analysis = "💎 頂級菁英"; // 四題全對
-            
+            if (q2 === "10") analysis = "❌ 誠信風險"; 
+            else if (q1 === "0") analysis = "🚧 事故隱憂";
+            else if (q4 === "5") analysis = "⚠️ 隱匿風險";
+            else if (score < 100) analysis = "💡 觀念待強";
+            if (score === 100) analysis = "💎 頂級菁英";
+
             const id = `p_${ph}`;
             try {
                 await setDoc(doc(partnersCol, id), {
@@ -362,12 +375,13 @@
                     custom_del: 15, custom_rev: 10,
                     ins_base: 0, ins_fm: 0
                 });
-                alert("評估資料已提交至公司審核。");
+                alert("評估資料已提交至後台審核中。");
                 location.reload();
-            } catch (e) { alert("提交失敗，請檢查網路。"); }
+            } catch (e) { alert("提交失敗。"); }
             setLoad(false);
         };
 
+        // 第二階段：人事建檔
         window.submitApply = async () => {
             if (!userAuth) return;
             const data = {
@@ -376,16 +390,17 @@
                 photos: photosCache,
                 status: "pending"
             };
-            if(!data.realName || !data.pin) return alert("姓名與 PIN 為必填項。");
+            if(!data.realName || !data.pin) return alert("真實姓名與 PIN 碼為必填。");
             setLoad(true);
             try {
                 await updateDoc(doc(partnersCol, currentUser.id), data);
-                alert("人事資料已建檔，請靜候管理端開通權限。");
+                alert("人事建檔完成！請靜候最後審核開通。");
                 location.reload();
-            } catch (e) { alert("資料儲存失敗"); }
+            } catch (e) { alert("建檔失敗"); }
             setLoad(false);
         };
 
+        // 第三階段：數據回報
         window.submitReport = async () => {
             if (!userAuth) return;
             const del = parseInt(document.getElementById('rep_del').value) || 0;
@@ -399,15 +414,18 @@
                     last_report: photosCache.rep_img,
                     lastReportAt: serverTimestamp()
                 });
-                alert("今日回報成功！數據已存入後台對帳。");
+                alert("數據回報成功！辛苦了！");
                 location.reload();
-            } catch (e) { alert("數據提交失敗"); }
+            } catch (e) { alert("回報失敗"); }
             setLoad(false);
         };
 
-        window.upS = async (id, s) => { if (!userAuth) return; setLoad(true); await updateDoc(doc(partnersCol, id), { status: s }); setLoad(false); };
-        window.upD = async (id, f, v) => { if (!userAuth) return; await updateDoc(doc(partnersCol, id), { [f]: parseFloat(v) || 0 }); };
-        window.delP = async (id, n) => { if (!userAuth) return; if(confirm(`確定要永久刪除夥伴【${n}】的所有資料嗎？`)) await deleteDoc(doc(partnersCol, id)); };
+        // 行政輔助
+        window.upStatus = async (id, s) => { if (!userAuth) return; setLoad(true); await updateDoc(doc(partnersCol, id), { status: s }); setLoad(false); };
+        window.upField = async (id, f, v) => { if (!userAuth) return; await updateDoc(doc(partnersCol, id), { [f]: parseFloat(v) || 0 }); };
+        window.delPartner = async (id, n) => { if (!userAuth) return; if(confirm(`確定要永久刪除夥伴【${n}】的所有資料？`)) await deleteDoc(doc(partnersCol, id)); };
+        
+        // 介面控制
         window.showLayer = id => { window.hideAll(); document.getElementById(id).style.display='flex'; };
         window.hideAll = () => { document.querySelectorAll('.layer').forEach(l=>l.style.display='none'); document.getElementById('gate').style.display='flex'; };
         window.triggerCam = f => { window.currentImgField = f; document.getElementById('cam').click(); };
@@ -427,24 +445,37 @@
             win.document.write(`<body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;"><img src="${url}" style="max-width:100%;max-height:100vh;"></body>`);
         };
 
+        // 系統啟動與 Firebase Auth 整合 (符合 Rule 3)
         const init = async () => {
             try {
+                // 優先檢查是否有自訂 Token，否則使用匿名登入
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
-                } else { await signInAnonymously(auth); }
-            } catch (err) { console.error("Auth failed:", err); }
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Firebase Auth 失敗:", err);
+            }
             
+            // 監聽驗證狀態，確保完成後才開啟資料監聽
             onAuthStateChanged(auth, user => {
                 userAuth = user;
                 if(user) {
                     onSnapshot(partnersCol, s => {
                         partners = s.docs.map(d => ({ id: d.id, ...d.data() }));
-                        if(document.getElementById('admin').style.display === 'flex') renderAdmin();
-                    }, err => console.error("Snapshot error:", err));
+                        // 如果正在管理端，則重新渲染表格
+                        if(document.getElementById('admin').style.display === 'flex') window.renderAdmin();
+                    }, err => {
+                        console.error("Firestore 監聽失敗 (Permission Denied?):", err);
+                    });
                 }
             });
+            
+            // 讀取記住的手機號碼
             if(localStorage.getItem('del_ph')) document.getElementById('login_phone').value = localStorage.getItem('del_ph');
         };
+
         init();
     </script>
 </body>
