@@ -9,12 +9,19 @@
     <style>
         body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
+        
+        /* 1:1 截圖視覺還原 */
         .id-card { width: 100%; max-width: 480px; background: #0f172a; border-radius: 2.5rem; padding: 30px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .input-box { background: rgba(30, 41, 59, 0.4); border: 1px solid #334155; border-radius: 1.2rem; padding: 18px; width: 100%; color: #ffffff; outline: none; margin-bottom: 15px; font-size: 16px; text-align: center; }
-        .btn-prime { width: 100%; padding: 18px; border-radius: 1.2rem; background: #0ea5e9; color: #ffffff; font-weight: 800; font-size: 18px; cursor: pointer; border: none; }
+        .btn-prime { width: 100%; padding: 18px; border-radius: 1.2rem; background: #0ea5e9; color: #ffffff; font-weight: 800; font-size: 18px; cursor: pointer; border: none; transition: 0.1s; }
+        .btn-prime:active { transform: scale(0.96); opacity: 0.8; }
+        .btn-prime:disabled { background: #1e293b; color: #475569; cursor: wait; }
+
+        /* 證件拍照藍色虛線框 */
         .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
         .photo-slot { background: transparent; border: 2px dashed #38bdf8; border-radius: 1.5rem; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; position: relative; }
         .photo-slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .photo-slot span { color: #64748b; font-size: 12px; font-weight: 500; }
         .label-blue { font-size: 14px; color: #38bdf8; font-weight: bold; margin-bottom: 10px; display: block; text-align: left; }
     </style>
 </head>
@@ -22,20 +29,20 @@
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
-        <p class="text-sky-500 text-xs font-black tracking-[0.4em] mb-12 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">夥伴數位營運中心</p>
+        <p class="text-sky-500 text-xs font-black tracking-[0.4em] mb-12 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">數位營運管理中心</p>
         
         <div class="w-full max-w-[340px] space-y-4">
             <div class="bg-slate-900/80 p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl">
-                <input type="tel" id="login_phone" placeholder="輸入手機號碼" class="input-box">
+                <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box">
                 <input type="password" id="login_pin" placeholder="PIN 碼 (管理員專用)" class="input-box">
-                <button onclick="boot()" class="btn-prime w-full shadow-lg">進入系統</button>
+                <button id="btn_boot" onclick="boot()" class="btn-prime w-full shadow-lg shadow-sky-900/20">進入系統</button>
             </div>
             
             <div class="pt-8 flex flex-col gap-4">
                 <button onclick="showLayer('interview-page')" class="w-full py-4 rounded-2xl border border-sky-500 text-sky-400 font-bold">一、營運實務評估測驗</button>
                 <div id="apply-lock-box">
                     <button disabled class="w-full py-4 rounded-2xl border border-slate-800 text-slate-700 font-bold flex items-center justify-center gap-2 cursor-not-allowed">
-                        二、人事資料建檔 (測驗通過後開啟) 🔒
+                        二、人事資料建檔 (測驗通過解鎖) 🔒
                     </button>
                 </div>
             </div>
@@ -46,7 +53,7 @@
         <div class="w-full max-w-[450px]">
             <h2 id="hub-name" class="text-4xl font-black text-white italic mb-10 text-center">夥伴工作台</h2>
             <div class="id-card">
-                <h3 class="text-sky-400 font-black mb-4 border-b border-sky-900 pb-2 italic">每日下班回報</h3>
+                <h3 class="text-sky-400 font-black mb-4 border-b border-sky-900 pb-2 italic">每日營運回報</h3>
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -59,25 +66,25 @@
                     </div>
                 </div>
 
-                <span class="label-blue">拍攝今日「配送總表」拍照存證</span>
+                <span class="label-blue">拍下今日「配送總表」拍照存證</span>
                 <div class="photo-slot !h-32" onclick="triggerCam('rep_img')">
                     <span id="t_rep_img">點擊相機拍照</span>
                     <img id="p_rep_img">
                 </div>
                 <button onclick="submitReport()" id="rep_btn" class="btn-prime mt-4 bg-green-600 shadow-xl">提交今日數據</button>
             </div>
-            <button onclick="location.reload()" class="text-slate-600 underline text-xs">安全登出系統</button>
+            <button onclick="location.reload()" class="mt-4 text-slate-600 underline text-xs">安全登出</button>
         </div>
     </div>
 
     <div id="admin" class="layer">
         <div class="w-full max-w-[850px]">
             <h2 class="text-white font-black text-3xl mb-10 border-l-8 border-sky-500 pl-4 uppercase">行政總控與薪資報表</h2>
-            <div class="bg-slate-900 p-4 rounded-3xl overflow-x-auto mb-10 border border-slate-800 shadow-2xl">
+            <div class="bg-slate-900 p-4 rounded-3xl overflow-x-auto mb-10 border border-slate-800">
                 <table class="w-full text-[11px] text-left">
                     <thead class="text-slate-500 border-b border-slate-800">
                         <tr>
-                            <th class="p-2">姓名</th><th>配送(正)</th><th>逆物流(逆)</th><th>勞健保/行政費</th><th>實付淨額</th>
+                            <th class="p-2">姓名</th><th>配送(正)</th><th>逆物流(逆)</th><th>應付淨額</th><th>存證</th>
                         </tr>
                     </thead>
                     <tbody id="admin-render" class="text-white"></tbody>
@@ -88,15 +95,47 @@
     </div>
 
     <div id="apply-page" class="layer">
-        </div>
+        <div class="w-full max-w-[500px]">
+            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="hideAll()">← 返回主頁</div>
+            <div class="id-card">
+                <h2 class="text-3xl font-black text-white mb-2 italic">人事基本資料建檔</h2>
+                <div class="w-full h-1 bg-orange-500 mb-8 rounded-full"></div>
+                
+                <div class="photo-grid">
+                    <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f">身分證正</span><img id="p_id_f"></div>
+                    <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b">身分證反</span><img id="p_id_b"></div>
+                    <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic">駕照影本</span><img id="p_lic"></div>
+                    <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car">車輛行照</span><img id="p_car"></div>
+                    <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
+                </div>
 
-    <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
+                <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
+                <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
+                <input type="text" id="app_h_addr" placeholder="完整戶籍地址" class="input-box">
+                
+                <span class="label-blue">營運車輛</span>
+                <select id="app_v" class="input-box bg-slate-900" onchange="togglePlate(this.value)">
+                    <option value="個人機車">個人機車</option>
+                    <option value="個人貨車">個人貨車</option>
+                    <option value="公司車">公司車 (免填車號)</option>
+                </select>
+                <div id="plate_box"><input type="text" id="app_plate" placeholder="車牌號碼" class="input-box"></div>
+                
+                <div class="flex gap-2">
+                    <input type="text" id="app_bc" placeholder="代碼" class="input-box w-1/3 text-center">
+                    <input type="text" id="app_ba" placeholder="銀行帳號" class="input-box w-2/3">
+                </div>
+                <input type="password" id="app_pin" placeholder="設定 4 位登入 PIN" maxlength="4" class="input-box">
+                <button onclick="submitApply()" id="app_btn" class="btn-prime bg-sky-600 mt-4 shadow-xl">提交建檔資料</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // 🔥 Firebase Config
+        // Firebase Config (請確保填寫)
         const firebaseConfig = { 
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
             authDomain: "supreme-v92.firebaseapp.com", 
@@ -109,45 +148,63 @@
         const db = getFirestore(app);
         let partners = [], currentUser = null, photosCache = {};
 
+        // 監聽數據
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({ id: d.id, ...d.data() })); });
 
+        // 登入中控與按鈕修復
         window.boot = () => {
+            const btn = document.getElementById('btn_boot');
+            btn.innerText = "驗證中..."; btn.disabled = true;
+            
             const ph = document.getElementById('login_phone').value;
             const pi = document.getElementById('login_pin').value;
             
-            // 老闆後台登入恢復
-            if(ph === "0976017938" && pi === "0531") return renderAdmin();
+            // 管理員入口
+            if(ph === "0976017938" && pi === "0531") {
+                renderAdmin();
+                return;
+            }
             
             currentUser = partners.find(x => x.phone === ph);
-            if(!currentUser) return alert("查無資料");
+            if(!currentUser) {
+                alert("手機號碼尚未參與營運評估");
+                btn.innerText = "進入系統"; btn.disabled = false;
+                return;
+            }
             
+            // 權限分流邏輯
             if(currentUser.status === "approved") {
                 document.getElementById('gate').style.display = 'none';
                 document.getElementById('hub').style.display = 'flex';
-                document.getElementById('hub-name').innerText = `歡迎, ${currentUser.name}`;
+                document.getElementById('hub-name').innerText = `歡迎夥伴, ${currentUser.name}`;
             } else if(currentUser.status === "interviewed") {
                 document.getElementById('apply-lock-box').innerHTML = `<button onclick="showLayer('apply-page')" class="w-full py-4 rounded-2xl border border-orange-500 text-orange-500 font-bold shadow-lg">二、人事資料建檔 (已解鎖)</button>`;
-                alert("營運評估通過！請點擊下方橘色按鈕建檔。");
+                alert("營運評估通過！請點擊橘色按鈕建檔。");
+                btn.innerText = "進入系統"; btn.disabled = false;
             } else {
-                alert("審核中，請等候通知。");
+                alert("審核中，請等候簡訊通知。");
+                btn.innerText = "進入系統"; btn.disabled = false;
             }
         };
 
+        // 提交回報 (分流配送與逆物流)
         window.submitReport = async () => {
             const del = parseInt(document.getElementById('rep_del').value) || 0;
             const rev = parseInt(document.getElementById('rep_rev').value) || 0;
-            if(!photosCache.rep_img) return alert("請拍攝總表照片！");
+            if(!photosCache.rep_img) return alert("請拍下總表存證！");
             
             const btn = document.getElementById('rep_btn');
             btn.innerText = "傳送中..."; btn.disabled = true;
 
-            await updateDoc(doc(db, 'partners', currentUser.id), { 
-                total_del: increment(del), 
-                total_rev: increment(rev), 
-                last_report: photosCache.rep_img 
-            });
-            alert("今日數據已同步雲端。");
-            location.reload();
+            try {
+                await updateDoc(doc(db, 'partners', currentUser.id), { 
+                    total_del: increment(del), 
+                    total_rev: increment(rev), 
+                    last_report: photosCache.rep_img 
+                });
+                alert("回報完成，辛苦了！");
+                location.reload();
+            } catch(e) { alert("失敗"); btn.disabled = false; }
         };
 
         function renderAdmin() {
@@ -156,16 +213,26 @@
             let html = '';
             partners.filter(p => p.status === 'approved').forEach(p => {
                 const income = ((p.total_del || 0) * 15) + ((p.total_rev || 0) * 10);
-                const fee = Math.round(income * 0.05);
-                html += `<tr class="border-b border-slate-900"><td class="p-2 text-white">${p.name}</td><td>${p.total_del || 0}</td><td>${p.total_rev || 0}</td><td class="text-red-500">-$${fee}</td><td class="text-sky-400 font-bold">$${income-fee}</td></tr>`;
+                html += `<tr class="border-b border-slate-900"><td class="p-2">${p.name}</td><td>${p.total_del || 0}</td><td>${p.total_rev || 0}</td><td class="text-sky-400 font-bold">$${income}</td><td>${p.last_report ? '✅' : '❌'}</td></tr>`;
             });
             document.getElementById('admin-render').innerHTML = html;
         }
 
+        // 通用 UI 指令
         window.showLayer = id => { hideAll(); document.getElementById(id).style.display = 'flex'; };
         window.hideAll = () => document.querySelectorAll('.layer').forEach(l => l.style.display='none');
+        window.togglePlate = v => document.getElementById('plate_box').style.display = (v==='公司車')?'none':'block';
         window.triggerCam = f => { window.currentImgField = f; document.getElementById('cam').click(); };
-        window.handleFile = i => { const r = new FileReader(); r.onload = e => { photosCache[window.currentImgField] = e.target.result; const p = document.getElementById('p_'+window.currentImgField); p.src = e.target.result; p.style.display='block'; document.getElementById('t_'+window.currentImgField).style.display='none'; }; r.readAsDataURL(i.files[0]); };
+        window.handleFile = i => {
+            const r = new FileReader();
+            r.onload = e => {
+                photosCache[window.currentImgField] = e.target.result;
+                const p = document.getElementById('p_'+window.currentImgField);
+                p.src = e.target.result; p.style.display='block';
+                document.getElementById('t_'+window.currentImgField).style.display='none';
+            };
+            r.readAsDataURL(i.files[0]);
+        };
     </script>
 </body>
 </html>
