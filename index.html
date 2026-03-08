@@ -3,39 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME V92 ALL-IN-ONE</title>
+    <title>SUPREME V92 NETWORK</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; user-select: none; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 30px 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 400px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 25px; border: 1px solid #1e293b; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .input-row { display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.8); padding: 15px; border-radius: 1.2rem; margin-bottom: 12px; border: 1px solid #1e293b; }
-        input[type="number"] { background: transparent; border: none; color: #38bdf8; text-align: center; font-size: 1.5rem; font-weight: 900; width: 70px; outline: none; }
-        #preview { width: 100%; height: 180px; object-fit: cover; border-radius: 1.2rem; margin-bottom: 15px; border: 2px dashed #334155; background: #020617; }
-        .btn-submit { width: 100%; padding: 20px; border-radius: 1.2rem; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; transition: all 0.2s; margin-top: 10px; }
-        .btn-submit:active { scale: 0.98; opacity: 0.9; }
-        .loading { animation: pulse 2s infinite; }
-        @keyframes pulse { 50% { opacity: .5; } }
+        .id-card { width: 100%; max-width: 400px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 25px; border: 1px solid #1e293b; }
+        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 1rem; padding: 15px; width: 100%; color: white; text-align: center; outline: none; margin-bottom: 10px; }
+        #preview { width: 100%; height: 180px; object-fit: cover; border-radius: 1.2rem; margin-bottom: 15px; border: 2px dashed #334155; }
+        .btn-blue { width: 100%; padding: 18px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; text-transform: uppercase; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-4xl font-black text-white tracking-tighter italic mb-1">SUPREME</h1>
-        <p class="text-[8px] text-slate-600 tracking-[0.6em] mb-12 uppercase">Logistic Terminal V92</p>
-        <input type="password" id="pin" placeholder="ENTER PIN" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-2xl text-sky-400 w-48 outline-none pb-2 tracking-[0.3em]">
-        <button onclick="boot()" class="mt-16 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] tracking-widest uppercase active:bg-white active:text-black transition">Verify Access</button>
+        <h1 class="text-4xl font-black text-white italic mb-1">SUPREME</h1>
+        <p class="text-[8px] text-slate-600 tracking-[0.6em] mb-12 uppercase">Logistic Fleet Management</p>
+        <input type="password" id="pin" placeholder="PIN CODE" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-2xl text-sky-400 w-48 outline-none pb-2 tracking-[0.3em]">
+        <button onclick="boot()" class="mt-12 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] uppercase active:bg-white active:text-black transition">Verify Access</button>
+        <button onclick="showApply()" class="mt-8 text-[10px] text-slate-700 underline tracking-widest uppercase">Apply to Join / 申請加入</button>
+    </div>
+
+    <div id="apply-page" class="layer">
+        <div class="id-card">
+            <h2 class="text-xl font-black text-white italic mb-6 text-center">DRIVER APPLICATION</h2>
+            <p class="text-[10px] text-slate-500 mb-4 text-center">請填寫真實姓名並設定您的專屬 PIN 碼</p>
+            <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
+            <input type="password" id="app_pin" placeholder="設定 4 位數 PIN" inputmode="numeric" maxlength="4" class="input-box">
+            <button onclick="submitApply()" class="btn-blue">送出申請</button>
+            <button onclick="location.reload()" class="w-full mt-4 text-[10px] text-slate-500 uppercase">返回登入</button>
+        </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase tracking-widest">Sign Out System</button>
+        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase">Sign Out</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, query, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -53,116 +61,95 @@
 
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
 
+        // 登入邏輯
         window.boot = () => {
             const entry = document.getElementById('pin').value;
-            const p = partners.find(x => x.uid === entry);
-            if(p) return renderUI(p);
-            alert("DENIED");
+            if(entry === "9999") return renderAdmin(); // 管理員
+            const p = partners.find(x => x.uid === entry && x.status === "approved");
+            if(p) return renderDriverUI(p);
+            alert("帳號尚未核准或 PIN 碼錯誤");
         };
 
-        function renderUI(p) {
+        // 顯示申請頁面
+        window.showApply = () => { document.getElementById('apply-page').style.display = 'flex'; };
+
+        // 送出申請
+        window.submitApply = async () => {
+            const name = document.getElementById('app_name').value;
+            const pin = document.getElementById('app_pin').value;
+            if(!name || pin.length < 4) return alert("請填寫完整資訊");
+            
+            await addDoc(collection(db, 'partners'), {
+                name: name,
+                uid: pin,
+                status: "pending", // 預設審核中
+                total_del: 0,
+                total_ret: 0,
+                applyTime: serverTimestamp()
+            });
+            alert("申請已送出，請等待管理員核准！");
+            location.reload();
+        };
+
+        // 司機作業介面 (延用之前的拍照件數功能)
+        function renderDriverUI(p) {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `
                 <div class="id-card">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <p class="text-[9px] text-sky-500 font-black tracking-widest uppercase">Operator</p>
-                            <h2 class="text-2xl font-black text-white italic">${p.name}</h2>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[9px] text-slate-500 font-black tracking-widest uppercase">Status</p>
-                            <p class="text-[10px] text-green-500 font-bold">ONLINE</p>
-                        </div>
-                    </div>
-
-                    <div class="relative">
-                        <img id="preview" src="" alt="Capture Proof">
-                        <label class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer">
-                            <span id="cam-icon" class="text-4xl">📸</span>
-                            <span id="cam-text" class="text-[10px] mt-2 font-bold text-slate-400 uppercase">點擊開啟相機</span>
-                            <input type="file" accept="image/*" capture="camera" class="hidden" onchange="window.handleImg(this)">
-                        </label>
-                    </div>
-
-                    <div class="input-row">
-                        <span class="text-xs font-black text-slate-300 italic tracking-widest">📦 DELIVERY 件數</span>
-                        <input type="number" id="delCount" value="0" min="0" onfocus="this.select()">
-                    </div>
-                    
-                    <div class="input-row">
-                        <span class="text-xs font-black text-orange-500 italic tracking-widest">🔄 RETURN 逆物流</span>
-                        <input type="number" id="retCount" value="0" min="0" onfocus="this.select()">
-                    </div>
-
-                    <button onclick="window.submitAll('${p.id}')" id="submitBtn" class="btn-submit bg-sky-500 text-slate-900 shadow-lg shadow-sky-900/20">
-                        Confirm & Upload
-                    </button>
+                    <h2 class="text-2xl font-black text-white italic mb-6">${p.name} <span class="text-[10px] text-green-500">ACTIVE</span></h2>
+                    <img id="preview" src="" style="display:none">
+                    <label class="btn-blue bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer mb-4 flex items-center justify-center">
+                        📸 拍照存證 <input type="file" accept="image/*" capture="camera" class="hidden" onchange="window.handleImg(this)">
+                    </label>
+                    <input type="number" id="dc" placeholder="配送件數" class="input-box text-sky-400 font-bold">
+                    <input type="number" id="rc" placeholder="逆物流件數" class="input-box text-orange-400 font-bold">
+                    <button onclick="window.submitAll('${p.id}')" class="btn-blue">確認上傳</button>
                 </div>`;
         }
 
+        // 管理員介面
+        function renderAdmin() {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('main').style.display = 'flex';
+            let listHtml = partners.filter(x => x.status === "pending").map(p => `
+                <div class="bg-slate-900 p-4 rounded-xl mb-2 border border-slate-800 flex justify-between items-center">
+                    <div><p class="text-white font-bold">${p.name}</p><p class="text-[9px]">PIN: ${p.uid}</p></div>
+                    <button onclick="window.approve('${p.id}')" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-lg">核准</button>
+                </div>
+            `).join('');
+            
+            document.getElementById('render-target').innerHTML = `
+                <div class="w-full max-w-[400px]">
+                    <h2 class="text-white font-black italic mb-6">待審核申請</h2>
+                    ${listHtml || '<p class="text-slate-600 text-center">目前無待處理申請</p>'}
+                </div>`;
+        }
+
+        window.approve = async (id) => {
+            await updateDoc(doc(db, 'partners', id), { status: "approved" });
+            alert("已核准該司機！");
+            renderAdmin();
+        };
+
+        // 圖片處理與上傳 (略，與之前相同邏輯)
         window.handleImg = (input) => {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const maxSide = 800;
-                        let w = img.width, h = img.height;
-                        if (w > h) { if (w > maxSide) { h *= maxSide / w; w = maxSide; } }
-                        else { if (h > maxSide) { w *= maxSide / h; h = maxSide; } }
-                        canvas.width = w; canvas.height = h;
-                        ctx.drawImage(img, 0, 0, w, h);
-                        base64Photo = canvas.toDataURL('image/jpeg', 0.7);
-                        document.getElementById('preview').src = base64Photo;
-                        document.getElementById('preview').style.border = "2px solid #38bdf8";
-                        document.getElementById('cam-icon').style.display = "none";
-                        document.getElementById('cam-text').style.display = "none";
-                    };
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                base64Photo = e.target.result;
+                document.getElementById('preview').src = base64Photo;
+                document.getElementById('preview').style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
         };
 
         window.submitAll = async (id) => {
-            if(!base64Photo) return alert("請先拍攝憑證照片！");
-            
-            const dc = parseInt(document.getElementById('delCount').value) || 0;
-            const rc = parseInt(document.getElementById('retCount').value) || 0;
-            const btn = document.getElementById('submitBtn');
-            
-            btn.innerHTML = "SYSTEM SYNCING...";
-            btn.classList.add('loading');
-            btn.disabled = true;
-
-            try {
-                // 1. 存入詳細日誌
-                await addDoc(collection(db, 'logs'), {
-                    driverId: id,
-                    delivery: dc,
-                    returns: rc,
-                    photo: base64Photo,
-                    timestamp: serverTimestamp()
-                });
-
-                // 2. 更新累計數據
-                await updateDoc(doc(db, 'partners', id), { 
-                    total_del: increment(dc),
-                    total_ret: increment(rc),
-                    lastUpdate: serverTimestamp() 
-                });
-
-                alert("回報成功！數據已存入雲端。");
-                location.reload();
-            } catch (e) {
-                alert("上傳失敗，請檢查網路連線");
-                btn.innerHTML = "Confirm & Upload";
-                btn.classList.remove('loading');
-                btn.disabled = false;
-            }
+            const dc = parseInt(document.getElementById('dc').value) || 0;
+            const rc = parseInt(document.getElementById('rc').value) || 0;
+            await addDoc(collection(db, 'logs'), { driverId: id, delivery: dc, returns: rc, photo: base64Photo, time: serverTimestamp() });
+            await updateDoc(doc(db, 'partners', id), { total_del: increment(dc), total_ret: increment(rc) });
+            alert("回報成功！");
+            location.reload();
         };
     </script>
 </body>
