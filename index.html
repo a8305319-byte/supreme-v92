@@ -3,94 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME 旗艦精英中控台 V93-Elite</title>
+    <title>SUPREME 旗艦精英中控台 V93.E</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { background-color: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        body { background-color: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; margin: 0; padding: 0; }
         .layer { display: none; position: fixed; inset: 0; background-color: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 25px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 580px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 3rem; padding: 45px; border: 2px solid #1e293b; margin-bottom: 35px; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 1); position: relative; }
-        .input-box { background-color: rgba(15, 23, 42, 0.98); border: 2px solid #334155; border-radius: 1.3rem; padding: 22px; width: 100%; color: #ffffff; outline: none; margin-bottom: 22px; font-size: 17px; }
-        .label-sky { font-size: 15px; color: #38bdf8; font-weight: 900; margin-bottom: 12px; display: block; margin-top: 20px; letter-spacing: 2px; text-transform: uppercase; }
-        .btn-prime { width: 100%; padding: 24px; border-radius: 1.6rem; background: #0ea5e9; color: #020617; font-weight: 950; font-size: 19px; cursor: pointer; border: none; }
-        .photo-slot { background-color: #0f172a; border: 2px dashed #334155; border-radius: 20px; height: 130px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; }
+        .id-card { width: 100%; max-width: 580px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 3rem; padding: 40px; border: 2px solid #1e293b; margin-bottom: 30px; box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 1); }
+        .input-box { background-color: rgba(15, 23, 42, 0.95); border: 2px solid #334155; border-radius: 1.2rem; padding: 20px; width: 100%; color: #ffffff; outline: none; margin-bottom: 20px; font-size: 16px; }
+        .label-sky { font-size: 14px; color: #0ea5e9; font-weight: 900; margin-bottom: 10px; display: block; margin-top: 15px; letter-spacing: 2px; }
+        .btn-prime { width: 100%; padding: 22px; border-radius: 1.5rem; background: #0ea5e9; color: #020617; font-weight: 950; font-size: 18px; cursor: pointer; border: none; box-shadow: 0 10px 20px rgba(14,165,233,0.3); }
+        .photo-slot { background-color: #0f172a; border: 2px dashed #334155; border-radius: 1.5rem; height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; position: relative; }
         .photo-slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
-        .admin-section-title { color: #0ea5e9; font-weight: 900; font-size: 18px; margin-top: 50px; margin-bottom: 20px; width: 100%; max-width: 580px; text-align: left; border-left: 10px solid #0ea5e9; padding-left: 15px; }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-8xl font-black text-white italic mb-5 tracking-tighter">SUPREME</h1>
-        <p class="text-sky-500 text-xs font-black tracking-[0.5em] mb-20 uppercase italic underline decoration-sky-600 decoration-4">Enterprise Logistics V93.E</p>
-        <div class="w-full max-w-[400px]">
-            <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center shadow-2xl">
-            <input type="password" id="login_pin" placeholder="PIN 安全認證碼" class="input-box text-center shadow-2xl">
+        <h1 class="text-7xl font-black text-white italic mb-4 tracking-tighter">SUPREME</h1>
+        <p class="text-sky-500 text-[10px] font-black tracking-[0.6em] mb-16 uppercase italic underline decoration-sky-600 decoration-4">Enterprise Hub V93.E</p>
+        <div class="w-full max-w-[380px]">
+            <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center">
+            <input type="password" id="login_pin" placeholder="PIN 安全認證碼" class="input-box text-center">
             <button onclick="boot()" class="btn-prime">進入系統中控台</button>
             
-            <button onclick="showInterview()" class="text-sky-400 font-black text-sm underline mt-24 block mx-auto uppercase tracking-widest">
-                Career / 應徵初審入口
-            </button>
-            <button onclick="showApply()" class="text-slate-700 text-xs mt-10 block mx-auto uppercase">夥伴正式註冊</button>
+            <button onclick="showInterview()" class="text-sky-400 font-black text-sm underline mt-20 block mx-auto uppercase tracking-widest">Career / 應徵初審入口</button>
+            <button onclick="showApply()" class="text-slate-700 text-[10px] mt-10 block mx-auto uppercase font-bold">夥伴正式註冊申請</button>
         </div>
     </div>
 
     <div id="interview-page" class="layer">
         <div class="id-card">
-            <h2 class="text-4xl font-black text-white mb-8 text-center italic">招募系統初審</h2>
-            <div style="background: rgba(14, 165, 233, 0.05); padding: 25px; border-radius: 15px; margin-bottom: 30px; font-size: 14px; line-height: 1.6;">
-                <p class="text-sky-400 font-bold mb-4">📍 夥伴應徵須知：</p>
-                <ul class="space-y-3 text-slate-300">
-                    <li>● 本工作為績效制配送業，需配合排班。</li>
-                    <li>● 薪資包含：基本報酬＋配送獎金＋行政補貼。</li>
-                    <li>● 需具備自我管理能力，詳細福利於核准後公告。</li>
-                </ul>
+            <h2 class="text-3xl font-black text-white mb-6 text-center italic">招募系統初審</h2>
+            <div style="background: rgba(14, 165, 233, 0.05); padding: 20px; border-radius: 15px; margin-bottom: 25px; font-size: 13px; line-height: 1.6; border: 1px solid rgba(14, 165, 233, 0.1);">
+                <p class="text-sky-400 font-bold mb-3">📍 應徵須知：</p>
+                <p>本職務為高效率配送作業，需配合排班與體能負荷。薪資採件數加給與行政補貼。通過初審後將由專人聯繫面試。</p>
             </div>
-            <div class="flex gap-3 mb-10"><input type="checkbox" id="ai_agree" class="w-6 h-6"><label class="text-xs">我已詳閱應徵說明，確認能配合物流作業強度。</label></div>
-            <label class="label-sky">應徵者清晰頭像</label>
-            <div class="photo-slot" onclick="triggerCam('face')"><span id="t_face">點擊拍照</span><img id="p_face"></div>
-            <input type="text" id="int_name" placeholder="您的真實姓名" class="input-box mt-6">
+            <div class="flex gap-3 mb-8"><input type="checkbox" id="ai_agree" class="w-5 h-5 accent-sky-500"><label class="text-[11px]">我已詳閱應徵說明，確認能配合物流強度。</label></div>
+            <label class="label-sky">應徵者頭像拍照</label>
+            <div class="photo-slot" onclick="triggerCam('face')"><span id="t_face" class="text-xs">點擊啟動相機</span><img id="p_face"></div>
+            <input type="text" id="int_name" placeholder="真實中文姓名" class="input-box mt-6">
             <input type="tel" id="int_phone" placeholder="聯絡手機號碼" class="input-box">
-            <label class="label-sky">情境題：若配送地址錯誤，您的處理方式？</label>
-            <textarea id="int_ans" class="input-box h-32" placeholder="請描述您的處理流程..."></textarea>
-            <button onclick="submitInterview()" class="btn-prime mt-8">提交初審資料</button>
-            <button onclick="location.reload()" class="w-full mt-6 text-sm">取消</button>
+            <label class="label-sky">若遇到收件地址無人響應，您會？</label>
+            <textarea id="int_ans" class="input-box h-28" placeholder="請簡述您的處理流程..."></textarea>
+            <button onclick="submitInterview()" class="btn-prime mt-6">提交審核資料</button>
+            <button onclick="location.reload()" class="w-full mt-6 text-xs text-slate-500">返回首頁</button>
         </div>
     </div>
 
     <div id="apply-page" class="layer">
         <div class="id-card">
-            <h2 class="text-4xl font-black text-white mb-10 text-center italic">夥伴正式註冊表單</h2>
-            <div class="photo-grid" style="display: grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
-                <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f" class="text-xs">證件正面</span><img id="p_id_f"></div>
-                <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b" class="text-xs">證件反面</span><img id="p_id_b"></div>
+            <h2 class="text-3xl font-black text-white mb-8 text-center italic underline decoration-sky-600 decoration-4">夥伴註冊表單</h2>
+            
+            <label class="label-sky">上傳身分證件</label>
+            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f" class="text-[10px]">證件正面</span><img id="p_id_f"></div>
+                <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b" class="text-[10px]">證件反面</span><img id="p_id_b"></div>
             </div>
-            <input type="text" id="app_name" placeholder="中文姓名" class="input-box">
-            <input type="tel" id="app_phone" placeholder="登入手機 (帳號)" class="input-box">
-            <input type="password" id="app_pin" placeholder="自訂 PIN (4位)" maxlength="4" class="input-box">
-            <button onclick="submitApply()" class="btn-prime mt-10">提交資料並等待核准</button>
-            <button onclick="location.reload()" class="w-full mt-6 text-sm">返回</button>
+
+            <label class="label-sky">基本資料填寫</label>
+            <input type="text" id="app_name" placeholder="中文全名 (必填)" class="input-box">
+            <input type="tel" id="app_phone" placeholder="手機號碼 (登入帳號)" class="input-box">
+            <input type="password" id="app_pin" placeholder="自訂 PIN 安全碼 (4位數字)" maxlength="4" class="input-box">
+            
+            <button onclick="submitApply()" class="btn-prime mt-8">確認註冊並提交</button>
+            <button onclick="location.reload()" class="w-full mt-6 text-xs text-slate-500">取消註冊</button>
         </div>
     </div>
 
     <div id="main" class="layer">
-        <h2 class="text-white font-black text-6xl mb-10 border-l-[15px] border-sky-500 pl-10 uppercase italic w-full max-w-[580px]">ELITE ADMIN</h2>
-        <div class="admin-section-title">📋 待審核招募名單</div>
-        <div id="interview-list" class="w-full flex flex-col items-center"><p class="text-slate-700 text-xs italic">尚無資料...</p></div>
-        <div class="admin-section-title">💰 夥伴人事與會計設定</div>
-        <div id="partner-list" class="w-full flex flex-col items-center"><p class="text-slate-700 text-xs italic">尚無資料...</p></div>
-        <button onclick="location.reload()" class="mt-32 mb-48 text-slate-700 font-black text-xs underline">安全登出系統</button>
-    </div>
+        <div class="w-full max-w-[580px]">
+            <h2 class="text-white font-black text-6xl mb-12 border-l-[12px] border-sky-500 pl-8 uppercase italic">ELITE ADMIN</h2>
+            
+            <p class="text-sky-500 font-black mb-6 border-b border-slate-800 pb-2 italic">📋 待審核名單 (Recruitment)</p>
+            <div id="interview-list" class="space-y-4 mb-16"></div>
 
-    <div id="edit-page" class="layer">
-        <div class="id-card shadow-orange-500/20 border-orange-900/20">
-            <h2 class="text-4xl font-black text-white mb-10 text-center italic">✏️ 修改夥伴檔案</h2>
-            <label class="label-sky">姓名</label><input type="text" id="ed_n" class="input-box">
-            <label class="label-sky">手機</label><input type="tel" id="ed_ph" class="input-box">
-            <label class="label-sky">PIN</label><input type="text" id="ed_pi" class="input-box">
-            <button onclick="window.commitPersonnelUpdate()" class="btn-prime !bg-orange-600 !text-white">儲存修正</button>
-            <button onclick="document.getElementById('edit-page').style.display='none'" class="w-full mt-8 text-sm">取消</button>
+            <p class="text-orange-500 font-black mb-6 border-b border-slate-800 pb-2 italic">💰 夥伴人事與會計設定</p>
+            <div id="partner-list" class="space-y-6"></div>
         </div>
+        <button onclick="location.reload()" class="mt-32 mb-48 text-slate-700 font-black text-xs underline tracking-[0.4em]">安全登出系統</button>
     </div>
 
     <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
@@ -103,7 +94,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let partners = [], logs = [], interviews = [], curF = '', editId = '', cache = {};
+        let partners = [], interviews = [], curF = '', cache = {};
 
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({ id: d.id, ...d.data() })); renderEliteAdmin(); });
         onSnapshot(collection(db, 'interviews'), s => { interviews = s.docs.map(d => ({ id: d.id, ...d.data() })); renderEliteAdmin(); });
@@ -111,62 +102,54 @@
         window.boot = () => {
             const ph = document.getElementById('login_phone').value, pi = document.getElementById('login_pin').value;
             if(ph === "0976017938" && pi === "0531") { document.getElementById('gate').style.display='none'; document.getElementById('main').style.display='flex'; return; }
-            alert("驗證失敗。");
+            alert("驗證錯誤。");
         };
 
-        window.showInterview = () => document.getElementById('interview-page').style.display = 'flex';
-        window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
+        window.showInterview = () => { document.getElementById('interview-page').style.display = 'flex'; };
+        window.showApply = () => { document.getElementById('apply-page').style.display = 'flex'; };
         window.triggerCam = (f) => { curF = f; document.getElementById('cam').click(); };
         window.handleFile = (i) => { const r = new FileReader(); r.onload = (e) => { cache[curF] = e.target.result; const p = document.getElementById('p_'+curF); p.src = e.target.result; p.style.display='block'; document.getElementById('t_'+curF).style.display='none'; }; r.readAsDataURL(i.files[0]); };
 
         window.submitInterview = async () => {
-            if(!document.getElementById('ai_agree').checked) return alert("請同意應徵規則！");
+            if(!document.getElementById('ai_agree').checked) return alert("請勾選同意。");
             await addDoc(collection(db, 'interviews'), { name: document.getElementById('int_name').value, phone: document.getElementById('int_phone').value, photo: cache['face']||'', answer: document.getElementById('int_ans').value, time: serverTimestamp() });
-            alert("提交成功。我們將審核您的資料。"); location.reload();
+            alert("提交成功，等候通知。"); location.reload();
         };
 
         window.submitApply = async () => {
             const n = document.getElementById('app_name').value, ph = document.getElementById('app_phone').value, pi = document.getElementById('app_pin').value;
-            if(!n || !ph || !pi) return alert("請填寫完整註冊資料！");
-            const d = { name: n, phone: ph, uid: pi, docs: cache, status: "pending", rate_del: 50, health_cnt: 1, total_del: 0, total_ret: 0, time: serverTimestamp() };
-            await addDoc(collection(db, 'partners'), d); alert("註冊完成，等候核准。"); location.reload();
+            if(!n || !ph || !pi) return alert("請填寫姓名、手機與 PIN！");
+            await addDoc(collection(db, 'partners'), { name: n, phone: ph, uid: pi, docs: cache, status: "pending", rate_del: 50, health_cnt: 1, total_del: 0, total_ret: 0, time: serverTimestamp() });
+            alert("註冊提交，請聯絡老闆核准。"); location.reload();
         };
 
         function renderEliteAdmin() {
             const intList = document.getElementById('interview-list');
-            if(interviews.length > 0) {
-                intList.innerHTML = interviews.map(i => `<div class="id-card !p-8 mb-6 border-sky-500/50 border-2 flex items-center gap-6"><img src="${i.photo}" class="w-16 h-16 rounded-xl object-cover"><div><p class="text-white font-bold">${i.name}</p><p class="text-xs">${i.phone}</p></div><button onclick="window.delInt('${i.id}')" class="ml-auto text-red-500 text-xs">刪除</button></div>`).join('');
-            }
+            intList.innerHTML = interviews.length > 0 ? interviews.map(i => `<div class="id-card !p-6 mb-4 border-sky-500/30 border-2 flex items-center gap-6"><img src="${i.photo}" class="w-14 h-14 rounded-xl object-cover"><div><p class="text-white font-bold text-sm">${i.name}</p><p class="text-[10px]">${i.phone}</p></div><button onclick="window.delInt('${i.id}')" class="ml-auto text-red-500 text-[10px] underline">移除</button></div>`).join('') : `<p class="text-slate-800 text-[10px] italic">目前無初審申請</p>`;
+            
             const partList = document.getElementById('partner-list');
-            const approved = partners.filter(x => x.status === "approved");
             const pending = partners.filter(x => x.status === "pending");
-            let p_html = pending.map(p => `<div class="id-card !p-8 mb-6 border-orange-500/50 border-2 flex justify-between items-center"><p class="text-white">${p.name} (待核准)</p><button onclick="window.approveReq('${p.id}')" class="bg-sky-600 px-6 py-2 rounded-xl text-white text-sm">核准</button></div>`).join('');
-            p_html += approved.map(p => `
-                <div class="id-card !p-10 mb-10 border-slate-800">
-                    <div class="flex justify-between items-center mb-10"><p class="text-white font-black text-4xl">${p.name}</p><button onclick="window.initModifyPanel('${p.id}')" class="text-xs text-orange-500 underline">✏️ 修改人事</button></div>
-                    <div class="grid grid-cols-2 gap-6"><div><label class="text-[10px] uppercase">單價</label><input id="rd_${p.id}" type="number" value="${p.rate_del||50}" class="input-box !py-3 !mb-0"></div><div><label class="text-[10px] uppercase">健保人數</label><input id="rhc_${p.id}" type="number" value="${p.health_cnt||1}" class="input-box !py-3 !mb-0"></div></div>
-                    <button onclick="window.saveSync('${p.id}')" class="btn-prime !py-4 mt-6 text-sm">同步參數</button>
-                </div>`).join('');
-            partList.innerHTML = p_html || `<p class="text-slate-700 text-xs italic">目前尚無資料...</p>`;
+            const approved = partners.filter(x => x.status === "approved");
+            
+            let h = pending.map(p => `<div class="id-card !p-6 border-orange-500/30 border-2 flex justify-between items-center"><p class="text-white text-sm font-bold">${p.name} (待核准)</p><button onclick="window.approveReq('${p.id}')" class="bg-sky-600 px-6 py-2 rounded-xl text-white text-xs font-black">核准進入系統</button></div>`).join('');
+            h += approved.map(p => `<div class="id-card !p-8 border-slate-800">
+                <div class="flex justify-between items-center mb-6"><p class="text-white font-black text-3xl">${p.name}</p></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[9px] uppercase tracking-tighter mb-2 block">配送單價</label><input id="rd_${p.id}" type="number" value="${p.rate_del||50}" class="input-box !py-2 !mb-0 text-center"></div>
+                    <div><label class="text-[9px] uppercase tracking-tighter mb-2 block">健保人數</label><input id="rhc_${p.id}" type="number" value="${p.health_cnt||1}" class="input-box !py-2 !mb-0 text-center"></div>
+                </div>
+                <button onclick="window.saveSync('${p.id}')" class="btn-prime !py-3 mt-6 text-xs !rounded-xl">同步更新</button>
+            </div>`).join('');
+            partList.innerHTML = h || `<p class="text-slate-800 text-[10px] italic">尚無正式夥伴</p>`;
         }
-
-        window.initModifyPanel = (id) => {
-            const p = partners.find(x => x.id === id); editId = id; document.getElementById('edit-page').style.display = 'flex';
-            document.getElementById('ed_n').value = p.name; document.getElementById('ed_ph').value = p.phone; document.getElementById('ed_pi').value = p.uid;
-        };
-
-        window.commitPersonnelUpdate = async () => {
-            await updateDoc(doc(db, 'partners', editId), { name: document.getElementById('ed_n').value, phone: document.getElementById('ed_ph').value, uid: document.getElementById('ed_pi').value });
-            alert("存檔成功！"); document.getElementById('edit-page').style.display='none';
-        };
 
         window.saveSync = async (id) => {
             await updateDoc(doc(db, 'partners', id), { rate_del: parseInt(document.getElementById('rd_'+id).value), health_cnt: parseInt(document.getElementById('rhc_'+id).value) });
-            alert("同步成功。");
+            alert("同步完成。");
         };
 
-        window.delInt = async (id) => { if(confirm("刪除面試者？")) await deleteDoc(doc(db, 'interviews', id)); };
-        window.approveReq = async (id) => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); alert("已核准！"); };
+        window.delInt = async (id) => { if(confirm("確定移除？")) await deleteDoc(doc(db, 'interviews', id)); };
+        window.approveReq = async (id) => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); alert("已准許加入。"); };
     </script>
 </body>
 </html>
