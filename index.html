@@ -3,122 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流 V2 - 數位營運總控</title>
+    <title>在地物流 V3 - 數位總控</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; }
-        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 500px; background: #0f172a; border-radius: 2rem; padding: 30px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .input-box { background: rgba(30, 41, 59, 0.4); border: 1px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #ffffff; outline: none; margin-bottom: 12px; text-align: center; }
-        .btn-prime { width: 100%; padding: 18px; border-radius: 1.2rem; background: #0ea5e9; color: #ffffff; font-weight: 800; font-size: 18px; cursor: pointer; border: none; }
+        .v3-layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
+        .card-glow { background: #0f172a; border-radius: 2rem; border: 1px solid #1e293b; box-shadow: 0 0 40px rgba(14, 165, 233, 0.1); }
+        .input-v3 { background: rgba(30, 41, 59, 0.6); border: 1px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #fff; text-align: center; margin-bottom: 12px; outline: none; }
+        .input-v3:focus { border-color: #0ea5e9; }
+        .btn-v3 { width: 100%; padding: 18px; border-radius: 1.2rem; background: #0ea5e9; color: #fff; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-v3:active { transform: scale(0.95); }
         
-        /* 行政控盤表 - 增加滾動條樣式 */
-        .admin-table th { font-size: 10px; color: #64748b; padding: 10px; border-bottom: 1px solid #1e293b; }
-        .admin-table td { font-size: 11px; padding: 12px 8px; border-bottom: 1px solid #0f172a; }
+        /* 行政表格 */
+        .v3-table th { font-size: 11px; color: #64748b; padding: 12px; border-bottom: 1px solid #1e293b; text-transform: uppercase; }
+        .v3-table td { font-size: 12px; padding: 15px 8px; border-bottom: 1px solid #0f172a; }
+        
+        /* AI 燈號系統 */
+        .v3-tag { padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: 900; border: 1px solid currentColor; }
+        .v3-safe { color: #4ade80; background: rgba(22, 101, 52, 0.1); }
+        .v3-warn { color: #fbbf24; background: rgba(146, 64, 14, 0.1); }
+        .v3-risk { color: #f87171; background: rgba(153, 27, 27, 0.1); }
 
-        /* AI 燈號 */
-        .status-pill { padding: 2px 8px; border-radius: 99px; font-size: 9px; font-weight: bold; border: 1px solid currentColor; }
-        .safe { color: #4ade80; border-color: #166534; background: rgba(22, 101, 52, 0.1); }
-        .warning { color: #facc15; border-color: #854d0e; background: rgba(133, 77, 14, 0.1); }
-        .danger { color: #f87171; border-color: #7f1d1d; background: rgba(127, 29, 29, 0.1); }
-
-        .loading-overlay { position: fixed; inset: 0; background: #020617; z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .loading-v3 { position: fixed; inset: 0; background: #020617; z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
     </style>
 </head>
 <body>
 
-    <div id="loading" class="loading-overlay">
-        <p class="text-sky-500 font-bold animate-pulse">數據同步中...</p>
+    <div id="loading-v3" class="loading-v3">
+        <div class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 text-sky-500 font-bold tracking-widest text-sm">LOADING V3 SYSTEM...</p>
     </div>
 
-    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-5xl font-black text-white italic mb-2">在地物流</h1>
-        <p class="text-slate-600 text-[10px] tracking-[0.4em] mb-10">CORE OPERATIONS SYSTEM</p>
+    <div id="v3-gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流<span class="text-sky-500 text-sm ml-2">V3</span></h1>
+        <p class="text-slate-600 text-[10px] tracking-[0.5em] mb-12 uppercase">Digital Intelligence Hub</p>
         
-        <div class="w-full max-w-[320px] space-y-4">
-            <div class="bg-slate-900 p-6 rounded-[2rem] border border-slate-800">
-                <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box">
-                <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box">
-                <button onclick="window.boot()" class="btn-prime">進入系統</button>
+        <div class="w-full max-w-[340px] space-y-4">
+            <div class="card-glow p-8">
+                <input type="tel" id="v3_login_phone" placeholder="手機號碼" class="input-v3">
+                <input type="password" id="v3_login_pin" placeholder="PIN 碼" class="input-v3">
+                <button onclick="window.v3Boot()" class="btn-v3 shadow-lg shadow-sky-900/20">進入系統</button>
             </div>
-            <button onclick="window.showLayer('v2-interview')" class="w-full py-4 rounded-xl border border-sky-500 text-sky-500 font-bold">新夥伴：實務功能評估</button>
+            <button onclick="window.v3Show('v3-ai-interview')" class="w-full py-4 rounded-2xl border border-sky-500 text-sky-400 font-bold hover:bg-sky-500/10 transition">新夥伴：AI 職能評估入口</button>
         </div>
     </div>
 
-    <div id="admin" class="layer">
-        <div class="w-full max-w-[1400px]">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-white font-black text-3xl italic">老闆行政總控</h2>
-                <button onclick="location.reload()" class="text-xs text-slate-500 underline">登出</button>
+    <div id="v3-ai-interview" class="v3-layer">
+        <div class="w-full max-w-[500px] py-10">
+            <div class="card-glow p-8">
+                <h2 class="text-3xl font-black text-white italic mb-2">職能評估</h2>
+                <p class="text-slate-500 text-xs mb-8">數據將直接影響帳號權限與 AI 風險標記</p>
+                
+                <div class="space-y-4 mb-10">
+                    <input type="text" id="v3_int_name" placeholder="真實姓名" class="input-v3">
+                    <input type="tel" id="v3_int_phone" placeholder="手機號碼" class="input-v3" maxlength="10">
+                </div>
+
+                <div class="space-y-8 text-left">
+                    <div class="p-5 bg-slate-800/20 rounded-2xl border border-slate-800">
+                        <p class="text-white text-sm font-bold mb-4">1. 配送途中發生輕微擦撞，包裹無損？</p>
+                        <div class="space-y-3">
+                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q1" value="25" class="mr-2"> 立即報警、聯繫公司回報</label>
+                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q1" value="0" class="mr-2"> 沒事就先送完，不浪費時間</label>
+                        </div>
+                    </div>
+
+                    <div class="p-5 bg-slate-800/20 rounded-2xl border border-slate-800">
+                        <p class="text-white text-sm font-bold mb-4">2. 發現包裹內容物有液體滲出痕跡？</p>
+                        <div class="space-y-3">
+                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q2" value="25" class="mr-2"> 拍照並聯繫站點，告知收件人</label>
+                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q2" value="0" class="mr-2"> 裝作不知道，送達簽收為止</label>
+                        </div>
+                    </div>
+
+                    <div class="p-5 bg-slate-800/20 rounded-2xl border border-slate-800">
+                        <p class="text-white text-sm font-bold mb-4">3. 客戶不在家要求改送到隔壁條街？</p>
+                        <div class="space-y-3">
+                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q3" value="25" class="mr-2"> 請客戶聯繫客服改派，保障權益</label>
+                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q3" value="10" class="mr-2"> 為了方便直接幫他送過去</label>
+                        </div>
+                    </div>
+
+                    <div class="p-5 bg-slate-800/20 rounded-2xl border border-slate-800">
+                        <p class="text-white text-sm font-bold mb-4">4. 配送中手機突然沒電，無法回報系統？</p>
+                        <div class="space-y-3">
+                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q4" value="25" class="mr-2"> 找充電站處理，確保數據即時</label>
+                            <label class="block text-xs cursor-pointer"><input type="radio" name="v3q4" value="5" class="mr-2"> 先送完，明天再請後台補登</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="window.v3SubmitInterview()" class="btn-v3 mt-10">提交資料並建立帳號</button>
+                <button onclick="window.v3Hide()" class="w-full mt-4 text-xs text-slate-600">取消</button>
             </div>
-            <div class="bg-slate-900 rounded-3xl overflow-hidden border border-slate-800">
-                <table class="w-full admin-table text-center">
+        </div>
+    </div>
+
+    <div id="v3-admin" class="v3-layer !px-6">
+        <div class="w-full max-w-[1400px] py-10">
+            <div class="flex justify-between items-end mb-10">
+                <h2 class="text-white font-black text-4xl italic">老闆行政控盤</h2>
+                <button onclick="location.reload()" class="bg-slate-800 px-6 py-2 rounded-full text-xs text-slate-400">登出</button>
+            </div>
+            
+            <div class="bg-slate-900 rounded-[2.5rem] overflow-x-auto border border-slate-800 shadow-2xl">
+                <table class="w-full v3-table text-center min-w-[1000px]">
                     <thead>
                         <tr>
-                            <th>狀態</th><th>姓名/手機</th><th>AI 風險評估</th><th>正/逆件</th><th>加保</th><th>2026 級距</th><th>應付淨額</th><th>操作</th>
+                            <th>狀態</th><th>夥伴</th><th>AI 風險評估</th><th>正件</th><th>逆件</th><th>加保</th><th>2026 級距</th><th>應付淨額</th><th>操作</th>
                         </tr>
                     </thead>
-                    <tbody id="admin-render" class="text-white"></tbody>
+                    <tbody id="v3-admin-render" class="text-white"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <div id="v2-interview" class="layer">
-        <div class="w-full max-w-[480px]">
-            <div class="id-card">
-                <h2 class="text-2xl font-black text-white mb-6 border-b border-sky-900 pb-2 italic">夥伴實務職能評估</h2>
-                
-                <input type="text" id="int_name" placeholder="您的姓名" class="input-box">
-                <input type="tel" id="int_phone" placeholder="手機號碼" class="input-box" maxlength="10">
-
-                <div class="space-y-6 text-left mt-6">
-                    <div class="bg-slate-800/30 p-4 rounded-xl">
-                        <p class="text-white text-sm font-bold mb-3">1. 配送時不慎擦撞路邊車輛，包裹沒損壞？</p>
-                        <div class="space-y-2 text-xs">
-                            <label class="block"><input type="radio" name="q1" value="25"> 報警拍照並即時回報公司</label>
-                            <label class="block"><input type="radio" name="q1" value="0"> 沒事就先送完，晚上再說</label>
-                        </div>
+    <div id="v3-hub" class="v3-layer">
+        <div class="w-full max-w-[420px] py-20">
+            <h2 id="v3-hub-name" class="text-4xl font-black text-white italic mb-10 text-center">夥伴工作台</h2>
+            <div class="card-glow p-8 text-left">
+                <div class="grid grid-cols-2 gap-4 mb-10">
+                    <div>
+                        <span class="text-sky-500 text-[10px] font-bold block mb-2">配送正件</span>
+                        <input type="number" id="v3_rep_del" placeholder="0" class="input-v3 text-3xl font-black">
                     </div>
-                    <div class="bg-slate-800/30 p-4 rounded-xl">
-                        <p class="text-white text-sm font-bold mb-3">2. 發現包裹內容物有滲漏痕跡？</p>
-                        <div class="space-y-2 text-xs">
-                            <label class="block"><input type="radio" name="q2" value="25"> 拍照帶回站點，聯繫收件人</label>
-                            <label class="block"><input type="radio" name="q2" value="0"> 裝不知道，送達簽收為止</label>
-                        </div>
-                    </div>
-                    <div class="bg-slate-800/30 p-4 rounded-xl">
-                        <p class="text-white text-sm font-bold mb-3">3. 客戶要求改送到不同地址（跨區）？</p>
-                        <div class="space-y-2 text-xs">
-                            <label class="block"><input type="radio" name="q3" value="25"> 請客戶聯繫客服，依規範改派</label>
-                            <label class="block"><input type="radio" name="q3" value="10"> 私下幫忙送過去</label>
-                        </div>
-                    </div>
-                    <div class="bg-slate-800/30 p-4 rounded-xl">
-                        <p class="text-white text-sm font-bold mb-3">4. 配送中手機電量耗盡無法掃描包裹？</p>
-                        <div class="space-y-2 text-xs">
-                            <label class="block"><input type="radio" name="q4" value="25"> 找地方充電後過刷，確保數據即時</label>
-                            <label class="block"><input type="radio" name="q4" value="5"> 先送完，隔天再請人工補錄</label>
-                        </div>
+                    <div>
+                        <span class="text-orange-500 text-[10px] font-bold block mb-2">逆物流</span>
+                        <input type="number" id="v3_rep_rev" placeholder="0" class="input-v3 text-3xl font-black text-orange-400">
                     </div>
                 </div>
-
-                <button onclick="window.submitInterview()" class="btn-prime mt-8">提交評估數據</button>
-                <button onclick="window.hideAll()" class="w-full mt-4 text-xs text-slate-600">返回</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="hub" class="layer">
-        <div class="w-full max-w-[400px]">
-            <h2 id="hub-name" class="text-3xl font-black text-white mb-8">夥伴工作台</h2>
-            <div class="id-card">
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div><span class="text-[10px] block mb-1">配送正件</span><input type="number" id="rep_del" class="input-box text-2xl"></div>
-                    <div><span class="text-[10px] block mb-1 text-orange-500">逆物流</span><input type="number" id="rep_rev" class="input-box text-2xl"></div>
-                </div>
-                <button onclick="window.submitReport()" class="btn-prime bg-green-600">提交今日報表</button>
-                <button onclick="location.reload()" class="mt-6 text-xs text-slate-600 underline">登出帳號</button>
+                <button onclick="window.v3SubmitReport()" class="btn-v3 bg-green-600">提交今日數據</button>
+                <button onclick="location.reload()" class="w-full mt-8 text-xs text-slate-600 underline">登出帳號</button>
             </div>
         </div>
     </div>
@@ -147,99 +163,94 @@
         let isReady = false;
         let activeUser = null;
 
-        window.setLoad = (s) => document.getElementById('loading').style.display = s ? 'flex' : 'none';
-
-        // 登入
-        window.boot = () => {
-            const ph = document.getElementById('login_phone').value.trim();
-            const pi = document.getElementById('login_pin').value.trim();
-            if(ph === "0976017938" && pi === "0531") return window.renderAdmin();
+        window.v3Boot = () => {
+            const ph = document.getElementById('v3_login_phone').value.trim();
+            const pi = document.getElementById('v3_login_pin').value.trim();
+            if(ph === "0976017938" && pi === "0531") return window.v3RenderAdmin();
             const target = partners.find(x => x.phone === ph);
             if(target && target.status === "approved" && target.pin === pi) {
                 activeUser = target;
-                window.showLayer('hub');
-                document.getElementById('hub-name').innerText = target.name;
-            } else alert("資料錯誤或審核中");
+                window.v3Show('v3-hub');
+                document.getElementById('v3-hub-name').innerText = target.name;
+            } else alert("帳號錯誤或尚未核准");
         };
 
-        // 行政渲染
-        window.renderAdmin = () => {
-            window.showLayer('admin');
-            const target = document.getElementById('admin-render');
+        window.v3RenderAdmin = () => {
+            window.v3Show('v3-admin');
+            const target = document.getElementById('v3-admin-render');
             let html = '';
             partners.forEach(p => {
                 const isIns = p.ins_toggle !== false;
                 const b = p.ins_base || 29500;
-                const fm = p.ins_fm || 1;
-                const totalIns = isIns ? Math.round(b * 0.025 + b * 0.01551 * fm) : 0;
-                const income = (p.total_del || 0) * (p.custom_del || 15) + (p.total_rev || 0) * (p.custom_rev || 10);
+                const totalIns = isIns ? Math.round(b * 0.025 + b * 0.01551 * (p.ins_fm || 1)) : 0;
+                const income = (p.total_del || 0) * 15 + (p.total_rev || 0) * 10;
                 
-                let riskClass = "safe";
-                if(p.ai_analysis.includes("風險")) riskClass = "danger";
-                if(p.ai_analysis.includes("培訓")) riskClass = "warning";
+                let tagStyle = "v3-safe";
+                if(p.ai_analysis.includes("風險")) tagStyle = "v3-risk";
+                if(p.ai_analysis.includes("培訓")) tagStyle = "v3-warn";
 
                 html += `<tr>
-                    <td>${p.status === 'approved' ? '✅' : `<button onclick="window.upField('${p.id}','status','approved')" class="text-[10px] bg-sky-600 px-2 rounded">核准</button>`}</td>
-                    <td>${p.name}<br><small class="text-slate-500">${p.phone}</small></td>
-                    <td><span class="status-pill ${riskClass}">${p.ai_analysis}</span></td>
-                    <td>${p.total_del || 0}/${p.total_rev || 0}</td>
-                    <td><button onclick="window.upField('${p.id}','ins_toggle',${!isIns})" class="text-[10px] ${isIns?'text-green-500':'text-red-500'}">${isIns?'開':'關'}</button></td>
+                    <td>${p.status==='approved'?'✅':'<span class="text-orange-500">待審</span>'}</td>
+                    <td class="text-left"><b>${p.name}</b><br><small class="text-slate-500">${p.phone}</small></td>
+                    <td><span class="v3-tag ${tagStyle}">${p.ai_analysis}</span></td>
+                    <td>${p.total_del || 0} / ${p.total_rev || 0}</td>
+                    <td><button onclick="window.v3Up('${p.id}','ins_toggle',${!isIns})">${isIns?'✔️':'❌'}</button></td>
                     <td>${b}</td>
                     <td class="text-sky-400 font-bold">$${income - totalIns}</td>
-                    <td><button onclick="window.delPartner('${p.id}')">🗑️</button></td>
+                    <td>
+                        <button onclick="window.v3Up('${p.id}','status','approved')" class="text-sky-500 mr-2">核准</button>
+                        <button onclick="window.v3Del('${p.id}')" class="text-red-900">🗑️</button>
+                    </td>
                 </tr>`;
             });
             target.innerHTML = html;
         };
 
-        // 提交面試 (含邏輯判定)
-        window.submitInterview = async () => {
-            const name = document.getElementById('int_name').value.trim();
-            const ph = document.getElementById('int_phone').value.trim();
+        window.v3SubmitInterview = async () => {
+            const name = document.getElementById('v3_int_name').value.trim();
+            const ph = document.getElementById('v3_int_phone').value.trim();
             const q = [
-                document.querySelector('input[name="q1"]:checked')?.value,
-                document.querySelector('input[name="q2"]:checked')?.value,
-                document.querySelector('input[name="q3"]:checked')?.value,
-                document.querySelector('input[name="q4"]:checked')?.value
+                document.querySelector('input[name="v3q1"]:checked')?.value,
+                document.querySelector('input[name="v3q2"]:checked')?.value,
+                document.querySelector('input[name="v3q3"]:checked')?.value,
+                document.querySelector('input[name="v3q4"]:checked')?.value
             ];
-            if(!name || !ph || q.includes(undefined)) return alert("請填齊內容");
+            if(!name || !ph || q.includes(undefined)) return alert("請完整回答所有問題");
 
             const score = q.reduce((a, b) => parseInt(a) + parseInt(b), 0);
             let analysis = "✅ 穩定可靠";
             if(score < 50) analysis = "🚫 高度風險";
             else if(score < 80) analysis = "⚠️ 需再培訓";
-            if(q[1] === "0") analysis += " | 🚩 誠信警示";
+            if(q[1] === "0") analysis += " | 誠信警告";
 
-            window.setLoad(true);
             await setDoc(doc(partnersCol, `p_${ph}`), {
                 id: `p_${ph}`, name, phone: ph, pin: "0000", status: "pending_review", 
-                ai_analysis: analysis, total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, 
-                ins_base: 29500, ins_fm: 1, ins_toggle: true, createdAt: serverTimestamp()
+                ai_analysis: analysis, total_del: 0, total_rev: 0, ins_base: 29500, ins_fm: 1, createdAt: serverTimestamp()
             });
-            alert("提交成功，預設 PIN 為 0000");
+            alert("提交成功！請聯繫老闆開通。");
             location.reload();
         };
 
-        window.submitReport = async () => {
-            const d = parseInt(document.getElementById('rep_del').value) || 0;
-            const r = parseInt(document.getElementById('rep_rev').value) || 0;
+        window.v3SubmitReport = async () => {
+            const d = parseInt(document.getElementById('v3_rep_del').value) || 0;
+            const r = parseInt(document.getElementById('v3_rep_rev').value) || 0;
             await updateDoc(doc(partnersCol, activeUser.id), { total_del: increment(d), total_rev: increment(r) });
-            alert("回報完成");
-            document.getElementById('rep_del').value = ""; document.getElementById('rep_rev').value = "";
+            alert("回報完成！");
+            document.getElementById('v3_rep_del').value = ""; document.getElementById('v3_rep_rev').value = "";
         };
 
-        window.upField = async (id, f, v) => { await updateDoc(doc(partnersCol, id), { [f]: v }); };
-        window.delPartner = async (id) => { if(confirm("確定刪除?")) await deleteDoc(doc(partnersCol, id)); };
-        window.showLayer = id => { window.hideAll(); document.getElementById(id).style.display='flex'; };
-        window.hideAll = () => { document.querySelectorAll('.layer').forEach(l=>l.style.display='none'); document.getElementById('gate').style.display='flex'; };
+        window.v3Up = async (id, f, v) => { await updateDoc(doc(partnersCol, id), { [f]: v }); };
+        window.v3Del = async (id) => { if(confirm("確定刪除?")) await deleteDoc(doc(partnersCol, id)); };
+        window.v3Show = id => { window.v3Hide(); document.getElementById(id).style.display='flex'; };
+        window.v3Hide = () => { document.querySelectorAll('.v3-layer').forEach(l=>l.style.display='none'); document.getElementById('v3-gate').style.display='flex'; };
 
         (async () => {
             await signInAnonymously(auth);
             onSnapshot(partnersCol, s => {
                 partners = s.docs.map(d => d.data());
                 isReady = true;
-                if(document.getElementById('admin').style.display === 'flex') window.renderAdmin();
-                window.setLoad(false);
+                if(document.getElementById('v3-admin').style.display === 'flex') window.v3RenderAdmin();
+                document.getElementById('loading-v3').style.display = 'none';
             });
         })();
     </script>
