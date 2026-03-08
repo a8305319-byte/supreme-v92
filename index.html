@@ -16,7 +16,10 @@
         .photo-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: none; }
         .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; transition: all 0.2s; border: none; }
         .btn-prime:active { scale: 0.96; }
-        .btn-export { background: #10b981; color: white; padding: 8px 16px; border-radius: 0.8rem; font-weight: bold; font-size: 13px; }
+        /* 記住我 樣式 */
+        .remember-wrap { display: flex; align-items: center; gap: 8px; margin-top: -5px; margin-bottom: 15px; width: 100%; justify-content: start; padding-left: 5px; }
+        .remember-wrap input { width: 16px; height: 16px; accent-color: #0ea5e9; }
+        .remember-wrap label { font-size: 13px; color: #64748b; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -24,11 +27,17 @@
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-4xl font-black text-white italic mb-2">SUPREME</h1>
         <p class="text-slate-500 text-sm mb-10 tracking-widest">物流管理系統</p>
-        <div class="w-full max-w-[320px] space-y-4">
-            <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center">
-            <input type="password" id="login_pin" placeholder="密碼 (PIN)" class="input-box text-center">
-            <button onclick="boot()" class="btn-prime">確認登入</button>
-            <button onclick="showApply()" class="text-sm text-slate-500 underline mt-8 block mx-auto">司機入職申請</button>
+        <div class="w-full max-w-[320px] flex flex-col items-center">
+            <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center w-full">
+            <input type="password" id="login_pin" placeholder="密碼 (PIN)" class="input-box text-center w-full">
+            
+            <div class="remember-wrap">
+                <input type="checkbox" id="remember_me">
+                <label for="remember_me">記住帳號密碼</label>
+            </div>
+
+            <button onclick="boot()" class="btn-prime w-full shadow-lg shadow-sky-500/10">確認登入</button>
+            <button onclick="showApply()" class="text-sm text-slate-600 underline mt-12 block mx-auto">司機入職申請</button>
         </div>
     </div>
 
@@ -83,16 +92,37 @@
 
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
 
+        // 初始化檢查「記住我」
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedPhone = localStorage.getItem('supreme_phone');
+            const savedPin = localStorage.getItem('supreme_pin');
+            if (savedPhone && savedPin) {
+                document.getElementById('login_phone').value = savedPhone;
+                document.getElementById('login_pin').value = atob(savedPin); // 基礎解密
+                document.getElementById('remember_me').checked = true;
+            }
+        });
+
         window.boot = () => {
             const phone = document.getElementById('login_phone').value;
             const pin = document.getElementById('login_pin').value;
+            const remember = document.getElementById('remember_me').checked;
 
-            // 管理員專屬登入資訊
+            // 處理記住密碼邏輯
+            if (remember) {
+                localStorage.setItem('supreme_phone', phone);
+                localStorage.setItem('supreme_pin', btoa(pin)); // 基礎加密
+            } else {
+                localStorage.removeItem('supreme_phone');
+                localStorage.removeItem('supreme_pin');
+            }
+
+            // 管理員登入
             if(phone === "0976017938" && pin === "0531") return renderAdmin();
             
             const p = partners.find(x => x.phone === phone && x.uid === pin && x.status === "approved");
             if(p) return renderDriverUI(p);
-            alert("帳號密碼錯誤或尚未通過審核");
+            alert("登入失敗：請檢查帳號密碼或等待審核");
         };
 
         window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
@@ -110,7 +140,7 @@
 
         window.submitApply = async () => {
             const phone = document.getElementById('app_phone').value;
-            if(partners.some(x => x.phone === phone)) return alert("此手機號碼已註冊");
+            if(partners.some(x => x.phone === phone)) return alert("此號碼已註冊");
             const data = {
                 name: document.getElementById('app_name').value,
                 phone: phone, uid: document.getElementById('app_pin').value,
@@ -121,7 +151,7 @@
                 total_del: 0, total_ret: 0, applyTime: serverTimestamp()
             };
             await addDoc(collection(db, 'partners'), data);
-            alert("申請已提交，請聯絡管理員審核"); location.reload();
+            alert("提交完成"); location.reload();
         };
 
         function renderDriverUI(p) {
@@ -170,11 +200,11 @@
             let html = `
                 <div class="w-full max-w-[480px]">
                     <div class="flex justify-between items-center mb-8">
-                        <h2 class="text-white font-bold text-xl tracking-wider">管理中心</h2>
-                        <button onclick="window.exportCSV()" class="btn-export">匯出薪資</button>
+                        <h2 class="text-white font-bold text-xl">管理中心</h2>
+                        <button onclick="window.exportCSV()" class="btn-prime !w-auto !py-2 !px-4 !text-xs bg-green-600 text-white">匯出薪資</button>
                     </div>`;
             if(pending.length > 0) {
-                html += `<p class="text-orange-500 font-bold mb-3">待審核項目</p>`;
+                html += `<p class="text-orange-500 font-bold mb-3">待審核</p>`;
                 html += pending.map(p => `
                     <div class="id-card !bg-slate-900 border-orange-900/30">
                         <p class="text-white font-bold mb-3">${p.name}</p>
@@ -182,14 +212,10 @@
                             <label class="text-xs">勞保: <select id="l_${p.id}" class="bg-slate-800 rounded px-1"><option value="1">1</option><option value="2">2</option></select></label>
                             <label class="text-xs">健保: <select id="h_${p.id}" class="bg-slate-800 rounded px-1"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
                         </div>
-                        <div class="flex gap-2 mb-6">
-                            <img src="${p.docs.id_f}" class="h-10 w-full object-cover rounded" onclick="window.open(this.src)">
-                            <img src="${p.docs.lic}" class="h-10 w-full object-cover rounded" onclick="window.open(this.src)">
-                        </div>
                         <button onclick="window.finalApprove('${p.id}')" class="btn-prime h-10 py-0 text-sm">核准入職</button>
                     </div>`).join('');
             }
-            html += `<p class="text-slate-500 font-bold mb-3">薪資結算概覽</p>`;
+            html += `<p class="text-slate-500 font-bold mb-3">薪資概覽</p>`;
             html += approved.map(p => {
                 const pay = (p.total_del * rates.del) + (p.total_ret * rates.ret) - rates.labor - (p.h_cnt * rates.health);
                 return `<div class="id-card !bg-slate-900/40 border-slate-800"><div class="flex justify-between items-center"><p class="text-white font-bold">${p.name}</p><p class="text-sky-400 font-black text-2xl">$${pay.toLocaleString()}</p></div></div>`;
@@ -208,7 +234,7 @@
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `SUPREME_薪資報表_${new Date().toLocaleDateString()}.csv`;
+            link.download = `薪資報表_${new Date().toLocaleDateString()}.csv`;
             link.click();
         };
 
