@@ -1,161 +1,32 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME V92 PRIVATE ADMIN</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; }
-        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; }
-        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 10px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 14px; }
-        .label-text { font-size: 10px; color: #38bdf8; font-weight: bold; margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 1px; }
-        .photo-btn { background: #0f172a; border: 1px dashed #334155; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; }
-        .photo-btn img { width: 100%; height: 80px; object-fit: contain; display: none; margin-top: 5px; border-radius: 5px; }
-        .btn-blue { width: 100%; padding: 18px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; margin-top: 15px; }
-        .admin-select { background: #1e293b; border: 1px solid #0ea5e9; color: white; padding: 2px 5px; border-radius: 5px; font-size: 12px; }
-    </style>
-</head>
-<body>
-    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-4xl font-black text-white italic mb-1 uppercase tracking-tighter">Supreme</h1>
-        <p class="text-[8px] text-slate-600 tracking-[0.6em] mb-12 uppercase">Internal Fleet Portal</p>
-        <input type="password" id="pin" placeholder="PIN CODE" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-2xl text-sky-400 w-48 outline-none pb-2 tracking-[0.3em]">
-        <button onclick="boot()" class="mt-12 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] uppercase">Login</button>
-        <button onclick="showApply()" class="mt-8 text-[10px] text-slate-700 underline uppercase tracking-widest">New Driver / 申請加入</button>
-    </div>
+// 在提交申請的 function 中加入檢查邏輯
+window.submitApply = async () => {
+    const pin = document.getElementById('app_pin').value;
+    
+    // 🔍 檢查 PIN 碼是否已經被佔用 (包括審核中與已核准的)
+    const isDuplicate = partners.some(p => p.uid === pin);
+    
+    if (isDuplicate) {
+        alert("❌ 此 PIN 碼已被其他司機使用，請重新設定（建議使用手機末 4 碼）");
+        document.getElementById('app_pin').value = "";
+        return;
+    }
 
-    <div id="apply-page" class="layer">
-        <div class="id-card">
-            <h2 class="text-xl font-black text-white italic mb-6 text-center uppercase tracking-widest">加入車隊申請</h2>
-            
-            <span class="label-text">1. 基本身分</span>
-            <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
-            <input type="password" id="app_pin" placeholder="登入 PIN (4碼)" inputmode="numeric" maxlength="4" class="input-box">
-            <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
-            <input type="tel" id="app_phone" placeholder="聯絡電話" class="input-box">
+    const btn = document.getElementById('subBtn');
+    btn.innerHTML = "提交中...";
+    btn.disabled = true;
 
-            <span class="label-text">2. 證件拍攝 (請正放拍攝)</span>
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                <div class="photo-btn" onclick="triggerCam('id_f')"><span class="text-[9px]">身分證(正)</span><img id="prev_id_f"></div>
-                <div class="photo-btn" onclick="triggerCam('id_b')"><span class="text-[9px]">身分證(反)</span><img id="prev_id_b"></div>
-                <div class="photo-btn" onclick="triggerCam('lic')"><span class="text-[9px]">駕駛執照</span><img id="prev_lic"></div>
-                <div class="photo-btn" onclick="triggerCam('car')"><span class="text-[9px]">行車執照</span><img id="prev_car"></div>
-                <input type="file" id="cam_input" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
-            </div>
+    const data = {
+        name: document.getElementById('app_name').value,
+        uid: pin,
+        // ...其餘欄位保持不變
+    };
 
-            <span class="label-text">3. 地址資訊</span>
-            <input type="text" id="app_h_addr" placeholder="戶籍地址" class="input-box">
-            <input type="text" id="app_c_addr" placeholder="通訊地址" class="input-box">
-
-            <button onclick="submitApply()" id="subBtn" class="btn-blue">提交申請</button>
-            <button onclick="location.reload()" class="w-full mt-4 text-[10px] text-slate-600 uppercase">返回</button>
-        </div>
-    </div>
-
-    <div id="main" class="layer">
-        <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase">Sign Out</button>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-            authDomain: "supreme-v92.firebaseapp.com",
-            projectId: "supreme-v92",
-            storageBucket: "supreme-v92.firebasestorage.app",
-            messagingSenderId: "485530156296",
-            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        let partners = [];
-        let currentField = '';
-        const photos = {};
-
-        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
-
-        window.boot = () => { if(document.getElementById('pin').value === "9999") renderAdmin(); else alert("DENIED"); };
-        window.showApply = () => { document.getElementById('apply-page').style.display = 'flex'; };
-
-        window.triggerCam = (f) => { currentField = f; document.getElementById('cam_input').click(); };
-        window.handleFile = (input) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                photos[currentField] = e.target.result;
-                const img = document.getElementById('prev_'+currentField);
-                img.src = e.target.result; img.style.display = 'block';
-            };
-            reader.readAsDataURL(input.files[0]);
-        };
-
-        window.submitApply = async () => {
-            const data = {
-                name: document.getElementById('app_name').value,
-                uid: document.getElementById('app_pin').value,
-                id_num: document.getElementById('app_idnum').value,
-                phone: document.getElementById('app_phone').value,
-                home_addr: document.getElementById('app_h_addr').value,
-                mail_addr: document.getElementById('app_c_addr').value || document.getElementById('app_h_addr').value,
-                docs: photos,
-                status: "pending",
-                l_cnt: 1, // 預設值，由後台修改
-                h_cnt: 1,
-                applyTime: serverTimestamp()
-            };
-            if(!data.name || !data.docs.id_f) return alert("請填寫姓名並拍攝證件");
-            await addDoc(collection(db, 'partners'), data);
-            alert("提交成功，請等候核准！"); location.reload();
-        };
-
-        function renderAdmin() {
-            document.getElementById('gate').style.display = 'none';
-            document.getElementById('main').style.display = 'flex';
-            const pending = partners.filter(x => x.status === "pending");
-            
-            let listHtml = pending.map(p => `
-                <div class="id-card mb-4 !bg-slate-900">
-                    <h3 class="text-white font-bold mb-3">${p.name} 的申請檔案</h3>
-                    <div class="text-[11px] text-slate-400 space-y-1 mb-4">
-                        <p>證號: ${p.id_num}</p>
-                        <p>通訊: ${p.mail_addr}</p>
-                    </div>
-                    
-                    <div class="border-t border-slate-800 pt-3 mb-4">
-                        <span class="label-text text-orange-500">後台設定：勞健保人數</span>
-                        <div class="flex gap-4 mt-2">
-                            <label class="text-[10px]">勞保: <select id="l_${p.id}" class="admin-select"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
-                            <label class="text-[10px]">健保: <select id="h_${p.id}" class="admin-select"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-4 gap-1 mb-4">
-                        <img src="${p.docs.id_f}" class="h-10 w-full object-cover rounded" onclick="window.open(this.src)">
-                        <img src="${p.docs.lic}" class="h-10 w-full object-cover rounded" onclick="window.open(this.src)">
-                    </div>
-
-                    <button onclick="window.finalApprove('${p.id}')" class="btn-blue h-10 py-0 text-xs">核准並設定人數</button>
-                </div>
-            `).join('');
-            document.getElementById('render-target').innerHTML = listHtml || '<p class="text-slate-700">無待處理申請</p>';
-        }
-
-        window.finalApprove = async (id) => {
-            const lc = parseInt(document.getElementById('l_'+id).value);
-            const hc = parseInt(document.getElementById('h_'+id).value);
-            await updateDoc(doc(db, 'partners', id), { 
-                status: "approved",
-                l_cnt: lc,
-                h_cnt: hc
-            });
-            alert("司機已核准，勞健保人數已記錄！");
-            renderAdmin();
-        };
-    </script>
-</body>
-</html>
+    try {
+        await addDoc(collection(db, 'partners'), data);
+        alert("✅ 申請成功！請靜候審核。");
+        location.reload();
+    } catch (e) {
+        alert("提交失敗");
+        btn.disabled = false;
+    }
+};
