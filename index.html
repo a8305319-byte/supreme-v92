@@ -14,19 +14,13 @@
         .btn-prime { width: 100%; padding: 18px; border-radius: 1.5rem; background: #0ea5e9; color: #ffffff; font-weight: 800; font-size: 18px; cursor: pointer; border: none; transition: 0.1s; }
         .btn-prime:active { transform: scale(0.96); opacity: 0.8; }
         
-        .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .photo-slot { background: transparent; border: 2px dashed #38bdf8; border-radius: 1.5rem; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; position: relative; }
-        .photo-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; display: none; }
-        .photo-slot span { color: #38bdf8; font-size: 12px; font-weight: bold; margin-top: 8px; }
-        .divider-orange { width: 100%; height: 4px; background: #f97316; margin-bottom: 25px; border-radius: 99px; }
-        .label-blue { font-size: 13px; color: #38bdf8; font-weight: bold; margin-bottom: 8px; display: block; text-align: left; }
-        
-        .admin-table th { font-size: 11px; padding: 10px 4px; color: #64748b; white-space: nowrap; text-align: center; }
+        /* 行政表格樣式 */
+        .admin-table th { font-size: 11px; padding: 10px 4px; color: #64748b; white-space: nowrap; text-align: center; border-bottom: 1px solid #1e293b; }
         .admin-table td { font-size: 11px; padding: 12px 4px; border-bottom: 1px solid #1e293b; vertical-align: middle; text-align: center; }
         .input-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #38bdf8; text-align: center; width: 55px; font-weight: bold; padding: 2px 0; }
         .select-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #0ea5e9; font-weight: bold; font-size: 10px; padding: 2px; outline: none; width: 105px; cursor: pointer; }
         .btn-del { color: #ef4444; border: 1px solid #450a0a; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
-        .ai-tag { font-size: 9px; padding: 2px 8px; border-radius: 99px; background: #0c4a6e; color: #38bdf8; font-weight: bold; border: 1px solid #0ea5e9; }
+        .ai-tag { font-size: 9px; padding: 2px 8px; border-radius: 99px; background: #0c4a6e; color: #38bdf8; font-weight: bold; border: 1px solid #0ea5e9; white-space: nowrap; }
         
         .toggle-btn { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; border: 1px solid transparent; width: 60px; }
         .toggle-on { background: #166534; color: #4ade80; border-color: #14532d; }
@@ -36,7 +30,6 @@
         .spinner { width: 40px; height: 40px; border: 4px solid #1e293b; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         #diag-text { color: #475569; font-size: 10px; margin-top: 20px; font-family: monospace; }
-
         #add-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; display: none; justify-content: center; align-items: center; padding: 20px; }
     </style>
 </head>
@@ -44,12 +37,10 @@
 
     <div id="loading" class="loading-overlay">
         <div class="spinner"></div>
-        <p class="mt-4 text-sky-500 font-bold tracking-widest">在地物流 數據同步中...</p>
-        <div id="diag-text">正在校準 2026 健保口數計算邏輯...</div>
-        <button onclick="window.setLoad(false)" class="mt-8 text-[10px] text-slate-600 underline">連線過久？強制進入</button>
+        <p class="mt-4 text-sky-500 font-bold tracking-widest text-sm">在地物流 數據同步中...</p>
+        <div id="diag-text">校準 2026 營運邏輯...</div>
     </div>
 
-    <!-- 快速新增人員 -->
     <div id="add-modal">
         <div class="id-card !mb-0 w-full max-w-[400px]">
             <h3 class="text-white font-bold mb-6 text-xl italic border-l-4 border-orange-500 pl-3">新增現有人員資料</h3>
@@ -65,72 +56,96 @@
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
-        <p class="text-slate-500 font-bold tracking-[0.3em] mb-10 text-xs uppercase">Digital Operations System</p>
+        <p class="text-slate-500 font-bold tracking-[0.3em] mb-10 text-[10px] uppercase">Digital Operations System 2026</p>
         
         <div class="w-full max-w-[340px]">
             <div class="bg-slate-900/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl">
                 <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box" maxlength="10">
                 <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box">
                 <button onclick="window.boot()" class="btn-prime w-full shadow-lg">進入系統</button>
-                <p id="auth-info" class="text-[9px] text-slate-700 mt-4 italic">Cloud Synced via Firebase</p>
+                <p class="text-[9px] text-slate-700 mt-4 italic">Cloud Synced via Firebase v11.6</p>
             </div>
             
             <div class="pt-8 flex flex-col gap-4">
                 <button onclick="window.showLayer('interview-page')" class="w-full py-4 rounded-2xl border border-sky-500 text-sky-400 font-bold">一、營運職能實務評估</button>
-                <div id="apply-lock-box">
-                    <button disabled class="w-full py-4 rounded-2xl border border-slate-800 text-slate-700 font-bold cursor-not-allowed bg-slate-900/50">二、人事建檔 (測驗後解鎖) 🔒</button>
-                </div>
+                <button disabled class="w-full py-4 rounded-2xl border border-slate-800 text-slate-700 font-bold cursor-not-allowed bg-slate-900/50 text-xs">二、數位合約簽署 (開發中) 🔒</button>
             </div>
         </div>
     </div>
 
-    <!-- 行政總控台 -->
     <div id="admin" class="layer !px-4">
         <div class="w-full max-w-[1440px]">
-            <div class="flex justify-between items-end mb-10">
+            <div class="flex justify-between items-end mb-8 mt-4">
                 <div>
                     <h2 class="text-white font-black text-4xl border-l-8 border-sky-500 pl-4 uppercase italic">老闆行政總控台</h2>
-                    <button onclick="document.getElementById('add-modal').style.display='flex'" class="mt-2 text-orange-500 text-[10px] font-bold border border-orange-500 px-3 py-1 rounded-full hover:bg-orange-500 hover:text-white transition">+ 快速新增人員資料</button>
+                    <button onclick="document.getElementById('add-modal').style.display='flex'" class="mt-2 text-orange-500 text-[10px] font-bold border border-orange-500 px-3 py-1 rounded-full">+ 快速新增人員</button>
                 </div>
                 <button onclick="location.reload()" class="bg-slate-800 px-6 py-2 rounded-full text-xs font-bold text-slate-400">登出系統</button>
             </div>
 
             <div class="bg-slate-900 p-6 rounded-[2.5rem] overflow-x-auto border border-slate-800 shadow-2xl">
                 <table class="w-full admin-table">
-                    <thead class="text-slate-500 border-b border-slate-800">
+                    <thead>
                         <tr>
-                            <th>狀態</th><th>姓名/手機</th><th>分析</th><th>正件</th><th>逆件</th><th>正價</th><th>逆價</th><th>加保開關</th><th>2026 勞保分級</th><th>健保口數(含本人)</th><th>保費扣繳</th><th>應付淨額</th><th>管理</th>
+                            <th>狀態</th><th>姓名/手機</th><th>AI 評估分析</th><th>正件</th><th>逆件</th><th>正價</th><th>逆價</th><th>加保</th><th>2026 薪資級距</th><th>健保口數</th><th>保費扣繳</th><th>應付淨額</th><th>管理</th>
                         </tr>
                     </thead>
                     <tbody id="admin-render" class="text-white">
-                        <tr><td colspan="13" class="text-center py-20 text-slate-600 font-bold italic">載入數據中...</td></tr>
+                        <tr><td colspan="13" class="text-center py-20 text-slate-600 font-bold italic text-sm">數據讀取中...</td></tr>
                     </tbody>
                 </table>
             </div>
-            <div class="mt-6 flex flex-wrap gap-4">
-                <div class="flex-1 min-w-[300px] p-4 bg-slate-800/30 rounded-xl text-[10px] text-slate-500 border border-slate-800 leading-relaxed">
-                    <p class="font-bold text-slate-400 mb-1">【承攬制 - 健保口數計算規則】</p>
-                    <p>● **口數 = 1**：僅本人投保（預設值）。</p>
-                    <p>● **口數 = 2~4**：本人 + N 位隨同投保眷屬（法律上限計 4 口）。</p>
-                    <p>● **計算公式**：基數 $\times$ 1.551% $\times$ 口數。系統會自動限制口數區間為 1 至 4。</p>
-                </div>
+            <div class="mt-6 p-4 bg-slate-800/30 rounded-xl text-[10px] text-slate-500 border border-slate-800">
+                <p class="font-bold text-slate-400 mb-1">【2026 承攬規範】</p>
+                <p>● 健保費 = 基數 × 1.551% × 口數 (上限4口)。 ● 勞保費(承攬代扣) = 基數 × 2.5%。</p>
             </div>
         </div>
     </div>
 
-    <!-- 實務評估頁面 -->
     <div id="interview-page" class="layer">
-        <div class="w-full max-w-[480px]">
+        <div class="w-full max-w-[480px] py-10">
             <div class="mb-4 text-slate-500 font-black cursor-pointer text-left flex items-center" onclick="window.hideAll()"><span class="mr-2">←</span> 返回</div>
             <div class="id-card">
                 <h2 class="text-2xl font-black text-white mb-6 italic border-b-2 border-sky-500 pb-2">夥伴營運職能評估</h2>
-                <input type="text" id="int_name" placeholder="您的真實姓名" class="input-box">
-                <input type="tel" id="int_phone" placeholder="手機號碼" class="input-box" maxlength="10">
-                <div class="space-y-4 text-left mb-6">
-                    <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                        <p class="text-white text-sm font-bold mb-3">1. 配送途中遇事故，首要流程為何？</p>
-                        <label class="block text-xs mb-2 cursor-pointer"><input type="radio" name="q1" value="25"> 報警拍照、聯繫公司回報</label>
-                        <label class="block text-xs cursor-pointer"><input type="radio" name="q1" value="0"> 先送完，晚上再回報</label>
+                
+                <div class="space-y-3 mb-8">
+                    <input type="text" id="int_name" placeholder="您的真實姓名" class="input-box !mb-0">
+                    <input type="tel" id="int_phone" placeholder="手機號碼" class="input-box" maxlength="10">
+                </div>
+
+                <div id="quiz-container" class="space-y-6 text-left mb-10">
+                    <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700">
+                        <p class="text-white text-sm font-bold mb-4">1. 配送途中遇交通事故，首要流程為何？</p>
+                        <div class="space-y-2">
+                            <label class="flex items-center text-xs p-3 bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-700 transition">
+                                <input type="radio" name="q1" value="25" class="mr-3"> 報警拍照、聯繫站點回報
+                            </label>
+                            <label class="flex items-center text-xs p-3 bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-700 transition">
+                                <input type="radio" name="q1" value="0" class="mr-3"> 先自行處理送完，晚上再說
+                            </label>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700">
+                        <p class="text-white text-sm font-bold mb-4">2. 包裹外箱破損導致內容物外漏時？</p>
+                        <div class="space-y-2">
+                            <label class="flex items-center text-xs p-3 bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-700 transition">
+                                <input type="radio" name="q2" value="25" class="mr-3"> 主動回報站點並與客戶溝通
+                            </label>
+                            <label class="flex items-center text-xs p-3 bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-700 transition">
+                                <input type="radio" name="q2" value="0" class="mr-3"> 沒看到，直接送達完成簽收
+                            </label>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700">
+                        <p class="text-white text-sm font-bold mb-4">3. 收件人未接電話且現場無人時？</p>
+                        <div class="space-y-2">
+                            <label class="flex items-center text-xs p-3 bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-700 transition">
+                                <input type="radio" name="q3" value="25" class="mr-3"> 留簡訊並依規範放置或帶回
+                            </label>
+                            <label class="flex items-center text-xs p-3 bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-700 transition">
+                                <input type="radio" name="q3" value="10" class="mr-3"> 直接放在門口就離開
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <button onclick="window.submitInterview()" class="btn-prime">提交評估資料</button>
@@ -138,17 +153,22 @@
         </div>
     </div>
 
-    <!-- 工作台 -->
     <div id="hub" class="layer">
-        <div class="w-full max-w-[450px]">
-            <h2 id="hub-name" class="text-3xl font-black text-white italic mb-8 text-center">夥伴工作台</h2>
+        <div class="w-full max-w-[450px] py-20">
+            <h2 id="hub-name" class="text-4xl font-black text-white italic mb-10 text-center">夥伴工作台</h2>
             <div class="id-card">
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div><span class="label-blue">配送正件</span><input type="number" id="rep_del" placeholder="0" class="input-box"></div>
-                    <div><span class="label-blue">逆物流件</span><input type="number" id="rep_rev" placeholder="0" class="input-box"></div>
+                <div class="grid grid-cols-2 gap-4 mb-8 text-left">
+                    <div>
+                        <span class="text-sky-400 text-xs font-bold block mb-2 ml-2">今日配送正件</span>
+                        <input type="number" id="rep_del" placeholder="0" class="input-box">
+                    </div>
+                    <div>
+                        <span class="text-orange-400 text-xs font-bold block mb-2 ml-2">今日逆物流件</span>
+                        <input type="number" id="rep_rev" placeholder="0" class="input-box">
+                    </div>
                 </div>
-                <button onclick="window.submitReport()" class="btn-prime bg-green-600 shadow-xl">提交今日回報</button>
-                <button onclick="location.reload()" class="w-full mt-4 text-[10px] text-slate-600 underline">登出帳號</button>
+                <button onclick="window.submitReport()" class="btn-prime bg-green-600 shadow-xl">提交今日數據</button>
+                <button onclick="location.reload()" class="w-full mt-6 text-[10px] text-slate-600 underline">安全登出系統</button>
             </div>
         </div>
     </div>
@@ -173,157 +193,159 @@
         const appId = 'logistics-master-v92';
         const partnersCol = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
 
-        const SALARY_GRADES = [
-            0, 29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800
-        ];
-
+        const SALARY_GRADES = [0, 29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
         let partners = [];
         let isReady = false;
+        let activeUser = null;
 
         window.setLoad = (s) => document.getElementById('loading').style.display = s ? 'flex' : 'none';
         const setDiag = (t) => document.getElementById('diag-text').innerText = t;
 
+        // 入口登入
         window.boot = () => {
             const ph = document.getElementById('login_phone').value.trim();
             const pi = document.getElementById('login_pin').value.trim();
             if(ph === "0976017938" && pi === "0531") return window.renderAdmin();
-            if(!isReady) return alert("系統連線中...");
+            if(!isReady) return alert("同步中...");
             const target = partners.find(x => x.phone === ph);
             if(target) {
                 if(target.status === "approved" && target.pin === pi) {
+                    activeUser = target;
                     window.showLayer('hub');
                     document.getElementById('hub-name').innerText = `夥伴 ${target.name}`;
-                } else alert("審核中或 PIN 碼錯誤。");
-            } else alert("查無人員。");
+                } else alert("帳號審核中或 PIN 碼錯誤。");
+            } else alert("查無此人員資料。");
         };
 
+        // 行政後台渲染
         window.renderAdmin = () => {
             window.showLayer('admin');
             const target = document.getElementById('admin-render');
             if(partners.length === 0) {
-                target.innerHTML = '<tr><td colspan="13" class="text-center py-20 text-slate-600 font-bold italic">目前無人員資料。</td></tr>';
+                target.innerHTML = '<tr><td colspan="13" class="py-20 text-slate-600">暫無夥伴數據</td></tr>';
                 return;
             }
             let html = '';
-            partners.forEach(p => {
+            partners.sort((a,b) => b.createdAt - a.createdAt).forEach(p => {
                 const dp = p.custom_del || 15; const rp = p.custom_rev || 10;
                 const income = ((p.total_del || 0) * dp) + ((p.total_rev || 0) * rp);
                 const ins_b = Number(p.ins_base) || 0; 
-                // 修正口數邏輯：預設 1 (本人)，最小 1，法律上限 4
                 const fm = Math.min(Math.max(Number(p.ins_fm) || 1, 1), 4);
                 const isInsOn = p.ins_toggle !== false;
 
                 const labor_calc = isInsOn ? Math.round(ins_b * 0.025) : 0;
                 const health_calc = isInsOn ? Math.round(ins_b * 0.01551 * fm) : 0;
-                const total_ins = labor_ins_calc() + health_ins_calc();
-                
-                function labor_ins_calc() { return labor_calc; }
-                function health_ins_calc() { return health_calc; }
+                const total_ins = labor_calc + health_calc;
 
-                let actionBtn = '';
-                if(p.status === 'pending_review') actionBtn = `<button onclick="window.upField('${p.id}','status','approved')" class="bg-sky-600 px-3 py-1 rounded text-[10px] font-bold">核准</button>`;
-                else actionBtn = `<span class="text-slate-500 text-[9px] font-bold uppercase">${p.status}</span>`;
+                let actionBtn = p.status === 'pending_review' 
+                    ? `<button onclick="window.upField('${p.id}','status','approved')" class="bg-sky-600 px-3 py-1 rounded text-[10px] font-bold">核准</button>`
+                    : `<span class="text-slate-500 text-[9px] uppercase font-bold">${p.status}</span>`;
 
-                let salaryOptions = SALARY_GRADES.map((grade, idx) => 
-                    `<option value="${grade}" ${parseInt(ins_b) === grade ? 'selected' : ''}>${grade === 0 ? '不投保' : (idx) + ' 級：' + grade.toLocaleString()}</option>`
-                ).join('');
-
-                html += `<tr class="hover:bg-white/5 border-b border-slate-800/50">
+                html += `<tr class="hover:bg-white/5">
                     <td>${actionBtn}</td>
-                    <td><span class="text-xs font-bold text-white">${p.name}</span><br><span class="text-[9px] text-slate-500">${p.phone}</span></td>
-                    <td><span class="ai-tag text-[8px]">${p.ai_analysis || '分析中'}</span></td>
+                    <td><span class="text-white font-bold">${p.name}</span><br><span class="text-[9px] text-slate-500">${p.phone}</span></td>
+                    <td><span class="ai-tag">${p.ai_analysis || '分析中'}</span></td>
                     <td class="text-sky-400 font-bold">${p.total_del || 0}</td>
                     <td class="text-orange-400 font-bold">${p.total_rev || 0}</td>
                     <td><input type="number" value="${dp}" onchange="window.upField('${p.id}','custom_del',this.value)" class="input-mini"></td>
                     <td><input type="number" value="${rp}" onchange="window.upField('${p.id}','custom_rev',this.value)" class="input-mini"></td>
                     <td>
-                        <button onclick="window.upField('${p.id}','ins_toggle',${!isInsOn})" 
-                                class="toggle-btn ${isInsOn ? 'toggle-on' : 'toggle-off'}">
-                            ${isInsOn ? '加保中' : '未加保'}
-                        </button>
+                        <button onclick="window.upField('${p.id}','ins_toggle',${!isInsOn})" class="toggle-btn ${isInsOn ? 'toggle-on' : 'toggle-off'}">${isInsOn ? '加保' : '停保'}</button>
                     </td>
                     <td>
                         <select onchange="window.upField('${p.id}','ins_base',this.value)" class="select-mini" ${!isInsOn ? 'disabled' : ''}>
-                            ${salaryOptions}
+                            ${SALARY_GRADES.map(g => `<option value="${g}" ${parseInt(ins_b)===g?'selected':''}>${g===0?'不投保':g.toLocaleString()}</option>`).join('')}
                         </select>
                     </td>
-                    <td>
-                        <input type="number" value="${fm}" min="1" max="4" 
-                               onchange="window.upField('${p.id}','ins_fm',this.value)" 
-                               class="input-mini !w-12" ${!isInsOn ? 'disabled' : ''}>
-                    </td>
-                    <td class="text-red-400 font-bold">-$${total_ins}</td>
-                    <td class="text-sky-400 font-black text-sm">$${income - total_ins}</td>
+                    <td><input type="number" value="${fm}" onchange="window.upField('${p.id}','ins_fm',this.value)" class="input-mini" ${!isInsOn ? 'disabled' : ''}></td>
+                    <td class="text-red-400">-$${total_ins}</td>
+                    <td class="text-sky-400 font-black">$${(income - total_ins).toLocaleString()}</td>
                     <td><span class="btn-del" onclick="window.delPartner('${p.id}','${p.name}')">🗑️</span></td>
                 </tr>`;
             });
             target.innerHTML = html;
         };
 
+        // 提交實務評估
         window.submitInterview = async () => {
             const name = document.getElementById('int_name').value.trim();
             const ph = document.getElementById('int_phone').value.trim();
-            const q1 = document.querySelector('input[name="q1"]:checked')?.value;
-            if(!name || !ph || !q1) return alert("請填齊。");
+            const q1 = parseInt(document.querySelector('input[name="q1"]:checked')?.value || -1);
+            const q2 = parseInt(document.querySelector('input[name="q2"]:checked')?.value || -1);
+            const q3 = parseInt(document.querySelector('input[name="q3"]:checked')?.value || -1);
+
+            if(!name || !ph || q1 === -1 || q2 === -1 || q3 === -1) return alert("請完整回答所有評估問題。");
+
+            const totalScore = q1 + q2 + q3;
+            let aiTag = (totalScore >= 75) ? "✅ 穩定可靠" : (totalScore >= 50 ? "⚠️ 需再培訓" : "🚫 高風險");
+            if(q2 === 0) aiTag += " | 🚩 誠信疑慮";
+
             window.setLoad(true);
             try {
                 await setDoc(doc(partnersCol, `p_${ph}`), {
                     id: `p_${ph}`, name, phone: ph, pin: "0000", status: "pending_review", 
-                    ai_analysis: q1 === "25" ? "✅ 穩定可靠" : "⚠️ 邏輯風險",
-                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, 
+                    ai_analysis: aiTag, total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, 
                     ins_base: 29500, ins_fm: 1, ins_toggle: true, createdAt: serverTimestamp()
                 });
-                alert("提交成功！");
+                alert("提交成功！預設 PIN 為 0000，請聯繫老闆審核。");
                 location.reload();
             } catch (e) { alert("連線失敗。"); }
             window.setLoad(false);
         };
 
-        window.addPartnerDirectly = async () => {
-            const n = document.getElementById('new_name').value.trim();
-            const p = document.getElementById('new_phone').value.trim();
-            if(!n || !p) return alert("必填。");
+        // 夥伴回報
+        window.submitReport = async () => {
+            const d = parseInt(document.getElementById('rep_del').value) || 0;
+            const r = parseInt(document.getElementById('rep_rev').value) || 0;
+            if(d < 0 || r < 0) return alert("請輸入正確數值。");
             window.setLoad(true);
             try {
-                await setDoc(doc(partnersCol, `p_${p}`), {
-                    id: `p_${p}`, name: n, phone: p, pin: "0000", status: "approved", ai_analysis: "💎 直接新增",
-                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, 
-                    ins_base: 29500, ins_fm: 1, ins_toggle: true
+                await updateDoc(doc(partnersCol, activeUser.id), {
+                    total_del: increment(d),
+                    total_rev: increment(r)
                 });
-                alert("新增成功！");
-                document.getElementById('add-modal').style.display='none';
-            } catch (e) { alert("失敗"); }
+                alert("今日數據已同步！");
+                document.getElementById('rep_del').value = "";
+                document.getElementById('rep_rev').value = "";
+            } catch (e) { alert("更新失敗"); }
             window.setLoad(false);
         };
 
+        // 通用 API
         window.upField = async (id, f, v) => { 
             const val = (typeof v === 'boolean') ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
             await updateDoc(doc(partnersCol, id), { [f]: val }); 
         };
-
+        window.addPartnerDirectly = async () => {
+            const n = document.getElementById('new_name').value.trim();
+            const p = document.getElementById('new_phone').value.trim();
+            if(!n || !p) return alert("必填。");
+            await setDoc(doc(partnersCol, `p_${p}`), {
+                id: `p_${p}`, name: n, phone: p, pin: "0000", status: "approved", ai_analysis: "💎 直接新增",
+                total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, ins_base: 29500, ins_fm: 1, ins_toggle: true, createdAt: serverTimestamp()
+            });
+            document.getElementById('add-modal').style.display='none';
+        };
         window.delPartner = async (id, n) => { if(confirm(`確定刪除 ${n}?`)) await deleteDoc(doc(partnersCol, id)); };
         window.showLayer = id => { window.hideAll(); document.getElementById(id).style.display='flex'; };
         window.hideAll = () => { document.querySelectorAll('.layer').forEach(l=>l.style.display='none'); document.getElementById('gate').style.display='flex'; };
 
-        const init = async () => {
-            setDiag("身分驗證中...");
+        // 初始化
+        (async () => {
             try {
                 await signInAnonymously(auth);
                 onAuthStateChanged(auth, user => {
                     if(user) {
-                        setDiag("同步雲端數據...");
                         onSnapshot(partnersCol, s => {
                             partners = s.docs.map(d => ({ id: d.id, ...d.data() }));
                             isReady = true;
                             if(document.getElementById('admin').style.display === 'flex') window.renderAdmin();
                             window.setLoad(false); 
-                        }, err => { setDiag("連線失敗。"); });
+                        });
                     }
                 });
-            } catch (err) { setDiag("連線異常。"); }
-            setTimeout(() => window.setLoad(false), 5000);
-        };
-        init();
+            } catch (err) { setDiag("連線異常，請重新整理。"); }
+        })();
     </script>
 </body>
 </html>
