@@ -3,175 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME 智慧薪資系統</title>
+    <title>SUPREME 旗艦經營中控台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 16px; }
-        .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; border: none; cursor: pointer; }
-        .btn-prime:active { opacity: 0.8; transform: scale(0.98); }
-        /* 薪資條模板樣式 */
+        .id-card { width: 100%; max-width: 500px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; }
+        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 14px; }
+        .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; cursor: pointer; border: none; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; padding: 20px; overflow-y: auto; }
         #slip-box { position: absolute; left: -9999px; background: white; color: black; padding: 40px; width: 400px; border: 1px solid #ddd; }
-        .slip-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .slip-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 15px; }
-        .total-row { margin-top: 25px; border-top: 2px solid #333; padding-top: 15px; display: flex; justify-content: space-between; font-size: 20px; font-weight: 900; color: #000; }
+        .photo-wall { display: grid; grid-template-cols: repeat(3, 1fr); gap: 5px; width: 100%; }
+        .photo-item { aspect-ratio: 1; background: #0f172a; border-radius: 4px; overflow: hidden; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-4xl font-black text-white italic mb-2 tracking-tighter">SUPREME</h1>
-        <p class="text-slate-500 text-sm mb-12">智慧物流與薪資管理</p>
+        <h1 class="text-5xl font-black text-white italic mb-2 tracking-tighter">SUPREME</h1>
+        <p class="text-sky-500 text-xs font-bold tracking-[0.3em] mb-12 uppercase">V92 Enterprise Solution</p>
         <div class="w-full max-w-[320px] space-y-4">
-            <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center">
-            <input type="password" id="login_pin" placeholder="登入密碼 (PIN)" class="input-box text-center">
-            <div class="flex items-center gap-2 text-xs text-slate-500 px-1">
-                <input type="checkbox" id="remember_me"> <label for="remember_me">記住帳號資訊 (加密儲存)</label>
-            </div>
-            <button onclick="boot()" class="btn-prime">確認登入</button>
-            <button onclick="showApply()" class="text-sm text-slate-700 underline mt-8 block mx-auto">夥伴入職申請入口</button>
+            <input type="tel" id="login_phone" placeholder="管理員/夥伴手機" class="input-box text-center">
+            <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box text-center">
+            <button onclick="boot()" class="btn-prime shadow-lg shadow-sky-500/20">進入系統</button>
+            <button onclick="showApply()" class="text-[10px] text-slate-700 underline uppercase mt-8 block mx-auto">New Partner Application / 夥伴入職</button>
         </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-700 font-bold text-sm underline uppercase">Sign Out / 登出系統</button>
+        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-700 font-bold text-xs underline">LOGOUT / 登出</button>
     </div>
 
-    <div id="slip-box">
-        <div class="slip-header">
-            <h2 style="margin:0; font-size: 24px;">SUPREME 薪資明細單</h2>
-            <p id="slip-date" style="margin:5px 0 0 0; font-size:12px; color:#666;"></p>
-        </div>
-        <div class="slip-row"><span>夥伴姓名</span><b id="slip-name"></b></div>
-        <div class="slip-row"><span>配送件數報酬</span><span id="slip-del-pay"></span></div>
-        <div class="slip-row"><span>逆物流量報酬</span><span id="slip-ret-pay"></span></div>
-        <div style="font-size:12px; color:#999; margin:15px 0 5px 0;">法定扣款項目</div>
-        <div class="slip-row" style="color:#c00;"><span>勞保費扣款</span><span id="slip-labor"></span></div>
-        <div class="slip-row" style="color:#c00;"><span>健保費扣款</span><span id="slip-health"></span></div>
-        <div class="total-row">
-            <span>本月實領總額</span>
-            <span id="slip-total"></span>
-        </div>
-        <div style="text-align:center; margin-top:40px; font-size:10px; color:#ccc;">數位簽章：SUPREME-LOGISTICS-V92-SECURED</div>
+    <div id="detail-modal" class="modal">
+        <div class="id-card mx-auto mt-10" id="detail-content"></div>
+        <button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-4 max-w-[500px] mx-auto block">關閉詳情</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-            authDomain: "supreme-v92.firebaseapp.com",
-            projectId: "supreme-v92",
-            storageBucket: "supreme-v92.firebasestorage.app",
-            messagingSenderId: "485530156296",
-            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92", storageBucket: "supreme-v92.firebasestorage.app", messagingSenderId: "485530156296", appId: "1:485530156296:web:6728c0ee08b98dedd800bd" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         let partners = [];
+        let taskLogs = [];
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
-
-        // 登入邏輯與記住我
-        window.addEventListener('DOMContentLoaded', () => {
-            const sp = localStorage.getItem('s_phone'), si = localStorage.getItem('s_pin');
-            if(sp && si) {
-                document.getElementById('login_phone').value = sp;
-                document.getElementById('login_pin').value = atob(si);
-                document.getElementById('remember_me').checked = true;
-            }
-        });
+        onSnapshot(collection(db, 'logs'), s => { taskLogs = s.docs.map(d => ({id: d.id, ...d.data()})); });
 
         window.boot = () => {
-            const phone = document.getElementById('login_phone').value;
-            const pin = document.getElementById('login_pin').value;
-            if(document.getElementById('remember_me').checked) {
-                localStorage.setItem('s_phone', phone);
-                localStorage.setItem('s_pin', btoa(pin));
-            }
+            const phone = document.getElementById('login_phone').value, pin = document.getElementById('login_pin').value;
             if(phone === "0976017938" && pin === "0531") return renderAdmin();
             const p = partners.find(x => x.phone === phone && x.uid === pin && x.status === "approved");
             if(p) return renderPartnerUI(p);
             alert("驗證失敗");
         };
 
-        // 夥伴介面與薪資條
-        function renderPartnerUI(p) {
-            document.getElementById('gate').style.display = 'none';
-            document.getElementById('main').style.display = 'flex';
-            
-            const r_del = p.rate_del || 50, r_ret = p.rate_ret || 20;
-            const labor = p.labor || 1500, health = (p.h_cnt || 1) * (p.health || 800);
-            const total = (p.total_del * r_del) + (p.total_ret * r_ret) - labor - health;
-
-            document.getElementById('render-target').innerHTML = `
-                <div class="id-card">
-                    <h2 class="text-2xl font-bold text-white mb-1">${p.name} 夥伴</h2>
-                    <p class="text-[10px] text-slate-500 mb-8 uppercase tracking-widest">本月實領：$${total.toLocaleString()}</p>
-                    
-                    <button onclick='window.downloadSlip(${JSON.stringify(p)})' class="w-full bg-sky-500 text-white py-4 rounded-xl font-black mb-10 shadow-lg shadow-sky-500/20">💾 下載電子薪資明細條</button>
-                    
-                    <div class="space-y-4 border-t border-slate-800 pt-8">
-                        <input type="number" id="dc" placeholder="填寫配送件數" class="input-box text-center text-xl font-bold">
-                        <input type="number" id="rc" placeholder="填寫逆物流量" class="input-box text-center text-xl font-bold">
-                        <button onclick="window.sendJob('${p.id}')" class="btn-prime bg-slate-800 text-sky-400 border border-sky-900">同步至雲端</button>
-                    </div>
-                </div>`;
+        // 功能 4: 照片牆渲染
+        function renderPhotoWall() {
+            const photos = taskLogs.slice(-12).reverse(); // 顯示最近 12 張
+            return `<div class="photo-wall mb-8">
+                ${photos.map(l => `<div class="photo-item" onclick="window.open('${l.photo}')"><img src="${l.photo}" class="w-full h-full object-cover"></div>`).join('')}
+            </div>`;
         }
 
-        window.downloadSlip = async (p) => {
-            const r_del = p.rate_del || 50, r_ret = p.rate_ret || 20;
-            const labor = p.labor || 1500, health = (p.h_cnt || 1) * (p.health || 800);
-            const total = (p.total_del * r_del) + (p.total_ret * r_ret) - labor - health;
-
-            document.getElementById('slip-date').innerText = "結算日期：" + new Date().toLocaleDateString();
-            document.getElementById('slip-name').innerText = p.name;
-            document.getElementById('slip-del-pay').innerText = `$${(p.total_del * r_del).toLocaleString()} (${p.total_del}件)`;
-            document.getElementById('slip-ret-pay').innerText = `$${(p.total_ret * r_ret).toLocaleString()} (${p.total_ret}件)`;
-            document.getElementById('slip-labor').innerText = `-$${labor.toLocaleString()}`;
-            document.getElementById('slip-health').innerText = `-$${health.toLocaleString()}`;
-            document.getElementById('slip-total').innerText = `$${total.toLocaleString()}`;
-
-            const box = document.getElementById('slip-box');
-            // 暫時顯示以供截圖
-            box.style.left = "0";
-            const canvas = await html2canvas(box, { scale: 2 });
-            box.style.left = "-9999px";
-
-            const link = document.createElement('a');
-            link.download = `SUPREME薪資條_${p.name}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        };
-
-        window.sendJob = async (id) => {
-            const d = parseInt(document.getElementById('dc').value) || 0;
-            const r = parseInt(document.getElementById('rc').value) || 0;
-            await updateDoc(doc(db, 'partners', id), { total_del: increment(d), total_ret: increment(r) });
-            alert("回報成功"); location.reload();
-        };
-
-        // 管理後台
+        // 老闆後台增強版
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             const approved = partners.filter(x => x.status === "approved");
-            let html = `<div class="w-full max-w-[480px] px-4"><h2 class="text-white font-black text-xl mb-8">老闆經營管理後台</h2>`;
-            html += approved.map(p => `
-                <div class="id-card !p-5 !bg-slate-900/50">
-                    <div class="flex justify-between items-center">
-                        <p class="text-white font-bold">${p.name}</p>
-                        <button onclick='window.downloadSlip(${JSON.stringify(p)})' class="text-[10px] text-sky-500 underline">下載薪資條</button>
+            
+            let html = `<div class="w-full max-w-[500px]"><h2 class="text-white font-black text-2xl italic mb-6">SUPREME 經營中控台</h2>`;
+            
+            // 功能 4: 即時任務照片牆
+            html += `<p class="text-sky-500 font-bold text-[10px] mb-2 uppercase tracking-widest">Live Task Audit / 即時任務審核</p>`;
+            html += renderPhotoWall();
+
+            // 功能 1: 結算重置按鈕
+            html += `<div class="flex gap-2 mb-10">
+                <button onclick="window.monthlyReset()" class="flex-1 bg-red-900/30 text-red-400 border border-red-900 py-3 rounded-xl text-xs font-bold">月底數據結算歸零</button>
+                <button onclick="window.exportCSV()" class="flex-1 bg-sky-900/30 text-sky-400 border border-sky-900 py-3 rounded-xl text-xs font-bold">匯出財務報表</button>
+            </div>`;
+
+            html += `<p class="text-slate-600 font-bold text-[10px] mb-4 uppercase">Partner Network / 夥伴名冊管理</p>`;
+            html += approved.map(p => {
+                // 功能 3: 加給與扣款計算
+                const bonus = p.bonus || 0;
+                const penalty = p.penalty || 0;
+                const pay = (p.total_del * p.rate_del) + (p.total_ret * p.rate_ret) - p.labor - (p.h_cnt * p.health) + bonus - penalty;
+                
+                return `
+                <div class="id-card !p-5 !bg-slate-900/40 border-slate-800 mb-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <div onclick="window.showPartnerDetail('${p.id}')" class="cursor-pointer">
+                            <p class="text-white font-bold">${p.name} <span class="text-[9px] text-sky-500 border border-sky-900 px-1 rounded">${p.v_type}</span></p>
+                            <p class="text-[9px] text-slate-500 underline">點擊查看詳細證件與資料</p>
+                        </div>
+                        <p class="text-green-400 font-black text-2xl">$${pay.toLocaleString()}</p>
                     </div>
-                </div>
-            `).join('');
+                    
+                    <div class="grid grid-cols-2 gap-2 mt-4">
+                        <div><label class="text-[9px] text-slate-600">本月獎金/加給</label><input id="bo_${p.id}" type="number" value="${bonus}" class="input-box !py-1 !text-xs !mb-0"></div>
+                        <div><label class="text-[9px] text-slate-600">本月扣罰/其他</label><input id="pe_${p.id}" type="number" value="${penalty}" class="input-box !py-1 !text-xs !mb-0"></div>
+                    </div>
+                    <button onclick="window.updateFinance('${p.id}')" class="w-full bg-slate-800 text-sky-500 py-2 rounded-lg text-[10px] font-bold mt-4 border border-sky-900">儲存財務調整</button>
+                </div>`;
+            }).join('');
+
             document.getElementById('render-target').innerHTML = html + `</div>`;
         }
+
+        // 功能 1: 月底歸零邏輯
+        window.monthlyReset = async () => {
+            if(!confirm("警告：這將會把所有夥伴的件數清零！請確認您已下載本月報表。")) return;
+            const approved = partners.filter(x => x.status === "approved");
+            for(let p of approved) {
+                await updateDoc(doc(db, 'partners', p.id), { 
+                    total_del: 0, total_ret: 0, 
+                    bonus: 0, penalty: 0 // 重置獎懲
+                });
+            }
+            alert("結算歸零完成，新月份已開啟！"); renderAdmin();
+        };
+
+        // 功能 2: 詳情彈窗邏輯
+        window.showPartnerDetail = (id) => {
+            const p = partners.find(x => x.id === id);
+            document.getElementById('detail-modal').style.display = 'block';
+            document.getElementById('detail-content').innerHTML = `
+                <h3 class="text-white font-bold mb-4 text-xl border-b border-slate-800 pb-2">夥伴詳細人事檔案</h3>
+                <div class="space-y-2 text-sm text-slate-400 mb-6">
+                    <p>真實姓名：<span class="text-white">${p.name}</span></p>
+                    <p>身分證號：<span class="text-white">${p.id_num}</span></p>
+                    <p>聯絡手機：<span class="text-white">${p.phone}</span></p>
+                    <p>緊急聯絡：<span class="text-white">${p.emergency || '未填'}</span></p>
+                    <p>車輛類型：<span class="text-white">${p.v_type}</span></p>
+                </div>
+                <p class="text-[10px] text-sky-500 font-bold mb-2 uppercase">Documents / 證件影像</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <img src="${p.docs?.id_f}" class="rounded border border-slate-800" onclick="window.open(this.src)">
+                    <img src="${p.docs?.id_b}" class="rounded border border-slate-800" onclick="window.open(this.src)">
+                    <img src="${p.docs?.lic}" class="rounded border border-slate-800" onclick="window.open(this.src)">
+                    <img src="${p.docs?.car}" class="rounded border border-slate-800" onclick="window.open(this.src)">
+                </div>
+            `;
+        };
+
+        // 功能 3: 更新個別財務調整
+        window.updateFinance = async (id) => {
+            const bo = parseInt(document.getElementById('bo_'+id).value) || 0;
+            const pe = parseInt(document.getElementById('pe_'+id).value) || 0;
+            await updateDoc(doc(db, 'partners', id), { bonus: bo, penalty: pe });
+            alert("財務調整已存檔"); renderAdmin();
+        };
+
+        // 其餘夥伴 UI 邏輯維持不變...
+        window.finalApprove = async (id) => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); renderAdmin(); };
     </script>
 </body>
 </html>
