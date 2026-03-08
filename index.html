@@ -3,37 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME V92 ADMIN</title>
-    <link rel="manifest" href="manifest.json">
+    <title>SUPREME V92 FLOW</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/709/709513.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; user-select: none; }
-        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 60px 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 400px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2.5rem; padding: 40px; border: 1px solid #1e293b; }
-        input { background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 12px; padding: 12px; color: white; outline: none; text-align: center; width: 100%; }
+        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; }
+        .id-card { width: 100%; max-width: 400px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 30px; border: 1px solid #1e293b; }
+        .btn-action { width: 100%; padding: 22px; border-radius: 1.2rem; font-weight: 900; text-transform: uppercase; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; }
+        #preview { width: 100%; height: 220px; object-fit: cover; border-radius: 1rem; margin-bottom: 20px; display: none; border: 2px solid #334155; }
+        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body>
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-3xl font-black text-white tracking-widest italic mb-2 uppercase">Supreme</h1>
-        <p class="text-[9px] text-slate-600 tracking-[0.5em] uppercase mb-12">Logistics Control</p>
-        <input type="password" id="pin" placeholder="••••" inputmode="numeric" style="background:transparent; border:none; border-bottom:2px solid #1e293b; border-radius:0; font-size:2rem; color:#38bdf8; width:200px;">
-        <button onclick="boot()" class="mt-16 px-16 py-4 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] tracking-widest uppercase active:bg-white active:text-black transition">Authenticate</button>
+        <p class="text-[9px] text-slate-600 tracking-[0.5em] mb-12 uppercase">Logistics Matrix</p>
+        <input type="password" id="pin" placeholder="••••" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-3xl text-sky-400 w-48 outline-none pb-2">
+        <button onclick="boot()" class="mt-16 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] tracking-widest uppercase active:bg-white active:text-black transition">Authenticate</button>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-20 mb-10 text-slate-800 font-bold text-[9px] uppercase border-b border-slate-900 pb-1">System Exit</button>
+        <button onclick="location.reload()" class="mt-10 mb-10 text-slate-800 font-bold text-[9px] uppercase border-b border-slate-900">Disconnect System</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // 使用你目前的 Firebase 配置
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
             authDomain: "supreme-v92.firebaseapp.com",
@@ -46,72 +46,96 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let partners = [];
+        let base64Photo = null;
 
-        onSnapshot(query(collection(db, 'partners'), orderBy('name')), s => { 
-            partners = s.docs.map(d => ({id: d.id, ...d.data()})); 
-            if(document.getElementById('driver-list')) renderList();
-        });
+        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
 
         window.boot = () => {
             const entry = document.getElementById('pin').value;
-            if(entry === "9999") return renderAdmin(); 
             const p = partners.find(x => x.uid === entry);
             if(p) return renderDriver(p);
-            alert("驗證失敗");
+            alert("ACCESS DENIED");
         };
-
-        function renderAdmin() {
-            document.getElementById('gate').style.display = 'none';
-            document.getElementById('main').style.display = 'flex';
-            document.getElementById('render-target').innerHTML = `
-                <div class="id-card mb-6">
-                    <h2 class="text-white font-black italic mb-6 text-center uppercase tracking-widest">Admin Matrix</h2>
-                    <div class="flex flex-col gap-4">
-                        <input type="text" id="newName" placeholder="司機姓名">
-                        <input type="text" id="newUid" placeholder="自訂 PIN 碼" inputmode="numeric">
-                        <button id="addBtn" class="bg-white text-black font-bold py-3 rounded-xl uppercase text-xs active:scale-95 transition">新增司機</button>
-                    </div>
-                </div>
-                <div id="driver-list" class="w-full max-w-[400px] flex flex-col gap-2"></div>`;
-            
-            document.getElementById('addBtn').onclick = async () => {
-                const n = document.getElementById('newName').value;
-                const u = document.getElementById('newUid').value;
-                if(!n || !u) return alert("請填寫姓名與 PIN");
-                try {
-                    await addDoc(collection(db, 'partners'), { name: n, uid: u, count: 0, lastSync: serverTimestamp() });
-                    document.getElementById('newName').value = ""; document.getElementById('newUid').value = "";
-                    alert("司機已成功加入系統");
-                } catch(e) { alert("儲存失敗，請檢查資料庫規則"); }
-            };
-            renderList();
-        }
-
-        function renderList() {
-            const list = document.getElementById('driver-list');
-            list.innerHTML = `<p class="text-[10px] mb-2 text-slate-500 font-bold uppercase tracking-widest text-center">目前車隊清單</p>`;
-            partners.forEach(p => {
-                list.innerHTML += `<div class="bg-slate-900/50 p-4 rounded-2xl flex justify-between items-center border border-slate-800 mb-2">
-                    <div><p class="text-white font-bold text-sm">${p.name}</p><p class="text-[9px] text-slate-500">PIN: ${p.uid}</p></div>
-                    <p class="text-sky-400 font-black text-xl">${p.count || 0}</p>
-                </div>`;
-            });
-        }
 
         function renderDriver(p) {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `
                 <div class="id-card">
-                    <p class="text-[10px] text-sky-500 font-black mb-1 uppercase tracking-widest">Operator</p>
-                    <h2 class="text-3xl font-black text-white italic mb-10">${p.name}</h2>
-                    <button id="reportBtn" class="w-full py-12 bg-sky-600 text-slate-900 font-black rounded-[2.5rem] text-2xl active:scale-95 transition shadow-2xl shadow-sky-900/40 uppercase">確認送達</button>
+                    <p class="text-[10px] text-sky-500 font-black mb-1 tracking-widest">DRIVER UNIT</p>
+                    <h2 class="text-3xl font-black text-white italic mb-8 uppercase">${p.name}</h2>
+                    
+                    <img id="preview" src="">
+                    
+                    <label class="btn-action bg-slate-800 text-white border border-slate-700 cursor-pointer mb-6">
+                        📷 啟動相機拍攝憑證
+                        <input type="file" accept="image/*" capture="camera" class="hidden" onchange="window.processImg(this)">
+                    </label>
+                    
+                    <div id="actions" class="hidden flex flex-col">
+                        <button onclick="window.send('${p.id}', 'DELIVERY')" class="btn-action bg-sky-600 text-slate-900">📦 正向配送完成</button>
+                        <button onclick="window.send('${p.id}', 'RETURN')" class="btn-action bg-orange-600 text-white">🔄 逆物流回收回報</button>
+                    </div>
                 </div>`;
-            document.getElementById('reportBtn').onclick = async () => {
-                await updateDoc(doc(db, 'partners', p.id), { count: increment(1), lastSync: serverTimestamp() });
-                alert("回報成功");
-            };
         }
+
+        window.processImg = (input) => {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        // 壓縮圖片大小
+                        const scale = Math.min(600 / img.width, 600 / img.height);
+                        canvas.width = img.width * scale;
+                        canvas.height = img.height * scale;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        base64Photo = canvas.toDataURL('image/jpeg', 0.6); // 60% 質量壓縮
+                        
+                        const pre = document.getElementById('preview');
+                        pre.src = base64Photo;
+                        pre.style.display = 'block';
+                        document.getElementById('actions').classList.remove('hidden');
+                    };
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+        window.send = async (id, type) => {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "SYSTEM SYNCING...";
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            try {
+                // 1. 寫入任務日誌
+                await addDoc(collection(db, 'logs'), {
+                    driverId: id,
+                    task: type,
+                    photoData: base64Photo, // 直接存入 Base64 字串
+                    time: serverTimestamp()
+                });
+
+                // 2. 增加司機績效
+                await updateDoc(doc(db, 'partners', id), { 
+                    count: increment(1),
+                    lastSync: serverTimestamp() 
+                });
+
+                alert("任務已上傳！");
+                location.reload();
+            } catch (e) {
+                alert("連線中斷，請稍後再試");
+                btn.innerHTML = originalText;
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        };
     </script>
 </body>
 </html>
