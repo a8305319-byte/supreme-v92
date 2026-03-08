@@ -3,108 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流 - 精準招募系統</title>
+    <title>在地物流 - 夥伴數位中心</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; overflow-x: hidden; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 24px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 500px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 2.5rem; padding: 30px; border: 1px solid #1e293b; margin-bottom: 20px; }
-        .input-box { background: rgba(15, 23, 42, 0.9); border: 2px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #fff; outline: none; margin-bottom: 12px; font-size: 16px; }
-        .btn-prime { width: 100%; padding: 20px; border-radius: 1.2rem; background: #0ea5e9; color: #020617; font-weight: 950; font-size: 18px; cursor: pointer; border: none; }
+        .id-card { width: 100%; max-width: 500px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 2.5rem; padding: 30px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .input-box { background: rgba(15, 23, 42, 0.9); border: 2px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #fff; outline: none; margin-bottom: 12px; font-size: 16px; transition: 0.3s; }
+        .input-box:focus { border-color: #0ea5e9; }
+        .btn-prime { width: 100%; padding: 20px; border-radius: 1.2rem; background: #0ea5e9; color: #020617; font-weight: 950; font-size: 18px; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-prime:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
         .label-sky { font-size: 13px; color: #38bdf8; font-weight: 900; margin-bottom: 8px; display: block; letter-spacing: 1px; }
         .q-box { background: rgba(255,255,255,0.03); border: 1px solid #1e293b; padding: 15px; border-radius: 1.5rem; margin-bottom: 20px; }
-        .opt-label { display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 10px; font-size: 14px; }
-        .opt-label input { width: 18px; height: 18px; }
+        .opt-label { display: flex; align-items: center; gap: 12px; padding: 12px; cursor: pointer; border-radius: 12px; font-size: 14px; color: #cbd5e1; }
+        .opt-label:hover { background: rgba(14, 165, 233, 0.1); }
+        .opt-label input { width: 20px; height: 20px; accent-color: #0ea5e9; }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
-        <p class="text-sky-500 text-sm font-black tracking-[0.4em] mb-12 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">物流專業評測系統</p>
+        <p class="text-sky-500 text-sm font-black tracking-[0.4em] mb-12 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">夥伴共榮管理系統</p>
+        
         <div class="w-full max-w-[340px] space-y-4">
-            <button onclick="showLayer('interview-page')" class="btn-prime">一、線上實務測驗</button>
-            <button onclick="showLayer('apply-page')" class="btn-prime !bg-transparent border-2 border-slate-700 !text-slate-500">二、正式入職補件</button>
+            <div class="bg-slate-900/80 p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl mb-8">
+                <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center shadow-inner">
+                <input type="password" id="login_pin" placeholder="PIN 安全密碼" class="input-box text-center shadow-inner">
+                <button onclick="boot()" class="btn-prime">進入工作台</button>
+            </div>
+            
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">── 夥伴入職引導 ──</p>
+            <button onclick="showLayer('interview-page')" class="btn-prime !bg-transparent border-2 border-sky-500 !text-sky-400">一、營運職能評估</button>
+            <button onclick="showLayer('apply-page')" class="btn-prime !bg-transparent border-2 border-slate-700 !text-slate-500">二、正式資料建檔</button>
         </div>
     </div>
 
     <div id="interview-page" class="layer">
         <div class="w-full max-w-[500px]">
-            <div class="mb-4 text-slate-500 font-black cursor-pointer" onclick="hideAll()">← 返回</div>
+            <div class="mb-4 text-slate-500 font-black cursor-pointer" onclick="hideAll()">← 返回首頁</div>
             <div class="id-card">
-                <h2 class="text-3xl font-black text-white mb-6 border-b-4 border-sky-500 pb-2 italic">線上實務評估</h2>
+                <h2 class="text-3xl font-black text-white mb-2 italic">營運職能評估</h2>
+                <p class="text-[11px] text-slate-400 mb-8 leading-relaxed">歡迎加入在地物流！請完成以下實務情境模擬，幫助我們為您安排最適合的配送區域。</p>
+                
+                <span class="label-sky">基本聯絡資訊</span>
                 <input type="text" id="int_name" placeholder="您的姓名" class="input-box">
                 <input type="tel" id="int_phone" placeholder="聯絡電話" class="input-box">
                 
-                <span class="label-sky">1. 配送突發大雨，貨物多且怕濕？</span>
-                <div class="q-box">
-                    <label class="opt-label"><input type="radio" name="q1" value="1"> 穿雨衣並蓋好雨布繼續送</label>
-                    <label class="opt-label"><input type="radio" name="q1" value="0"> 找地方躲雨，等雨小再送</label>
+                <span class="label-sky">預計加入車隊</span>
+                <select id="int_v_type" class="input-box bg-slate-900 text-white font-bold" onchange="updateUI(this.value)">
+                    <option value="機車">機車配送夥伴</option>
+                    <option value="貨車">貨車專業夥伴 (需職業駕照)</option>
+                </select>
+
+                <div id="truck_field" class="hidden mb-6 p-4 bg-sky-900/20 border border-sky-500/30 rounded-2xl">
+                    <span class="label-sky !text-sky-400">資格確認</span>
+                    <label class="opt-label"><input type="checkbox" id="pro_lic_check"> 我已持有職業小型車以上駕照</label>
                 </div>
 
-                <span class="label-sky">2. 聯絡不到客戶且無法停車？</span>
-                <div class="q-box">
-                    <label class="opt-label"><input type="radio" name="q2" value="1"> 先送下一件並回報公司</label>
-                    <label class="opt-label"><input type="radio" name="q2" value="0"> 貨放門口拍照直接離開</label>
+                <div class="space-y-2">
+                    <span class="label-sky">情境一：配送中突發大雨，貨多且怕濕？</span>
+                    <div class="q-box">
+                        <label class="opt-label"><input type="radio" name="q1" value="1"> 穿雨衣並蓋好遮雨布繼續送</label>
+                        <label class="opt-label"><input type="radio" name="q1" value="0"> 找地方躲雨，等雨小再送</label>
+                    </div>
+
+                    <span class="label-sky">情境二：聯絡不到客戶且無法停車？</span>
+                    <div class="q-box">
+                        <label class="opt-label"><input type="radio" name="q2" value="1"> 先送下一件並回報公司調度</label>
+                        <label class="opt-label"><input type="radio" name="q2" value="0"> 貨放門口拍照直接離開</label>
+                    </div>
+
+                    <span class="label-sky">情境三：代收貨款多了 200 元但不確定來源？</span>
+                    <div class="q-box">
+                        <label class="opt-label"><input type="radio" name="q3" value="1"> 主動上繳公司並說明情況</label>
+                        <label class="opt-label"><input type="radio" name="q3" value="0"> 先留著，沒人發現就當小費</label>
+                    </div>
                 </div>
 
-                <span class="label-sky">3. 代收貨款多了 200 元不確定來源？</span>
-                <div class="q-box">
-                    <label class="opt-label"><input type="radio" name="q3" value="1"> 主動上繳公司並說明</label>
-                    <label class="opt-label"><input type="radio" name="q3" value="0"> 先留著，沒人發現就當小費</label>
-                </div>
-
-                <span class="label-sky">4. 客戶發現外箱微損現場大罵？</span>
-                <div class="q-box">
-                    <label class="opt-label"><input type="radio" name="q4" value="1"> 禮貌引導聯繫理賠並拍照</label>
-                    <label class="opt-label"><input type="radio" name="q4" value="0"> 跟他理論，強調這不是我的錯</label>
-                </div>
-
-                <span class="label-sky">5. 發現輪胎磨平但今天貨量大？</span>
-                <div class="q-box">
-                    <label class="opt-label"><input type="radio" name="q5" value="1"> 立即要求更換輪胎或換車</label>
-                    <label class="opt-label"><input type="radio" name="q5" value="0"> 先硬著頭皮送，送完再去換</label>
-                </div>
-
-                <button onclick="submitInterview()" id="sub_btn" class="btn-prime mt-6">送出評估資料</button>
+                <button onclick="submitInterview()" id="sub_btn" class="btn-prime mt-6 shadow-xl">送出評估結果</button>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, serverTimestamp, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // Firebase 初始化 (略)
+        // Firebase 基礎設定 (請確保您的參數正確)
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
+            authDomain: "supreme-v92.firebaseapp.com", 
+            projectId: "supreme-v92", 
+            storageBucket: "supreme-v92.firebasestorage.app", 
+            messagingSenderId: "485530156296", 
+            appId: "1:485530156296:web:6728c0ee08b98dedd800bd" 
+        };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // 更新 UI 分流
+        window.updateUI = (val) => {
+            document.getElementById('truck_field').style.display = (val === '貨車') ? 'block' : 'none';
+        };
+
+        // 按鈕修復與提交邏輯
         window.submitInterview = async () => {
+            const btn = document.getElementById('sub_btn');
             const name = document.getElementById('int_name').value;
             const phone = document.getElementById('int_phone').value;
-            const q = [
-                document.querySelector('input[name="q1"]:checked')?.value,
-                document.querySelector('input[name="q2"]:checked')?.value,
-                document.querySelector('input[name="q3"]:checked')?.value,
-                document.querySelector('input[name="q4"]:checked')?.value,
-                document.querySelector('input[name="q5"]:checked')?.value
-            ];
+            const vType = document.getElementById('int_v_type').value;
+            const proLic = document.getElementById('pro_lic_check').checked;
 
-            if(!name || !phone || q.includes(undefined)) return alert("請完成所有基本資料與實務題目！");
+            // 抓取 3 題答案
+            const q1 = document.querySelector('input[name="q1"]:checked')?.value;
+            const q2 = document.querySelector('input[name="q2"]:checked')?.value;
+            const q3 = document.querySelector('input[name="q3"]:checked')?.value;
 
-            const score = q.reduce((a, b) => a + parseInt(b), 0) * 20; // 5 題，每題 20 分
+            // 防呆判斷：必填欄位
+            if (!name || !phone || !q1 || !q2 || !q3) {
+                alert("請完整填寫姓名、電話，並完成所有情境評估題目。");
+                return;
+            }
+
+            // 貨車強制檢查
+            if (vType === '貨車' && !proLic) {
+                alert("加入貨車車隊必須持有職業駕照，請勾選確認。");
+                return;
+            }
+
+            // 開始提交
+            btn.disabled = true;
+            btn.innerText = "正在傳送評估數據...";
+
+            const score = (parseInt(q1) + parseInt(q2) + parseInt(q3)) * 33.3;
 
             try {
                 await addDoc(collection(db, 'partners'), {
                     name: name,
                     phone: phone,
-                    ai_score: score,
+                    v_type: vType,
+                    has_pro_lic: proLic,
+                    ai_score: Math.round(score),
                     status: "interviewing",
                     time: serverTimestamp()
                 });
-                alert(`評測完成！您的專業分數：${score} 分。請等候審核通知。`);
+                alert("評估資料已成功送出！請靜候系統審核通知。");
                 location.reload();
-            } catch(e) { alert("提交錯誤"); }
+            } catch (error) {
+                console.error(error);
+                alert("傳送失敗，請檢查網路連線後重試。");
+                btn.disabled = false;
+                btn.innerText = "送出評估結果";
+            }
         };
 
         window.showLayer = id => document.getElementById(id).style.display = 'flex';
