@@ -10,23 +10,23 @@
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
         .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; }
         .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 16px; }
-        .label-sky { font-size: 14px; color: #38bdf8; font-weight: bold; margin-bottom: 8px; display: block; }
-        .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; transition: all 0.2s; border: none; }
+        .select-box { background: #1e293b; border: 1px solid #38bdf8; color: white; border-radius: 0.8rem; padding: 12px; width: 100%; margin-bottom: 10px; }
+        .label-sky { font-size: 13px; color: #38bdf8; font-weight: bold; margin-bottom: 8px; display: block; }
+        .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; border: none; }
         .btn-prime:active { scale: 0.96; }
-        .admin-section { width: 100%; max-width: 480px; margin-bottom: 30px; border-bottom: 1px solid #1e293b; padding-bottom: 20px; }
-        .setting-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 10px; }
+        .v-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #334155; color: #38bdf8; margin-left: 5px; }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-4xl font-black text-white italic mb-2">SUPREME</h1>
-        <p class="text-slate-500 text-sm mb-10 tracking-widest">物流管理系統</p>
+        <p class="text-slate-500 text-sm mb-10">物流管理系統</p>
         <div class="w-full max-w-[320px]">
             <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center">
             <input type="password" id="login_pin" placeholder="密碼 (PIN)" class="input-box text-center">
-            <div class="flex items-center gap-2 mb-4 justify-start p-1 text-xs text-slate-500">
-                <input type="checkbox" id="remember_me" class="accent-sky-500"> <label for="remember_me">記住帳號密碼</label>
+            <div class="flex items-center gap-2 mb-4 text-xs text-slate-500">
+                <input type="checkbox" id="remember_me"> <label for="remember_me">記住我</label>
             </div>
             <button onclick="boot()" class="btn-prime">確認登入</button>
             <button onclick="showApply()" class="text-sm text-slate-600 underline mt-10 block mx-auto">夥伴入職申請</button>
@@ -38,7 +38,15 @@
             <h2 class="text-xl font-bold text-white mb-6 text-center">夥伴入職申請</h2>
             <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
             <input type="tel" id="app_phone" placeholder="手機號碼" class="input-box">
-            <input type="password" id="app_pin" placeholder="自訂登入密碼 (4位數)" maxlength="4" class="input-box">
+            <input type="password" id="app_pin" placeholder="自訂登入密碼 (4位)" maxlength="4" class="input-box">
+            
+            <span class="label-sky">使用的車輛類型</span>
+            <select id="app_vehicle" class="select-box">
+                <option value="A機車">A 機車</option>
+                <option value="B自有車">B 自有車</option>
+                <option value="C公司車">C 公司車</option>
+            </select>
+
             <button onclick="submitApply()" class="btn-prime mt-4">提交申請資料</button>
             <button onclick="location.reload()" class="w-full mt-4 text-sm text-slate-500">返回</button>
         </div>
@@ -51,7 +59,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -65,10 +73,6 @@
         const db = getFirestore(app);
 
         let partners = [];
-        let config = { del: 50, ret: 20, labor: 1500, health: 800 };
-
-        // 讀取費率設定與夥伴資料
-        onSnapshot(doc(db, 'settings', 'rates'), d => { if(d.exists()) config = d.data(); });
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -83,8 +87,6 @@
         window.boot = () => {
             const phone = document.getElementById('login_phone').value, pin = document.getElementById('login_pin').value;
             if (document.getElementById('remember_me').checked) { localStorage.setItem('supreme_phone', phone); localStorage.setItem('supreme_pin', btoa(pin)); }
-            else { localStorage.removeItem('supreme_phone'); localStorage.removeItem('supreme_pin'); }
-
             if(phone === "0976017938" && pin === "0531") return renderAdmin();
             const p = partners.find(x => x.phone === phone && x.uid === pin && x.status === "approved");
             if(p) return renderPartnerUI(p);
@@ -98,7 +100,11 @@
             await addDoc(collection(db, 'partners'), {
                 name: document.getElementById('app_name').value,
                 phone: phone, uid: document.getElementById('app_pin').value,
-                status: "pending", l_cnt: 1, h_cnt: 1, total_del: 0, total_ret: 0, time: serverTimestamp()
+                v_type: document.getElementById('app_vehicle').value,
+                status: "pending", 
+                rate_del: 50, rate_ret: 20, // 個別初始費率
+                labor: 1500, health: 800, h_cnt: 1,
+                total_del: 0, total_ret: 0, time: serverTimestamp()
             });
             alert("已提交申請"); location.reload();
         };
@@ -108,8 +114,8 @@
             document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `
                 <div class="id-card">
-                    <h2 class="text-2xl font-bold text-white mb-6">${p.name} 夥伴</h2>
-                    <div class="space-y-4">
+                    <h2 class="text-2xl font-bold text-white mb-2">${p.name} <span class="v-badge">${p.v_type}</span></h2>
+                    <div class="space-y-4 mt-8">
                         <div><span class="label-sky">配送件數</span><input type="number" id="dc" placeholder="0" class="input-box text-center text-2xl font-black text-sky-400"></div>
                         <div><span class="label-sky">逆物流量</span><input type="number" id="rc" placeholder="0" class="input-box text-center text-2xl font-black text-orange-400"></div>
                         <button onclick="window.sendJob('${p.id}')" class="btn-prime">同步作業數據</button>
@@ -128,47 +134,36 @@
             document.getElementById('main').style.display = 'flex';
             const approved = partners.filter(x => x.status === "approved"), pending = partners.filter(x => x.status === "pending");
             
-            let html = `
-                <div class="w-full max-w-[480px]">
-                    <h2 class="text-white font-bold text-xl mb-6">管理中心</h2>
-                    
-                    <div class="admin-section">
-                        <p class="text-sky-400 font-bold mb-3 text-sm">⚙️ 費率設定 (全體同步)</p>
-                        <div class="setting-grid">
-                            <div><label class="text-[10px]">配送單價</label><input type="number" id="s_del" value="${config.del}" class="input-box !py-2"></div>
-                            <div><label class="text-[10px]">逆物流單價</label><input type="number" id="s_ret" value="${config.ret}" class="input-box !py-2"></div>
-                            <div><label class="text-[10px]">基本勞保</label><input type="number" id="s_lab" value="${config.labor}" class="input-box !py-2"></div>
-                            <div><label class="text-[10px]">健保單價</label><input type="number" id="s_hea" value="${config.health}" class="input-box !py-2"></div>
-                        </div>
-                        <button onclick="window.saveRates()" class="w-full bg-sky-900 text-sky-200 py-2 rounded-lg text-xs font-bold mt-2">儲存所有設定</button>
-                    </div>`;
+            let html = `<div class="w-full max-w-[480px]"><h2 class="text-white font-bold text-xl mb-6">管理後台</h2>`;
 
             if(pending.length > 0) {
-                html += `<p class="text-orange-500 font-bold mb-3 text-sm">待核准夥伴</p>`;
+                html += `<p class="text-orange-500 font-bold mb-3 text-sm">新入職申請</p>`;
                 html += pending.map(p => `
                     <div class="id-card !p-4 !bg-slate-900 mb-4">
-                        <p class="text-white font-bold">${p.name} (${p.phone})</p>
+                        <p class="text-white font-bold">${p.name} (${p.v_type})</p>
                         <button onclick="window.finalApprove('${p.id}')" class="btn-prime !py-2 !text-xs mt-3">核准入職</button>
                     </div>`).join('');
             }
 
-            html += `<div class="flex justify-between items-center mb-3"><p class="text-slate-500 font-bold text-sm">夥伴管理與薪資</p><button onclick="window.exportCSV()" class="text-green-500 text-xs font-bold">匯出報表</button></div>`;
+            html += `<div class="flex justify-between items-center mb-4"><p class="text-slate-500 font-bold text-sm">夥伴薪資與個別費率設定</p></div>`;
             html += approved.map(p => {
-                const pay = (p.total_del * config.del) + (p.total_ret * config.ret) - config.labor - (p.h_cnt * config.health);
+                const pay = (p.total_del * p.rate_del) + (p.total_ret * p.rate_ret) - p.labor - (p.h_cnt * p.health);
                 return `
                 <div class="id-card !p-5 !bg-slate-900/40 border-slate-800">
-                    <div class="flex justify-between items-start">
+                    <div class="flex justify-between items-start border-b border-slate-800 pb-3 mb-3">
                         <div>
-                            <p class="text-white font-bold">${p.name}</p>
-                            <p class="text-[10px] text-slate-500">${p.phone} | PIN:${p.uid}</p>
+                            <p class="text-white font-bold">${p.name} <span class="v-badge">${p.v_type}</span></p>
+                            <p class="text-[10px] text-slate-500">配送: $${p.rate_del} | 逆物: $${p.rate_ret}</p>
                         </div>
-                        <div class="text-right">
-                            <p class="text-sky-400 font-black text-xl">$${pay.toLocaleString()}</p>
-                            <div class="flex gap-2 mt-2">
-                                <button onclick="window.editPartner('${p.id}')" class="text-slate-500 text-[10px] underline">修改</button>
-                                <button onclick="window.delPartner('${p.id}')" class="text-red-900 text-[10px] underline">刪除</button>
-                            </div>
-                        </div>
+                        <p class="text-sky-400 font-black text-xl">$${pay.toLocaleString()}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-[9px]">配送單價</label><input id="rd_${p.id}" type="number" value="${p.rate_del}" class="input-box !py-1 !text-xs"></div>
+                        <div><label class="text-[9px]">逆物單價</label><input id="rr_${p.id}" type="number" value="${p.rate_ret}" class="input-box !py-1 !text-xs"></div>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="window.updateRate('${p.id}')" class="flex-1 bg-sky-900 text-sky-200 py-1 rounded text-[10px] font-bold">儲存個別費率</button>
+                        <button onclick="window.delPartner('${p.id}')" class="px-2 text-red-900 text-[10px] underline">刪除</button>
                     </div>
                 </div>`;
             }).join('');
@@ -177,51 +172,15 @@
             document.getElementById('render-target').innerHTML = html;
         }
 
-        window.saveRates = async () => {
-            const data = {
-                del: parseInt(document.getElementById('s_del').value),
-                ret: parseInt(document.getElementById('s_ret').value),
-                labor: parseInt(document.getElementById('s_lab').value),
-                health: parseInt(document.getElementById('s_hea').value)
-            };
-            await setDoc(doc(db, 'settings', 'rates'), data);
-            alert("費率設定已生效"); renderAdmin();
+        window.updateRate = async (id) => {
+            const d = parseInt(document.getElementById('rd_'+id).value);
+            const r = parseInt(document.getElementById('rr_'+id).value);
+            await updateDoc(doc(db, 'partners', id), { rate_del: d, rate_ret: r });
+            alert("費率已單獨更新"); renderAdmin();
         };
 
-        window.editPartner = async (id) => {
-            const p = partners.find(x => x.id === id);
-            const newName = prompt("修改姓名:", p.name);
-            const newPin = prompt("修改密碼 (PIN):", p.uid);
-            if(newName && newPin) {
-                await updateDoc(doc(db, 'partners', id), { name: newName, uid: newPin });
-                renderAdmin();
-            }
-        };
-
-        window.delPartner = async (id) => {
-            if(confirm("確定要刪除這位夥伴嗎？數據將無法恢復。")) {
-                await deleteDoc(doc(db, 'partners', id));
-                renderAdmin();
-            }
-        };
-
-        window.finalApprove = async (id) => {
-            await updateDoc(doc(db, 'partners', id), { status: "approved" });
-            renderAdmin();
-        };
-
-        window.exportCSV = () => {
-            let csv = "\ufeff夥伴姓名,手機,實領薪資\n";
-            partners.filter(x => x.status === "approved").forEach(p => {
-                const pay = (p.total_del * config.del) + (p.total_ret * config.ret) - config.labor - (p.h_cnt * config.health);
-                csv += `${p.name},${p.phone},${pay}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `SUPREME_夥伴薪資_${new Date().toLocaleDateString()}.csv`;
-            link.click();
-        };
+        window.delPartner = async (id) => { if(confirm("確定刪除？")) { await deleteDoc(doc(db, 'partners', id)); renderAdmin(); } };
+        window.finalApprove = async (id) => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); renderAdmin(); };
     </script>
 </body>
 </html>
