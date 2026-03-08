@@ -10,17 +10,21 @@
         body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
         .id-card { width: 100%; max-width: 500px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 16px; }
+        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 15px; }
+        .label-sky { font-size: 13px; color: #38bdf8; font-weight: bold; margin-bottom: 6px; display: block; margin-top: 10px; }
         .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; cursor: pointer; border: none; }
         .btn-prime:active { opacity: 0.8; transform: scale(0.98); }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; padding: 20px; overflow-y: auto; }
         .remember-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; width: 100%; justify-content: start; padding-left: 5px; }
         .remember-wrap input { width: 18px; height: 18px; accent-color: #0ea5e9; }
-        .remember-wrap label { font-size: 14px; color: #64748b; cursor: pointer; }
-        /* 薪資條模板 */
-        #slip-box { position: absolute; left: -9999px; background: white; color: black; padding: 40px; width: 400px; }
-        .photo-wall { display: grid; grid-template-cols: repeat(3, 1fr); gap: 5px; width: 100%; margin-bottom: 20px; }
-        .photo-item { aspect-ratio: 1; background: #0f172a; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b; }
+        .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .photo-slot { background: #0f172a; border: 1px dashed #334155; border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+        .photo-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: none; }
+        .photo-wall { display: grid; grid-template-cols: repeat(3, 1fr); gap: 8px; width: 100%; margin-bottom: 30px; }
+        .photo-item { position: relative; aspect-ratio: 1; background: #0f172a; border-radius: 8px; overflow: hidden; border: 1px solid #1e293b; }
+        .del-badge { position: absolute; top: 4px; right: 4px; background: rgba(220,38,38,0.9); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; cursor: pointer; z-index: 10; font-weight: bold; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; padding: 20px; overflow-y: auto; }
+        #slip-box { position: absolute; left: -9999px; background: white; color: black; padding: 40px; width: 400px; border: 1px solid #ddd; }
+        .slip-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -31,14 +35,40 @@
         <div class="w-full max-w-[320px]">
             <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center w-full">
             <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box text-center w-full">
-            
             <div class="remember-wrap">
                 <input type="checkbox" id="remember_me">
-                <label for="remember_me">記住帳號密碼 (加密儲存)</label>
+                <label for="remember_me" class="text-xs text-slate-500">記住帳號密碼 (加密儲存)</label>
             </div>
+            <button onclick="boot()" class="btn-prime w-full shadow-lg shadow-sky-500/20">確認登入</button>
+            <button onclick="showApply()" class="text-xs text-slate-700 underline mt-10 block mx-auto uppercase">Partner Application / 夥伴入職</button>
+        </div>
+    </div>
 
-            <button onclick="boot()" class="btn-prime w-full">確認登入系統</button>
-            <button onclick="showApply()" class="text-xs text-slate-700 underline mt-10 block mx-auto uppercase tracking-widest">Partner Application / 夥伴入職</button>
+    <div id="apply-page" class="layer">
+        <div class="id-card">
+            <h2 class="text-xl font-bold text-white mb-6 text-center">夥伴詳細入職申請</h2>
+            <span class="label-sky">第一步：證件影像</span>
+            <div class="photo-grid">
+                <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f" class="text-xs">身分證正面</span><img id="p_id_f"></div>
+                <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b" class="text-xs">身分證反面</span><img id="p_id_b"></div>
+                <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic" class="text-xs">駕駛執照</span><img id="p_lic"></div>
+                <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car" class="text-xs">行車執照</span><img id="p_car"></div>
+                <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
+            </div>
+            <span class="label-sky">第二步：基本資料</span>
+            <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
+            <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
+            <input type="tel" id="app_phone" placeholder="手機號碼" class="input-box">
+            <input type="password" id="app_pin" placeholder="自訂密碼 (4位)" maxlength="4" class="input-box">
+            <span class="label-sky">第三步：聯繫與車輛</span>
+            <input type="text" id="app_emergency" placeholder="緊急聯絡人/電話" class="input-box">
+            <select id="app_vehicle" class="input-box bg-[#1e293b]">
+                <option value="A機車">A 機車</option>
+                <option value="B自有車">B 自有車</option>
+                <option value="C公司車">C 公司車</option>
+            </select>
+            <button onclick="submitApply()" class="btn-prime mt-4">提交申請資料</button>
+            <button onclick="location.reload()" class="w-full mt-4 text-sm text-slate-500">返回登入</button>
         </div>
     </div>
 
@@ -49,19 +79,18 @@
 
     <div id="detail-modal" class="modal">
         <div class="id-card mx-auto mt-10" id="detail-content"></div>
-        <button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-4 max-w-[500px] mx-auto block">關閉視窗</button>
+        <button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-4 max-w-[500px] mx-auto block">關閉詳情視窗</button>
     </div>
 
     <div id="slip-box">
-        <div style="text-align:center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
+        <div style="text-align:center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 style="margin:0; font-size: 22px;">SUPREME 夥伴酬勞明細單</h2>
             <p id="slip-date" style="margin:5px 0; font-size:12px; color:#666;"></p>
         </div>
-        <div id="slip-body" style="font-size:14px; line-height: 2;"></div>
+        <div id="slip-body"></div>
         <div id="slip-total-row" style="margin-top:20px; border-top:2px solid #000; padding-top:10px; font-size:18px; font-weight:bold; display:flex; justify-content:space-between;">
             <span>本月實領金額</span><span id="slip-total-val"></span>
         </div>
-        <p style="text-align:center; font-size:10px; color:#999; margin-top:30px;">本報表由 SUPREME V92 系統自動結算</p>
     </div>
 
     <script type="module">
@@ -72,12 +101,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let partners = [];
-        let taskLogs = [];
+        let partners = [], taskLogs = [], currentF = '', photos = {};
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
         onSnapshot(collection(db, 'logs'), s => { taskLogs = s.docs.map(d => ({id: d.id, ...d.data()})); });
 
-        // 初始化「記住我」檢查
         window.addEventListener('DOMContentLoaded', () => {
             const sp = localStorage.getItem('s_phone'), si = localStorage.getItem('s_pin');
             if(sp && si) {
@@ -89,115 +116,148 @@
 
         window.boot = () => {
             const phone = document.getElementById('login_phone').value, pin = document.getElementById('login_pin').value;
-            const remember = document.getElementById('remember_me').checked;
-
-            if(remember) {
-                localStorage.setItem('s_phone', phone);
-                localStorage.setItem('s_pin', btoa(pin));
-            } else {
-                localStorage.removeItem('s_phone');
-                localStorage.removeItem('s_pin');
-            }
-
+            if(document.getElementById('remember_me').checked) { localStorage.setItem('s_phone', phone); localStorage.setItem('s_pin', btoa(pin)); }
+            else { localStorage.removeItem('s_phone'); localStorage.removeItem('s_pin'); }
             if(phone === "0976017938" && pin === "0531") return renderAdmin();
             const p = partners.find(x => x.phone === phone && x.uid === pin && x.status === "approved");
             if(p) return renderPartnerUI(p);
-            alert("登入失敗：請檢查資料或等待審核");
+            alert("驗證失敗");
         };
 
-        // 老闆管理端
+        window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
+        window.triggerCam = (f) => { currentF = f; document.getElementById('cam').click(); };
+        window.handleFile = (input) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                photos[currentF] = e.target.result;
+                const prev = document.getElementById('p_' + currentF);
+                prev.src = e.target.result; prev.style.display = 'block';
+                document.getElementById('t_' + currentF).style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        };
+
+        window.submitApply = async () => {
+            const data = {
+                name: document.getElementById('app_name').value, phone: document.getElementById('app_phone').value,
+                uid: document.getElementById('app_pin').value, id_num: document.getElementById('app_idnum').value,
+                emergency: document.getElementById('app_emergency').value, v_type: document.getElementById('app_vehicle').value,
+                docs: photos, status: "pending", rate_del: 50, rate_ret: 20, labor: 1500, health: 800, h_cnt: 1, bonus: 0, penalty: 0, total_del: 0, total_ret: 0, time: serverTimestamp()
+            };
+            await addDoc(collection(db, 'partners'), data);
+            alert("申請已提交"); location.reload();
+        };
+
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
-            const approved = partners.filter(x => x.status === "approved");
-            const totalDel = approved.reduce((s, p) => s + (p.total_del || 0), 0);
+            const approved = partners.filter(x => x.status === "approved"), pending = partners.filter(x => x.status === "pending");
             
-            let html = `<div class="w-full max-w-[500px]"><h2 class="text-white font-black text-2xl mb-8">旗艦經營中控台</h2>`;
+            let html = `<div class="w-full max-w-[500px] px-2"><h2 class="text-white font-black text-2xl mb-8 uppercase italic">Boss Control Center</h2>`;
             
-            // 看板數據
-            html += `<div class="grid grid-cols-2 gap-3 mb-8">
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800"><p class="text-[10px] text-slate-500 uppercase">Total Items / 總件數</p><p class="text-2xl font-black text-sky-400">${totalDel}</p></div>
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800"><p class="text-[10px] text-slate-500 uppercase">Active Partners / 夥伴數</p><p class="text-2xl font-black text-white">${approved.length}</p></div>
-            </div>`;
+            // 照片牆 + 刪除照片
+            html += `<p class="text-sky-500 font-bold text-[10px] mb-3 uppercase tracking-widest">任務影像審核牆</p>`;
+            html += `<div class="photo-wall">${taskLogs.slice(-9).reverse().map(l => `
+                <div class="photo-item"><img src="${l.photo}" class="w-full h-full object-cover"><div class="del-badge" onclick="window.delPhoto('${l.id}')">刪除</div></div>`).join('')}</div>`;
 
-            // 照片牆 (最近回報)
-            html += `<p class="text-sky-500 font-bold text-[10px] mb-3 uppercase tracking-widest">Recent Tasks / 任務查核牆</p>`;
-            html += `<div class="photo-wall">${taskLogs.slice(-9).reverse().map(l => `<div class="photo-item"><img src="${l.photo}" class="w-full h-full object-cover" onclick="window.open(this.src)"></div>`).join('')}</div>`;
+            if(pending.length > 0) {
+                html += `<p class="text-orange-500 font-bold mb-3 text-xs uppercase">待核准夥伴</p>`;
+                html += pending.map(p => `<div class="id-card !p-4 !bg-slate-900 mb-4 flex justify-between items-center"><p class="text-white font-bold">${p.name}</p><button onclick="window.finalApprove('${p.id}')" class="bg-sky-600 text-white px-4 py-1 rounded text-xs font-bold">核准</button></div>`).join('');
+            }
 
-            // 功能按鈕
-            html += `<div class="flex gap-2 mb-10">
-                <button onclick="window.monthlyReset()" class="flex-1 bg-red-900/20 text-red-500 border border-red-900/50 py-3 rounded-xl text-[10px] font-bold">月底數據結算歸零</button>
-                <button onclick="window.exportCSV()" class="flex-1 bg-sky-900/20 text-sky-500 border border-sky-900/50 py-3 rounded-xl text-[10px] font-bold">匯出財務報表</button>
-            </div>`;
-
-            // 夥伴列表
+            html += `<div class="flex justify-between items-center mb-4"><p class="text-slate-600 font-bold text-[10px] uppercase">夥伴名冊與各別費率</p><button onclick="window.monthlyReset()" class="text-red-500 text-[10px] font-bold underline">月底數據結算歸零</button></div>`;
             html += approved.map(p => {
-                const bonus = p.bonus || 0, penalty = p.penalty || 0;
-                const pay = (p.total_del * (p.rate_del || 50)) + (p.total_ret * (p.rate_ret || 20)) - (p.labor || 1500) - ((p.h_cnt || 1) * (p.health || 800)) + bonus - penalty;
+                const pay = (p.total_del * (p.rate_del || 50)) + (p.total_ret * (p.rate_ret || 20)) - (p.labor || 1500) - ((p.h_cnt || 1) * (p.health || 800)) + (p.bonus || 0) - (p.penalty || 0);
                 return `
                 <div class="id-card !p-5 !bg-slate-900/40 border-slate-800 mb-4">
                     <div class="flex justify-between items-start mb-4">
                         <div onclick="window.showPartnerDetail('${p.id}')" class="cursor-pointer">
-                            <p class="text-white font-bold">${p.name} <span class="v-badge">${p.v_type}</span></p>
-                            <p class="text-[10px] text-slate-600 underline">查看完整人事證件</p>
+                            <p class="text-white font-bold">${p.name} <span class="text-[9px] border border-sky-900 px-1 rounded text-sky-500">${p.v_type}</span></p>
+                            <p class="text-[9px] text-slate-500 underline mt-1">查看證件詳情</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-green-400 font-black text-xl">$${pay.toLocaleString()}</p>
-                            <button onclick='window.downloadSlip(${JSON.stringify(p)})' class="text-[9px] text-sky-500 underline">製作薪資條</button>
+                            <p class="text-sky-400 font-black text-xl">$${pay.toLocaleString()}</p>
+                            <button onclick='window.downloadSlip(${JSON.stringify(p)})' class="text-[9px] text-sky-600 underline">下載薪資條</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
-                        <input id="bo_${p.id}" type="number" placeholder="加給" value="${bonus}" class="input-box !py-1 !text-xs !mb-0">
-                        <input id="pe_${p.id}" type="number" placeholder="扣款" value="${penalty}" class="input-box !py-1 !text-xs !mb-0">
+                        <div><label class="text-[9px] text-slate-600">配送費率</label><input id="rd_${p.id}" type="number" value="${p.rate_del}" class="input-box !py-1 !text-xs !mb-0"></div>
+                        <div><label class="text-[9px] text-slate-600">逆物費率</label><input id="rr_${p.id}" type="number" value="${p.rate_ret}" class="input-box !py-1 !text-xs !mb-0"></div>
+                        <div><label class="text-[9px] text-slate-600">本月加給</label><input id="bo_${p.id}" type="number" value="${p.bonus}" class="input-box !py-1 !text-xs !mb-0"></div>
+                        <div><label class="text-[9px] text-slate-600">本月扣處</label><input id="pe_${p.id}" type="number" value="${p.penalty}" class="input-box !py-1 !text-xs !mb-0"></div>
                     </div>
-                    <button onclick="window.updateFinance('${p.id}')" class="w-full bg-slate-800 text-sky-500 py-1 rounded mt-2 text-[10px] font-bold">更新本月獎懲</button>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="window.updateFinance('${p.id}')" class="flex-1 bg-slate-800 text-sky-500 py-2 rounded text-[10px] font-bold border border-sky-900">更新參數</button>
+                        <button onclick="window.delPartner('${p.id}')" class="px-2 text-red-900 text-[10px] underline">移除帳號</button>
+                    </div>
                 </div>`;
             }).join('');
-            
             document.getElementById('render-target').innerHTML = html + `</div>`;
         }
 
-        // 薪資條下載功能
+        window.delPhoto = async (id) => { if(confirm("確定刪除影像？")) await deleteDoc(doc(db, 'logs', id)); };
+        window.delPartner = async (id) => { if(confirm("警告：永久刪除此夥伴？")) await deleteDoc(doc(db, 'partners', id)); };
+        window.updateFinance = async (id) => {
+            await updateDoc(doc(db, 'partners', id), {
+                rate_del: parseInt(document.getElementById('rd_'+id).value), rate_ret: parseInt(document.getElementById('rr_'+id).value),
+                bonus: parseInt(document.getElementById('bo_'+id).value), penalty: parseInt(document.getElementById('pe_'+id).value)
+            });
+            alert("已更新"); renderAdmin();
+        };
+        window.monthlyReset = async () => { if(confirm("確定月底歸零？")) for(let p of partners) await updateDoc(doc(db, 'partners', p.id), { total_del: 0, total_ret: 0, bonus: 0, penalty: 0 }); alert("歸零完成"); location.reload(); };
+
+        window.showPartnerDetail = (id) => {
+            const p = partners.find(x => x.id === id);
+            document.getElementById('detail-modal').style.display = 'block';
+            document.getElementById('detail-content').innerHTML = `
+                <h3 class="text-white font-bold mb-4 border-b border-slate-800 pb-2 uppercase text-xs tracking-widest">Partner HR Profile</h3>
+                <div class="text-xs text-slate-400 space-y-1 mb-6">
+                    <p>姓名：${p.name}</p><p>證號：${p.id_num}</p><p>電話：${p.phone}</p><p>緊急：${p.emergency}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <img src="${p.docs?.id_f}" class="rounded border border-slate-800" onclick="window.open(this.src)">
+                    <img src="${p.docs?.lic}" class="rounded border border-slate-800" onclick="window.open(this.src)">
+                </div>
+            `;
+        };
+
         window.downloadSlip = async (p) => {
             const r_del = p.rate_del || 50, r_ret = p.rate_ret || 20, lab = p.labor || 1500, hea = (p.h_cnt || 1) * (p.health || 800);
-            const bonus = p.bonus || 0, penalty = p.penalty || 0;
-            const total = (p.total_del * r_del) + (p.total_ret * r_ret) - lab - hea + bonus - penalty;
-
-            document.getElementById('slip-date').innerText = "結算期間：" + new Date().toLocaleDateString();
+            const total = (p.total_del * r_del) + (p.total_ret * r_ret) - lab - hea + (p.bonus || 0) - (p.penalty || 0);
+            document.getElementById('slip-date').innerText = "結算時間：" + new Date().toLocaleDateString();
             document.getElementById('slip-body').innerHTML = `
                 <div class="slip-row"><span>夥伴姓名</span><b>${p.name}</b></div>
-                <div class="slip-row"><span>配送件數報酬</span><span>$${(p.total_del * r_del).toLocaleString()} (${p.total_del}件)</span></div>
-                <div class="slip-row"><span>逆物流報酬</span><span>$${(p.total_ret * r_ret).toLocaleString()} (${p.total_ret}件)</span></div>
-                <div class="slip-row"><span>本月獎金/加給</span><span>+$${bonus.toLocaleString()}</span></div>
-                <div class="slip-row" style="color:red"><span>勞保費扣款</span><span>-$${lab.toLocaleString()}</span></div>
-                <div class="slip-row" style="color:red"><span>健保費扣款</span><span>-$${hea.toLocaleString()}</span></div>
-                <div class="slip-row" style="color:red"><span>其他扣款/處分</span><span>-$${penalty.toLocaleString()}</span></div>
+                <div class="slip-row"><span>配送件數報酬</span><span>$${(p.total_del * r_del).toLocaleString()}</span></div>
+                <div class="slip-row"><span>本月加給項目</span><span>+$${(p.bonus || 0).toLocaleString()}</span></div>
+                <div class="slip-row" style="color:red"><span>勞保扣款</span><span>-$${lab.toLocaleString()}</span></div>
+                <div class="slip-row" style="color:red"><span>健保扣款</span><span>-$${hea.toLocaleString()}</span></div>
+                <div class="slip-row" style="color:red"><span>罰款/其他扣款</span><span>-$${(p.penalty || 0).toLocaleString()}</span></div>
             `;
             document.getElementById('slip-total-val').innerText = "$" + total.toLocaleString();
-
             const box = document.getElementById('slip-box');
-            box.style.left = "0";
-            const canvas = await html2canvas(box, { scale: 2 });
-            box.style.left = "-9999px";
-            const link = document.createElement('a');
-            link.download = `SUPREME薪資條_${p.name}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+            box.style.left = "0"; const canvas = await html2canvas(box, { scale: 2 }); box.style.left = "-9999px";
+            const link = document.createElement('a'); link.download = `SUPREME薪資條_${p.name}.png`; link.href = canvas.toDataURL(); link.click();
         };
 
-        // 其他功能函式 (與旗艦版相同)
-        window.showApply = () => document.getElementById('apply-page').style.display = 'flex'; // 申請頁面
-        window.updateFinance = async (id) => {
-            const bo = parseInt(document.getElementById('bo_'+id).value) || 0;
-            const pe = parseInt(document.getElementById('pe_'+id).value) || 0;
-            await updateDoc(doc(db, 'partners', id), { bonus: bo, penalty: pe });
-            alert("調整已存檔");
+        function renderPartnerUI(p) {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('main').style.display = 'flex';
+            document.getElementById('render-target').innerHTML = `<div class="id-card">
+                <h2 class="text-2xl font-bold text-white mb-8">${p.name} 您好</h2>
+                <input type="number" id="dc" placeholder="當次配送件數" class="input-box text-center text-xl">
+                <button onclick="window.sendJob('${p.id}')" class="btn-prime">確認回報</button>
+            </div>`;
+        }
+
+        window.sendJob = async (id) => {
+            const d = parseInt(document.getElementById('dc').value) || 0;
+            // 隨便給一張圖代表完成拍照
+            const dummy = "https://via.placeholder.com/300/0ea5e9/ffffff?text=SUPREME+TASK";
+            await addDoc(collection(db, 'logs'), { driverId: id, photo: dummy, time: serverTimestamp() });
+            await updateDoc(doc(db, 'partners', id), { total_del: increment(d) });
+            alert("同步完成"); location.reload();
         };
-        window.monthlyReset = async () => {
-            if(!confirm("確定要將所有件數歸零嗎？")) return;
-            for(let p of partners) { await updateDoc(doc(db, 'partners', p.id), { total_del: 0, total_ret: 0, bonus: 0, penalty: 0 }); }
-            alert("結算歸零成功");
-        };
+        window.finalApprove = async (id) => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); renderAdmin(); };
     </script>
 </body>
 </html>
