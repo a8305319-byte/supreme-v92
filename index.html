@@ -34,11 +34,32 @@
         .loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); z-index: 1000; display: none; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #1e293b; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 新增人員表單彈窗 */
+        #add-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; display: none; justify-content: center; align-items: center; padding: 20px; }
     </style>
 </head>
 <body>
 
     <div id="loading" class="loading-overlay"><div class="spinner"></div><p class="mt-4 text-sky-500 font-bold">系統處理中...</p></div>
+
+    <!-- 快速新增人員彈窗 -->
+    <div id="add-modal">
+        <div class="id-card !mb-0 w-full max-w-[400px]">
+            <h3 class="text-white font-bold mb-6 text-xl italic border-l-4 border-orange-500 pl-3">新增現有人員</h3>
+            <input type="text" id="new_name" placeholder="人員姓名" class="input-box">
+            <input type="tel" id="new_phone" placeholder="手機號碼" class="input-box" maxlength="10">
+            <input type="password" id="new_pin" placeholder="登入 PIN (預設 0000)" class="input-box" maxlength="4">
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <input type="number" id="new_del_p" placeholder="正件單價" class="input-box !mb-0" value="15">
+                <input type="number" id="new_rev_p" placeholder="逆件單價" class="input-box !mb-0" value="10">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('add-modal').style.display='none'" class="w-1/2 py-4 rounded-xl border border-slate-700 text-slate-500 font-bold">取消</button>
+                <button onclick="window.addPartnerDirectly()" class="w-1/2 py-4 rounded-xl bg-orange-600 text-white font-bold">確認新增</button>
+            </div>
+        </div>
+    </div>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
@@ -63,7 +84,7 @@
         </div>
     </div>
 
-    <!-- 第一階段：面試 (AI 隱藏字樣) -->
+    <!-- 第一階段：面試 -->
     <div id="interview-page" class="layer">
         <div class="w-full max-w-[480px]">
             <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="window.hideAll()">← 返回首頁</div>
@@ -170,7 +191,10 @@
             <div class="flex justify-between items-end mb-10">
                 <div>
                     <h2 class="text-white font-black text-4xl border-l-8 border-sky-500 pl-4 uppercase italic">老闆行政總控台</h2>
-                    <p class="text-slate-500 text-[10px] mt-2 pl-6 tracking-widest uppercase">Personnel & Operations Master Control</p>
+                    <div class="flex gap-4 mt-2 pl-6">
+                        <p class="text-slate-500 text-[10px] tracking-widest uppercase">Personnel & Operations Master Control</p>
+                        <button onclick="document.getElementById('add-modal').style.display='flex'" class="text-orange-500 text-[10px] font-bold border border-orange-500 px-3 py-1 rounded-full hover:bg-orange-500 hover:text-white transition">+ 快速新增人員資料</button>
+                    </div>
                 </div>
                 <button onclick="location.reload()" class="bg-slate-800 px-6 py-2 rounded-full text-xs font-bold text-slate-400">安全登出</button>
             </div>
@@ -254,11 +278,9 @@
                 const rp = p.custom_rev || 10;
                 const income = ((p.total_del || 0) * dp) + ((p.total_rev || 0) * rp);
                 
-                // --- 勞健保自動計算黑盒 ---
-                const ins_b = p.ins_base || 0; // 投保額
-                const fm = p.ins_fm || 0;     // 眷屬數
+                const ins_b = p.ins_base || 0; 
+                const fm = p.ins_fm || 0;     
                 
-                // 公式：勞保(2.5%) + 健保(1.8% x (1 + 眷屬))
                 const labor_ins = Math.round(ins_b * 0.025);
                 const health_ins = Math.round(ins_b * 0.018 * (1 + parseInt(fm)));
                 const total_ins = labor_ins + health_ins;
@@ -268,7 +290,7 @@
                 if(p.status === 'pending_review') actionBtn = `<button onclick="window.upS('${p.id}','interviewed')" class="bg-sky-600 px-2 py-1 rounded">核准面試</button>`;
                 if(p.status === 'pending') actionBtn = `<button onclick="window.upS('${p.id}','approved')" class="bg-green-600 px-2 py-1 rounded">正式開通</button>`;
 
-                const aiAnalysis = p.ai_analysis || (p.score !== undefined ? `${p.score < 75 ? '⚠️ 風險偏高' : '✅ 誠信可靠'}` : '尚未分析');
+                const aiAnalysis = p.ai_analysis || (p.score !== undefined ? `${p.score < 75 ? '⚠️ 風險偏高' : '✅ 誠信可靠'}` : '現有人員');
 
                 html += `
                 <tr class="hover:bg-white/5">
@@ -279,8 +301,8 @@
                     <td class="text-center font-bold text-orange-400">${p.total_rev || 0}</td>
                     <td><input type="number" value="${dp}" onchange="window.upD('${p.id}','custom_del',this.value)" class="input-mini"></td>
                     <td><input type="number" value="${rp}" onchange="window.upD('${p.id}','custom_rev',this.value)" class="input-mini"></td>
-                    <td><input type="number" value="${ins_b}" onchange="window.upD('${p.id}','ins_base',this.value)" class="input-mini !w-16" placeholder="投保額"></td>
-                    <td><input type="number" value="${fm}" onchange="window.upD('${p.id}','ins_fm',this.value)" class="input-mini" placeholder="眷屬"></td>
+                    <td><input type="number" value="${ins_b}" onchange="window.upD('${p.id}','ins_base',this.value)" class="input-mini !w-16"></td>
+                    <td><input type="number" value="${fm}" onchange="window.upD('${p.id}','ins_fm',this.value)" class="input-mini"></td>
                     <td class="text-red-400 font-bold">-$${total_ins}</td>
                     <td class="text-sky-400 font-black text-sm">$${net_income}</td>
                     <td>
@@ -294,25 +316,57 @@
             document.getElementById('admin-render').innerHTML = html || '<tr><td colspan="12" class="text-center py-10 text-slate-600">目前尚無人員資料</td></tr>';
         };
 
+        // 老闆直接新增人員功能
+        window.addPartnerDirectly = async () => {
+            if (!userAuth) return;
+            const name = document.getElementById('new_name').value;
+            const phone = document.getElementById('new_phone').value;
+            const pin = document.getElementById('new_pin').value || "0000";
+            const dp = parseFloat(document.getElementById('new_del_p').value) || 15;
+            const rp = parseFloat(document.getElementById('new_rev_p').value) || 10;
+
+            if(!name || !phone) return alert("姓名與手機為必填。");
+            
+            setLoad(true);
+            const id = `p_${phone}`;
+            try {
+                await setDoc(doc(partnersCol, id), {
+                    id, name, phone, pin,
+                    status: "approved",
+                    createdAt: serverTimestamp(),
+                    total_del: 0, total_rev: 0,
+                    custom_del: dp, 
+                    custom_rev: rp,
+                    ins_base: 0, ins_fm: 0,
+                    ai_analysis: "📋 現有人員"
+                });
+                alert(`已成功新增夥伴：${name}`);
+                document.getElementById('add-modal').style.display = 'none';
+                // 清空表單
+                document.getElementById('new_name').value = '';
+                document.getElementById('new_phone').value = '';
+            } catch (e) {
+                console.error(e);
+                alert("新增失敗，可能手機號碼已存在。");
+            }
+            setLoad(false);
+        };
+
         window.submitInterview = async () => {
-            if (!userAuth) return alert("系統初始化中...");
+            if (!userAuth) return;
             const name = document.getElementById('int_name').value;
             const ph = document.getElementById('int_phone').value;
             const q1 = document.querySelector('input[name="q1"]:checked')?.value;
             const q2 = document.querySelector('input[name="q2"]:checked')?.value;
             const q3 = document.querySelector('input[name="q3"]:checked')?.value;
             const q4 = document.querySelector('input[name="q4"]:checked')?.value;
-
             if(!name || !ph || !q1 || !q2 || !q3 || !q4) return alert("請填寫姓名電話並完成評估。");
-            
             setLoad(true);
             const score = parseInt(q1) + parseInt(q2) + parseInt(q3) + parseInt(q4);
             let analysis = "✅ 誠信可靠";
             if (parseInt(q2) < 25) analysis = "⚠️ 誠信風險";
             else if (parseInt(q1) < 25) analysis = "🚧 操作風險";
             else if (score < 75) analysis = "💡 需再教育";
-            if (score === 100) analysis = "💎 極優夥伴";
-
             const id = `p_${ph}`;
             try {
                 await setDoc(doc(partnersCol, id), {
@@ -326,7 +380,7 @@
                 });
                 alert("評估資料已提交，請靜候通知。");
                 location.reload();
-            } catch (e) { console.error(e); alert("提交失敗。"); }
+            } catch (e) { alert("提交失敗。"); }
             setLoad(false);
         };
 
@@ -346,7 +400,7 @@
             setLoad(true);
             try {
                 await updateDoc(doc(partnersCol, currentUser.id), data);
-                alert("人事建檔完成！請等待老闆最後核准。");
+                alert("人事建檔完成！請等待老闆核准。");
                 location.reload();
             } catch (e) { alert("儲存失敗"); }
             setLoad(false);
