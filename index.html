@@ -15,7 +15,6 @@
         .btn-prime:active { transform: scale(0.96); opacity: 0.8; }
         .btn-prime:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
         
-        /* 視覺還原：藍色虛線拍照框 */
         .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         .photo-slot { background: transparent; border: 2px dashed #38bdf8; border-radius: 1.5rem; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; position: relative; }
         .photo-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; display: none; }
@@ -23,27 +22,23 @@
         .divider-orange { width: 100%; height: 4px; background: #f97316; margin-bottom: 25px; border-radius: 99px; }
         .label-blue { font-size: 13px; color: #38bdf8; font-weight: bold; margin-bottom: 8px; display: block; text-align: left; }
         
-        /* 行政總控台樣式 */
         .admin-table th { font-size: 11px; padding: 10px 4px; color: #64748b; white-space: nowrap; }
         .admin-table td { font-size: 11px; padding: 12px 4px; border-bottom: 1px solid #1e293b; vertical-align: middle; }
         .input-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #38bdf8; text-align: center; width: 60px; font-weight: bold; padding: 2px 0; }
         .btn-del { color: #ef4444; border: 1px solid #450a0a; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
-        .ai-tag { font-size: 9px; padding: 2px 6px; border-radius: 99px; background: #0c4a6e; color: #38bdf8; font-weight: bold; }
+        .ai-tag { font-size: 9px; padding: 2px 8px; border-radius: 99px; background: #0c4a6e; color: #38bdf8; font-weight: bold; border: 1px solid #0ea5e9; }
         
-        /* 動畫 */
         .loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); z-index: 1000; display: none; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #1e293b; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* 新增人員表單彈窗 */
         #add-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; display: none; justify-content: center; align-items: center; padding: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="loading" class="loading-overlay"><div class="spinner"></div><p class="mt-4 text-sky-500 font-bold">系統處理中...</p></div>
+    <div id="loading" class="loading-overlay"><div class="spinner"></div><p class="mt-4 text-sky-500 font-bold">正在分析夥伴職能...</p></div>
 
-    <!-- 快速新增人員彈窗 -->
     <div id="add-modal">
         <div class="id-card !mb-0 w-full max-w-[400px]">
             <h3 class="text-white font-bold mb-6 text-xl italic border-l-4 border-orange-500 pl-3">新增現有人員</h3>
@@ -84,7 +79,6 @@
         </div>
     </div>
 
-    <!-- 第一階段：面試 -->
     <div id="interview-page" class="layer">
         <div class="w-full max-w-[480px]">
             <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="window.hideAll()">← 返回首頁</div>
@@ -121,7 +115,6 @@
         </div>
     </div>
 
-    <!-- 第二階段：人事建檔 -->
     <div id="apply-page" class="layer">
         <div class="w-full max-w-[500px]">
             <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="window.hideAll()">← 取消並返回</div>
@@ -155,7 +148,6 @@
         </div>
     </div>
 
-    <!-- 第三階段：工作台回報 -->
     <div id="hub" class="layer">
         <div class="w-full max-w-[450px]">
             <div class="flex justify-between w-full items-center mb-8">
@@ -185,7 +177,6 @@
         </div>
     </div>
 
-    <!-- 第四階段：行政總控台 -->
     <div id="admin" class="layer !px-4">
         <div class="w-full max-w-[1300px]">
             <div class="flex justify-between items-end mb-10">
@@ -203,15 +194,11 @@
                 <table class="w-full text-left admin-table">
                     <thead class="text-slate-500 border-b border-slate-800">
                         <tr>
-                            <th>狀態</th><th>姓名/手機</th><th>AI 評估</th><th>正件</th><th>逆件</th><th>正價</th><th>逆價</th><th>投保額</th><th>眷屬</th><th>扣繳額</th><th>應付淨額</th><th>管理</th>
+                            <th>狀態</th><th>姓名/手機</th><th>隱藏 AI 分析</th><th>正件</th><th>逆件</th><th>正價</th><th>逆價</th><th>投保額</th><th>眷屬</th><th>扣繳額</th><th>應付淨額</th><th>管理</th>
                         </tr>
                     </thead>
                     <tbody id="admin-render" class="text-white"></tbody>
                 </table>
-            </div>
-            
-            <div class="mt-6 p-4 bg-slate-800/30 rounded-2xl border border-slate-700 text-[10px] text-slate-500">
-                <p>※ 勞健保自動計算公式：勞保個人負擔 (基數 x 2.5%) + 健保個人負擔 (基數 x 1.8% x (1 + 眷屬人數))。最終數值以政府公告為準。</p>
             </div>
         </div>
     </div>
@@ -223,7 +210,6 @@
         import { getFirestore, doc, updateDoc, deleteDoc, increment, serverTimestamp, collection, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // Firebase 初始化
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{"apiKey":"","projectId":"supreme-v92"}');
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -239,10 +225,8 @@
 
         const setLoad = (s) => document.getElementById('loading').style.display = s ? 'flex' : 'none';
 
-        // --- 核心功能 ---
-
         window.boot = () => {
-            if (!userAuth) return alert("系統尚未就緒，請稍候。");
+            if (!userAuth) return;
             const ph = document.getElementById('login_phone').value;
             const pi = document.getElementById('login_pin').value;
             
@@ -259,14 +243,14 @@
                     document.getElementById('date-today').innerText = new Date().toLocaleDateString();
                 } else if(currentUser.status === "interviewed") {
                     document.getElementById('apply-lock-box').innerHTML = `<button onclick="window.showLayer('apply-page')" class="w-full py-4 rounded-2xl border border-orange-500 text-orange-500 font-bold shadow-lg animate-pulse">二、人事建檔 (點此開始)</button>`;
-                    alert("評估核准通過！請點擊下方橘色按鈕進行人事建檔。");
+                    alert("測驗核准！請進行建檔。");
                 } else if(currentUser.status === "pending_review") {
-                    alert("測驗審核中，請靜候老闆通知。");
+                    alert("測驗審核中。");
                 } else {
-                    alert("密碼錯誤或權限尚未開通。");
+                    alert("密碼錯誤或尚未開通。");
                 }
             } else {
-                alert("查無此號碼，請先完成職能評估。");
+                alert("查無號碼。");
             }
         };
 
@@ -277,10 +261,8 @@
                 const dp = p.custom_del || 15;
                 const rp = p.custom_rev || 10;
                 const income = ((p.total_del || 0) * dp) + ((p.total_rev || 0) * rp);
-                
                 const ins_b = p.ins_base || 0; 
                 const fm = p.ins_fm || 0;     
-                
                 const labor_ins = Math.round(ins_b * 0.025);
                 const health_ins = Math.round(ins_b * 0.018 * (1 + parseInt(fm)));
                 const total_ins = labor_ins + health_ins;
@@ -288,15 +270,15 @@
 
                 let actionBtn = '';
                 if(p.status === 'pending_review') actionBtn = `<button onclick="window.upS('${p.id}','interviewed')" class="bg-sky-600 px-2 py-1 rounded">核准面試</button>`;
-                if(p.status === 'pending') actionBtn = `<button onclick="window.upS('${p.id}','approved')" class="bg-green-600 px-2 py-1 rounded">正式開通</button>`;
+                if(p.status === 'pending') actionBtn = `<button onclick="window.upS('${p.id}','approved')" class="bg-green-600 px-2 py-1 rounded">開通權限</button>`;
 
-                const aiAnalysis = p.ai_analysis || (p.score !== undefined ? `${p.score < 75 ? '⚠️ 風險偏高' : '✅ 誠信可靠'}` : '現有人員');
+                const aiLabel = p.ai_analysis || "📋 尚未評估";
 
                 html += `
                 <tr class="hover:bg-white/5">
                     <td>${actionBtn || `<span class="text-slate-500 text-[9px] uppercase font-bold">${p.status}</span>`}</td>
                     <td><span class="font-bold text-white">${p.name}</span><br><span class="text-[9px] text-slate-500">${p.phone}</span></td>
-                    <td><span class="ai-tag">${aiAnalysis}</span></td>
+                    <td><span class="ai-tag">${aiLabel}</span></td>
                     <td class="text-center font-bold text-sky-400">${p.total_del || 0}</td>
                     <td class="text-center font-bold text-orange-400">${p.total_rev || 0}</td>
                     <td><input type="number" value="${dp}" onchange="window.upD('${p.id}','custom_del',this.value)" class="input-mini"></td>
@@ -313,10 +295,9 @@
                     </td>
                 </tr>`;
             });
-            document.getElementById('admin-render').innerHTML = html || '<tr><td colspan="12" class="text-center py-10 text-slate-600">目前尚無人員資料</td></tr>';
+            document.getElementById('admin-render').innerHTML = html || '<tr><td colspan="12" class="text-center py-10">尚無資料</td></tr>';
         };
 
-        // 老闆直接新增人員功能
         window.addPartnerDirectly = async () => {
             if (!userAuth) return;
             const name = document.getElementById('new_name').value;
@@ -324,9 +305,7 @@
             const pin = document.getElementById('new_pin').value || "0000";
             const dp = parseFloat(document.getElementById('new_del_p').value) || 15;
             const rp = parseFloat(document.getElementById('new_rev_p').value) || 10;
-
-            if(!name || !phone) return alert("姓名與手機為必填。");
-            
+            if(!name || !phone) return alert("必填姓名與手機");
             setLoad(true);
             const id = `p_${phone}`;
             try {
@@ -335,20 +314,13 @@
                     status: "approved",
                     createdAt: serverTimestamp(),
                     total_del: 0, total_rev: 0,
-                    custom_del: dp, 
-                    custom_rev: rp,
+                    custom_del: dp, custom_rev: rp,
                     ins_base: 0, ins_fm: 0,
                     ai_analysis: "📋 現有人員"
                 });
-                alert(`已成功新增夥伴：${name}`);
+                alert("已新增");
                 document.getElementById('add-modal').style.display = 'none';
-                // 清空表單
-                document.getElementById('new_name').value = '';
-                document.getElementById('new_phone').value = '';
-            } catch (e) {
-                console.error(e);
-                alert("新增失敗，可能手機號碼已存在。");
-            }
+            } catch (e) { alert("新增失敗"); }
             setLoad(false);
         };
 
@@ -360,13 +332,18 @@
             const q2 = document.querySelector('input[name="q2"]:checked')?.value;
             const q3 = document.querySelector('input[name="q3"]:checked')?.value;
             const q4 = document.querySelector('input[name="q4"]:checked')?.value;
-            if(!name || !ph || !q1 || !q2 || !q3 || !q4) return alert("請填寫姓名電話並完成評估。");
+            if(!name || !ph || !q1 || !q2 || !q3 || !q4) return alert("請完成評估。");
             setLoad(true);
+            
+            // 強化 AI 分析演算邏輯
             const score = parseInt(q1) + parseInt(q2) + parseInt(q3) + parseInt(q4);
             let analysis = "✅ 誠信可靠";
-            if (parseInt(q2) < 25) analysis = "⚠️ 誠信風險";
-            else if (parseInt(q1) < 25) analysis = "🚧 操作風險";
-            else if (score < 75) analysis = "💡 需再教育";
+            if (q2 === "10") analysis = "❌ 誠信待查"; // 代收問題
+            else if (q1 === "0") analysis = "🚧 事故隱憂"; // 事故處理不當
+            else if (q4 === "5") analysis = "⚠️ 隱匿風險"; // 包裝破損不報
+            else if (score < 75) analysis = "💡 觀念待強";
+            if (score === 100) analysis = "💎 頂級菁英";
+
             const id = `p_${ph}`;
             try {
                 await setDoc(doc(partnersCol, id), {
@@ -378,9 +355,9 @@
                     custom_del: 15, custom_rev: 10,
                     ins_base: 0, ins_fm: 0
                 });
-                alert("評估資料已提交，請靜候通知。");
+                alert("提交完成");
                 location.reload();
-            } catch (e) { alert("提交失敗。"); }
+            } catch (e) { alert("失敗"); }
             setLoad(false);
         };
 
@@ -388,21 +365,17 @@
             if (!userAuth) return;
             const data = {
                 realName: document.getElementById('app_name').value,
-                idNumber: document.getElementById('app_idnum').value,
-                address: document.getElementById('app_h_addr').value,
-                bankCode: document.getElementById('app_bc').value,
-                bankAccount: document.getElementById('app_ba').value,
                 pin: document.getElementById('app_pin').value,
                 photos: photosCache,
                 status: "pending"
             };
-            if(!data.realName || !data.pin) return alert("姓名與 PIN 為必填。");
+            if(!data.realName || !data.pin) return alert("必填姓名與 PIN");
             setLoad(true);
             try {
                 await updateDoc(doc(partnersCol, currentUser.id), data);
-                alert("人事建檔完成！請等待老闆核准。");
+                alert("建檔完成");
                 location.reload();
-            } catch (e) { alert("儲存失敗"); }
+            } catch (e) { alert("失敗"); }
             setLoad(false);
         };
 
@@ -410,7 +383,7 @@
             if (!userAuth) return;
             const del = parseInt(document.getElementById('rep_del').value) || 0;
             const rev = parseInt(document.getElementById('rep_rev').value) || 0;
-            if(!photosCache.rep_img) return alert("請拍攝存證。");
+            if(!photosCache.rep_img) return alert("請拍照");
             setLoad(true);
             try {
                 await updateDoc(doc(partnersCol, currentUser.id), {
@@ -419,15 +392,15 @@
                     last_report: photosCache.rep_img,
                     lastReportAt: serverTimestamp()
                 });
-                alert("回報成功！");
+                alert("成功");
                 location.reload();
-            } catch (e) { alert("回報失敗"); }
+            } catch (e) { alert("失敗"); }
             setLoad(false);
         };
 
         window.upS = async (id, s) => { if (!userAuth) return; setLoad(true); await updateDoc(doc(partnersCol, id), { status: s }); setLoad(false); };
         window.upD = async (id, f, v) => { if (!userAuth) return; await updateDoc(doc(partnersCol, id), { [f]: parseFloat(v) || 0 }); };
-        window.delP = async (id, n) => { if (!userAuth) return; if(confirm(`確定刪除夥伴【${n}】？`)) await deleteDoc(doc(partnersCol, id)); };
+        window.delP = async (id, n) => { if (!userAuth) return; if(confirm(`刪除 ${n}？`)) await deleteDoc(doc(partnersCol, id)); };
         window.showLayer = id => { window.hideAll(); document.getElementById(id).style.display='flex'; };
         window.hideAll = () => { document.querySelectorAll('.layer').forEach(l=>l.style.display='none'); document.getElementById('gate').style.display='flex'; };
         window.triggerCam = f => { window.currentImgField = f; document.getElementById('cam').click(); };
