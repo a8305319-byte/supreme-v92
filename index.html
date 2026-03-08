@@ -3,90 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流有限公司 - 經營中控台</title>
+    <title>在地物流有限公司 - 經營管理中控台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 24px; overflow-y: auto; }
         .id-card { width: 100%; max-width: 580px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 3rem; padding: 40px; border: 1px solid #1e293b; margin-bottom: 35px; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 1); position: relative; }
         .input-box { background: rgba(15, 23, 42, 0.98); border: 2px solid #334155; border-radius: 1.3rem; padding: 20px; width: 100%; color: #fff; outline: none; margin-bottom: 20px; font-size: 16px; transition: 0.3s; }
         .input-box:focus { border-color: #0ea5e9; box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); }
         .btn-prime { width: 100%; padding: 22px; border-radius: 1.5rem; background: #0ea5e9; color: #020617; font-weight: 950; font-size: 18px; cursor: pointer; border: none; box-shadow: 0 15px 30px -5px rgba(14, 165, 233, 0.5); }
         .btn-prime:active { transform: scale(0.96); }
-        .label-sky { font-size: 14px; color: #38bdf8; font-weight: 900; margin-bottom: 12px; display: block; letter-spacing: 2px; text-transform: uppercase; margin-top: 20px; }
+        .label-sky { font-size: 14px; color: #38bdf8; font-weight: 900; margin-bottom: 12px; display: block; letter-spacing: 2px; text-transform: uppercase; margin-top: 25px; }
         .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
         .photo-slot { background: #0f172a; border: 2px dashed #334155; border-radius: 20px; height: 130px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; }
         .photo-slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000; padding: 20px; overflow-y: auto; }
         #slip-box { position: absolute; left: -9999px; background: #fff; color: #000; padding: 60px; width: 550px; border-radius: 10px; }
         .slip-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 15px 0; font-size: 18px; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000; padding: 20px; overflow-y: auto; }
-        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 20px; border-radius: 2rem; backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-6xl font-black text-white italic mb-4 tracking-tighter">在地物流</h1>
-        <p class="text-sky-500 text-sm font-black tracking-[0.6em] mb-20 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">V92-Elite Hub PRO</p>
+        <h1 class="text-6xl font-black text-white italic mb-4">在地物流</h1>
+        <p class="text-sky-500 text-sm font-black tracking-[0.5em] mb-20 uppercase italic underline decoration-sky-600 underline-offset-8">物流夥伴管理系統 PRO</p>
         <div class="w-full max-w-[380px]">
             <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center">
             <input type="password" id="login_pin" placeholder="PIN 安全密碼" class="input-box text-center">
-            <button onclick="boot()" class="btn-prime">進入系統中控台</button>
-            <button onclick="showApply()" class="text-sm text-slate-600 underline mt-16 block mx-auto font-black uppercase tracking-widest">Partner Onboarding</button>
+            <button onclick="boot()" class="btn-prime">登入管理系統</button>
+            <button onclick="showApply()" class="text-sm text-slate-600 underline mt-16 block mx-auto font-black">新夥伴入職申請</button>
         </div>
     </div>
 
     <div id="apply-page" class="layer">
         <div class="id-card">
-            <h2 class="text-4xl font-black text-white mb-10 text-center italic">夥伴入職申請</h2>
-            <span class="label-sky">STEP 1：證件影像拍照</span>
+            <h2 class="text-4xl font-black text-white mb-10 text-center italic border-b-4 border-sky-500 pb-4">新夥伴入職申請中心</h2>
+            
+            <span class="label-sky">第一步：證件拍照上傳</span>
             <div class="photo-grid">
                 <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f" class="text-xs">身分證正面</span><img id="p_id_f"></div>
                 <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b" class="text-xs">身分證反面</span><img id="p_id_b"></div>
-                <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic" class="text-xs">夥伴駕照</span><img id="p_lic"></div>
-                <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car" class="text-xs">營運行照</span><img id="p_car"></div>
+                <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic" class="text-xs">駕照影本</span><img id="p_lic"></div>
+                <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car" class="text-xs">行照影本</span><img id="p_car"></div>
                 <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
             </div>
-            <span class="label-sky">STEP 2：人事資料</span>
-            <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
+
+            <span class="label-sky">第二步：基本資料填寫</span>
+            <input type="text" id="app_name" placeholder="姓名 (必填)" class="input-box">
+            <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
             <input type="tel" id="app_phone" placeholder="手機號碼 (登入帳號)" class="input-box">
-            <input type="password" id="app_pin" placeholder="自訂 PIN (4位數)" maxlength="4" class="input-box">
-            <button onclick="submitApply()" class="btn-prime mt-10">提交審核資料</button>
-            <button onclick="location.reload()" class="w-full mt-6 text-xs text-slate-500 font-black uppercase underline">返回</button>
+            <input type="password" id="app_pin" placeholder="自訂 4 位 PIN 密碼" maxlength="4" class="input-box">
+            <input type="text" id="app_emergency" placeholder="緊急聯絡人 (姓名與電話)" class="input-box">
+            
+            <span class="label-sky">第三步：營運車輛資訊</span>
+            <select id="app_vehicle" class="input-box bg-slate-900">
+                <option value="機車">自有機車</option>
+                <option value="貨車">自有貨車/轎車</option>
+                <option value="公司租賃">公司租賃車</option>
+            </select>
+            <input type="text" id="app_plate" placeholder="車牌號碼 (例: ABC-1234)" class="input-box">
+
+            <span class="label-sky">第四步：薪資匯款帳戶</span>
+            <input type="text" id="app_bank_code" placeholder="銀行代碼 (3 碼，例: 822)" class="input-box">
+            <input type="text" id="app_bank_acc" placeholder="匯款帳號" class="input-box">
+
+            <button onclick="submitApply()" class="btn-prime mt-10">確認並提交入職資料</button>
+            <button onclick="location.reload()" class="w-full mt-6 text-xs text-slate-500 font-black underline">取消並返回登入頁</button>
         </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-20 mb-20 text-slate-700 font-black text-xs underline uppercase tracking-widest">安全登出系統</button>
-    </div>
-
-    <div id="edit-page" class="layer">
-        <div class="id-card">
-            <h2 class="text-3xl font-black text-white mb-8 border-b-4 border-orange-500 pb-2">✏️ 修改人事資料</h2>
-            <input type="text" id="edit_name" class="input-box" placeholder="修正姓名">
-            <input type="tel" id="edit_phone" class="input-box" placeholder="修正手機">
-            <input type="text" id="edit_pin" class="input-box" placeholder="修正 PIN">
-            <button onclick="commitPersonnelUpdate()" class="btn-prime !bg-orange-600 !text-white">同步更新雲端</button>
-            <button onclick="document.getElementById('edit-page').style.display='none'" class="w-full mt-6 text-xs text-slate-500 font-black underline">放棄修改</button>
-        </div>
+        <button onclick="location.reload()" class="mt-20 mb-20 text-slate-700 font-black text-xs underline uppercase">登出在地物流系統</button>
     </div>
 
     <div id="detail-modal" class="modal">
         <div class="id-card mx-auto mt-10" id="detail-content"></div>
-        <button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-6 max-w-[560px] mx-auto block">CLOSE</button>
-    </div>
-
-    <div id="slip-box">
-        <div style="text-align: center; border-bottom: 5px solid #000; padding-bottom: 20px; margin-bottom: 30px;">
-            <h2 style="font-size: 30px; font-weight: 900;">在地物流 - 酬勞明細</h2>
-            <p id="slip-date" style="border: 2px solid #000; display: inline-block; padding: 2px 10px; font-weight: 900;"></p>
-        </div>
-        <div id="slip-body"></div>
-        <div style="margin-top:40px; border-top: 5px double #000; padding-top:20px; font-size:28px; font-weight:900; display:flex; justify-content:space-between; background:#ffffd0; padding: 10px;">
-            <span>實領總額</span><span id="slip-total-val"></span>
-        </div>
+        <button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-6 max-w-[560px] mx-auto block">關閉詳細資料</button>
     </div>
 
     <script type="module">
@@ -104,14 +98,16 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let partners = [], currentImgField = '', globalEditId = '';
+        let partners = [], currentImgField = '';
         let photosCache = { id_f: null, id_b: null, lic: null, car: null };
 
+        // 監聽雲端資料庫
         onSnapshot(collection(db, 'partners'), s => { 
             partners = s.docs.map(d => ({ id: d.id, ...d.data() })); 
             if(document.getElementById('main').style.display === 'flex') boot(); 
         });
 
+        // 圖片自動壓縮邏輯
         async function compressImg(base64) {
             return new Promise(res => {
                 const img = new Image(); img.src = base64;
@@ -121,7 +117,7 @@
                     if(w > h) { if(w > MAX) { h *= MAX/w; w = MAX; } } else { if(h > MAX) { w *= MAX/h; h = MAX; } }
                     canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    res(canvas.toDataURL('image/jpeg', 0.7));
+                    res(canvas.toDataURL('image/jpeg', 0.6));
                 };
             });
         }
@@ -140,137 +136,111 @@
             reader.readAsDataURL(input.files[0]);
         };
 
+        // 登入邏輯
         window.boot = () => {
             const ph = document.getElementById('login_phone').value;
             const pi = document.getElementById('login_pin').value;
+            // 管理員帳號
             if(ph === "0976017938" && pi === "0531") return renderAdmin();
+            // 夥伴帳號
             const p = partners.find(x => x.phone === ph && x.uid === pi && x.status === "approved");
             if(p) return renderHub(p);
-            if(ph && pi) alert("驗證失敗或尚未核准");
+            if(ph && pi) alert("登入失敗：帳號密碼錯誤，或入職申請尚未通過審核。");
         };
 
+        // 後台管理員介面
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
-            const apped = partners.filter(x => x.status === "approved");
-            const pend = partners.filter(x => x.status === "pending");
-            const totalRev = apped.reduce((a, b) => a + (b.total_del * (b.rate_del || 50)), 0);
-
-            let html = `<div class="w-full max-w-[550px] px-2">
-                <h2 class="text-white font-black text-5xl mb-10 italic border-l-8 border-sky-500 pl-6 uppercase">在地物流 Admin</h2>
-                <div class="grid grid-cols-2 gap-4 mb-10">
-                    <div class="stat-card"><p class="text-slate-500 text-[10px] font-black mb-1">本月預估營收</p><p class="text-3xl font-black text-white italic">$${totalRev.toLocaleString()}</p></div>
-                    <div class="stat-card"><p class="text-slate-500 text-[10px] font-black mb-1">活躍夥伴人數</p><p class="text-3xl font-black text-sky-500 italic">${apped.length} PAX</p></div>
-                </div>`;
+            const apped = partners.filter(x => x.status === "approved"), pend = partners.filter(x => x.status === "pending");
+            
+            let html = `<div class="w-full max-w-[550px] px-2"><h2 class="text-white font-black text-5xl mb-10 italic border-l-8 border-sky-500 pl-6 uppercase">後台管理中心</h2>`;
 
             if(pend.length > 0) {
-                html += `<p class="label-sky !text-orange-500">待核准入職 (${pend.length})</p>`;
+                html += `<p class="label-sky !text-orange-500">待審核入職名單 (${pend.length})</p>`;
                 pend.forEach(p => {
                     html += `<div class="id-card !p-8 !bg-slate-900 border-orange-900 flex justify-between items-center mb-6">
                         <p class="text-white font-black text-xl">${p.name}</p>
-                        <button onclick="approvePartner('${p.id}')" class="bg-sky-600 text-white px-8 py-3 rounded-xl font-black">核准</button>
+                        <button onclick="approvePartner('${p.id}')" class="bg-sky-600 text-white px-8 py-3 rounded-xl font-black">審核通過</button>
                     </div>`;
                 });
             }
 
-            html += `<p class="label-sky">夥伴管理與財務結算</p>`;
+            html += `<p class="label-sky">現役夥伴資料管理</p>`;
             apped.forEach(p => {
-                const net = (p.total_del*(p.rate_del||50))+(p.total_ret*(p.rate_ret||20))-(p.labor_fee||1500)-((p.health_cnt||1)*(p.health_fee||800))+(p.bonus||0)-(p.penalty||0);
                 html += `<div class="id-card !p-8 !bg-slate-900/50 mb-10 border-slate-800">
-                    <div class="flex justify-between items-start mb-8">
-                        <div onclick="viewDoc('${p.id}')" class="cursor-pointer"><p class="text-white font-black text-3xl">${p.name}</p><p class="text-xs text-sky-500 underline">查看證件檔案</p></div>
-                        <div class="text-right"><p class="text-sky-400 font-black text-4xl italic">$${net.toLocaleString()}</p><button onclick="initEdit('${p.id}')" class="text-xs text-orange-500 underline mt-2">修改人事資料</button></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 mb-8">
-                        <div><label class="text-[10px] font-black mb-1 block">配費費率</label><input id="rd_${p.id}" type="number" value="${p.rate_del||50}" class="input-box !p-3 !mb-0 text-lg"></div>
-                        <div><label class="text-[10px] font-black mb-1 block">逆費費率</label><input id="rr_${p.id}" type="number" value="${p.rate_ret||20}" class="input-box !p-3 !mb-0 text-lg"></div>
-                        <div><label class="text-[10px] font-black mb-1 block">勞保扣款</label><input id="lf_${p.id}" type="number" value="${p.labor_fee||1500}" class="input-box !p-3 !mb-0 text-lg"></div>
-                        <div><label class="text-[10px] font-black mb-1 block">健保單價</label><input id="hf_${p.id}" type="number" value="${p.health_fee||800}" class="input-box !p-3 !mb-0 text-lg"></div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div onclick="viewDoc('${p.id}')" class="cursor-pointer"><p class="text-white font-black text-3xl">${p.name}</p><p class="text-xs text-sky-500 underline font-black">點擊查看詳細資料 / 證件</p></div>
+                        <div class="text-right">
+                            <p class="text-slate-500 text-xs font-bold">${p.v_type} | ${p.plate}</p>
+                        </div>
                     </div>
                     <div class="flex gap-3">
-                        <button onclick="saveAdminSync('${p.id}')" class="flex-1 bg-sky-600 text-white py-4 rounded-2xl font-black">同步數據</button>
-                        <button onclick='exportPaySlip(${JSON.stringify(p)})' class="bg-slate-800 text-sky-400 px-6 rounded-2xl font-black">帳單</button>
-                        <button onclick="delP('${p.id}')" class="text-red-900 font-black text-xs underline">移除</button>
+                        <button onclick="delP('${p.id}')" class="text-red-900 font-black text-xs underline">永久移除此夥伴</button>
                     </div>
                 </div>`;
             });
             document.getElementById('render-target').innerHTML = html + `</div>`;
         }
 
-        window.approvePartner = async id => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); alert("已核准。"); };
-        window.saveAdminSync = async id => {
-            const upd = {
-                rate_del: parseInt(document.getElementById('rd_'+id).value)||0,
-                rate_ret: parseInt(document.getElementById('rr_'+id).value)||0,
-                labor_fee: parseInt(document.getElementById('lf_'+id).value)||0,
-                health_fee: parseInt(document.getElementById('hf_'+id).value)||0
-            };
-            await updateDoc(doc(db, 'partners', id), upd); alert("同步成功。");
-        };
-
+        // 提交申請
         window.submitApply = async () => {
-            const n = document.getElementById('app_name').value, ph = document.getElementById('app_phone').value, pi = document.getElementById('app_pin').value;
-            if(!n || !ph || !pi) return alert("請完整填寫人事資料");
-            await addDoc(collection(db, 'partners'), {
-                name: n, phone: ph, uid: pi, status: "pending", total_del: 0, total_ret: 0,
-                docs: photosCache, rate_del: 50, rate_ret: 20, labor_fee: 1500, health_fee: 800, time: serverTimestamp()
-            });
-            alert("申請資料已提交，請靜候核准。"); location.reload();
+            const data = {
+                name: document.getElementById('app_name').value, 
+                phone: document.getElementById('app_phone').value, 
+                uid: document.getElementById('app_pin').value,
+                id_num: document.getElementById('app_idnum').value, 
+                emergency: document.getElementById('app_emergency').value,
+                v_type: document.getElementById('app_vehicle').value, 
+                plate: document.getElementById('app_plate').value,
+                bank_code: document.getElementById('app_bank_code').value, 
+                bank_acc: document.getElementById('app_bank_acc').value,
+                docs: photosCache, status: "pending", total_del: 0, time: serverTimestamp()
+            };
+            if(!data.name || !data.phone || !data.uid) return alert("請務必填寫姓名、手機與 PIN 碼！");
+            await addDoc(collection(db, 'partners'), data);
+            alert("入職資料已成功送出！請通知管理員進行審核。"); location.reload();
         };
 
-        window.exportPaySlip = async p => {
-            const rd = p.rate_del||50, net = (p.total_del*rd) + (p.total_ret*(p.rate_ret||20)) - (p.labor_fee||1500) - ((p.health_cnt||1)*(p.health_fee||800));
-            document.getElementById('slip-date').innerText = (new Date().getMonth()+1) + " 月份酬勞結算";
-            document.getElementById('slip-body').innerHTML = `
-                <div class="slip-row" style="background:#f8f8f8; padding:20px 10px; border-radius:8px; margin-bottom:10px;"><span>夥伴姓名</span><b>${p.name}</b></div>
-                <div class="slip-row"><span>配送報酬 (${p.total_del}件)</span><span>$${(p.total_del*rd).toLocaleString()}</span></div>
-                <div class="slip-row"><span>逆物報酬 (${p.total_ret}件)</span><span>$${(p.total_ret*(p.rate_ret||20)).toLocaleString()}</span></div>
-                <div class="slip-row" style="color:red"><span>代扣勞保費用</span><span>-$${(p.labor_fee||1500).toLocaleString()}</span></div>
-                <div class="slip-row" style="color:red"><span>代扣健保費用</span><span>-$${((p.health_cnt||1)*(p.health_fee||800)).toLocaleString()}</span></div>`;
-            document.getElementById('slip-total-val').innerText = "TWD $ " + net.toLocaleString();
-            const s = document.getElementById('slip-box'); s.style.left = "0";
-            const canvas = await html2canvas(s, { scale: 3 }); s.style.left = "-9999px";
-            const a = document.createElement('a'); a.download = `在地物流_${p.name}_薪資單.png`; a.href = canvas.toDataURL(); a.click();
+        // 查看詳細資料
+        window.viewDoc = id => {
+            const p = partners.find(x => x.id === id); 
+            document.getElementById('detail-modal').style.display = 'block';
+            document.getElementById('detail-content').innerHTML = `
+                <h3 class="text-white font-black mb-6 border-b-2 border-slate-800 pb-4 text-xl">夥伴完整資料檔案</h3>
+                <div class="text-xs space-y-2 mb-8 text-slate-400">
+                    <p>姓名：<span class="text-white">${p.name}</span> | 身分證：<span class="text-white">${p.id_num}</span></p>
+                    <p>車型：<span class="text-white">${p.v_type}</span> | 車牌：<span class="text-white">${p.plate}</span></p>
+                    <p>緊急聯絡人：<span class="text-white">${p.emergency}</span></p>
+                    <p class="text-sky-500 font-bold">匯款銀行代碼：${p.bank_code} | 帳號：${p.bank_acc}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <img src="${p.docs?.id_f}" class="rounded-2xl border border-slate-700 shadow-xl"><img src="${p.docs?.id_b}" class="rounded-2xl border border-slate-700 shadow-xl">
+                    <img src="${p.docs?.lic}" class="rounded-2xl border border-slate-700 shadow-xl"><img src="${p.docs?.car}" class="rounded-2xl border border-slate-700 shadow-xl">
+                </div>`;
         };
 
+        window.approvePartner = async id => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); alert("已通過審核，該夥伴現在可以登入回報件數了。"); };
+        window.delP = async id => { if(confirm("確定要永久移除此夥伴及其所有資料嗎？")) await deleteDoc(doc(db, 'partners', id)); };
+        window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
+        
+        // 夥伴回報介面
         function renderHub(p) {
             document.getElementById('gate').style.display = 'none'; document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `<div class="id-card">
                 <h2 class="text-6xl font-black text-white italic underline mb-4">${p.name} 夥伴</h2>
-                <p class="text-slate-500 text-xs font-black uppercase mb-12">在地物流有限公司 - 營運中心</p>
-                <label class="label-sky">回報今日配送件數</label><input type="number" id="v_del" class="input-box text-center text-7xl h-36 font-black text-sky-400" placeholder="0">
-                <button onclick="commitJob('${p.id}')" class="btn-prime mt-10">確認數據同步至雲端</button>
+                <p class="text-slate-500 text-xs mb-12 uppercase tracking-widest">在地物流有限公司 - 配送回報中心</p>
+                <label class="label-sky">今日配送件數回報</label><input type="number" id="v_del" class="input-box text-center text-7xl h-36 font-black text-sky-400" placeholder="0">
+                <button onclick="commitJob('${p.id}')" class="btn-prime mt-10">確認同步數據</button>
             </div>`;
         }
 
         window.commitJob = async id => {
             const d = parseInt(document.getElementById('v_del').value)||0;
-            if(d === 0) return alert("請輸入件數");
+            if(d <= 0) return alert("請輸入正確的配送件數！");
             await updateDoc(doc(db, 'partners', id), { total_del: increment(d) });
             await addDoc(collection(db, 'logs'), { driverId: id, del: d, time: serverTimestamp() });
-            alert("同步成功。"); location.reload();
-        };
-
-        window.delP = async id => { if(confirm("確定刪除夥伴？")) await deleteDoc(doc(db, 'partners', id)); };
-        window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
-        window.viewDoc = id => {
-            const p = partners.find(x => x.id === id); document.getElementById('detail-modal').style.display = 'block';
-            document.getElementById('detail-content').innerHTML = `<h3 class="text-white font-black mb-6 border-b-2 border-slate-800 pb-4 text-xl">夥伴證件檔案</h3>
-                <div class="grid grid-cols-2 gap-4"><img src="${p.docs?.id_f}" class="rounded-2xl"><img src="${p.docs?.id_b}" class="rounded-2xl">
-                <img src="${p.docs?.lic}" class="rounded-2xl"><img src="${p.docs?.car}" class="rounded-2xl"></div>`;
-        };
-        window.initEdit = id => {
-            const p = partners.find(x => x.id === id); globalEditId = id;
-            document.getElementById('edit-page').style.display = 'flex';
-            document.getElementById('edit_name').value = p.name;
-            document.getElementById('edit_phone').value = p.phone;
-            document.getElementById('edit_pin').value = p.uid;
-        };
-        window.commitPersonnelUpdate = async () => {
-            await updateDoc(doc(db, 'partners', globalEditId), {
-                name: document.getElementById('edit_name').value, phone: document.getElementById('edit_phone').value, uid: document.getElementById('edit_pin').value
-            });
-            alert("已更新。"); document.getElementById('edit-page').style.display = 'none';
+            alert("今日件數已成功同步至雲端。"); location.reload();
         };
     </script>
 </body>
