@@ -5,61 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SUPREME 智慧薪資系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; }
+        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; }
-        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 15px; }
-        .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; border: none; }
-        /* 薪資條樣式 */
-        #slip-box { display: none; background: white; color: black; padding: 30px; width: 350px; font-family: sans-serif; }
-        .slip-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 8px 0; font-size: 14px; }
+        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 1.5rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 16px; }
+        .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 16px; border: none; cursor: pointer; }
+        .btn-prime:active { opacity: 0.8; transform: scale(0.98); }
+        /* 薪資條模板樣式 */
+        #slip-box { position: absolute; left: -9999px; background: white; color: black; padding: 40px; width: 400px; border: 1px solid #ddd; }
+        .slip-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+        .slip-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 15px; }
+        .total-row { margin-top: 25px; border-top: 2px solid #333; padding-top: 15px; display: flex; justify-content: space-between; font-size: 20px; font-weight: 900; color: #000; }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-4xl font-black text-white italic mb-2">SUPREME</h1>
-        <p class="text-slate-500 text-sm mb-10">薪資與物流管理</p>
-        <div class="w-full max-w-[320px]">
+        <h1 class="text-4xl font-black text-white italic mb-2 tracking-tighter">SUPREME</h1>
+        <p class="text-slate-500 text-sm mb-12">智慧物流與薪資管理</p>
+        <div class="w-full max-w-[320px] space-y-4">
             <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center">
-            <input type="password" id="login_pin" placeholder="密碼 (PIN)" class="input-box text-center">
-            <div class="flex items-center gap-2 mb-4 text-xs text-slate-500 justify-start px-1">
-                <input type="checkbox" id="remember_me"> <label for="remember_me">記住我</label>
+            <input type="password" id="login_pin" placeholder="登入密碼 (PIN)" class="input-box text-center">
+            <div class="flex items-center gap-2 text-xs text-slate-500 px-1">
+                <input type="checkbox" id="remember_me"> <label for="remember_me">記住帳號資訊 (加密儲存)</label>
             </div>
             <button onclick="boot()" class="btn-prime">確認登入</button>
-            <button onclick="showApply()" class="text-sm text-slate-600 underline mt-12 block mx-auto">夥伴入職入口</button>
+            <button onclick="showApply()" class="text-sm text-slate-700 underline mt-8 block mx-auto">夥伴入職申請入口</button>
         </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-600 font-bold text-sm underline">登出系統</button>
+        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-700 font-bold text-sm underline uppercase">Sign Out / 登出系統</button>
     </div>
 
     <div id="slip-box">
-        <div style="text-align:center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
-            <h2 style="margin:0">SUPREME 薪資明細單</h2>
-            <small id="slip-date"></small>
+        <div class="slip-header">
+            <h2 style="margin:0; font-size: 24px;">SUPREME 薪資明細單</h2>
+            <p id="slip-date" style="margin:5px 0 0 0; font-size:12px; color:#666;"></p>
         </div>
         <div class="slip-row"><span>夥伴姓名</span><b id="slip-name"></b></div>
-        <div class="slip-row"><span>配送總件數</span><span id="slip-del-cnt"></span></div>
-        <div class="slip-row"><span>配送總報酬</span><span id="slip-del-pay"></span></div>
-        <div class="slip-row"><span>逆物流報酬</span><span id="slip-ret-pay"></span></div>
-        <div style="margin: 10px 0; font-weight: bold; color: #d00;">扣款項目</div>
-        <div class="slip-row"><span>勞保費扣款</span><span id="slip-labor"></span></div>
-        <div class="slip-row"><span>健保費扣款</span><span id="slip-health"></span></div>
-        <div style="margin-top: 20px; border-top: 2px solid #000; padding-top: 10px; display: flex; justify-content: space-between; font-size: 18px; font-weight: bold;">
-            <span>實領總額</span><span id="slip-total"></span>
+        <div class="slip-row"><span>配送件數報酬</span><span id="slip-del-pay"></span></div>
+        <div class="slip-row"><span>逆物流量報酬</span><span id="slip-ret-pay"></span></div>
+        <div style="font-size:12px; color:#999; margin:15px 0 5px 0;">法定扣款項目</div>
+        <div class="slip-row" style="color:#c00;"><span>勞保費扣款</span><span id="slip-labor"></span></div>
+        <div class="slip-row" style="color:#c00;"><span>健保費扣款</span><span id="slip-health"></span></div>
+        <div class="total-row">
+            <span>本月實領總額</span>
+            <span id="slip-total"></span>
         </div>
-        <p style="font-size: 10px; color: #999; margin-top: 30px; text-align: center;">本單據由 SUPREME 系統自動生成</p>
+        <div style="text-align:center; margin-top:40px; font-size:10px; color:#ccc;">數位簽章：SUPREME-LOGISTICS-V92-SECURED</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-        // 引入 html2canvas 用於製作圖片下載
-        import html2canvas from "https://jspm.dev/html2canvas";
+        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -75,83 +77,99 @@
         let partners = [];
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
 
+        // 登入邏輯與記住我
+        window.addEventListener('DOMContentLoaded', () => {
+            const sp = localStorage.getItem('s_phone'), si = localStorage.getItem('s_pin');
+            if(sp && si) {
+                document.getElementById('login_phone').value = sp;
+                document.getElementById('login_pin').value = atob(si);
+                document.getElementById('remember_me').checked = true;
+            }
+        });
+
         window.boot = () => {
-            const phone = document.getElementById('login_phone').value, pin = document.getElementById('login_pin').value;
+            const phone = document.getElementById('login_phone').value;
+            const pin = document.getElementById('login_pin').value;
+            if(document.getElementById('remember_me').checked) {
+                localStorage.setItem('s_phone', phone);
+                localStorage.setItem('s_pin', btoa(pin));
+            }
             if(phone === "0976017938" && pin === "0531") return renderAdmin();
             const p = partners.find(x => x.phone === phone && x.uid === pin && x.status === "approved");
             if(p) return renderPartnerUI(p);
-            alert("登入失敗");
+            alert("驗證失敗");
         };
 
+        // 夥伴介面與薪資條
         function renderPartnerUI(p) {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             
-            const health_fee = p.h_cnt * p.health;
-            const pay = (p.total_del * p.rate_del) + (p.total_ret * p.rate_ret) - p.labor - health_fee;
+            const r_del = p.rate_del || 50, r_ret = p.rate_ret || 20;
+            const labor = p.labor || 1500, health = (p.h_cnt || 1) * (p.health || 800);
+            const total = (p.total_del * r_del) + (p.total_ret * r_ret) - labor - health;
 
             document.getElementById('render-target').innerHTML = `
                 <div class="id-card">
-                    <h2 class="text-2xl font-bold text-white mb-2">${p.name} 夥伴</h2>
-                    <p class="text-xs text-slate-500 mb-6 underline">本月預計實領：$${pay.toLocaleString()}</p>
-                    <button onclick='window.downloadSlip(${JSON.stringify(p)})' class="w-full bg-white text-black py-3 rounded-lg font-bold mb-8">💾 下載本月電子薪資條</button>
+                    <h2 class="text-2xl font-bold text-white mb-1">${p.name} 夥伴</h2>
+                    <p class="text-[10px] text-slate-500 mb-8 uppercase tracking-widest">本月實領：$${total.toLocaleString()}</p>
                     
-                    <div class="space-y-4 border-t border-slate-800 pt-6">
-                        <span class="text-xs text-sky-500 font-bold uppercase">數據回報</span>
-                        <input type="number" id="dc" placeholder="當次配送數" class="input-box text-center text-xl">
-                        <input type="number" id="rc" placeholder="當次逆物數" class="input-box text-center text-xl">
-                        <button onclick="window.sendJob('${p.id}')" class="btn-prime">同步數據</button>
+                    <button onclick='window.downloadSlip(${JSON.stringify(p)})' class="w-full bg-sky-500 text-white py-4 rounded-xl font-black mb-10 shadow-lg shadow-sky-500/20">💾 下載電子薪資明細條</button>
+                    
+                    <div class="space-y-4 border-t border-slate-800 pt-8">
+                        <input type="number" id="dc" placeholder="填寫配送件數" class="input-box text-center text-xl font-bold">
+                        <input type="number" id="rc" placeholder="填寫逆物流量" class="input-box text-center text-xl font-bold">
+                        <button onclick="window.sendJob('${p.id}')" class="btn-prime bg-slate-800 text-sky-400 border border-sky-900">同步至雲端</button>
                     </div>
                 </div>`;
         }
 
         window.downloadSlip = async (p) => {
-            const health_fee = p.h_cnt * p.health;
-            const pay = (p.total_del * p.rate_del) + (p.total_ret * p.rate_ret) - p.labor - health_fee;
-            
-            // 填入資料到隱藏模板
-            document.getElementById('slip-date').innerText = new Date().toLocaleDateString();
-            document.getElementById('slip-name').innerText = p.name;
-            document.getElementById('slip-del-cnt').innerText = p.total_del + " 件";
-            document.getElementById('slip-del-pay').innerText = "$" + (p.total_del * p.rate_del).toLocaleString();
-            document.getElementById('slip-ret-pay').innerText = "$" + (p.total_ret * p.rate_ret).toLocaleString();
-            document.getElementById('slip-labor').innerText = "-$" + p.labor.toLocaleString();
-            document.getElementById('slip-health').innerText = "-$" + health_fee.toLocaleString();
-            document.getElementById('slip-total').innerText = "$" + pay.toLocaleString();
+            const r_del = p.rate_del || 50, r_ret = p.rate_ret || 20;
+            const labor = p.labor || 1500, health = (p.h_cnt || 1) * (p.health || 800);
+            const total = (p.total_del * r_del) + (p.total_ret * r_ret) - labor - health;
 
-            // 轉為圖片並下載
-            const slip = document.getElementById('slip-box');
-            slip.style.display = 'block';
-            const canvas = await html2canvas(slip);
+            document.getElementById('slip-date').innerText = "結算日期：" + new Date().toLocaleDateString();
+            document.getElementById('slip-name').innerText = p.name;
+            document.getElementById('slip-del-pay').innerText = `$${(p.total_del * r_del).toLocaleString()} (${p.total_del}件)`;
+            document.getElementById('slip-ret-pay').innerText = `$${(p.total_ret * r_ret).toLocaleString()} (${p.total_ret}件)`;
+            document.getElementById('slip-labor').innerText = `-$${labor.toLocaleString()}`;
+            document.getElementById('slip-health').innerText = `-$${health.toLocaleString()}`;
+            document.getElementById('slip-total').innerText = `$${total.toLocaleString()}`;
+
+            const box = document.getElementById('slip-box');
+            // 暫時顯示以供截圖
+            box.style.left = "0";
+            const canvas = await html2canvas(box, { scale: 2 });
+            box.style.left = "-9999px";
+
             const link = document.createElement('a');
             link.download = `SUPREME薪資條_${p.name}.png`;
-            link.href = canvas.toDataURL();
+            link.href = canvas.toDataURL("image/png");
             link.click();
-            slip.style.display = 'none';
         };
 
-        // ... 管理員後台代碼維持不變 ...
         window.sendJob = async (id) => {
-            const d = parseInt(document.getElementById('dc').value) || 0, r = parseInt(document.getElementById('rc').value) || 0;
+            const d = parseInt(document.getElementById('dc').value) || 0;
+            const r = parseInt(document.getElementById('rc').value) || 0;
             await updateDoc(doc(db, 'partners', id), { total_del: increment(d), total_ret: increment(r) });
-            alert("同步成功"); location.reload();
+            alert("回報成功"); location.reload();
         };
 
+        // 管理後台
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             const approved = partners.filter(x => x.status === "approved");
-            let html = `<div class="w-full max-w-[480px]"><h2 class="text-white font-bold text-xl mb-6">老闆管理後台</h2>`;
-            html += approved.map(p => {
-                const pay = (p.total_del * p.rate_del) + (p.total_ret * p.rate_ret) - p.labor - (p.h_cnt * p.health);
-                return `<div class="id-card !p-5 !bg-slate-900/40 border-slate-800">
+            let html = `<div class="w-full max-w-[480px] px-4"><h2 class="text-white font-black text-xl mb-8">老闆經營管理後台</h2>`;
+            html += approved.map(p => `
+                <div class="id-card !p-5 !bg-slate-900/50">
                     <div class="flex justify-between items-center">
                         <p class="text-white font-bold">${p.name}</p>
-                        <p class="text-sky-400 font-black text-xl">$${pay.toLocaleString()}</p>
+                        <button onclick='window.downloadSlip(${JSON.stringify(p)})' class="text-[10px] text-sky-500 underline">下載薪資條</button>
                     </div>
-                    <button onclick='window.downloadSlip(${JSON.stringify(p)})' class="text-[10px] text-slate-500 underline mt-2">生成並預覽此夥伴薪資條</button>
-                </div>`;
-            }).join('');
+                </div>
+            `).join('');
             document.getElementById('render-target').innerHTML = html + `</div>`;
         }
     </script>
