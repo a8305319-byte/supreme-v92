@@ -3,71 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME V92 NETWORK PRO</title>
+    <title>SUPREME V92 HUMAN RESOURCES</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 450px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 25px; border: 1px solid #1e293b; }
-        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 12px; font-size: 14px; }
-        .label-text { font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 4px; display: block; text-transform: uppercase; }
-        .btn-blue { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; margin-top: 10px; }
+        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 25px; border: 1px solid #1e293b; }
+        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 10px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 14px; }
+        .label-text { font-size: 10px; color: #38bdf8; font-weight: bold; margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 1px; }
+        .grid-row { display: grid; grid-template-cols: 1fr 1fr; gap: 10px; }
+        .btn-blue { width: 100%; padding: 18px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; margin-top: 15px; box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3); }
     </style>
 </head>
 <body>
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-4xl font-black text-white italic mb-1 uppercase tracking-tighter">Supreme</h1>
-        <p class="text-[8px] text-slate-600 tracking-[0.6em] mb-12 uppercase">Fleet Network System</p>
+        <p class="text-[8px] text-slate-600 tracking-[0.6em] mb-12 uppercase">HR Management System</p>
         <input type="password" id="pin" placeholder="PIN CODE" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-2xl text-sky-400 w-48 outline-none pb-2 tracking-[0.3em]">
-        <button onclick="boot()" class="mt-12 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] uppercase active:bg-white active:text-black transition">Verify Access</button>
-        <button onclick="showApply()" class="mt-8 text-[10px] text-slate-700 underline tracking-widest uppercase">Apply to Join / 司機入職申請</button>
+        <button onclick="boot()" class="mt-12 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] uppercase">Verify</button>
+        <button onclick="showApply()" class="mt-8 text-[10px] text-slate-700 underline uppercase tracking-widest">Driver Onboarding / 司機入職申請</button>
     </div>
 
     <div id="apply-page" class="layer">
         <div class="id-card">
-            <h2 class="text-xl font-black text-white italic mb-6 text-center uppercase tracking-widest">Driver Registration</h2>
+            <h2 class="text-xl font-black text-white italic mb-6 text-center uppercase tracking-widest">人事資料登記</h2>
             
-            <span class="label-text">基本資訊</span>
-            <input type="text" id="app_name" placeholder="姓名 (如: 王小明)" class="input-box">
-            <input type="password" id="app_pin" placeholder="設定 4 位登入 PIN 碼" inputmode="numeric" maxlength="4" class="input-box">
+            <span class="label-text">基本身分資料</span>
+            <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
+            <div class="grid-row">
+                <input type="password" id="app_pin" placeholder="登入 PIN (4碼)" inputmode="numeric" maxlength="4" class="input-box">
+                <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box text-sm">
+            </div>
             <input type="tel" id="app_phone" placeholder="聯絡電話" class="input-box">
-            <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
-            
-            <span class="label-text">通訊地址</span>
-            <input type="text" id="app_addr" placeholder="戶籍/通訊地址" class="input-box">
-            
-            <div class="grid grid-cols-2 gap-2">
+
+            <span class="label-text">地址資訊</span>
+            <input type="text" id="app_h_addr" placeholder="戶籍地址" class="input-box">
+            <div class="flex items-center gap-2 mb-2 px-2">
+                <input type="checkbox" id="sync_addr" onchange="syncAddr()">
+                <label for="sync_addr" class="text-[10px] text-slate-500">通訊地址同上</label>
+            </div>
+            <input type="text" id="app_c_addr" placeholder="通訊地址" class="input-box">
+
+            <span class="label-text">投保設定 (含本人)</span>
+            <div class="grid-row mb-2">
                 <div>
-                    <span class="label-text">緊急聯絡人</span>
-                    <input type="text" id="app_emg_name" placeholder="姓名" class="input-box">
+                    <p class="text-[9px] text-slate-500 mb-1">勞保加保人數</p>
+                    <select id="app_l_people" class="input-box">
+                        <option value="1">1 人</option><option value="2">2 人</option><option value="3">3 人</option>
+                    </select>
                 </div>
                 <div>
-                    <span class="label-text">緊急聯絡人電話</span>
-                    <input type="tel" id="app_emg_phone" placeholder="電話" class="input-box">
+                    <p class="text-[9px] text-slate-500 mb-1">健保加保人數</p>
+                    <select id="app_h_people" class="input-box">
+                        <option value="1">1 人</option><option value="2">2 人</option><option value="3">3 人</option><option value="4">4 人</option>
+                    </select>
                 </div>
             </div>
 
-            <span class="label-text">預計投保眷屬人數 (含本人)</span>
-            <select id="app_h_count" class="input-box">
-                <option value="1">1 人 (僅本人)</option>
-                <option value="2">2 人</option>
-                <option value="3">3 人</option>
-                <option value="4">4 人</option>
-            </select>
+            <span class="label-text">緊急聯絡人</span>
+            <div class="grid-row">
+                <input type="text" id="app_emg_n" placeholder="聯絡人姓名" class="input-box">
+                <input type="tel" id="app_emg_p" placeholder="聯絡人電話" class="input-box">
+            </div>
 
-            <button onclick="submitApply()" class="btn-blue">提交入職申請</button>
-            <button onclick="location.reload()" class="w-full mt-4 text-[10px] text-slate-600 uppercase">返回登入</button>
+            <button onclick="submitApply()" class="btn-blue">確認並提交資料</button>
+            <button onclick="location.reload()" class="w-full mt-4 text-[10px] text-slate-600 uppercase">返回</button>
         </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase">Sign Out</button>
+        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase underline">Sign Out</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -88,32 +99,35 @@
             const entry = document.getElementById('pin').value;
             if(entry === "9999") return renderAdmin();
             const p = partners.find(x => x.uid === entry && x.status === "approved");
-            if(p) return alert("進入司機回報頁面 (保持原功能)"); 
-            alert("帳號錯誤或審核中");
+            if(p) alert("司機功能模組..."); else alert("權限不足或審核中");
         };
 
         window.showApply = () => { document.getElementById('apply-page').style.display = 'flex'; };
+
+        window.syncAddr = () => {
+            if(document.getElementById('sync_addr').checked) {
+                document.getElementById('app_c_addr').value = document.getElementById('app_h_addr').value;
+            }
+        };
 
         window.submitApply = async () => {
             const data = {
                 name: document.getElementById('app_name').value,
                 uid: document.getElementById('app_pin').value,
-                phone: document.getElementById('app_phone').value,
                 id_num: document.getElementById('app_idnum').value,
-                addr: document.getElementById('app_addr').value,
-                emg_name: document.getElementById('app_emg_name').value,
-                emg_phone: document.getElementById('app_emg_phone').value,
-                h_count: parseInt(document.getElementById('app_h_count').value),
+                phone: document.getElementById('app_phone').value,
+                home_addr: document.getElementById('app_h_addr').value,
+                mail_addr: document.getElementById('app_c_addr').value,
+                labor_count: parseInt(document.getElementById('app_l_people').value),
+                health_count: parseInt(document.getElementById('app_h_people').value),
+                emg_name: document.getElementById('app_emg_n').value,
+                emg_phone: document.getElementById('app_emg_p').value,
                 status: "pending",
-                total_del: 0,
-                total_ret: 0,
-                applyTime: serverTimestamp()
+                total_del: 0, total_ret: 0, applyTime: serverTimestamp()
             };
-
-            if(!data.name || data.uid.length < 4 || !data.phone) return alert("請填寫姓名、PIN 碼與電話");
-
+            if(!data.name || data.uid.length < 4) return alert("請完整填寫資料");
             await addDoc(collection(db, 'partners'), data);
-            alert("申請已送出！管理員核准後即可登入。");
+            alert("資料已送出！");
             location.reload();
         };
 
@@ -123,31 +137,34 @@
             const pending = partners.filter(x => x.status === "pending");
             
             let listHtml = pending.map(p => `
-                <div class="id-card mb-4 !bg-slate-900/80 border-sky-900/30">
-                    <p class="text-sky-500 font-bold mb-2">待審核申請</p>
-                    <div class="grid grid-cols-2 gap-y-2 text-[11px] text-slate-400">
-                        <p class="text-white text-sm font-bold col-span-2">${p.name} (PIN: ${p.uid})</p>
-                        <p>電話: ${p.phone}</p>
-                        <p>身分證: ${p.id_num}</p>
-                        <p class="col-span-2">地址: ${p.addr}</p>
-                        <p>聯絡人: ${p.emg_name}</p>
-                        <p>聯絡人電話: ${p.emg_phone}</p>
-                        <p>健保人數: ${p.h_count} 人</p>
+                <div class="id-card mb-4 !bg-slate-900 border-sky-500/30">
+                    <p class="text-sky-500 font-bold text-xs mb-3"># 待審核入職申請</p>
+                    <div class="space-y-2 text-[11px]">
+                        <p class="text-white text-base font-bold">${p.name} <span class="text-slate-500 text-xs">(${p.id_num})</span></p>
+                        <div class="grid grid-cols-2 gap-2 text-slate-400">
+                            <p>📞 電話: ${p.phone}</p>
+                            <p>🔑 PIN: ${p.uid}</p>
+                            <p>🛡️ 勞保: ${p.labor_count}人</p>
+                            <p>🏥 健保: ${p.health_count}人</p>
+                        </div>
+                        <p class="text-slate-400">🏠 戶籍: ${p.home_addr}</p>
+                        <p class="text-slate-400">📫 通訊: ${p.mail_addr}</p>
+                        <p class="text-slate-400">🆘 緊急: ${p.emg_name} (${p.emg_phone})</p>
                     </div>
-                    <button onclick="window.approve('${p.id}')" class="btn-blue h-10 py-0 text-xs mt-4">核准入職</button>
+                    <button onclick="window.approve('${p.id}')" class="btn-blue h-10 py-0 text-xs mt-5">核准加入車隊</button>
                 </div>
             `).join('');
 
             document.getElementById('render-target').innerHTML = `
-                <div class="w-full max-w-[450px]">
-                    <h2 class="text-white font-black italic mb-6">入職審核中心</h2>
-                    ${listHtml || '<p class="text-center text-slate-700">目前沒有新的申請</p>'}
+                <div class="w-full max-w-[480px]">
+                    <h2 class="text-white font-black italic mb-6">ADMIN CONTROL</h2>
+                    ${listHtml || '<p class="text-center">目前無待處理項目</p>'}
                 </div>`;
         }
 
         window.approve = async (id) => {
             await updateDoc(doc(db, 'partners', id), { status: "approved" });
-            alert("已成功核准司機入職！");
+            alert("審核完成！");
             renderAdmin();
         };
     </script>
