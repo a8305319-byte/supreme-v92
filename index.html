@@ -4,216 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SUPREME 旗艦精英中控台 V93-AI</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
     <style>
-        /* 樣式區塊：強制物理換行防止摺疊 */
-        body {
-            background-color: #020617;
-            color: #94a3b8;
-            font-family: "Microsoft JhengHei", sans-serif;
-            margin: 0px;
-            padding: 0px;
-            overflow-x: hidden;
-        }
-        .layer {
-            display: none;
-            position: fixed;
-            top: 0px;
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
-            background-color: #020617;
-            z-index: 100;
-            flex-direction: column;
-            align-items: center;
-            padding: 25px;
-            overflow-y: auto;
-        }
-        .id-card {
-            width: 100%;
-            max-width: 580px;
-            background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%);
-            border-radius: 3.5rem;
-            padding: 50px;
-            border: 2px solid #1e293b;
-            margin-bottom: 45px;
-            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 1);
-            position: relative;
-        }
-        .input-box {
-            background-color: rgba(15, 23, 42, 0.98);
-            border: 2px solid #334155;
-            border-radius: 1.5rem;
-            padding: 22px;
-            width: 100%;
-            color: #ffffff;
-            outline: none;
-            margin-bottom: 25px;
-            font-size: 18px;
-        }
-        .label-sky {
-            font-size: 16px;
-            color: #38bdf8;
-            font-weight: 900;
-            margin-bottom: 15px;
-            display: block;
-            margin-top: 30px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-        .btn-prime {
-            width: 100%;
-            padding: 25px;
-            border-radius: 2rem;
-            background: #0ea5e9;
-            color: #020617;
-            font-weight: 950;
-            font-size: 20px;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 15px 30px rgba(14,165,233,0.4);
-        }
-        .photo-grid {
-            display: grid;
-            grid-template-cols: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        .photo-slot {
-            background-color: #0f172a;
-            border: 3px dashed #334155;
-            border-radius: 25px;
-            height: 155px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            overflow: hidden;
-        }
-        .photo-slot img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
-        .ai-bubble {
-            background: rgba(14, 165, 233, 0.08);
-            border-left: 6px solid #0ea5e9;
-            padding: 25px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            color: #f1f5f9;
-            line-height: 2;
-        }
-        #slip-box {
-            position: absolute;
-            left: -9999px;
-            background: #ffffff;
-            color: #000;
-            padding: 80px;
-            width: 600px;
-            border: 2px solid #ccc;
-        }
+        body { background-color: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        .layer { display: none; position: fixed; inset: 0; background-color: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 25px; overflow-y: auto; }
+        .id-card { width: 100%; max-width: 580px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 3rem; padding: 45px; border: 2px solid #1e293b; margin-bottom: 35px; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 1); position: relative; }
+        .input-box { background-color: rgba(15, 23, 42, 0.98); border: 2px solid #334155; border-radius: 1.3rem; padding: 22px; width: 100%; color: #ffffff; outline: none; margin-bottom: 22px; font-size: 17px; }
+        .label-sky { font-size: 15px; color: #38bdf8; font-weight: 900; margin-bottom: 12px; display: block; margin-top: 20px; letter-spacing: 2px; text-transform: uppercase; }
+        .btn-prime { width: 100%; padding: 24px; border-radius: 1.6rem; background: #0ea5e9; color: #020617; font-weight: 950; font-size: 19px; cursor: pointer; border: none; }
+        .photo-slot { background-color: #0f172a; border: 2px dashed #334155; border-radius: 20px; height: 130px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; }
+        .photo-slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .admin-section-title { color: #0ea5e9; font-weight: 900; font-size: 18px; margin-top: 50px; margin-bottom: 20px; width: 100%; max-width: 580px; text-align: left; border-left: 10px solid #0ea5e9; padding-left: 15px; }
+        #slip-box { position: absolute; left: -9999px; background: #ffffff; color: #000; padding: 60px; width: 550px; border: 1px solid #ccc; }
+        .slip-row { display: flex; justify-content: space-between; border-bottom: 1.5px solid #eee; padding: 18px 0; font-size: 18px; }
+        .ai-bubble { background: rgba(14, 165, 233, 0.08); border-left: 6px solid #0ea5e9; padding: 25px; border-radius: 20px; margin-bottom: 30px; color: #f1f5f9; line-height: 2; }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-9xl font-black text-white italic mb-8 tracking-tighter">SUPREME</h1>
-        <p class="text-sky-500 text-base font-black tracking-[0.6em] mb-24 uppercase italic underline decoration-sky-600 decoration-8 underline-offset-8">Elite Hub V93-AI</p>
-        
-        <div class="w-full max-w-[420px]">
-            <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center">
-            <input type="password" id="login_pin" placeholder="PIN 安全密碼" class="input-box text-center">
-            <button onclick="boot()" class="btn-prime">進入系統中控台</button>
-            
-            <button onclick="showInterview()" class="text-sky-400 font-black text-lg underline mt-24 block mx-auto animate-pulse uppercase tracking-widest">
-                Join Our Team / AI 面試門檻
-            </button>
-            
-            <button onclick="showApply()" class="text-slate-700 text-xs mt-12 block mx-auto font-black uppercase">夥伴註冊申請</button>
+        <h1 class="text-8xl font-black text-white italic mb-5 tracking-tighter">SUPREME</h1>
+        <p class="text-sky-500 text-xs font-black tracking-[0.5em] mb-20 uppercase underline decoration-sky-600 decoration-4">Elite Hub V93-AI</p>
+        <div class="w-full max-w-[400px]">
+            <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center shadow-2xl">
+            <input type="password" id="login_pin" placeholder="PIN 安全認證碼" class="input-box text-center shadow-2xl">
+            <button onclick="boot()" class="btn-prime">進入管理後台</button>
+            <button onclick="showInterview()" class="text-sky-400 font-black text-lg underline mt-24 block mx-auto animate-pulse uppercase">AI 面試申請入口</button>
+            <button onclick="showApply()" class="text-slate-700 text-xs mt-10 block mx-auto uppercase">員工正式註冊</button>
         </div>
     </div>
 
     <div id="interview-page" class="layer">
         <div class="id-card">
-            <h2 class="text-5xl font-black text-white mb-10 text-center italic">AI 應徵初審中心</h2>
-            
+            <h2 class="text-4xl font-black text-white mb-8 text-center italic">AI 應徵初審</h2>
             <div class="ai-bubble">
-                <p class="text-sky-400 font-black text-xl mb-4">📢 應徵須知（由 AI 代答）</p>
-                <div class="text-sm space-y-4">
-                    <p>1. **公司業務**：我們是 SUPREME 物流精英團隊，專注高效率配送。</p>
-                    <p>2. **薪資結構**：採績效制，包含件數報酬＋各項行政補貼。</p>
-                    <p>3. **福利制度**：享團保、勞健保代辦、高額配送獎金。</p>
-                    <p>4. **工作強度**：本職務需體能、需加班，相對提供市場領先報酬。</p>
-                </div>
+                <p class="text-sky-400 font-bold mb-2">📢 薪資/福利/加班 (AI回答)</p>
+                <p class="text-sm">績效制報酬，提供團保與加給。物流業具備高強度特質，需配合加班，我們尋找的是高效精英。</p>
             </div>
-
-            <div class="flex items-start gap-4 mb-10">
-                <input type="checkbox" id="ai_ok" class="w-8 h-8 accent-sky-500 mt-1">
-                <label for="ai_ok" class="text-slate-400 font-bold">我已清楚上述公司規則，面試時不會再詢問重複問題。</label>
-            </div>
-
-            <label class="label-sky">拍攝應徵者頭像</label>
-            <div class="photo-slot" onclick="triggerCam('face')"><span id="t_face">點擊拍照</span><img id="p_face"></div>
-            
-            <input type="text" id="int_name" placeholder="應徵者全名" class="input-box mt-8">
-            <input type="tel" id="int_phone" placeholder="應徵者聯絡電話" class="input-box">
-            
-            <label class="label-sky">AI 情境：若今日配送爆量，您的心態？</label>
-            <textarea id="int_ans" class="input-box h-40" placeholder="請輸入您的回答..."></textarea>
-
-            <button onclick="submitInterview()" class="btn-prime">提交 AI 審核資料</button>
-            <button onclick="location.reload()" class="w-full mt-8 text-slate-500 underline font-black">返回</button>
+            <div class="flex gap-3 mb-10"><input type="checkbox" id="ai_agree" class="w-6 h-6"><label class="text-xs">我已詳閱規則，不會再問老闆重複問題。</label></div>
+            <label class="label-sky">應徵者頭像</label>
+            <div class="photo-slot" onclick="triggerCam('face')"><span id="t_face">拍照</span><img id="p_face"></div>
+            <input type="text" id="int_name" placeholder="您的姓名" class="input-box mt-6">
+            <input type="tel" id="int_phone" placeholder="聯絡電話" class="input-box">
+            <button onclick="submitInterview()" class="btn-prime mt-8">提交申請</button>
+            <button onclick="location.reload()" class="w-full mt-6 text-sm text-slate-500">取消</button>
         </div>
     </div>
 
     <div id="edit-page" class="layer">
         <div class="id-card shadow-orange-500/20 border-orange-900/20">
-            <h2 class="text-4xl font-black text-white mb-10 text-center italic border-b-8 border-orange-600 pb-5">✏️ 修改夥伴檔案</h2>
-            <label class="label-sky">修改姓名</label><input type="text" id="ed_n" class="input-box">
-            <label class="label-sky">修改手機</label><input type="tel" id="ed_ph" class="input-box">
-            <label class="label-sky">重設 PIN</label><input type="text" id="ed_pi" class="input-box">
+            <h2 class="text-4xl font-black text-white mb-10 text-center italic">✏️ 修改夥伴資料</h2>
+            <label class="label-sky">真實姓名</label><input type="text" id="ed_n" class="input-box">
+            <label class="label-sky">手機帳號</label><input type="tel" id="ed_ph" class="input-box">
+            <label class="label-sky">登入 PIN</label><input type="text" id="ed_pi" class="input-box">
             <label class="label-sky">身分證號</label><input type="text" id="ed_id" class="input-box">
             <label class="label-sky">詳細地址</label><input type="text" id="ed_ha" class="input-box">
             <label class="label-sky">緊急聯絡</label><input type="text" id="ed_em" class="input-box">
-            <div class="mt-14 pt-8 border-t-2 border-slate-800">
-                <button onclick="window.commitPersonnelUpdate()" class="btn-prime !bg-orange-600 !text-white">確認並同步存檔</button>
-                <button onclick="document.getElementById('edit-page').style.display='none'" class="w-full mt-10 text-slate-500 text-center font-black">放棄修改</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="apply-page" class="layer">
-        <div class="id-card">
-            <h2 class="text-5xl font-black text-white mb-10 text-center italic">正式註冊表單</h2>
-            <div class="photo-grid">
-                <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f">身分證正</span><img id="p_id_f"></div>
-                <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b">身分證反</span><img id="p_id_b"></div>
-            </div>
-            <input type="text" id="app_name" placeholder="中文全名" class="input-box">
-            <input type="tel" id="app_phone" placeholder="手機號碼" class="input-box">
-            <input type="password" id="app_pin" placeholder="PIN (4位)" maxlength="4" class="input-box">
-            <button onclick="submitApply()" class="btn-prime mt-10">提交資料</button>
+            <button onclick="window.commitPersonnelUpdate()" class="btn-prime !bg-orange-600 !text-white">確認儲存雲端</button>
+            <button onclick="document.getElementById('edit-page').style.display='none'" class="w-full mt-8 text-sm">返回</button>
         </div>
     </div>
 
     <div id="main" class="layer">
-        <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-32 mb-48 text-slate-700 font-black underline uppercase tracking-[0.5em]">安全登出系統</button>
-    </div>
+        <div id="admin-header" class="w-full flex flex-col items-center">
+            <h2 class="text-white font-black text-8xl mb-10 border-l-[15px] border-sky-500 pl-10 uppercase italic w-full max-w-[580px]">ELITE ADMIN</h2>
+            
+            <div class="admin-section-title">📋 AI 初審面試名單</div>
+            <div id="interview-list" class="w-full flex flex-col items-center">
+                <p class="text-slate-600 text-xs italic">目前尚無應徵者資料...</p>
+            </div>
 
-    <div id="slip-box">
-        <div class="slip-header"><h2 style="margin:0; font-size: 32px; font-weight: 950;">SUPREME 酬勞結算單</h2><p id="slip-date" style="margin:15px 0; font-size:16px; border: 3px solid #000; display: inline-block; padding: 4px 15px;"></p></div>
-        <div id="slip-body"></div>
-        <div style="margin-top:50px; border-top: 10px double #000; padding-top:30px; font-size:28px; font-weight:950; display:flex; justify-content:space-between; background: #ffffd0; padding: 15px;"><span>應領總額</span><span id="slip-total-val"></span></div>
+            <div class="admin-section-title">💰 會計結算與人事管理</div>
+            <div id="partner-list" class="w-full flex flex-col items-center">
+                <p class="text-slate-600 text-xs italic">目前尚無正式夥伴資料...</p>
+            </div>
+        </div>
+        <button onclick="location.reload()" class="mt-32 mb-48 text-slate-700 font-black text-xs underline tracking-[0.5em]">安全登出系統</button>
     </div>
-
-    <div id="detail-modal" class="modal"><div class="id-card mx-auto mt-20 shadow-sky-500/30" id="detail-content"></div><button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-12 max-w-[580px] mx-auto block">CLOSE</button></div>
 
     <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
 
@@ -227,71 +95,49 @@
 
         let partners = [], logs = [], interviews = [], curF = '', editId = '', cache = {};
 
-        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({ id: d.id, ...d.data() })); });
-        onSnapshot(collection(db, 'logs'), s => { logs = s.docs.map(d => ({ id: d.id, ...d.data() })); });
-        onSnapshot(collection(db, 'interviews'), s => { interviews = s.docs.map(d => ({ id: d.id, ...d.data() })); });
+        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({ id: d.id, ...d.data() })); renderEliteAdmin(); });
+        onSnapshot(collection(db, 'logs'), s => { logs = s.docs.map(d => ({ id: d.id, ...d.data() })); renderEliteAdmin(); });
+        onSnapshot(collection(db, 'interviews'), s => { interviews = s.docs.map(d => ({ id: d.id, ...d.data() })); renderEliteAdmin(); });
 
         window.boot = () => {
             const ph = document.getElementById('login_phone').value, pi = document.getElementById('login_pin').value;
-            if(ph === "0976017938" && pi === "0531") return renderEliteAdmin();
-            const p = partners.find(x => x.phone === ph && x.uid === pi && x.status === "approved");
-            if(p) return renderPartner(p);
-            alert("驗證失敗：帳號錯誤或未核准。");
+            if(ph === "0976017938" && pi === "0531") { document.getElementById('gate').style.display='none'; document.getElementById('main').style.display='flex'; return; }
+            alert("驗證失敗。");
         };
 
         window.showInterview = () => document.getElementById('interview-page').style.display = 'flex';
-        window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
         window.triggerCam = (f) => { curF = f; document.getElementById('cam').click(); };
         window.handleFile = (i) => { const r = new FileReader(); r.onload = (e) => { cache[curF] = e.target.result; const p = document.getElementById('p_'+curF); p.src = e.target.result; p.style.display='block'; document.getElementById('t_'+curF).style.display='none'; }; r.readAsDataURL(i.files[0]); };
 
         window.submitInterview = async () => {
-            if(!document.getElementById('ai_ok').checked) return alert("請先同意應徵規則！");
-            const name = document.getElementById('int_name').value, ph = document.getElementById('int_phone').value;
-            if(!name || !ph) return alert("請填寫聯繫資料！");
-            await addDoc(collection(db, 'interviews'), { name, phone: ph, photo: cache['face'], answer: document.getElementById('int_ans').value, time: serverTimestamp() });
-            alert("AI 初審提交成功。通過者將由專人聯繫。"); location.reload();
-        };
-
-        window.submitApply = async () => {
-            const d = { name: document.getElementById('app_name').value, phone: document.getElementById('app_phone').value, uid: document.getElementById('app_pin').value, docs: cache, status: "pending", rate_del: 50, rate_ret: 20, labor_fee: 1500, health_fee: 800, health_cnt: 1, total_del: 0, total_ret: 0, time: serverTimestamp() };
-            await addDoc(collection(db, 'partners'), d); alert("註冊完成，等候核准。"); location.reload();
+            if(!document.getElementById('ai_agree').checked) return alert("同意規則！");
+            await addDoc(collection(db, 'interviews'), { name: document.getElementById('int_name').value, phone: document.getElementById('int_phone').value, photo: cache['face'], time: serverTimestamp() });
+            alert("提交成功。"); location.reload();
         };
 
         function renderEliteAdmin() {
-            document.getElementById('gate').style.display='none'; document.getElementById('main').style.display='flex';
-            const approved = partners.filter(x => x.status === "approved"), pending = partners.filter(x => x.status === "pending");
-            
-            let h = `<div class="w-full max-w-[580px] px-2"><h2 class="text-white font-black text-8xl mb-20 border-l-[15px] border-sky-500 pl-10 uppercase italic">Elite Admin</h2>`;
-            
+            // AI 面試名單渲染
+            const intList = document.getElementById('interview-list');
             if(interviews.length > 0) {
-                h += `<p class="text-sky-500 font-bold mb-8 text-lg tracking-widest">📋 AI 初審名單 (${interviews.length})</p>`;
-                interviews.forEach(i => {
-                    h += `<div class="id-card !p-8 !bg-slate-900 mb-10 border-sky-500/50 border-2">
-                        <div class="flex gap-6 items-center"><img src="${i.photo}" class="w-20 h-20 rounded-2xl object-cover">
-                        <div><p class="text-white font-bold text-xl">${i.name}</p><p class="text-xs text-slate-500">${i.phone}</p></div>
-                        <button onclick="window.delInt('${i.id}')" class="ml-auto text-red-500 text-xs">刪除</button></div>
-                        <p class="text-xs text-slate-300 mt-4 bg-black/40 p-4 rounded-xl italic">回：${i.answer}</p></div>`;
-                });
+                intList.innerHTML = interviews.map(i => `<div class="id-card !p-8 mb-6 border-sky-500/50 border-2 flex items-center gap-6"><img src="${i.photo}" class="w-16 h-16 rounded-xl object-cover"><div><p class="text-white font-bold">${i.name}</p><p class="text-xs">${i.phone}</p></div><button onclick="window.delInt('${i.id}')" class="ml-auto text-red-500 text-xs underline">刪除</button></div>`).join('');
             }
-
-            approved.forEach(p => {
-                const pay = (p.total_del*(p.rate_del||50))+(p.total_ret*(p.rate_ret||20))-(p.labor_fee||1500)-((p.health_cnt||1)*(p.health_fee||800));
-                h += `<div class="id-card !p-12 !bg-slate-900/60 border-slate-800 mb-20">
-                    <div class="flex justify-between items-start mb-14">
-                        <div onclick="window.viewDocProfile('${p.id}')" class="cursor-pointer"><p class="text-white font-black text-5xl">${p.name}</p></div>
-                        <div class="text-right"><p class="text-sky-400 font-black text-5xl">$${pay.toLocaleString()}</p><button onclick="window.initModifyPanel('${p.id}')" class="text-xs text-orange-500 underline mt-4">✏️ 修改人事資料</button></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-10">
-                        <div><label class="text-[11px] text-slate-600 block mb-2">配送單價</label><input id="rd_${p.id}" type="number" value="${p.rate_del||50}" class="input-box !py-4"></div>
-                        <div><label class="text-[11px] text-slate-600 block mb-2">逆物單價</label><input id="rr_${p.id}" type="number" value="${p.rate_ret||20}" class="input-box !py-4"></div>
-                        <div><label class="text-[11px] text-orange-600 block mb-2">勞保扣費</label><input id="rl_${p.id}" type="number" value="${p.labor_fee||1500}" class="input-box !py-4"></div>
-                        <div><label class="text-[11px] text-orange-600 block mb-2">健保單價/人數</label><div class="flex gap-2"><input id="rhf_${p.id}" type="number" value="${p.health_fee||800}" class="input-box !w-2/3 !py-4"><input id="rhc_${p.id}" type="number" value="${p.health_cnt||1}" class="input-box !w-1/3 !py-4 text-center"></div></div>
-                    </div>
-                    <button onclick="window.saveSync('${p.id}')" class="btn-prime mt-10">同步雲端</button>
-                    <div class="flex gap-6 mt-8"><button onclick='window.slipExport(${JSON.stringify(p)})' class="flex-1 bg-sky-500/10 py-5 rounded-2xl border-2 border-sky-500/30 text-sky-500 font-bold">薪資單</button><button onclick="window.delP('${p.id}')" class="px-6 text-red-900 text-xs">移除</button></div>
-                </div>`;
-            });
-            document.getElementById('render-target').innerHTML = h + `</div>`;
+            // 夥伴列表渲染
+            const partList = document.getElementById('partner-list');
+            const approved = partners.filter(x => x.status === "approved");
+            if(approved.length > 0) {
+                partList.innerHTML = approved.map(p => `
+                    <div class="id-card !p-10 mb-10 border-slate-800">
+                        <div class="flex justify-between items-center mb-10">
+                            <p class="text-white font-black text-4xl">${p.name}</p>
+                            <button onclick="window.initModifyPanel('${p.id}')" class="text-xs text-orange-500 underline uppercase">✏️ 修改人事</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div><label class="text-[10px] uppercase">配送單價</label><input id="rd_${p.id}" type="number" value="${p.rate_del||50}" class="input-box !py-3 !mb-0"></div>
+                            <div><label class="text-[10px] uppercase">健保人數</label><input id="rhc_${p.id}" type="number" value="${p.health_cnt||1}" class="input-box !py-3 !mb-0 text-center"></div>
+                        </div>
+                        <button onclick="window.saveSync('${p.id}')" class="btn-prime !py-4 mt-6 text-sm">同步雲端參數</button>
+                    </div>`).join('');
+            }
         }
 
         window.initModifyPanel = (id) => {
@@ -302,43 +148,14 @@
 
         window.commitPersonnelUpdate = async () => {
             const u = { name: document.getElementById('ed_n').value, phone: document.getElementById('ed_ph').value, uid: document.getElementById('ed_pi').value, id_num: document.getElementById('ed_id').value, h_addr: document.getElementById('ed_ha').value, emergency: document.getElementById('ed_em').value };
-            await updateDoc(doc(db, 'partners', editId), u); alert("人事資料存檔成功！"); document.getElementById('edit-page').style.display='none'; renderEliteAdmin();
+            await updateDoc(doc(db, 'partners', editId), u); alert("人事已存檔！"); document.getElementById('edit-page').style.display='none';
         };
 
         window.saveSync = async (id) => {
-            const u = { rate_del: parseInt(document.getElementById('rd_'+id).value), rate_ret: parseInt(document.getElementById('rr_'+id).value), labor_fee: parseInt(document.getElementById('rl_'+id).value), health_fee: parseInt(document.getElementById('rhf_'+id).value), health_cnt: parseInt(document.getElementById('rhc_'+id).value) };
-            await updateDoc(doc(db, 'partners', id), u); alert("參數同步。"); renderEliteAdmin();
+            await updateDoc(doc(db, 'partners', id), { rate_del: parseInt(document.getElementById('rd_'+id).value), health_cnt: parseInt(document.getElementById('rhc_'+id).value) }); alert("參數同步成功。");
         };
 
-        window.slipExport = async (p) => {
-            const net = (p.total_del*(p.rate_del||50))+(p.total_ret*(p.rate_ret||20))-(p.labor_fee||1500)-((p.health_cnt||1)*(p.health_fee||800));
-            document.getElementById('slip-date').innerText = (new Date().getMonth()+1) + " 月份結算";
-            document.getElementById('slip-body').innerHTML = `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:15px 0;"><span>夥伴姓名</span><b>${p.name}</b></div><div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:15px 0;"><span>配送報酬</span><span>$${(p.total_del*(p.rate_del||50)).toLocaleString()}</span></div><div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:15px 0;"><span>逆物報酬</span><span>$${(p.total_ret*(p.rate_ret||20)).toLocaleString()}</span></div><div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:15px 0; color:red;"><span>勞保扣費</span><span>-$${(p.labor_fee||1500).toLocaleString()}</span></div><div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:15px 0; color:red;"><span>健保費 (${p.health_cnt}人)</span><span>-$${((p.health_cnt||1)*(p.health_fee||800)).toLocaleString()}</span></div>`;
-            document.getElementById('slip-total-val').innerText = "$ " + net.toLocaleString();
-            const s = document.getElementById('slip-box'); s.style.left = "0"; const c = await html2canvas(s, { scale: 3 }); s.style.left = "-9999px";
-            const a = document.createElement('a'); a.download = `SLIP_${p.name}.png`; a.href = c.toDataURL(); a.click();
-        };
-
-        function renderPartner(p) {
-            document.getElementById('gate').style.display='none'; document.getElementById('main').style.display='flex';
-            document.getElementById('render-target').innerHTML = `<div class="id-card shadow-sky-500/20 text-center"><h2 class="text-7xl font-black text-white italic mb-10">${p.name}</h2><label class="label-sky">回報今日配送成功</label><input type="number" id="v_del" class="input-box text-center text-7xl font-black h-36"> <label class="label-sky">回報今日逆物總數</label><input type="number" id="v_ret" class="input-box text-center text-7xl font-black h-36"><button onclick="window.commitJob('${p.id}')" class="btn-prime mt-10">同步作業數據</button></div>`;
-        }
-
-        window.commitJob = async (id) => {
-            const d = parseInt(document.getElementById('v_del').value)||0, r = parseInt(document.getElementById('v_ret').value)||0;
-            await addDoc(collection(db, 'logs'), { driverId: id, del: d, ret: r, photo: "https://via.placeholder.com/400", time: serverTimestamp() });
-            await updateDoc(doc(db, 'partners', id), { total_del: increment(d), total_ret: increment(r) });
-            alert("同步成功。"); location.reload();
-        };
-
-        window.delInt = async (id) => { if(confirm("刪除此面試者？")) await deleteDoc(doc(db, 'interviews', id)); };
-        window.delP = async (id) => { if(confirm("移除此帳號？")) await deleteDoc(doc(db, 'partners', id)); };
-        window.approveReq = async (id) => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); alert("核准！"); renderEliteAdmin(); };
-        window.resetData = async () => { if(confirm("數據清零？")) { for(let p of partners) { await updateDoc(doc(db, 'partners', p.id), { total_del: 0, total_ret: 0 }); } alert("已清零。"); location.reload(); } };
-        window.viewDocProfile = (id) => {
-            const p = partners.find(x => x.id === id); document.getElementById('detail-modal').style.display='block';
-            document.getElementById('detail-content').innerHTML = `<h3 class="text-white font-black mb-10 border-b-4 border-slate-800 pb-6 text-base italic uppercase">Partner File</h3><div class="grid grid-cols-2 gap-y-7 text-xs text-slate-400 mb-10"><p>姓名：<span class="text-white font-bold ml-2">${p.name}</span></p><p>身分證：<span class="text-white ml-2">${p.id_num}</span></p><p class="col-span-2">戶籍：<span class="text-white ml-2">${p.h_addr}</span></p></div><div class="grid grid-cols-2 gap-8"><img src="${p.docs?.id_f}" class="rounded-2xl border border-slate-800 shadow-2xl"><img src="${p.docs?.id_b}" class="rounded-2xl border border-slate-800 shadow-2xl"></div>`;
-        };
+        window.delInt = async (id) => { if(confirm("刪除面試者？")) await deleteDoc(doc(db, 'interviews', id)); };
     </script>
 </body>
 </html>
