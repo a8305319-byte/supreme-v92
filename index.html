@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流 - 夥伴數位中心</title>
+    <title>在地物流 - 營運管理中控台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -26,97 +26,99 @@
         <p class="text-sky-500 text-sm font-black tracking-[0.4em] mb-12 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">物流夥伴專業管理系統</p>
         
         <div class="w-full max-w-[340px] space-y-4">
-            <button onclick="showLayer('interview-page')" class="btn-prime">一、線上職能實務評估</button>
-            <button onclick="showLayer('apply-page')" class="w-full py-4 rounded-2xl border-2 border-slate-700 text-slate-500 font-black">二、正式入職資料建檔</button>
-            <button onclick="alert('請聯繫管理員開通帳號')" class="mt-8 text-slate-600 text-xs underline">夥伴登入工作台</button>
+            <div class="bg-slate-900/80 p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl">
+                <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center">
+                <input type="password" id="login_pin" placeholder="PIN 密碼" class="input-box text-center">
+                <button onclick="boot()" class="btn-prime w-full">登入系統</button>
+            </div>
+            
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest pt-8">── 新夥伴申請 ──</p>
+            <button onclick="showLayer('interview-page')" class="w-full py-4 rounded-2xl border-2 border-sky-500 text-sky-400 font-black">夥伴職能實務評估</button>
+            <button onclick="showLayer('apply-page')" class="w-full py-4 rounded-2xl border-2 border-slate-700 text-slate-500 font-black">正式入職資料建檔</button>
         </div>
     </div>
 
     <div id="interview-page" class="layer">
         <div class="w-full max-w-[500px]">
-            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="hideAll()">← 返回主頁</div>
+            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="hideAll()">← 返回</div>
             <div class="id-card">
-                <h2 class="text-3xl font-black text-white mb-6 italic border-b-4 border-sky-500 pb-2">夥伴職能評估</h2>
-                <input type="text" id="int_name" placeholder="您的姓名" class="input-box">
-                <input type="tel" id="int_phone" placeholder="聯絡電話" class="input-box">
+                <h2 class="text-2xl font-black text-white mb-6 border-b-4 border-sky-500 pb-2 italic">夥伴營運職能評估</h2>
+                <input type="text" id="int_name" placeholder="姓名" class="input-box">
+                <input type="tel" id="int_phone" placeholder="電話" class="input-box">
                 
-                <span class="label-sky">應徵車種 (影響後續評估內容)</span>
-                <select id="int_v_type" class="input-box bg-slate-900 text-white font-bold" onchange="toggleTruckSection(this.value)">
-                    <option value="機車">機車配送夥伴</option>
-                    <option value="貨車">貨車專業夥伴 (需職業駕照)</option>
+                <select id="int_v_type" class="input-box bg-slate-900 text-white font-bold" onchange="toggleTruck(this.value)">
+                    <option value="機車">應徵：機車配送員</option>
+                    <option value="貨車">應徵：貨車司機 (需職業駕照)</option>
                 </select>
 
-                <div id="truck_check_section" class="hidden mb-6 p-4 bg-orange-900/20 border border-orange-500/30 rounded-2xl">
-                    <p class="text-orange-400 text-xs font-bold mb-3 italic">⚠️ 法律規範：貨車司機必須持有職業駕照</p>
-                    <label class="opt-label">
-                        <input type="checkbox" id="pro_lic_confirm" class="w-5 h-5"> 我已持有職業小型車以上駕照
-                    </label>
+                <div id="truck_warn" class="hidden mb-6 p-4 bg-orange-900/20 border border-orange-500/30 rounded-2xl">
+                    <label class="opt-label"><input type="checkbox" id="pro_confirm" class="w-5 h-5"> 我確認持有職業小型車以上駕照</label>
                 </div>
 
-                <span class="label-sky">情境測驗：配送途中遇擦撞，你會？</span>
+                <span class="label-sky">實務情境：配送遇擦撞，你會？</span>
                 <div class="q-box">
-                    <label class="opt-label"><input type="radio" name="q1" value="1"> 報警、拍照存證並回報公司</label>
+                    <label class="opt-label"><input type="radio" name="q1" value="1"> 報警、拍照並回報公司</label>
                     <label class="opt-label"><input type="radio" name="q1" value="0"> 趕快送完，事後私下處理</label>
                 </div>
 
-                <span class="label-sky">情境測驗：還有急件但車輛突然故障？</span>
-                <div class="q-box">
-                    <label class="opt-label"><input type="radio" name="q2" value="1"> 第一時間回報調度尋求支援</label>
-                    <label class="opt-label"><input type="radio" name="q2" value="0"> 攔計程車去送，晚點再修車</label>
-                </div>
-
-                <button onclick="submitInterview()" id="sub_btn" class="btn-prime mt-6">送出評估結果</button>
+                <button onclick="submitInterview()" id="sub_btn" class="btn-prime mt-6">送出評估</button>
             </div>
         </div>
     </div>
 
     <div id="apply-page" class="layer">
         <div class="w-full max-w-[500px]">
-            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="hideAll()">← 返回主頁</div>
+            <div class="mb-4 text-slate-500 font-black cursor-pointer text-left" onclick="hideAll()">← 返回</div>
             <div class="id-card">
-                <h2 class="text-3xl font-black text-white mb-6 border-b-4 border-orange-500 pb-2 italic text-left">正式入職建檔</h2>
+                <h2 class="text-2xl font-black text-white mb-6 border-b-4 border-orange-500 pb-2 italic">正式入職建檔</h2>
                 
-                <span class="label-sky">證件與車輛影像上傳</span>
                 <div class="photo-grid">
                     <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f">身分證正面</span><img id="p_id_f"></div>
                     <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b">身分證反面</span><img id="p_id_b"></div>
-                    <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic">駕駛執照 (貨車需職業)</span><img id="p_lic"></div>
-                    <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car">車輛行照</span><img id="p_car"></div>
+                    <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic">職業/普通駕照</span><img id="p_lic"></div>
+                    <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car">行照影本</span><img id="p_car"></div>
                     <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
                 </div>
 
-                <span class="label-sky">夥伴核心資訊</span>
+                <span class="label-sky">核心資料</span>
                 <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
-                <input type="tel" id="app_phone" placeholder="行動電話" class="input-box">
+                <input type="tel" id="app_phone" placeholder="手機號碼" class="input-box">
                 <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
+                <input type="text" id="app_h_addr" placeholder="戶籍地址" class="input-box">
                 
-                <span class="label-sky">營運車輛資訊</span>
-                <select id="app_vehicle" class="input-box bg-slate-900 text-white font-bold" onchange="togglePlateField(this.value)">
-                    <option value="機車">個人機車</option>
-                    <option value="貨車">個人貨車</option>
+                <span class="label-sky">緊急聯絡人</span>
+                <input type="text" id="app_em_name" placeholder="聯絡人姓名/關係" class="input-box">
+                <input type="tel" id="app_em_tel" placeholder="聯絡人電話" class="input-box">
+
+                <span class="label-sky">營運與銀行</span>
+                <select id="app_vehicle" class="input-box bg-slate-900 text-white" onchange="togglePlate(this.value)">
+                    <option value="機車">機車</option>
+                    <option value="貨車">貨車</option>
                     <option value="公司車">公司配車 (免填車號)</option>
                 </select>
-                <div id="plate_field">
-                    <input type="text" id="app_plate" placeholder="營運車牌號碼" class="input-box">
-                </div>
-
-                <span class="label-sky">匯款帳戶</span>
+                <div id="plate_box"><input type="text" id="app_plate" placeholder="車牌號碼" class="input-box"></div>
+                
                 <div class="flex gap-2">
-                    <input type="text" id="app_bank_code" placeholder="代碼" class="input-box w-1/3">
-                    <input type="text" id="app_bank_acc" placeholder="銀行帳號" class="input-box w-2/3">
+                    <input type="text" id="app_bank_code" placeholder="銀行代碼" class="input-box w-1/3">
+                    <input type="text" id="app_bank_acc" placeholder="匯款帳號" class="input-box w-2/3">
                 </div>
-                <input type="password" id="app_pin" placeholder="自訂 4 位 PIN 碼" maxlength="4" class="input-box">
+                <input type="password" id="app_pin" placeholder="設定 4 位登入密碼" maxlength="4" class="input-box">
 
-                <button onclick="submitApply()" id="app_btn" class="btn-prime bg-orange-600 mt-6 shadow-xl">提交入職建檔</button>
+                <button onclick="submitApply()" id="app_btn" class="btn-prime bg-orange-600 mt-6">確認提交</button>
             </div>
         </div>
     </div>
 
+    <div id="main" class="layer">
+        <div id="render-target" class="w-full flex flex-col items-center"></div>
+        <button onclick="location.reload()" class="mt-10 mb-20 text-slate-700 text-xs underline font-black uppercase">登出後台系統</button>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // 🔥 請務必填寫您的 Firebase Config
+        // Firebase Config (請確保您的設定正確)
         const firebaseConfig = { 
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
             authDomain: "supreme-v92.firebaseapp.com", 
@@ -128,66 +130,61 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        let partners = [], currentImgField = '';
         let photosCache = { id_f: null, id_b: null, lic: null, car: null };
-        let currentImgField = '';
 
-        // 貨車分流 UI
-        window.toggleTruckSection = (val) => {
-            document.getElementById('truck_check_section').style.display = (val === '貨車') ? 'block' : 'none';
+        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({ id: d.id, ...d.data() })); });
+
+        window.toggleTruck = (v) => { document.getElementById('truck_warn').style.display = (v==='貨車')?'block':'none'; };
+        window.togglePlate = (v) => { document.getElementById('plate_box').style.display = (v==='公司車')?'none':'block'; };
+
+        // 登入邏輯 (包含管理員)
+        window.boot = () => {
+            const ph = document.getElementById('login_phone').value;
+            const pi = document.getElementById('login_pin').value;
+            // 管理員後台登入判斷
+            if(ph === "0976017938" && pi === "0531") return renderAdmin();
+            const p = partners.find(x => x.phone === ph && x.uid === pi && x.status === "approved");
+            if(p) return renderHub(p);
+            alert("帳號密碼錯誤或尚未核准");
         };
 
-        // 公司車免填車牌 UI
-        window.togglePlateField = (val) => {
-            document.getElementById('plate_field').style.display = (val === '公司車') ? 'none' : 'block';
-        };
+        function renderAdmin() {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('main').style.display = 'flex';
+            const pend = partners.filter(x => x.status === "interviewing" || x.status === "pending");
+            let html = `<div class="w-full max-w-[500px]"><h2 class="text-white font-black text-3xl mb-8 border-l-8 border-sky-500 pl-4">招募管理牆</h2>`;
+            pend.forEach(p => {
+                html += `<div class="id-card !p-6 mb-4">
+                    <p class="text-white font-black text-xl">${p.name} <span class="text-sky-400 text-xs">[${p.status}]</span></p>
+                    <p class="text-xs text-slate-500 mb-4">${p.v_type || '未填'} | ${p.phone}</p>
+                    <button onclick="approveP('${p.id}')" class="btn-prime !py-3 !text-sm">核准通過</button>
+                </div>`;
+            });
+            document.getElementById('render-target').innerHTML = html + `</div>`;
+        }
 
-        // 提交第一階段：評估
         window.submitInterview = async () => {
             const name = document.getElementById('int_name').value;
-            const phone = document.getElementById('int_phone').value;
             const vType = document.getElementById('int_v_type').value;
-            const q1 = document.querySelector('input[name="q1"]:checked')?.value;
-            const q2 = document.querySelector('input[name="q2"]:checked')?.value;
-
-            if(!name || !phone || !q1 || !q2) return alert("請完整填寫評估資訊與情境測驗！");
-            if(vType === '貨車' && !document.getElementById('pro_lic_confirm').checked) {
-                return alert("貨車司機必須持有職業駕照，請確認後再提交！");
-            }
-
-            const btn = document.getElementById('sub_btn');
-            btn.innerText = "傳送中..."; btn.disabled = true;
-
-            try {
-                await addDoc(collection(db, 'partners'), {
-                    name, phone, v_type: vType, score: (parseInt(q1)+parseInt(q2))*50, status: "interviewed", time: serverTimestamp()
-                });
-                alert("職能評估完成！請繼續執行『第二步：正式入職建檔』");
-                location.reload();
-            } catch(e) { alert("系統錯誤"); btn.disabled = false; }
+            if(vType === '貨車' && !document.getElementById('pro_confirm').checked) return alert("貨車需持有職業駕照");
+            await addDoc(collection(db, 'partners'), { name, phone: document.getElementById('int_phone').value, v_type: vType, status: "interviewing", time: serverTimestamp() });
+            alert("評估送出成功"); location.reload();
         };
 
-        // 提交第二階段：入職
         window.submitApply = async () => {
             const name = document.getElementById('app_name').value;
+            const pin = document.getElementById('app_pin').value;
             const vType = document.getElementById('app_vehicle').value;
-            const plate = (vType === '公司車') ? "公司配車" : document.getElementById('app_plate').value;
-
-            if(!name || !document.getElementById('app_pin').value) return alert("請填寫姓名與 PIN 碼！");
-
-            const btn = document.getElementById('app_btn');
-            btn.innerText = "正在上傳影像大檔案..."; btn.disabled = true;
-
-            try {
-                await addDoc(collection(db, 'partners'), {
-                    name, phone: document.getElementById('app_phone').value,
-                    v_type: vType, plate: plate, docs: photosCache, status: "pending", time: serverTimestamp()
-                });
-                alert("入職資料建檔成功！請通知管理員開通。");
-                location.reload();
-            } catch(e) { alert("上傳失敗"); btn.disabled = false; }
+            await addDoc(collection(db, 'partners'), {
+                name, phone: document.getElementById('app_phone').value, uid: pin,
+                v_type: vType, plate: (vType==='公司車')?'公司配車':document.getElementById('app_plate').value,
+                docs: photosCache, status: "pending", time: serverTimestamp()
+            });
+            alert("資料補件成功"); location.reload();
         };
 
-        // UI 與相機核心
+        // UI 與影像核心
         window.showLayer = id => { hideAll(); document.getElementById(id).style.display = 'flex'; };
         window.hideAll = () => { document.querySelectorAll('.layer').forEach(l => l.style.display='none'); };
         window.triggerCam = f => { currentImgField = f; document.getElementById('cam').click(); };
@@ -201,6 +198,7 @@
             };
             reader.readAsDataURL(input.files[0]);
         };
+        window.approveP = async id => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); alert("已核准"); };
     </script>
 </body>
 </html>
