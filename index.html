@@ -28,7 +28,6 @@
     </style>
 </head>
 <body>
-
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-8xl font-black text-white italic mb-4 tracking-tighter">SUPREME</h1>
         <p class="text-sky-500 text-sm font-black tracking-[0.6em] mb-20 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">V92-Elite Hub PRO</p>
@@ -39,7 +38,6 @@
             <button onclick="showApply()" class="text-sm text-slate-600 underline mt-16 block mx-auto font-black uppercase tracking-widest">Partner Onboarding</button>
         </div>
     </div>
-
     <div id="apply-page" class="layer">
         <div class="id-card">
             <h2 class="text-4xl font-black text-white mb-10 text-center italic">夥伴入職申請</h2>
@@ -59,12 +57,10 @@
             <button onclick="location.reload()" class="w-full mt-6 text-xs text-slate-500 font-black uppercase underline">返回</button>
         </div>
     </div>
-
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
         <button onclick="location.reload()" class="mt-20 mb-20 text-slate-700 font-black text-xs underline uppercase tracking-widest">安全登出系統</button>
     </div>
-
     <div id="edit-page" class="layer">
         <div class="id-card">
             <h2 class="text-3xl font-black text-white mb-8 border-b-4 border-orange-500 pb-2">✏️ 修改人事資料</h2>
@@ -75,12 +71,10 @@
             <button onclick="document.getElementById('edit-page').style.display='none'" class="w-full mt-6 text-xs text-slate-500 font-black underline">放棄修改</button>
         </div>
     </div>
-
     <div id="detail-modal" class="modal">
         <div class="id-card mx-auto mt-10" id="detail-content"></div>
         <button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-6 max-w-[560px] mx-auto block">CLOSE</button>
     </div>
-
     <div id="slip-box">
         <div style="text-align: center; border-bottom: 5px solid #000; padding-bottom: 20px; margin-bottom: 30px;">
             <h2 style="font-size: 30px; font-weight: 900;">SUPREME 酬勞明細</h2>
@@ -91,7 +85,6 @@
             <span>實領總額</span><span id="slip-total-val"></span>
         </div>
     </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
@@ -110,11 +103,16 @@
         let partners = [], taskLogs = [], currentImgField = '', globalEditId = '';
         let photosCache = { id_f: null, id_b: null, lic: null, car: null };
 
-        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({ id: d.id, ...d.data() })); if(document.getElementById('main').style.display === 'flex') boot(); });
-        onSnapshot(collection(db, 'logs'), s => { taskLogs = s.docs.map(d => ({ id: d.id, ...d.data() })); });
+        // 實時監聽
+        onSnapshot(collection(db, 'partners'), s => { 
+            partners = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+            if(document.getElementById('main').style.display === 'flex') boot(); 
+        });
+        onSnapshot(collection(db, 'logs'), s => { 
+            taskLogs = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+        });
 
-        
-        async function compressImg(base64) {
+        // 圖片壓縮         async function compressImg(base64) {
             return new Promise(res => {
                 const img = new Image(); img.src = base64;
                 img.onload = () => {
@@ -198,8 +196,11 @@
             });
             document.getElementById('render-target').innerHTML = html + `</div>`;
         }
+        window.approvePartner = async id => { 
+            await updateDoc(doc(db, 'partners', id), { status: "approved" }); 
+            alert("已核准開通。"); 
+        };
 
-        window.approvePartner = async id => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); alert("已核准開通。"); };
         window.saveAdminSync = async id => {
             const upd = {
                 rate_del: parseInt(document.getElementById('rd_'+id).value)||0,
@@ -207,7 +208,8 @@
                 labor_fee: parseInt(document.getElementById('lf_'+id).value)||0,
                 health_fee: parseInt(document.getElementById('hf_'+id).value)||0
             };
-            await updateDoc(doc(db, 'partners', id), upd); alert("雲端數據已同步。");
+            await updateDoc(doc(db, 'partners', id), upd); 
+            alert("雲端數據已同步。");
         };
 
         window.initEdit = id => {
@@ -225,21 +227,26 @@
                 phone: document.getElementById('edit_phone').value,
                 uid: document.getElementById('edit_pin').value
             });
-            alert("同步更新成功。"); document.getElementById('edit-page').style.display = 'none';
+            alert("同步更新成功。"); 
+            document.getElementById('edit-page').style.display = 'none';
         };
 
         window.submitApply = async () => {
-            const n = document.getElementById('app_name').value, ph = document.getElementById('app_phone').value, pi = document.getElementById('app_pin').value;
+            const n = document.getElementById('app_name').value, 
+                  ph = document.getElementById('app_phone').value, 
+                  pi = document.getElementById('app_pin').value;
             if(!n || !ph || !pi) return alert("請完整填寫人事資料");
             await addDoc(collection(db, 'partners'), {
                 name: n, phone: ph, uid: pi, status: "pending", total_del: 0, total_ret: 0,
                 docs: photosCache, rate_del: 50, rate_ret: 20, labor_fee: 1500, health_fee: 800, time: serverTimestamp()
             });
-            alert("申請資料已提交，請靜候核准。"); location.reload();
+            alert("申請資料已提交，請靜候核准。"); 
+            location.reload();
         };
 
         window.exportPaySlip = async p => {
-            const rd = p.rate_del||50, net = (p.total_del*rd) + (p.total_ret*(p.rate_ret||20)) - (p.labor_fee||1500) - ((p.health_cnt||1)*(p.health_fee||800));
+            const rd = p.rate_del||50, 
+                  net = (p.total_del*rd) + (p.total_ret*(p.rate_ret||20)) - (p.labor_fee||1500) - ((p.health_cnt||1)*(p.health_fee||800));
             document.getElementById('slip-date').innerText = (new Date().getMonth()+1) + " 月份酬勞結算";
             document.getElementById('slip-body').innerHTML = `
                 <div class="slip-row" style="background:#f8f8f8; padding:20px 10px; border-radius:8px; margin-bottom:10px;"><span>夥伴姓名</span><b>${p.name}</b></div>
@@ -248,13 +255,19 @@
                 <div class="slip-row" style="color:red"><span>代扣勞保費用</span><span>-$${(p.labor_fee||1500).toLocaleString()}</span></div>
                 <div class="slip-row" style="color:red"><span>代扣健保費用</span><span>-$${((p.health_cnt||1)*(p.health_fee||800)).toLocaleString()}</span></div>`;
             document.getElementById('slip-total-val').innerText = "TWD $ " + net.toLocaleString();
-            const s = document.getElementById('slip-box'); s.style.left = "0";
-            const canvas = await html2canvas(s, { scale: 3 }); s.style.left = "-9999px";
-            const a = document.createElement('a'); a.download = `SUPREME_SLIP_${p.name}.png`; a.href = canvas.toDataURL(); a.click();
+            const s = document.getElementById('slip-box'); 
+            s.style.left = "0";
+            const canvas = await html2canvas(s, { scale: 3 }); 
+            s.style.left = "-9999px";
+            const a = document.createElement('a'); 
+            a.download = `SUPREME_SLIP_${p.name}.png`; 
+            a.href = canvas.toDataURL(); 
+            a.click();
         };
 
         function renderHub(p) {
-            document.getElementById('gate').style.display = 'none'; document.getElementById('main').style.display = 'flex';
+            document.getElementById('gate').style.display = 'none'; 
+            document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `<div class="id-card">
                 <h2 class="text-6xl font-black text-white italic underline mb-4">${p.name} 夥伴</h2>
                 <p class="text-slate-500 text-xs font-black uppercase tracking-[0.4em] mb-12">Operational Center</p>
@@ -268,13 +281,15 @@
             if(d === 0) return alert("請輸入件數");
             await updateDoc(doc(db, 'partners', id), { total_del: increment(d) });
             await addDoc(collection(db, 'logs'), { driverId: id, del: d, time: serverTimestamp() });
-            alert("同步成功。"); location.reload();
+            alert("同步成功。"); 
+            location.reload();
         };
 
         window.delP = async id => { if(confirm("確定刪除夥伴？")) await deleteDoc(doc(db, 'partners', id)); };
         window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
         window.viewDoc = id => {
-            const p = partners.find(x => x.id === id); document.getElementById('detail-modal').style.display = 'block';
+            const p = partners.find(x => x.id === id); 
+            document.getElementById('detail-modal').style.display = 'block';
             document.getElementById('detail-content').innerHTML = `
                 <h3 class="text-white font-black mb-6 border-b-2 border-slate-800 pb-4 text-xl">Partner ID Files</h3>
                 <div class="grid grid-cols-2 gap-4">
