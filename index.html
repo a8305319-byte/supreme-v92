@@ -3,34 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME V92 ADMIN DROP</title>
+    <title>SUPREME V92 NETWORK PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .admin-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 1.5rem; padding: 20px; width: 100%; max-width: 500px; margin-bottom: 15px; }
-        .ins-btn { padding: 8px 15px; border-radius: 10px; font-size: 11px; font-weight: 800; transition: all 0.2s; flex-shrink: 0; }
-        .ins-on { background: #0ea5e9; color: #020617; }
-        .ins-off { background: #1e293b; color: #475569; border: 1px solid #334155; }
-        select { background: #1e293b; color: white; border: 1px solid #334155; border-radius: 8px; font-size: 11px; padding: 5px 10px; outline: none; }
+        .id-card { width: 100%; max-width: 450px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 25px; border: 1px solid #1e293b; }
+        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 12px; font-size: 14px; }
+        .label-text { font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 4px; display: block; text-transform: uppercase; }
+        .btn-blue { width: 100%; padding: 16px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-4xl font-black text-white italic mb-1 uppercase">Supreme</h1>
-        <p class="text-[8px] text-slate-600 tracking-[0.6em] mb-12">ADMINISTRATION UNIT</p>
-        <input type="password" id="pin" placeholder="ADMIN PIN" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-2xl text-sky-400 w-48 outline-none pb-2">
-        <button onclick="boot()" class="mt-12 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] uppercase transition active:bg-white active:text-black">Enter Matrix</button>
+        <h1 class="text-4xl font-black text-white italic mb-1 uppercase tracking-tighter">Supreme</h1>
+        <p class="text-[8px] text-slate-600 tracking-[0.6em] mb-12 uppercase">Fleet Network System</p>
+        <input type="password" id="pin" placeholder="PIN CODE" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-2xl text-sky-400 w-48 outline-none pb-2 tracking-[0.3em]">
+        <button onclick="boot()" class="mt-12 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] uppercase active:bg-white active:text-black transition">Verify Access</button>
+        <button onclick="showApply()" class="mt-8 text-[10px] text-slate-700 underline tracking-widest uppercase">Apply to Join / 司機入職申請</button>
+    </div>
+
+    <div id="apply-page" class="layer">
+        <div class="id-card">
+            <h2 class="text-xl font-black text-white italic mb-6 text-center uppercase tracking-widest">Driver Registration</h2>
+            
+            <span class="label-text">基本資訊</span>
+            <input type="text" id="app_name" placeholder="姓名 (如: 王小明)" class="input-box">
+            <input type="password" id="app_pin" placeholder="設定 4 位登入 PIN 碼" inputmode="numeric" maxlength="4" class="input-box">
+            <input type="tel" id="app_phone" placeholder="聯絡電話" class="input-box">
+            <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
+            
+            <span class="label-text">通訊地址</span>
+            <input type="text" id="app_addr" placeholder="戶籍/通訊地址" class="input-box">
+            
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <span class="label-text">緊急聯絡人</span>
+                    <input type="text" id="app_emg_name" placeholder="姓名" class="input-box">
+                </div>
+                <div>
+                    <span class="label-text">緊急聯絡人電話</span>
+                    <input type="tel" id="app_emg_phone" placeholder="電話" class="input-box">
+                </div>
+            </div>
+
+            <span class="label-text">預計投保眷屬人數 (含本人)</span>
+            <select id="app_h_count" class="input-box">
+                <option value="1">1 人 (僅本人)</option>
+                <option value="2">2 人</option>
+                <option value="3">3 人</option>
+                <option value="4">4 人</option>
+            </select>
+
+            <button onclick="submitApply()" class="btn-blue">提交入職申請</button>
+            <button onclick="location.reload()" class="w-full mt-4 text-[10px] text-slate-600 uppercase">返回登入</button>
+        </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase">Terminal Exit</button>
+        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase">Sign Out</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -44,105 +81,75 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let partners = [];
-        let rates = { del: 50, ret: 20, labor: 1500, health: 800 };
 
-        onSnapshot(collection(db, 'partners'), s => { 
-            const newData = s.docs.map(d => ({id: d.id, ...d.data()}));
-            if (partners.length === 0) {
-                partners = newData.map(p => ({...p, li: false, hi: false, h_count: 1})); 
-            } else {
-                partners = partners.map(p => ({...p, ...newData.find(n => n.id === p.id)}));
-            }
-            if(document.getElementById('settlement-list')) renderSettlement();
-        });
+        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
 
         window.boot = () => {
-            if(document.getElementById('pin').value === "9999") renderAdmin();
-            else alert("DENIED");
+            const entry = document.getElementById('pin').value;
+            if(entry === "9999") return renderAdmin();
+            const p = partners.find(x => x.uid === entry && x.status === "approved");
+            if(p) return alert("進入司機回報頁面 (保持原功能)"); 
+            alert("帳號錯誤或審核中");
+        };
+
+        window.showApply = () => { document.getElementById('apply-page').style.display = 'flex'; };
+
+        window.submitApply = async () => {
+            const data = {
+                name: document.getElementById('app_name').value,
+                uid: document.getElementById('app_pin').value,
+                phone: document.getElementById('app_phone').value,
+                id_num: document.getElementById('app_idnum').value,
+                addr: document.getElementById('app_addr').value,
+                emg_name: document.getElementById('app_emg_name').value,
+                emg_phone: document.getElementById('app_emg_phone').value,
+                h_count: parseInt(document.getElementById('app_h_count').value),
+                status: "pending",
+                total_del: 0,
+                total_ret: 0,
+                applyTime: serverTimestamp()
+            };
+
+            if(!data.name || data.uid.length < 4 || !data.phone) return alert("請填寫姓名、PIN 碼與電話");
+
+            await addDoc(collection(db, 'partners'), data);
+            alert("申請已送出！管理員核准後即可登入。");
+            location.reload();
         };
 
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
-            document.getElementById('render-target').innerHTML = `
-                <div class="admin-card">
-                    <h2 class="text-white font-black italic mb-4 text-[10px] tracking-widest uppercase">Global Parameters</h2>
-                    <div class="grid grid-cols-2 gap-4 text-[9px] uppercase font-bold">
-                        <div>配送單價 <input type="number" id="r_del" value="${rates.del}" class="w-full mt-1 bg-slate-900 p-2 rounded border border-slate-800" onchange="updateRates()"></div>
-                        <div>逆流單價 <input type="number" id="r_ret" value="${rates.ret}" class="w-full mt-1 bg-slate-900 p-2 rounded border border-slate-800" onchange="updateRates()"></div>
-                    </div>
-                </div>
-                <div id="settlement-list" class="w-full max-w-[500px]"></div>`;
-            renderSettlement();
-        }
-
-        window.updateRates = () => {
-            rates.del = parseInt(document.getElementById('r_del').value) || 0;
-            rates.ret = parseInt(document.getElementById('r_ret').value) || 0;
-            renderSettlement();
-        };
-
-        window.toggleIns = (id, type) => {
-            const p = partners.find(x => x.id === id);
-            p[type] = !p[type];
-            renderSettlement();
-        };
-
-        window.updateHCount = (id, val) => {
-            const p = partners.find(x => x.id === id);
-            p.h_count = parseInt(val);
-            renderSettlement();
-        };
-
-        function renderSettlement() {
-            const list = document.getElementById('settlement-list');
-            if(!list) return;
-            list.innerHTML = `<h3 class="text-[10px] text-slate-500 font-black mb-4 tracking-[0.3em] uppercase">Payroll Real-Time Sync</h3>`;
+            const pending = partners.filter(x => x.status === "pending");
             
-            partners.filter(x => x.status === "approved").forEach(p => {
-                const total_raw = (p.total_del * rates.del) + (p.total_ret * rates.ret);
-                const labor_deduct = p.li ? rates.labor : 0;
-                const health_deduct = p.hi ? (rates.health * p.h_count) : 0;
-                const final_pay = total_raw - labor_deduct - health_deduct;
-
-                list.innerHTML += `
-                <div class="admin-card !bg-slate-900/40">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <p class="text-white font-black italic text-lg uppercase">${p.name}</p>
-                            <div class="flex gap-2 mt-1">
-                                <span class="text-[8px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">📦 ${p.total_del || 0}</span>
-                                <span class="text-[8px] bg-slate-800 px-2 py-0.5 rounded text-orange-500">🔄 ${p.total_ret || 0}</span>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sky-400 font-black text-2xl tracking-tighter">$${final_pay.toLocaleString()}</p>
-                            <p class="text-[8px] text-slate-600">實領薪資</p>
-                        </div>
+            let listHtml = pending.map(p => `
+                <div class="id-card mb-4 !bg-slate-900/80 border-sky-900/30">
+                    <p class="text-sky-500 font-bold mb-2">待審核申請</p>
+                    <div class="grid grid-cols-2 gap-y-2 text-[11px] text-slate-400">
+                        <p class="text-white text-sm font-bold col-span-2">${p.name} (PIN: ${p.uid})</p>
+                        <p>電話: ${p.phone}</p>
+                        <p>身分證: ${p.id_num}</p>
+                        <p class="col-span-2">地址: ${p.addr}</p>
+                        <p>聯絡人: ${p.emg_name}</p>
+                        <p>聯絡人電話: ${p.emg_phone}</p>
+                        <p>健保人數: ${p.h_count} 人</p>
                     </div>
+                    <button onclick="window.approve('${p.id}')" class="btn-blue h-10 py-0 text-xs mt-4">核准入職</button>
+                </div>
+            `).join('');
 
-                    <div class="flex items-center gap-3 border-t border-slate-800/50 pt-4 overflow-x-auto">
-                        <button onclick="window.toggleIns('${p.id}', 'li')" class="ins-btn ${p.li ? 'ins-on' : 'ins-off'}">勞保</button>
-                        
-                        <button onclick="window.toggleIns('${p.id}', 'hi')" class="ins-btn ${p.hi ? 'ins-on' : 'ins-off'}">健保</button>
-                        
-                        ${p.hi ? `
-                            <div class="flex items-center gap-2 ml-auto">
-                                <span class="text-[9px] text-slate-500 uppercase font-bold">人數</span>
-                                <select onchange="window.updateHCount('${p.id}', this.value)">
-                                    ${[1,2,3,4,5].map(n => `<option value="${n}" ${p.h_count === n ? 'selected' : ''}>${n} 人</option>`).join('')}
-                                </select>
-                            </div>
-                        ` : ''}
-                    </div>
-                    ${p.hi || p.li ? `
-                        <p class="text-[8px] mt-3 text-slate-700 italic">
-                            * 已扣除: ${p.li ? `勞保($${rates.labor}) ` : ''} ${p.hi ? `健保($${rates.health * p.h_count})` : ''}
-                        </p>
-                    ` : ''}
+            document.getElementById('render-target').innerHTML = `
+                <div class="w-full max-w-[450px]">
+                    <h2 class="text-white font-black italic mb-6">入職審核中心</h2>
+                    ${listHtml || '<p class="text-center text-slate-700">目前沒有新的申請</p>'}
                 </div>`;
-            });
         }
+
+        window.approve = async (id) => {
+            await updateDoc(doc(db, 'partners', id), { status: "approved" });
+            alert("已成功核准司機入職！");
+            renderAdmin();
+        };
     </script>
 </body>
 </html>
