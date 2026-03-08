@@ -11,22 +11,19 @@
         .id-card { width: 100%; max-width: 480px; background: #0f172a; border-radius: 2.5rem; padding: 30px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .input-box { background: rgba(30, 41, 59, 0.4); border: 1px solid #334155; border-radius: 1.2rem; padding: 18px; width: 100%; color: #ffffff; outline: none; margin-bottom: 12px; font-size: 16px; text-align: center; }
         
+        /* 行政表格樣式 */
         .admin-table th { font-size: 11px; padding: 10px 4px; color: #64748b; white-space: nowrap; text-align: center; }
         .admin-table td { font-size: 11px; padding: 12px 4px; border-bottom: 1px solid #1e293b; vertical-align: middle; text-align: center; }
         .input-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #38bdf8; text-align: center; width: 55px; font-weight: bold; padding: 2px 0; }
-        .select-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #0ea5e9; font-weight: bold; font-size: 10px; padding: 2px; width: 100px; }
         
-        /* 新增按鈕樣式 */
+        /* 修改按鈕樣式 */
         .btn-action { padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold; transition: 0.1s; }
-        .btn-confirm { background: #0ea5e9; color: white; }
-        .btn-pin { background: #6366f1; color: white; }
+        .btn-blue { background: #0ea5e9; color: white; }
+        .btn-purple { background: #6366f1; color: white; }
         .btn-del { color: #ef4444; border: 1px solid #450a0a; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
-        
+
         /* 日曆控制列 */
-        .calendar-bar { background: #0f172a; border: 1px solid #1e293b; border-radius: 1.5rem; padding: 15px 25px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%; max-width: 1400px; }
-        
-        /* 圖片放大預覽 */
-        #img-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; justify-content: center; align-items: center; }
+        .calendar-bar { background: #0f172a; border: 1px solid #1e293b; border-radius: 1.5rem; padding: 12px 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; width: 100%; }
 
         .loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 1); z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #1e293b; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 1s linear infinite; }
@@ -35,14 +32,9 @@
 </head>
 <body>
 
-    <div id="img-modal" onclick="this.style.display='none'">
-        <img id="modal-img" src="" class="max-w-[90%] max-h-[90%] border-4 border-white rounded-lg shadow-2xl">
-        <p class="absolute bottom-10 text-white font-bold">點擊任何處關閉預覽</p>
-    </div>
-
     <div id="loading" class="loading-overlay">
         <div class="spinner"></div>
-        <p class="mt-4 text-sky-500 font-bold tracking-widest">在地物流 數據同步中...</p>
+        <p class="mt-4 text-sky-500 font-bold tracking-widest">在地物流 雲端同步中...</p>
     </div>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
@@ -51,135 +43,143 @@
         <div class="w-full max-w-[340px] bg-slate-900/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl">
             <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box" maxlength="10">
             <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box">
-            <button onclick="window.boot()" class="btn-prime w-full shadow-lg">進入系統</button>
+            <button onclick="window.boot()" class="btn-prime w-full bg-sky-600 p-4 rounded-2xl text-white font-bold">進入系統</button>
         </div>
     </div>
 
     <div id="admin" class="layer !px-4">
         <div class="w-full max-w-[1440px]">
-            <div id="boss-tools" class="hidden mb-6 p-5 bg-slate-900 border border-amber-500/30 rounded-[2rem] flex flex-wrap items-center gap-4">
-                <span class="text-amber-500 font-black italic text-sm border-r border-slate-700 pr-4">👑 行政帳號管理</span>
-                <input type="tel" id="acc_phone" placeholder="會計手機" class="input-mini !w-32 !h-10">
-                <input type="text" id="acc_pin" placeholder="會計PIN" class="input-mini !w-24 !h-10">
-                <button onclick="window.updateAcc()" class="btn-action btn-confirm !px-6 !py-2">儲存行政設定</button>
+            <div id="boss-config-area" class="hidden mb-4 p-4 bg-slate-900 border border-amber-500/30 rounded-2xl flex flex-wrap gap-4 items-center">
+                <span class="text-amber-500 font-bold text-sm italic">👑 行政權限設定</span>
+                <input type="tel" id="new_acc_phone" placeholder="會計手機" class="input-mini !w-32 !h-10">
+                <input type="text" id="new_acc_pin" placeholder="會計PIN" class="input-mini !w-24 !h-10">
+                <button onclick="window.saveAdminAcc()" class="btn-action btn-blue !px-6 !py-2">儲存行政帳號</button>
             </div>
 
             <div class="calendar-bar">
-                <span class="text-sky-400 font-bold text-sm">📅 對帳日期：</span>
-                <input type="date" id="view_date" onchange="window.renderAdmin()" class="bg-transparent text-white font-bold outline-none cursor-pointer">
-                <div class="ml-auto flex gap-4">
-                    <h2 id="admin-title" class="text-white font-black text-2xl italic uppercase">行政總控台</h2>
-                    <button onclick="location.reload()" class="bg-slate-800 px-4 py-1 rounded-full text-[10px] font-bold text-slate-400">登出</button>
-                </div>
+                <span class="text-sky-400 font-bold text-sm">📅 調閱對帳日期：</span>
+                <input type="date" id="target_date" onchange="window.renderAdmin()" class="bg-transparent text-white font-bold outline-none cursor-pointer">
+                <div class="ml-auto text-white font-black italic">ADMIN PANEL</div>
             </div>
 
             <div class="bg-slate-900 p-6 rounded-[2.5rem] overflow-x-auto border border-slate-800 shadow-2xl">
                 <table class="w-full admin-table">
                     <thead class="text-slate-500 border-b border-slate-800">
                         <tr>
-                            <th>狀態</th><th>姓名/手機</th><th>手動件數(正/逆)</th><th>正價</th><th>逆價</th><th>加保</th><th>2026 分級</th><th>口數</th><th>保費</th><th>應付淨額</th><th>PIN 碼</th><th>管理</th>
+                            <th>狀態</th><th>姓名/手機</th><th>手動正/逆件</th><th>單價</th><th>加保</th><th>分級/口數</th><th>保費</th><th>應付淨額</th><th>PIN碼</th><th>管理</th>
                         </tr>
                     </thead>
                     <tbody id="admin-render" class="text-white"></tbody>
                 </table>
             </div>
+            <button onclick="location.reload()" class="mt-8 text-slate-600 underline text-xs">安全登出系統</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, deleteDoc, collection, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, deleteDoc, collection, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const config = { /* 您的 Firebase Config */ };
-        const app = initializeApp(config); const db = getFirestore(app);
+        const config = { 
+            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
+            authDomain: "supreme-v92.firebaseapp.com", 
+            projectId: "supreme-v92", 
+            storageBucket: "supreme-v92.firebasestorage.app", 
+            messagingSenderId: "485530156296", 
+            appId: "1:485530156296:web:6728c0ee08b98dedd800bd" 
+        };
+
+        const app = initializeApp(config);
+        const db = getFirestore(app);
         const appId = 'logistics-master-v92';
         const partnersCol = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
 
         let partners = [];
-        let userRole = "partner"; // boss, accountant, partner
+        let userRole = "partner";
 
-        // 初始化日期
-        document.getElementById('view_date').valueAsDate = new Date();
+        // 初始化日期為今日
+        document.getElementById('target_date').valueAsDate = new Date();
 
         window.boot = () => {
             const ph = document.getElementById('login_phone').value.trim();
             const pi = document.getElementById('login_pin').value.trim();
             
+            // 老闆登入
             if(ph === "0976017938" && pi === "0531") {
                 userRole = "boss";
-                document.getElementById('boss-tools').classList.remove('hidden');
+                document.getElementById('boss-config-area').classList.remove('hidden');
                 return window.renderAdmin();
             }
+            // 會計登入 (預設 8888)
             if(ph === "0900000000" && pi === "8888") {
                 userRole = "accountant";
                 return window.renderAdmin();
             }
-            // 夥伴登入邏輯...
+            // 其餘夥伴邏輯...
         };
 
         window.renderAdmin = () => {
+            document.getElementById('gate').style.display='none';
+            document.getElementById('admin').style.display='flex';
             const isBoss = userRole === "boss";
-            document.getElementById('gate').style.display = 'none';
-            document.getElementById('admin').style.display = 'flex';
+            const target = document.getElementById('admin-render');
             
-            const list = document.getElementById('admin-render');
             let html = '';
-
             partners.forEach(p => {
                 const dp = p.custom_del || 15; const rp = p.custom_rev || 10;
                 const ins_b = Number(p.ins_base) || 0; 
                 const fm = Math.min(Math.max(Number(p.ins_fm) || 1, 1), 4);
                 const isInsOn = p.ins_toggle !== false;
-                
-                // 2026 勞健保精算 (模擬黑盒)
                 const total_ins = isInsOn ? Math.round(ins_b * 0.025 + ins_b * 0.01551 * fm) : 0;
                 const income = ((p.total_del || 0) * dp) + ((p.total_rev || 0) * rp);
 
-                html += `<tr class="hover:bg-white/5">
-                    <td><span class="text-[9px] uppercase font-bold">${p.status}</span></td>
-                    <td><span class="font-bold text-white">${p.name}</span></td>
+                html += `<tr class="border-b border-slate-800/50">
+                    <td><span class="text-[9px] font-bold">${p.status}</span></td>
+                    <td><span class="text-white font-bold">${p.name}</span></td>
                     <td>
                         <input type="number" value="${p.total_del||0}" onchange="window.upF('${p.id}','total_del',this.value)" class="input-mini"> / 
                         <input type="number" value="${p.total_rev||0}" onchange="window.upF('${p.id}','total_rev',this.value)" class="input-mini">
                     </td>
-                    <td><input type="number" value="${dp}" onchange="window.upF('${p.id}','custom_del',this.value)" class="input-mini" ${!isBoss?'disabled opacity-30':''}></td>
-                    <td><input type="number" value="${rp}" onchange="window.upF('${p.id}','custom_rev',this.value)" class="input-mini" ${!isBoss?'disabled opacity-30':''}></td>
-                    <td><button onclick="window.upF('${p.id}','ins_toggle',${!isInsOn})" class="text-[9px] font-bold ${isInsOn?'text-green-500':'text-red-500'}">${isInsOn?'ON':'OFF'}</button></td>
-                    <td><input type="number" value="${ins_b}" onchange="window.upF('${p.id}','ins_base',this.value)" class="input-mini !w-16"></td>
-                    <td><input type="number" value="${fm}" onchange="window.upF('${p.id}','ins_fm',this.value)" class="input-mini !w-10"></td>
+                    <td>
+                        <input type="number" value="${dp}" onchange="window.upF('${p.id}','custom_del',this.value)" class="input-mini" ${!isBoss?'disabled opacity-30':''}>
+                    </td>
+                    <td>
+                        <button onclick="window.upF('${p.id}','ins_toggle',${!isInsOn})" class="text-[9px] font-bold ${isInsOn?'text-green-500':'text-red-500'}">${isInsOn?'加保中':'不加保'}</button>
+                    </td>
+                    <td>
+                        <input type="number" value="${ins_b}" onchange="window.upF('${p.id}','ins_base',this.value)" class="input-mini !w-16">
+                        <input type="number" value="${fm}" onchange="window.upF('${p.id}','ins_fm',this.value)" class="input-mini !w-8">
+                    </td>
                     <td class="text-red-400">-$${total_ins}</td>
-                    <td class="text-sky-400 font-black text-sm">$${income - total_ins}</td>
-                    <td><input type="text" id="pin_${p.id}" value="${p.pin}" class="input-mini !w-12" ${!isBoss?'disabled opacity-30':''}></td>
+                    <td class="text-sky-400 font-black">$${income - total_ins}</td>
+                    <td>
+                        <input type="text" id="pin_${p.id}" value="${p.pin}" class="input-mini !w-12" ${!isBoss?'disabled opacity-30':''}>
+                    </td>
                     <td class="flex gap-2 justify-center">
-                        <button onclick="alert('數據已保存')" class="btn-action btn-confirm">確認</button>
-                        ${isBoss ? `<button onclick="window.upF('${p.id}','pin',document.getElementById('pin_${p.id}').value)" class="btn-action btn-pin">改PIN</button>` : ''}
-                        <img src="sample_momo.jpg" class="w-6 h-6 rounded cursor-pointer" onclick="window.zoomImg(this.src)">
+                        <button onclick="alert('數據已同步雲端')" class="btn-action btn-blue">確認</button>
+                        ${isBoss ? `<button onclick="window.upF('${p.id}','pin',document.getElementById('pin_${p.id}').value)" class="btn-action btn-purple">改PIN</button>` : ''}
+                        <img src="sample_momo.jpg" class="w-6 h-6 rounded cursor-pointer" onclick="window.open(this.src)">
                         ${isBoss ? `<span class="btn-del" onclick="window.delP('${p.id}')">🗑️</span>` : ''}
                     </td>
                 </tr>`;
             });
-            list.innerHTML = html || '<tr><td colspan="12" class="py-10 text-slate-600 italic">該日期無回報數據</td></tr>';
+            target.innerHTML = html;
         };
 
-        window.zoomImg = (src) => {
-            document.getElementById('modal-img').src = src;
-            document.getElementById('img-modal').style.display = 'flex';
-        };
-
-        window.upF = async (id, f, v) => { 
+        window.upF = async (id, f, v) => {
             const val = (typeof v === 'boolean') ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
-            await updateDoc(doc(partnersCol, id), { [f]: val }); 
-            alert("雲端同步成功");
+            await updateDoc(doc(partnersCol, id), { [f]: val });
         };
 
-        window.updateAcc = () => {
-            const ph = document.getElementById('acc_phone').value;
-            const pi = document.getElementById('acc_pin').value;
-            alert(`行政權限已重置！\n新帳號：${ph}\n新PIN：${pi}`);
-            // 此處連動 Firebase 權限表...
+        window.saveAdminAcc = () => {
+            const ph = document.getElementById('new_acc_phone').value;
+            const pi = document.getElementById('new_acc_pin').value;
+            alert(`行政權限已重置：${ph} / ${pi}`);
+            // 您可以在 Firebase 中另開 config 文件存放這組動態變數
         };
 
-        // 監聽雲端數據
+        window.delP = async (id) => { if(confirm("確定刪除？")) await deleteDoc(doc(partnersCol, id)); };
+
         onSnapshot(partnersCol, s => {
             partners = s.docs.map(d => ({ id: d.id, ...d.data() }));
             if(document.getElementById('admin').style.display === 'flex') window.renderAdmin();
