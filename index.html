@@ -3,38 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流 - 夥伴數位中心 PRO</title>
+    <title>在地物流 - 職業夥伴數位中心</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
         .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 24px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 500px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 2.5rem; padding: 35px; border: 1px solid #1e293b; margin-bottom: 25px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        .input-box { background: rgba(15, 23, 42, 0.9); border: 2px solid #334155; border-radius: 1rem; padding: 18px; width: 100%; color: #fff; outline: none; margin-bottom: 15px; font-size: 16px; }
+        .id-card { width: 100%; max-width: 500px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 2.5rem; padding: 30px; border: 1px solid #334155; margin-bottom: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .input-box { background: rgba(15, 23, 42, 0.9); border: 2px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #fff; outline: none; margin-bottom: 12px; font-size: 16px; }
         .btn-prime { width: 100%; padding: 20px; border-radius: 1.2rem; background: #0ea5e9; color: #020617; font-weight: 950; font-size: 18px; cursor: pointer; border: none; transition: 0.2s; }
-        .btn-prime:active { transform: scale(0.96); background: #38bdf8; }
-        .label-sky { font-size: 13px; color: #38bdf8; font-weight: 900; margin-bottom: 8px; display: block; letter-spacing: 1px; text-transform: uppercase; }
-        .q-box { background: rgba(255,255,255,0.03); border: 1px solid #1e293b; padding: 15px; border-radius: 1.5rem; margin-bottom: 20px; }
-        .opt-label { display: flex; align-items: center; gap: 12px; padding: 12px; cursor: pointer; border-radius: 12px; font-size: 14px; }
-        .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .photo-slot { background: #0f172a; border: 2px dashed #334155; border-radius: 15px; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; position: relative; }
-        .photo-slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .btn-prime:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
+        .label-sky { font-size: 13px; color: #38bdf8; font-weight: 900; margin-bottom: 10px; display: block; letter-spacing: 1px; text-transform: uppercase; border-left: 4px solid #0ea5e9; padding-left: 8px; margin-top: 20px; }
+        .q-box { background: rgba(255,255,255,0.03); border: 1px solid #1e293b; padding: 15px; border-radius: 1.5rem; margin-bottom: 10px; }
+        .opt-label { display: flex; align-items: center; gap: 12px; padding: 10px; cursor: pointer; border-radius: 12px; font-size: 14px; transition: 0.2s; }
+        .opt-label:hover { background: rgba(14, 165, 233, 0.1); }
+        .opt-label input { width: 20px; height: 20px; accent-color: #0ea5e9; }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-6xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
-        <p class="text-sky-500 text-sm font-black tracking-[0.4em] mb-16 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">數位服務平台</p>
+        <p class="text-sky-500 text-sm font-black tracking-[0.4em] mb-16 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">職業物流夥伴管理平台</p>
         
         <div class="w-full max-w-[340px] space-y-4">
             <div class="bg-slate-900/80 p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl">
-                <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center shadow-inner">
-                <input type="password" id="login_pin" placeholder="PIN 安全密碼" class="input-box text-center shadow-inner">
-                <button onclick="boot()" class="btn-prime">立即登入</button>
+                <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center">
+                <input type="password" id="login_pin" placeholder="PIN 安全密碼" class="input-box text-center">
+                <button onclick="boot()" class="btn-prime w-full">進入系統</button>
             </div>
             
-            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest pt-8">── 夥伴入職引導 ──</p>
-            <button onclick="showLayer('interview-page')" class="w-full py-4 rounded-2xl border-2 border-sky-500 text-sky-400 font-black">一、職能評估 (機車/貨車)</button>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest pt-8">── 職業夥伴引導 ──</p>
+            <button onclick="showLayer('interview-page')" class="w-full py-4 rounded-2xl border-2 border-sky-500 text-sky-400 font-black">一、職能適性評估 (4題測驗)</button>
             <button onclick="showLayer('apply-page')" class="w-full py-4 rounded-2xl border-2 border-slate-700 text-slate-500 font-black">二、正式入職資料補件</button>
         </div>
     </div>
@@ -43,65 +42,59 @@
         <div class="w-full max-w-[500px]">
             <div class="mb-4 text-slate-500 font-black cursor-pointer" onclick="hideAll()">← 返回首頁</div>
             <div class="id-card">
-                <h2 class="text-3xl font-black text-white mb-6 italic border-b-4 border-sky-500 pb-2">營運職能評估</h2>
+                <h2 class="text-3xl font-black text-white mb-6 italic border-b-4 border-sky-500 pb-2">夥伴職能評估</h2>
                 
-                <span class="label-sky">基本資訊</span>
                 <input type="text" id="int_name" placeholder="您的姓名" class="input-box">
                 <input type="tel" id="int_phone" placeholder="聯絡電話" class="input-box">
                 
-                <span class="label-sky">應徵車種</span>
+                <span class="label-sky">應徵車種類型</span>
                 <select id="int_v_type" class="input-box bg-slate-900 text-white font-bold" onchange="checkTruck(this.value)">
                     <option value="機車">機車配送夥伴</option>
-                    <option value="貨車">貨車專業夥伴 (需職業駕照)</option>
+                    <option value="貨車">貨車專業夥伴 (職業小型車以上)</option>
                 </select>
 
-                <div id="truck_box" class="hidden mb-6 p-4 bg-sky-900/20 border border-sky-500/30 rounded-2xl text-xs">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="pro_lic_check" class="w-5 h-5"> 我已持有「職業小型車」以上有效駕照
+                <div id="truck_box" class="hidden mb-6 p-4 bg-orange-900/20 border border-orange-500/30 rounded-2xl">
+                    <label class="flex items-center gap-2 cursor-pointer text-white font-bold text-sm">
+                        <input type="checkbox" id="pro_lic_check" class="w-5 h-5"> 我確認持有有效「職業駕照」
                     </label>
                 </div>
 
-                <span class="label-sky">情境：配送中遇大雨且貨多？</span>
+                <span class="label-sky">1. 安全：配送途中輕微擦撞，你會？</span>
                 <div class="q-box">
-                    <label class="opt-label"><input type="radio" name="q1" value="1"> 穿雨衣並蓋好遮雨布繼續送</label>
-                    <label class="opt-label"><input type="radio" name="q1" value="0"> 找地方躲雨，等雨小再送</label>
+                    <label class="opt-label"><input type="radio" name="q1" value="1"> 報警、拍照存證並同步回報調度</label>
+                    <label class="opt-label"><input type="radio" name="q1" value="0"> 趕快送完包裹，晚點再私下處理</label>
                 </div>
 
-                <button onclick="submitInterview()" id="sub_btn" class="btn-prime shadow-xl">送出評估結果</button>
+                <span class="label-sky">2. 責任：遇突發大雨且載貨量大，你會？</span>
+                <div class="q-box">
+                    <label class="opt-label"><input type="radio" name="q2" value="1"> 確實覆蓋雨布，穿雨衣繼續配送</label>
+                    <label class="opt-label"><input type="radio" name="q2" value="0"> 為了貨物不濕，先回站所暫緩配送</label>
+                </div>
+
+                <span class="label-sky">3. 誠信：代收貨款多了錢但不確定來源？</span>
+                <div class="q-box">
+                    <label class="opt-label"><input type="radio" name="q3" value="1"> 主動聯繫回報公司並上繳</label>
+                    <label class="opt-label"><input type="radio" name="q3" value="0"> 先收著，如果沒人反應就當小費</label>
+                </div>
+
+                <span class="label-sky">4. 危機：車輛故障且還有 10 件急件？</span>
+                <div class="q-box">
+                    <label class="opt-label"><input type="radio" name="q4" value="1"> 第一時間回報公司，尋求鄰近支援</label>
+                    <label class="opt-label"><input type="radio" name="q4" value="0"> 自行攔計程車去送，晚點再去修車</label>
+                </div>
+
+                <button onclick="submitInterview()" id="sub_btn" class="btn-prime w-full mt-6 shadow-xl">送出完整評估結果</button>
             </div>
         </div>
     </div>
 
     <div id="apply-page" class="layer">
-        <div class="w-full max-w-[500px]">
-            <div class="mb-4 text-slate-500 font-black cursor-pointer" onclick="hideAll()">← 返回首頁</div>
-            <div class="id-card">
-                <h2 class="text-3xl font-black text-white mb-6 border-b-4 border-orange-500 pb-2 italic">正式入職資料</h2>
-                
-                <div class="photo-grid">
-                    <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f" class="text-[10px]">身分證正面</span><img id="p_id_f"></div>
-                    <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b" class="text-[10px]">身分證反面</span><img id="p_id_b"></div>
-                    <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic" class="text-[10px]">駕照影本</span><img id="p_lic"></div>
-                    <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car" class="text-[10px]">行照影本</span><img id="p_car"></div>
-                    <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
-                </div>
-
-                <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
-                <input type="tel" id="app_phone" placeholder="行動電話" class="input-box">
-                <input type="text" id="app_h_addr" placeholder="完整戶籍地址" class="input-box">
-                <input type="text" id="app_plate" placeholder="營運車牌號碼" class="input-box">
-                <input type="password" id="app_pin" placeholder="設定 4 位登入密碼" maxlength="4" class="input-box">
-
-                <button onclick="submitApply()" id="app_btn" class="btn-prime bg-orange-600 shadow-xl">提交建檔資料</button>
-            </div>
         </div>
-    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // 🔥 請務必填寫您正確的 Firebase Config
         const firebaseConfig = { 
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
             authDomain: "supreme-v92.firebaseapp.com", 
@@ -113,68 +106,41 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let partners = [], currentImgField = '';
-        let photosCache = { id_f: null, id_b: null, lic: null, car: null };
-
-        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({ id: d.id, ...d.data() })); });
-
         window.checkTruck = (v) => { document.getElementById('truck_box').style.display = (v==='貨車')?'block':'none'; };
 
-        // 修復後的提交邏輯
         window.submitInterview = async () => {
+            const btn = document.getElementById('sub_btn');
             const name = document.getElementById('int_name').value;
             const phone = document.getElementById('int_phone').value;
-            const q1 = document.querySelector('input[name="q1"]:checked')?.value;
             const vType = document.getElementById('int_v_type').value;
 
-            if(!name || !phone || !q1) return alert("請填寫姓名、電話並回答情境題！");
-            if(vType === '貨車' && !document.getElementById('pro_lic_check').checked) return alert("貨車夥伴必須持有職業駕照，請勾選確認。");
+            // 抓取 4 題答案
+            const q1 = document.querySelector('input[name="q1"]:checked')?.value;
+            const q2 = document.querySelector('input[name="q2"]:checked')?.value;
+            const q3 = document.querySelector('input[name="q3"]:checked')?.value;
+            const q4 = document.querySelector('input[name="q4"]:checked')?.value;
 
-            const btn = document.getElementById('sub_btn');
-            btn.innerText = "傳送中..."; btn.disabled = true;
+            if(!name || !phone || !q1 || !q2 || !q3 || !q4) return alert("請完整填寫基本資料並完成 4 題評估！");
+            
+            if(vType === '貨車' && !document.getElementById('pro_lic_check').checked) {
+                return alert("應徵貨車夥伴必須確認持有「職業駕照」！");
+            }
 
-            try {
-                await addDoc(collection(db, 'partners'), {
-                    name, phone, v_type: vType, ai_score: parseInt(q1)*100, status: "interviewing", time: serverTimestamp()
-                });
-                alert("評估已送出，請等候核准通知！"); location.reload();
-            } catch(e) { alert("系統繁忙，請稍後再試"); btn.innerText = "送出評估結果"; btn.disabled = false; }
-        };
+            btn.disabled = true; btn.innerText = "正在傳送專業數據...";
 
-        window.submitApply = async () => {
-            const name = document.getElementById('app_name').value;
-            const pin = document.getElementById('app_pin').value;
-            if(!name || !pin) return alert("請填寫姓名與登入密碼");
-
-            const btn = document.getElementById('app_btn');
-            btn.innerText = "正在上傳證件..."; btn.disabled = true;
+            const finalScore = (parseInt(q1) + parseInt(q2) + parseInt(q3) + parseInt(q4)) * 25;
 
             try {
                 await addDoc(collection(db, 'partners'), {
-                    name, phone: document.getElementById('app_phone').value,
-                    h_addr: document.getElementById('app_h_addr').value,
-                    plate: document.getElementById('app_plate').value,
-                    uid: pin, docs: photosCache, status: "pending", total_del: 0, time: serverTimestamp()
+                    name, phone, v_type: vType, ai_score: finalScore, status: "interviewing", time: serverTimestamp()
                 });
-                alert("資料已建檔！請通知管理員開通。"); location.reload();
-            } catch(e) { alert("上傳失敗"); btn.innerText = "提交建檔資料"; btn.disabled = false; }
+                alert(`評估完成！您的專業度評分為：${finalScore} 分。請等候審核。`);
+                location.reload();
+            } catch(e) { alert("提交失敗"); btn.disabled = false; btn.innerText = "送出完整評估結果"; }
         };
 
-        // UI 邏輯
         window.showLayer = id => document.getElementById(id).style.display = 'flex';
         window.hideAll = () => { document.querySelectorAll('.layer').forEach(l => l.style.display='none'); };
-        window.triggerCam = f => { currentImgField = f; document.getElementById('cam').click(); };
-        window.handleFile = (input) => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                photosCache[currentImgField] = e.target.result;
-                const p = document.getElementById('p_' + currentImgField);
-                p.src = e.target.result; p.style.display = 'block';
-                document.getElementById('t_' + currentImgField).style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
-        };
-        window.boot = () => { /* 登入邏輯同前版... */ };
     </script>
 </body>
 </html>
