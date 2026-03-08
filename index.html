@@ -1,229 +1,93 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME V92 ENTERPRISE</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; }
-        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 480px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 25px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 0.8rem; padding: 12px; width: 100%; color: white; outline: none; margin-bottom: 10px; font-size: 14px; }
-        .label-sky { font-size: 10px; color: #38bdf8; font-weight: bold; margin-bottom: 4px; display: block; letter-spacing: 1px; text-transform: uppercase; }
-        .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .photo-slot { background: #0f172a; border: 1px dashed #334155; border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .photo-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: none; }
-        .btn-prime { width: 100%; padding: 18px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; text-transform: uppercase; transition: all 0.2s; }
-        .btn-prime:active { scale: 0.98; }
-        .ins-tag { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; }
-    </style>
-</head>
-<body>
+// 核心設定：Google AI 金鑰
+const AI_KEY = "AIzaSyAOYllgLJPKNIKMRxg1FiZVjUb1CkfMPyA";
 
-    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-5xl font-black text-white italic mb-1 tracking-tighter">SUPREME</h1>
-        <p class="text-[9px] text-slate-600 tracking-[0.5em] mb-12 uppercase font-bold">Logistics Command Center</p>
+/**
+ * AI 辨識主引擎 (OCR)
+ * 功能：辨識身分證字號與姓名
+ */
+window.aiOcr = async (base64) => {
+    // 預先檢查金鑰
+    if (!AI_KEY || AI_KEY.includes("貼上")) {
+        console.error("未設定有效的 API Key");
+        return;
+    }
+
+    const raw = base64.split(',')[1];
+    const url = `https://vision.googleapis.com/v1/images:annotate?key=${AI_KEY}`;
+    
+    // 顯示辨識中狀態
+    const subBtn = document.getElementById('subBtn');
+    const originalBtnText = subBtn.innerHTML;
+    subBtn.innerHTML = "🤖 AI 正在讀取證件...";
+    subBtn.disabled = true;
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                requests: [{ 
+                    image: { content: raw }, 
+                    features: [{ type: "TEXT_DETECTION" }] 
+                }]
+            })
+        });
         
-        <div class="w-full max-w-[300px] space-y-4">
-            <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box text-center text-lg">
-            <input type="password" id="login_pin" placeholder="PIN CODE" inputmode="numeric" class="input-box text-center text-lg tracking-[0.5em]">
-            <button onclick="boot()" class="btn-prime">驗證登入</button>
-            <button onclick="showApply()" class="text-[10px] text-slate-700 underline uppercase tracking-widest mt-4">New Driver Application / 司機入職申請</button>
-        </div>
-    </div>
-
-    <div id="apply-page" class="layer">
-        <div class="id-card">
-            <h2 class="text-xl font-black text-white italic mb-6 text-center uppercase tracking-widest">人事資料數位建檔</h2>
-            
-            <span class="label-sky">基本個資</span>
-            <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
-            <input type="tel" id="app_phone" placeholder="聯絡電話 (登入帳號)" class="input-box">
-            <input type="password" id="app_pin" placeholder="自訂登入 PIN (4碼)" maxlength="4" class="input-box">
-            <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
-
-            <span class="label-sky">證件拍照存證</span>
-            <div class="photo-grid">
-                <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f">身分證正</span><img id="p_id_f"></div>
-                <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b">身分證反</span><img id="p_id_b"></div>
-                <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic">駕駛執照</span><img id="p_lic"></div>
-                <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car">行車執照</span><img id="p_car"></div>
-                <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
-            </div>
-
-            <span class="label-sky">地址資訊</span>
-            <input type="text" id="app_h_addr" placeholder="戶籍地址" class="input-box">
-            <input type="text" id="app_c_addr" placeholder="通訊地址 (同上免填)" class="input-box">
-
-            <button onclick="submitApply()" id="subBtn" class="btn-prime mt-4">提交入職資料</button>
-            <button onclick="location.reload()" class="w-full mt-4 text-[10px] text-slate-600 uppercase">返回</button>
-        </div>
-    </div>
-
-    <div id="main" class="layer">
-        <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase">Disconnect</button>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-            authDomain: "supreme-v92.firebaseapp.com",
-            projectId: "supreme-v92",
-            storageBucket: "supreme-v92.firebasestorage.app",
-            messagingSenderId: "485530156296",
-            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        let partners = [];
-        let currentF = '';
-        const photos = {};
-        let rates = { del: 50, ret: 20, labor: 1500, health: 800 };
-
-        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
-
-        // 登入邏輯：手機 + PIN
-        window.boot = () => {
-            const phone = document.getElementById('login_phone').value;
-            const pin = document.getElementById('login_pin').value;
-            
-            if(phone === "0900000000" && pin === "9999") return renderAdmin(); // 超級管理員
-            
-            const p = partners.find(x => x.phone === phone && x.uid === pin && x.status === "approved");
-            if(p) return renderDriverUI(p);
-            alert("登入失敗：請確認手機、PIN 碼是否正確或帳號審核中");
-        };
-
-        window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
-
-        // 拍照與檔案處理
-        window.triggerCam = (f) => { currentF = f; document.getElementById('cam').click(); };
-        window.handleFile = (input) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                photos[currentF] = e.target.result;
-                document.getElementById('p_'+currentF).src = e.target.result;
-                document.getElementById('p_'+currentF).style.display = 'block';
-                document.getElementById('t_'+currentF).style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
-        };
-
-        // 提交申請：包含重複檢查
-        window.submitApply = async () => {
-            const phone = document.getElementById('app_phone').value;
-            if(partners.some(x => x.phone === phone)) return alert("此手機號碼已註冊過！");
-
-            const data = {
-                name: document.getElementById('app_name').value,
-                phone: phone,
-                uid: document.getElementById('app_pin').value,
-                id_num: document.getElementById('app_idnum').value,
-                home_addr: document.getElementById('app_h_addr').value,
-                mail_addr: document.getElementById('app_c_addr').value || document.getElementById('app_h_addr').value,
-                docs: photos,
-                status: "pending",
-                l_cnt: 1, h_cnt: 1, // 後台預設值
-                total_del: 0, total_ret: 0, applyTime: serverTimestamp()
-            };
-            await addDoc(collection(db, 'partners'), data);
-            alert("提交完成，請等候核准！"); location.reload();
-        };
-
-        // [司機端作業]：單頁拍照與件數
-        function renderDriverUI(p) {
-            document.getElementById('gate').style.display = 'none';
-            document.getElementById('main').style.display = 'flex';
-            document.getElementById('render-target').innerHTML = `
-                <div class="id-card">
-                    <h2 class="text-2xl font-black text-white italic mb-8 uppercase">${p.name}</h2>
-                    <img id="job_p" class="w-full h-48 object-cover rounded-xl mb-4 border-2 border-slate-800" style="display:none">
-                    <label class="btn-prime bg-slate-800 text-white mb-6 flex items-center justify-center cursor-pointer">
-                        📸 拍攝作業憑證 <input type="file" accept="image/*" capture="camera" class="hidden" onchange="window.handleJobPhoto(this)">
-                    </label>
-                    <div class="space-y-3">
-                        <input type="number" id="dc" placeholder="當次配送件數" class="input-box text-sky-400 font-bold text-center text-xl">
-                        <input type="number" id="rc" placeholder="當次逆物流量" class="input-box text-orange-400 font-bold text-center text-xl">
-                        <button onclick="window.sendJob('${p.id}')" class="btn-prime bg-sky-600">確認並上傳數據</button>
-                    </div>
-                </div>`;
+        const data = await res.json();
+        
+        if (!data.responses || !data.responses[0].fullTextAnnotation) {
+            throw new Error("無法辨識文字，請確認照片清晰且無反光");
         }
 
-        let jobBase64 = null;
-        window.handleJobPhoto = (input) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                jobBase64 = e.target.result;
-                document.getElementById('job_p').src = jobBase64;
-                document.getElementById('job_p').style.display = 'block';
-            };
-            reader.readAsDataURL(input.files[0]);
-        };
+        const fullText = data.responses[0].fullTextAnnotation.text;
+        console.log("AI 辨識結果:", fullText);
 
-        window.sendJob = async (id) => {
-            if(!jobBase64) return alert("請先拍照！");
-            const d = parseInt(document.getElementById('dc').value) || 0;
-            const r = parseInt(document.getElementById('rc').value) || 0;
-            await addDoc(collection(db, 'logs'), { driverId: id, d: d, r: r, photo: jobBase64, time: serverTimestamp() });
-            await updateDoc(doc(db, 'partners', id), { total_del: increment(d), total_ret: increment(r) });
-            alert("回報成功！"); location.reload();
-        };
-
-        // [管理端後台]：含審核、薪資、勞健保下拉選單
-        function renderAdmin() {
-            document.getElementById('gate').style.display = 'none';
-            document.getElementById('main').style.display = 'flex';
-            
-            const pending = partners.filter(x => x.status === "pending");
-            const approved = partners.filter(x => x.status === "approved");
-
-            let html = `<h2 class="text-white font-black italic mb-6">ADMIN CONTROL CENTER</h2>`;
-            
-            // 待審核區
-            html += pending.map(p => `
-                <div class="id-card !bg-slate-900 border-orange-900/50">
-                    <p class="text-orange-500 text-[10px] font-bold mb-2 tracking-widest">待審核申請</p>
-                    <p class="text-white font-bold text-lg">${p.name}</p>
-                    <p class="text-[10px] text-slate-500 mb-4">電話: ${p.phone} | 身分證: ${p.id_num}</p>
-                    <div class="flex gap-4 mb-4">
-                        <label class="text-[10px]">勞保: <select id="l_${p.id}" class="bg-slate-800 text-white rounded"><option value="1">1人</option><option value="2">2人</option></select></label>
-                        <label class="text-[10px]">健保: <select id="h_${p.id}" class="bg-slate-800 text-white rounded"><option value="1">1人</option><option value="2">2人</option><option value="3">3人</option><option value="4">4人</option><option value="5">5人</option></select></label>
-                    </div>
-                    <button onclick="window.finalApprove('${p.id}')" class="btn-prime h-10 py-0 text-xs">核准並設定人數</button>
-                </div>
-            `).join('');
-
-            // 薪資結算區
-            html += `<h3 class="text-slate-500 font-bold text-[10px] my-6 tracking-widest uppercase">Fleet Payroll</h3>`;
-            html += approved.map(p => {
-                const pay = (p.total_del * rates.del) + (p.total_ret * rates.ret) - (p.l_cnt > 0 ? rates.labor : 0) - (p.h_cnt * rates.health);
-                return `
-                <div class="id-card !bg-slate-900/30">
-                    <div class="flex justify-between items-center">
-                        <p class="text-white font-bold">${p.name}</p>
-                        <p class="text-sky-400 font-black text-xl">$${pay.toLocaleString()}</p>
-                    </div>
-                    <div class="text-[9px] text-slate-600 mt-2">
-                        📦 ${p.total_del}件 | 🔄 ${p.total_ret}件 | 🛡️ 勞${p.l_cnt}人 健${p.h_cnt}人
-                    </div>
-                </div>`;
-            }).join('');
-
-            document.getElementById('render-target').innerHTML = html;
+        // 🧠 智能提取邏輯
+        // 1. 搜尋身分證字號 (1個大寫字母 + 9個數字)
+        const idMatch = fullText.match(/[A-Z][1-2]\d{8}/);
+        if (idMatch) {
+            document.getElementById('app_idnum').value = idMatch[0];
+            document.getElementById('app_idnum').classList.add('border-green-500');
         }
 
-        window.finalApprove = async (id) => {
-            const l = parseInt(document.getElementById('l_'+id).value);
-            const h = parseInt(document.getElementById('h_'+id).value);
-            await updateDoc(doc(db, 'partners', id), { status: "approved", l_cnt: l, h_cnt: h });
-            alert("已核准司機入職！"); renderAdmin();
-        };
-    </script>
-</body>
-</html>
+        // 2. 搜尋姓名 (抓取證件上常見的 2-3 個中文字組合)
+        // 排除掉「姓名」、「身分證」、「性別」等關鍵字後的首組中文
+        const cleanText = fullText.replace(/姓名|身分證|性別|出生|日期|地址/g, "");
+        const nameMatch = cleanText.match(/[\u4e00-\u9fa5]{2,3}/);
+        if (nameMatch) {
+            document.getElementById('app_name').value = nameMatch[0];
+            document.getElementById('app_name').classList.add('border-green-500');
+        }
+
+        alert("✨ AI 辨識成功！已自動填寫姓名與證號。");
+    } catch (e) {
+        alert("AI 辨識失敗：" + e.message);
+    } finally {
+        subBtn.innerHTML = originalBtnText;
+        subBtn.disabled = false;
+    }
+};
+
+/**
+ * 修改拍照處理邏輯：當拍完身分證正面 (id_f) 時自動觸發 AI
+ */
+window.handleFile = (input) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64 = e.target.result;
+        photos[currentField] = base64;
+        
+        // 更新顯示預覽圖
+        const prevImg = document.getElementById('p_' + currentField);
+        if (prevImg) {
+            prevImg.src = base64;
+            prevImg.style.display = 'block';
+            document.getElementById('t_' + currentField).style.display = 'none';
+        }
+
+        // 📸 關鍵動作：只有在拍「身分證正面 (id_f)」時啟動 AI
+        if (currentField === 'id_f') {
+            await window.aiOcr(base64);
+        }
+    };
+    reader.readAsDataURL(input.files[0]);
+};
