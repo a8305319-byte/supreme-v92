@@ -3,48 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流 - 下班報表系統</title>
+    <title>在地物流 - 營運管理中控台 PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; }
-        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 480px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 30px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        .input-box { background: rgba(15, 23, 42, 0.9); border: 2px solid #334155; border-radius: 1rem; padding: 15px; width: 100%; color: #fff; outline: none; margin-bottom: 15px; font-size: 20px; text-align: center; }
-        .btn-prime { width: 100%; padding: 20px; border-radius: 1.2rem; background: #0ea5e9; color: #020617; font-weight: 900; font-size: 20px; cursor: pointer; border: none; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); }
-        .btn-prime:active { transform: scale(0.95); }
-        .label-sky { font-size: 14px; color: #38bdf8; font-weight: 900; margin-bottom: 10px; display: block; letter-spacing: 2px; text-transform: uppercase; }
+        body { background: #020617; color: #94a3b8; font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 24px; overflow-y: auto; }
+        .id-card { width: 100%; max-width: 500px; background: linear-gradient(165deg, #0f172a 0%, #1e293b 100%); border-radius: 2.5rem; padding: 35px; border: 1px solid #1e293b; margin-bottom: 25px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .input-box { background: rgba(15, 23, 42, 0.9); border: 2px solid #334155; border-radius: 1rem; padding: 18px; width: 100%; color: #fff; outline: none; margin-bottom: 15px; font-size: 16px; }
+        .input-box:focus { border-color: #0ea5e9; }
+        .btn-prime { width: 100%; padding: 20px; border-radius: 1.2rem; background: #0ea5e9; color: #020617; font-weight: 950; font-size: 18px; cursor: pointer; border: none; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); }
+        .label-sky { font-size: 13px; color: #38bdf8; font-weight: 900; margin-bottom: 8px; display: block; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 15px; }
         
-        /* 報表影像牆 */
+        /* 報表牆設計 */
         .report-grid { display: grid; grid-template-cols: repeat(2, 1fr); gap: 12px; width: 100%; margin-bottom: 30px; }
-        .report-item { background: #0f172a; border-radius: 15px; overflow: hidden; border: 1px solid #334155; position: relative; aspect-ratio: 3/4; }
+        .report-item { background: #0f172a; border-radius: 15px; overflow: hidden; border: 1px solid #334155; position: relative; aspect-ratio: 3/4; cursor: pointer; }
         .report-item img { width: 100%; height: 100%; object-fit: cover; }
-        .report-tag { position: absolute; bottom: 0; background: rgba(0,0,0,0.8); width: 100%; padding: 6px; font-size: 11px; color: #fff; text-align: center; font-weight: bold; }
+        .report-tag { position: absolute; bottom: 0; background: rgba(0,0,0,0.8); width: 100%; padding: 6px; font-size: 10px; color: #fff; text-align: center; }
         
-        /* 拍照區 */
-        .cam-trigger { width: 100%; height: 220px; background: #020617; border: 3px dashed #1e293b; border-radius: 1.5rem; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; margin-bottom: 25px; overflow: hidden; }
+        /* 下班拍照區 */
+        .cam-trigger { width: 100%; height: 200px; background: #020617; border: 3px dashed #1e293b; border-radius: 1.5rem; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; margin-bottom: 20px; overflow: hidden; }
         .cam-trigger img { width: 100%; height: 100%; object-fit: contain; display: none; }
+        
+        .photo-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .photo-slot { background: #0f172a; border: 2px dashed #334155; border-radius: 15px; height: 100px; display: flex; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; }
+        .photo-slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000; padding: 20px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-5xl font-black text-white italic mb-2 tracking-tighter">在地物流</h1>
-        <p class="text-sky-500 text-xs font-black tracking-[0.4em] mb-12 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">每日報表上傳系統</p>
+        <h1 class="text-6xl font-black text-white italic mb-4">在地物流</h1>
+        <p class="text-sky-500 text-sm font-black tracking-[0.4em] mb-16 uppercase italic underline decoration-sky-600 decoration-4 underline-offset-8">物流夥伴管理平台</p>
         <div class="w-full max-w-[320px]">
-            <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box shadow-2xl">
-            <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box shadow-2xl">
-            <button onclick="boot()" class="btn-prime">進入報表拍照</button>
+            <input type="tel" id="login_phone" placeholder="手 機 號 碼" class="input-box text-center shadow-2xl">
+            <input type="password" id="login_pin" placeholder="PIN 安全密碼" class="input-box text-center shadow-2xl">
+            <button onclick="boot()" class="btn-prime">進入系統</button>
+            <button onclick="showApply()" class="text-sm text-slate-600 underline mt-16 block font-black">新夥伴入職申請 (Onboarding)</button>
+        </div>
+    </div>
+
+    <div id="apply-page" class="layer">
+        <div class="w-full max-w-[500px]">
+            <div class="mb-6 cursor-pointer text-slate-500 font-bold" onclick="location.reload()">← 返回登入頁</div>
+            <div class="id-card">
+                <h2 class="text-3xl font-black text-white mb-8 text-center italic border-b-4 border-sky-500 pb-2">夥伴入職資料填寫</h2>
+                
+                <span class="label-sky">第一步：上傳證件影像</span>
+                <div class="photo-grid">
+                    <div class="photo-slot" onclick="triggerCam('id_f')"><span id="t_id_f" class="text-xs">身分證正面</span><img id="p_id_f"></div>
+                    <div class="photo-slot" onclick="triggerCam('id_b')"><span id="t_id_b" class="text-xs">身分證反面</span><img id="p_id_b"></div>
+                    <div class="photo-slot" onclick="triggerCam('lic')"><span id="t_lic" class="text-xs">駕照影本</span><img id="p_lic"></div>
+                    <div class="photo-slot" onclick="triggerCam('car')"><span id="t_car" class="text-xs">行照影本</span><img id="p_car"></div>
+                </div>
+                <input type="file" id="cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
+
+                <span class="label-sky">第二步：個人基本資料</span>
+                <input type="text" id="app_name" placeholder="真實姓名 (必填)" class="input-box">
+                <input type="tel" id="app_phone" placeholder="手機號碼 (登入帳號)" class="input-box">
+                <input type="password" id="app_pin" placeholder="自訂 4 位 PIN 碼" maxlength="4" class="input-box">
+                <input type="text" id="app_idnum" placeholder="身分證字號" class="input-box">
+                
+                <span class="label-sky">第三步：營運車種選擇</span>
+                <select id="app_vehicle" class="input-box bg-slate-900 font-bold text-white">
+                    <option value="" disabled selected>請選擇車種</option>
+                    <option value="機車">自有機車</option>
+                    <option value="自有貨車">自有貨車</option>
+                    <option value="自有轎車">自有轎車</option>
+                    <option value="公司車">公司車 (公司配發)</option>
+                </select>
+                <input type="text" id="app_plate" placeholder="車牌號碼" class="input-box">
+
+                <span class="label-sky">第四步：地址與匯款帳戶</span>
+                <input type="text" id="app_h_addr" placeholder="戶籍地址" class="input-box">
+                <div class="flex gap-2">
+                    <input type="text" id="app_bank_code" placeholder="銀行代碼" class="input-box !w-1/3">
+                    <input type="text" id="app_bank_acc" placeholder="匯款帳號" class="input-box !w-2/3">
+                </div>
+
+                <button onclick="submitApply()" class="btn-prime mt-6">確認並提交申請</button>
+            </div>
         </div>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-10 mb-10 text-slate-700 text-xs underline font-black uppercase tracking-widest">安全登出系統</button>
+        <button onclick="location.reload()" class="mt-10 mb-20 text-slate-700 text-xs underline font-black uppercase tracking-widest">登出管理系統</button>
     </div>
 
-    <div id="img-viewer" class="layer !bg-black/95 flex justify-center items-center" onclick="this.style.display='none'">
-        <img id="modal-img" class="max-w-full max-h-[85vh] rounded-lg shadow-2xl">
-        <p class="text-white mt-6 font-black text-lg">點擊任何地方關閉</p>
+    <div id="detail-modal" class="modal">
+        <div class="id-card mx-auto mt-10" id="detail-content"></div>
+        <button onclick="document.getElementById('detail-modal').style.display='none'" class="btn-prime bg-slate-800 text-white mt-6 max-w-[500px] mx-auto block">關閉視窗</button>
     </div>
 
     <script type="module">
@@ -62,16 +111,19 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let partners = [], logs = [], currentPhoto = null;
+        let partners = [], logs = [], currentImgField = '', currentReportPhoto = null;
+        let photosCache = { id_f: null, id_b: null, lic: null, car: null };
 
-        // 監聽數據
+        // 監聽夥伴資料
         onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({ id: d.id, ...d.data() })); });
+        
+        // 監聽回報日誌 (影像牆用)
         onSnapshot(query(collection(db, 'logs'), orderBy('time', 'desc'), limit(10)), s => { 
             logs = s.docs.map(d => ({ id: d.id, ...d.data() })); 
-            if(document.getElementById('main').style.display === 'flex') boot(); 
+            if(document.getElementById('main').style.display === 'flex') boot();
         });
 
-        // 圖片壓縮邏輯 
+        // 圖片壓縮邏輯
         async function compressImg(base64) {
             return new Promise(res => {
                 const img = new Image(); img.src = base64;
@@ -81,10 +133,31 @@
                     if(w > h) { if(w > MAX) { h *= MAX/w; w = MAX; } } else { if(h > MAX) { w *= MAX/h; h = MAX; } }
                     canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    res(canvas.toDataURL('image/jpeg', 0.7));
+                    res(canvas.toDataURL('image/jpeg', 0.6));
                 };
             });
         }
+
+        window.triggerCam = f => { currentImgField = f; document.getElementById('cam').click(); };
+        window.handleFile = async input => {
+            if (!input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = async e => {
+                const compressed = await compressImg(e.target.result);
+                if(currentImgField === 'report') {
+                    currentReportPhoto = compressed;
+                    const pre = document.getElementById('preview-report');
+                    pre.src = compressed; pre.style.display = 'block';
+                    document.getElementById('cam-tip').style.display = 'none';
+                } else {
+                    photosCache[currentImgField] = compressed;
+                    const p = document.getElementById('p_' + currentImgField);
+                    p.src = compressed; p.style.display = 'block';
+                    document.getElementById('t_' + currentImgField).style.display = 'none';
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        };
 
         window.boot = () => {
             const ph = document.getElementById('login_phone').value;
@@ -92,96 +165,105 @@
             if(ph === "0976017938" && pi === "0531") return renderAdmin();
             const p = partners.find(x => x.phone === ph && x.uid === pi && x.status === "approved");
             if(p) return renderHub(p);
-            if(ph && pi) alert("登入失敗：帳號錯誤或審核中");
         };
 
-        // 老闆後台：只看報表照片與總數
+        // 後台管理介面
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
+            const apped = partners.filter(x => x.status === "approved"), pend = partners.filter(x => x.status === "pending");
             
-            let html = `<div class="w-full max-w-[480px]">
+            let html = `<div class="w-full max-w-[500px]">
                 <h2 class="text-white font-black text-3xl mb-8 italic border-l-8 border-sky-500 pl-4 uppercase">今日下班報表牆</h2>
                 <div class="report-grid">`;
             
             logs.forEach(l => {
                 const pname = partners.find(x => x.id === l.driverId)?.name || '未知';
-                html += `<div class="report-item" onclick="viewPhoto('${l.photo}')">
-                    <img src="${l.photo}">
-                    <div class="report-tag">${pname} | ${l.del}件</div>
-                </div>`;
+                html += `<div class="report-item"><img src="${l.photo}"><div class="report-tag">${pname} | ${l.del}件</div></div>`;
             });
+            html += `</div>`;
 
-            html += `</div><p class="label-sky">夥伴當月累計數據</p>`;
-            partners.filter(x => x.status === "approved").forEach(p => {
-                html += `<div class="id-card !p-5 flex justify-between items-center mb-4 !mb-2 border-slate-800">
-                    <p class="text-white font-bold">${p.name}</p>
-                    <p class="text-sky-400 font-black text-xl">${p.total_del || 0} 件</p>
+            if(pend.length > 0) {
+                html += `<p class="label-sky !text-orange-500">待核准入職單 (${pend.length})</p>`;
+                pend.forEach(p => {
+                    html += `<div class="id-card !p-6 flex justify-between items-center mb-4 border-orange-900"><p class="text-white font-black">${p.name}</p><button onclick="approveP('${p.id}')" class="bg-sky-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg">審核通過</button></div>`;
+                });
+            }
+
+            html += `<p class="label-sky">夥伴資料與當月件數</p>`;
+            apped.forEach(p => {
+                html += `<div class="id-card !p-6 flex justify-between items-center mb-2 border-slate-800">
+                    <div onclick="viewDoc('${p.id}')" class="cursor-pointer group"><p class="text-white font-bold text-xl underline group-hover:text-sky-400">${p.name}</p><p class="text-[10px] text-slate-500">${p.v_type} | ${p.plate}</p></div>
+                    <p class="text-sky-400 font-black text-2xl">${p.total_del || 0} 件</p>
                 </div>`;
             });
             document.getElementById('render-target').innerHTML = html + `</div>`;
         }
 
-        // 夥伴介面：只要拍照 + 輸入數字
+        // 夥伴回報介面 (下班拍照)
         function renderHub(p) {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
             document.getElementById('render-target').innerHTML = `
-                <div class="id-card">
-                    <h2 class="text-4xl font-black text-white italic mb-2">${p.name}</h2>
-                    <p class="text-sky-500 text-xs font-black mb-10 tracking-widest uppercase">Daily Report Sign-off</p>
+                <div class="id-card text-center">
+                    <h2 class="text-4xl font-black text-white italic mb-2">${p.name} 夥伴</h2>
+                    <p class="text-sky-500 text-xs font-black mb-10 tracking-widest">下班報表影像存證</p>
                     
-                    <span class="label-sky">1. 拍攝今日報表 (簽單/系統畫面)</span>
-                    <div class="cam-trigger" id="cam-area" onclick="document.getElementById('hidden-cam').click()">
-                        <p id="cam-tip" class="text-slate-500 font-black">點擊啟動相機拍照</p>
-                        <img id="preview-img">
+                    <span class="label-sky">1. 拍攝今日紙本報表/簽單</span>
+                    <div class="cam-trigger" onclick="triggerCam('report')">
+                        <p id="cam-tip" class="text-slate-500 font-bold italic">點擊開啟相機拍照</p>
+                        <img id="preview-report">
                     </div>
-                    <input type="file" id="hidden-cam" accept="image/*" capture="camera" class="hidden" onchange="handleFile(this)">
 
                     <span class="label-sky">2. 輸入今日配送總件數</span>
-                    <input type="number" id="input_num" class="input-box !text-6xl h-28 font-black text-sky-400" placeholder="0">
+                    <input type="number" id="input_del" class="input-box !text-6xl h-28 font-black text-sky-400 text-center" placeholder="0">
                     
-                    <button onclick="submitReport('${p.id}')" class="btn-prime mt-6">上傳報表並下班</button>
+                    <button onclick="submitReport('${p.id}')" class="btn-prime mt-6">同步報表並完成簽退</button>
                 </div>`;
         }
 
-        window.handleFile = async input => {
-            if (!input.files[0]) return;
-            const reader = new FileReader();
-            reader.onload = async e => {
-                currentPhoto = await compressImg(e.target.result);
-                const pre = document.getElementById('preview-img');
-                pre.src = currentPhoto;
-                pre.style.display = 'block';
-                document.getElementById('cam-tip').style.display = 'none';
-                document.getElementById('cam-area').style.border = '2px solid #0ea5e9';
-            };
-            reader.readAsDataURL(input.files[0]);
-        };
-
         window.submitReport = async id => {
-            const num = parseInt(document.getElementById('input_num').value) || 0;
-            if(!currentPhoto) return alert("必須拍攝報表照片才能下班！");
+            const num = parseInt(document.getElementById('input_del').value) || 0;
+            if(!currentReportPhoto) return alert("請務必拍攝今日報表！");
             if(num <= 0) return alert("請輸入今日配送件數！");
-
-            try {
-                // 更新夥伴當月累計 + 寫入每日 Log
-                await updateDoc(doc(db, 'partners', id), { total_del: increment(num) });
-                await addDoc(collection(db, 'logs'), {
-                    driverId: id,
-                    del: num,
-                    photo: currentPhoto,
-                    time: serverTimestamp()
-                });
-                alert("今日報表已同步，辛苦了，準時下班！");
-                location.reload();
-            } catch(e) { alert("系統繁忙中，請檢查網路。"); }
+            await updateDoc(doc(db, 'partners', id), { total_del: increment(num) });
+            await addDoc(collection(db, 'logs'), { driverId: id, del: num, photo: currentReportPhoto, time: serverTimestamp() });
+            alert("今日報表同步成功，辛苦了，請安全回家！"); location.reload();
         };
 
-        window.viewPhoto = src => {
-            document.getElementById('modal-img').src = src;
-            document.getElementById('img-viewer').style.display = 'flex';
+        window.submitApply = async () => {
+            const v = document.getElementById('app_vehicle').value;
+            if(!v) return alert("請選擇營運車種！");
+            const data = {
+                name: document.getElementById('app_name').value, phone: document.getElementById('app_phone').value, uid: document.getElementById('app_pin').value,
+                id_num: document.getElementById('app_idnum').value, h_addr: document.getElementById('app_h_addr').value, 
+                v_type: v, plate: document.getElementById('app_plate').value,
+                bank_code: document.getElementById('app_bank_code').value, bank_acc: document.getElementById('app_bank_acc').value,
+                docs: photosCache, status: "pending", total_del: 0, time: serverTimestamp()
+            };
+            if(!data.name || !data.phone) return alert("必填欄位未填寫完整");
+            await addDoc(collection(db, 'partners'), data);
+            alert("入職資料已送出！請通知管理員審核。"); location.reload();
         };
+
+        window.viewDoc = id => {
+            const p = partners.find(x => x.id === id); document.getElementById('detail-modal').style.display = 'block';
+            document.getElementById('detail-content').innerHTML = `
+                <h3 class="text-white font-black mb-4 text-xl border-b border-slate-700 pb-2">${p.name} 詳細檔案</h3>
+                <div class="text-[12px] space-y-2 mb-6">
+                    <p>手機：<span class="text-white">${p.phone}</span> | 身分證：<span class="text-white">${p.id_num}</span></p>
+                    <p>地址：<span class="text-white">${p.h_addr}</span></p>
+                    <p class="text-sky-400">車種：${p.v_type} | 車牌：${p.plate}</p>
+                    <p class="text-sky-400">銀行：(${p.bank_code}) ${p.bank_acc}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <img src="${p.docs?.id_f}" class="rounded-lg border border-slate-700">
+                    <img src="${p.docs?.id_b}" class="rounded-lg border border-slate-700">
+                </div>`;
+        };
+
+        window.approveP = async id => { await updateDoc(doc(db, 'partners', id), { status: "approved" }); alert("已核准開通。"); };
+        window.showApply = () => document.getElementById('apply-page').style.display = 'flex';
     </script>
 </body>
 </html>
