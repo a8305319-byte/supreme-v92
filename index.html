@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SUPREME V92</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/709/709513.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; user-select: none; }
+        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 60px 20px; }
+        .id-card { width: 100%; max-width: 400px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2.5rem; padding: 40px; border: 1px solid #1e293b; }
+    </style>
+</head>
+<body>
+    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="text-3xl font-black text-white tracking-widest italic mb-2">SUPREME</h1>
+        <p class="text-[9px] text-slate-600 tracking-[0.5em] uppercase mb-12">Logistics Terminal V92</p>
+        <input type="password" id="pin" placeholder="••••" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 p-4 text-center text-3xl text-sky-400 outline-none w-60 font-mono">
+        <button onclick="boot()" class="mt-16 px-16 py-4 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] tracking-widest uppercase active:bg-white active:text-black transition">Authenticate</button>
+    </div>
+
+    <div id="main" class="layer">
+        <div id="render-target" class="w-full flex flex-col items-center"></div>
+        <button onclick="location.reload()" class="mt-20 text-slate-800 font-bold text-[9px] uppercase border-b border-slate-900 pb-1">Exit Terminal</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+        // 已填入你剛才提供的專屬金鑰
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+            authDomain: "supreme-v92.firebaseapp.com",
+            projectId: "supreme-v92",
+            storageBucket: "supreme-v92.firebasestorage.app",
+            messagingSenderId: "485530156296",
+            appId: "1:485530156296:web:6728c0ee08b98dedd800bd",
+            measurementId: "G-JF36CHXE9Z"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let partners = [];
+        onSnapshot(collection(db, 'partners'), s => { 
+            partners = s.docs.map(d => ({id: d.id, ...d.data()})); 
+        });
+
+        window.boot = () => {
+            const entry = document.getElementById('pin').value;
+            const p = partners.find(x => x.uid === entry);
+            if(entry === "9999") return renderBoss(); // 管理員 PIN
+            if(p) {
+                document.getElementById('gate').style.display = 'none';
+                document.getElementById('main').style.display = 'flex';
+                document.getElementById('render-target').innerHTML = `
+                    <div class="id-card">
+                        <p class="text-[10px] text-sky-500 font-black mb-1 tracking-widest">OPERATOR</p>
+                        <h2 class="text-3xl font-black text-white italic mb-10">${p.name}</h2>
+                        <button onclick="report('${p.id}')" class="w-full py-10 bg-sky-600 text-slate-900 font-black rounded-3xl text-xl uppercase shadow-xl shadow-sky-900/40 active:scale-95 transition">確認送達回報</button>
+                    </div>`;
+            } else { alert("驗證碼無效"); }
+        };
+
+        function renderBoss() {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('main').style.display = 'flex';
+            document.getElementById('render-target').innerHTML = `
+                <div class="id-card text-center text-white">
+                    <h2 class="font-black italic mb-4">ADMIN MASTER</h2>
+                    <p class="text-xs text-slate-500 uppercase">System Linked</p>
+                </div>`;
+        }
+
+        window.report = async (id) => {
+            try {
+                await updateDoc(doc(db, 'partners', id), { count: increment(1), lastSync: serverTimestamp() });
+                alert("回報成功！");
+            } catch (e) {
+                alert("回報失敗，請確認資料庫已開啟「測試模式」");
+            }
+        };
+    </script>
+</body>
+</html>
