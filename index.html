@@ -23,11 +23,16 @@
         
         .admin-table th { font-size: 11px; padding: 10px 4px; color: #64748b; white-space: nowrap; }
         .admin-table td { font-size: 11px; padding: 12px 4px; border-bottom: 1px solid #1e293b; vertical-align: middle; }
-        .input-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #38bdf8; text-align: center; width: 60px; font-weight: bold; padding: 2px 0; }
-        .select-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #0ea5e9; font-weight: bold; font-size: 10px; padding: 2px; outline: none; width: 105px; cursor: pointer; }
+        .input-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #38bdf8; text-align: center; width: 55px; font-weight: bold; padding: 2px 0; }
+        .select-mini { background: #020617; border: 1px solid #334155; border-radius: 4px; color: #0ea5e9; font-weight: bold; font-size: 10px; padding: 2px; outline: none; width: 100px; cursor: pointer; }
         .btn-del { color: #ef4444; border: 1px solid #450a0a; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 10px; }
         .ai-tag { font-size: 9px; padding: 2px 8px; border-radius: 99px; background: #0c4a6e; color: #38bdf8; font-weight: bold; border: 1px solid #0ea5e9; }
         
+        /* 承攬制特殊標籤 */
+        .toggle-btn { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .toggle-on { background: #166534; color: #4ade80; border-color: #14532d; }
+        .toggle-off { background: #450a0a; color: #f87171; border-color: #7f1d1d; }
+
         .loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 1); z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #1e293b; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -41,8 +46,8 @@
     <div id="loading" class="loading-overlay">
         <div class="spinner"></div>
         <p class="mt-4 text-sky-500 font-bold tracking-widest">在地物流 系統連線中...</p>
-        <div id="diag-text">同步 2026 最新法規數據...</div>
-        <button onclick="window.setLoad(false)" class="mt-8 text-[10px] text-slate-600 underline">連線過久？強制進入</button>
+        <div id="diag-text">同步 2026 最新法規級距數據...</div>
+        <button onclick="window.setLoad(false)" class="mt-8 text-[10px] text-slate-600 underline">連線過久？強制進入系統</button>
     </div>
 
     <!-- 快速新增人員 -->
@@ -96,23 +101,20 @@
                 <table class="w-full text-left admin-table">
                     <thead class="text-slate-500 border-b border-slate-800">
                         <tr>
-                            <th>狀態</th><th>姓名/手機</th><th>隱藏評估</th><th>正件</th><th>逆件</th><th>正價</th><th>逆價</th><th>2026 勞保分級</th><th>眷屬</th><th>保費扣繳</th><th>應付淨額</th><th>管理</th>
+                            <th>狀態</th><th>姓名/手機</th><th>分析</th><th>正件</th><th>逆件</th><th>正價</th><th>逆價</th><th>加保開關</th><th>2026 勞保分級</th><th>口數(含己)</th><th>扣繳額</th><th>應付淨額</th><th>管理</th>
                         </tr>
                     </thead>
                     <tbody id="admin-render" class="text-white">
-                        <tr><td colspan="12" class="text-center py-20 text-slate-600 font-bold italic">載入數據中...</td></tr>
+                        <tr><td colspan="13" class="text-center py-20 text-slate-600 font-bold italic">載入數據中...</td></tr>
                     </tbody>
                 </table>
             </div>
             <div class="mt-6 flex flex-wrap gap-4">
-                <div class="flex-1 min-w-[300px] p-4 bg-slate-800/30 rounded-xl text-[10px] text-slate-500 leading-relaxed border border-slate-800">
-                    <p class="font-bold text-slate-400 mb-1">【2026 勞健保扣繳公式說明】</p>
-                    <p>● 勞保個人負擔：薪資基數 $\times$ 2.5% (含 1% 就保比例)。</p>
-                    <p>● 健保個人負擔：薪資基數 $\times$ 1.6% $\times$ (1 + 眷屬人數)，眷屬上限為 3 人。</p>
-                    <p>● 系統已鎖定 2026/01/01 起基本工資為 **NT$29,500**。</p>
-                </div>
-                <div class="p-4 bg-slate-900 border border-slate-800 rounded-xl text-[10px] text-sky-500 font-bold flex items-center">
-                    🟢 勞健保費率已更新至 2026 版本
+                <div class="flex-1 min-w-[300px] p-4 bg-slate-800/30 rounded-xl text-[10px] text-slate-500 border border-slate-800 leading-relaxed">
+                    <p class="font-bold text-slate-400 mb-1">【承攬制 - 後台結算規則】</p>
+                    <p>● **加保開關**：由管理端決定是否掛靠公司投保。若關閉，則扣繳額歸零。</p>
+                    <p>● **2026 薪資級距**：依照 2026/01/01 法令調整，基本薪資自 NT$29,500 起跳。</p>
+                    <p>● **健保口數**：法律上限為 4 口 (含本人)。</p>
                 </div>
             </div>
         </div>
@@ -173,7 +175,6 @@
         const appId = 'logistics-master-v92';
         const partnersCol = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
 
-        // 勞保投保薪資級距 (2026年最新公告 11 級)
         const SALARY_GRADES = [
             0, 29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800
         ];
@@ -184,40 +185,39 @@
         window.setLoad = (s) => document.getElementById('loading').style.display = s ? 'flex' : 'none';
         const setDiag = (t) => document.getElementById('diag-text').innerText = t;
 
-        // --- 登入邏輯 ---
         window.boot = () => {
             const ph = document.getElementById('login_phone').value.trim();
             const pi = document.getElementById('login_pin').value.trim();
             if(ph === "0976017938" && pi === "0531") return window.renderAdmin();
-            if(!isReady) return alert("系統初始化中...");
+            if(!isReady) return alert("系統連線中...");
             const target = partners.find(x => x.phone === ph);
             if(target) {
                 if(target.status === "approved" && target.pin === pi) {
                     window.showLayer('hub');
                     document.getElementById('hub-name').innerText = `夥伴 ${target.name}`;
-                } else alert("狀態審核中或 PIN 碼錯誤。");
-            } else alert("查無人員，請先提交評估。");
+                } else alert("審核中或 PIN 碼錯誤。");
+            } else alert("查無人員。");
         };
 
         window.renderAdmin = () => {
             window.showLayer('admin');
             const target = document.getElementById('admin-render');
             if(partners.length === 0) {
-                target.innerHTML = '<tr><td colspan="12" class="text-center py-20 text-slate-600 font-bold italic">目前無人員資料。</td></tr>';
+                target.innerHTML = '<tr><td colspan="13" class="text-center py-20 text-slate-600 font-bold italic">目前無人員資料。</td></tr>';
                 return;
             }
             let html = '';
             partners.forEach(p => {
                 const dp = p.custom_del || 15; const rp = p.custom_rev || 10;
                 const income = ((p.total_del || 0) * dp) + ((p.total_rev || 0) * rp);
-                const ins_b = Number(p.ins_base) || 0; 
-                const fm = Math.min(Number(p.ins_fm) || 0, 3); // 法律規定眷屬上限 3 人
                 
-                // --- 2026 最新費率精算邏輯 ---
-                // 勞保：12.5% * 20% = 2.5%
-                // 健保：5.17% * 30% = 1.551% (取 1.6% 或精確值)
-                const labor_calc = Math.round(ins_b * 0.025);
-                const health_calc = Math.round(ins_b * 0.016 * (1 + fm));
+                const ins_b = Number(p.ins_base) || 0; 
+                const fm = Math.min(Math.max(Number(p.ins_fm) || 1, 1), 4);
+                const isInsOn = p.ins_toggle !== false; // 預設開啟
+
+                // 2026 扣繳計算 (若開關關閉則為 0)
+                const labor_calc = isInsOn ? Math.round(ins_b * 0.025) : 0;
+                const health_calc = isInsOn ? Math.round(ins_b * 0.01551 * fm) : 0;
                 const total_ins = labor_calc + health_calc;
                 
                 let actionBtn = '';
@@ -237,11 +237,17 @@
                     <td><input type="number" value="${dp}" onchange="window.upField('${p.id}','custom_del',this.value)" class="input-mini"></td>
                     <td><input type="number" value="${rp}" onchange="window.upField('${p.id}','custom_rev',this.value)" class="input-mini"></td>
                     <td>
-                        <select onchange="window.upField('${p.id}','ins_base',this.value)" class="select-mini">
+                        <button onclick="window.upField('${p.id}','ins_toggle',${!isInsOn})" 
+                                class="toggle-btn ${isInsOn ? 'toggle-on' : 'toggle-off'}">
+                            ${isInsOn ? '已加保' : '未加保'}
+                        </button>
+                    </td>
+                    <td>
+                        <select onchange="window.upField('${p.id}','ins_base',this.value)" class="select-mini" ${!isInsOn ? 'disabled' : ''}>
                             ${salaryOptions}
                         </select>
                     </td>
-                    <td><input type="number" value="${p.ins_fm || 0}" onchange="window.upField('${p.id}','ins_fm',this.value)" class="input-mini !w-12"></td>
+                    <td><input type="number" value="${p.ins_fm || 1}" min="1" max="4" onchange="window.upField('${p.id}','ins_fm',this.value)" class="input-mini !w-12" ${!isInsOn ? 'disabled' : ''}></td>
                     <td class="text-red-400 font-bold">-$${total_ins}</td>
                     <td class="text-sky-400 font-black text-sm">$${income - total_ins}</td>
                     <td><span class="btn-del" onclick="window.delPartner('${p.id}','${p.name}')">🗑️</span></td>
@@ -254,13 +260,14 @@
             const name = document.getElementById('int_name').value.trim();
             const ph = document.getElementById('int_phone').value.trim();
             const q1 = document.querySelector('input[name="q1"]:checked')?.value;
-            if(!name || !ph || !q1) return alert("請填寫姓名與測驗。");
+            if(!name || !ph || !q1) return alert("資訊未填齊。");
             window.setLoad(true);
             try {
                 await setDoc(doc(partnersCol, `p_${ph}`), {
                     id: `p_${ph}`, name, phone: ph, pin: "0000", status: "pending_review", 
                     ai_analysis: q1 === "25" ? "✅ 穩定可靠" : "⚠️ 邏輯風險",
-                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, ins_base: 0, ins_fm: 0, createdAt: serverTimestamp()
+                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, 
+                    ins_base: 29500, ins_fm: 1, ins_toggle: true, createdAt: serverTimestamp()
                 });
                 alert("提交成功！");
                 location.reload();
@@ -271,13 +278,14 @@
         window.addPartnerDirectly = async () => {
             const n = document.getElementById('new_name').value.trim();
             const p = document.getElementById('new_phone').value.trim();
-            if(!n || !p) return alert("請填寫姓名與電話。");
+            if(!n || !p) return alert("必填。");
             window.setLoad(true);
             try {
                 await setDoc(doc(partnersCol, `p_${p}`), {
-                    id: `p_${p}`, name: n, phone: p, pin: "0000",
+                    id: `p_${p}`, name: n, phone: p, pin: document.getElementById('new_pin').value || "0000",
                     status: "approved", ai_analysis: "💎 直接新增",
-                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, ins_base: 0, ins_fm: 0
+                    total_del: 0, total_rev: 0, custom_del: 15, custom_rev: 10, 
+                    ins_base: 29500, ins_fm: 1, ins_toggle: true
                 });
                 alert("新增成功！");
                 document.getElementById('add-modal').style.display='none';
@@ -286,7 +294,7 @@
         };
 
         window.upField = async (id, f, v) => { 
-            const val = isNaN(parseFloat(v)) ? v : parseFloat(v);
+            const val = (typeof v === 'boolean') ? v : (isNaN(parseFloat(v)) ? v : parseFloat(v));
             await updateDoc(doc(partnersCol, id), { [f]: val }); 
         };
 
@@ -300,16 +308,13 @@
                 await signInAnonymously(auth);
                 onAuthStateChanged(auth, user => {
                     if(user) {
-                        setDiag("同步 2026 勞健保數據...");
+                        setDiag("同步雲端數據...");
                         onSnapshot(partnersCol, s => {
                             partners = s.docs.map(d => ({ id: d.id, ...d.data() }));
                             isReady = true;
                             if(document.getElementById('admin').style.display === 'flex') window.renderAdmin();
                             window.setLoad(false); 
-                        }, err => { 
-                            console.error(err); 
-                            setDiag("連線失敗。"); 
-                        });
+                        }, err => { setDiag("連線失敗。"); });
                     }
                 });
             } catch (err) { setDiag("連線異常。"); }
