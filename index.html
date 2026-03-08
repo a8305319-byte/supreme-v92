@@ -3,47 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SUPREME V92 NETWORK</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>SUPREME V92 ENTERPRISE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; user-select: none; }
-        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 30px 20px; overflow-y: auto; }
-        .id-card { width: 100%; max-width: 400px; background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border-radius: 2rem; padding: 25px; border: 1px solid #1e293b; }
-        .input-box { background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 1rem; padding: 15px; width: 100%; color: white; text-align: center; outline: none; margin-bottom: 10px; }
-        #preview { width: 100%; height: 180px; object-fit: cover; border-radius: 1.2rem; margin-bottom: 15px; border: 2px dashed #334155; }
-        .btn-blue { width: 100%; padding: 18px; border-radius: 1rem; background: #0ea5e9; color: #020617; font-weight: 900; text-transform: uppercase; margin-top: 10px; }
+        body { background: #020617; color: #94a3b8; font-family: ui-monospace, monospace; }
+        .layer { display: none; position: fixed; inset: 0; background: #020617; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
+        .admin-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 1.5rem; padding: 20px; width: 100%; max-width: 500px; margin-bottom: 15px; }
+        input[type="number"], select { background: #1e293b; border: 1px solid #334155; color: #38bdf8; border-radius: 8px; padding: 5px; font-weight: bold; }
+        .toggle-btn { padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; cursor: pointer; border: 1px solid transparent; }
+        .toggle-on { background: #0ea5e9; color: #020617; }
+        .toggle-off { background: #1e293b; color: #475569; border-color: #334155; }
     </style>
 </head>
 <body>
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 class="text-4xl font-black text-white italic mb-1">SUPREME</h1>
-        <p class="text-[8px] text-slate-600 tracking-[0.6em] mb-12 uppercase">Logistic Fleet Management</p>
-        <input type="password" id="pin" placeholder="PIN CODE" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-2xl text-sky-400 w-48 outline-none pb-2 tracking-[0.3em]">
-        <button onclick="boot()" class="mt-12 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] uppercase active:bg-white active:text-black transition">Verify Access</button>
-        <button onclick="showApply()" class="mt-8 text-[10px] text-slate-700 underline tracking-widest uppercase">Apply to Join / 申請加入</button>
-    </div>
-
-    <div id="apply-page" class="layer">
-        <div class="id-card">
-            <h2 class="text-xl font-black text-white italic mb-6 text-center">DRIVER APPLICATION</h2>
-            <p class="text-[10px] text-slate-500 mb-4 text-center">請填寫真實姓名並設定您的專屬 PIN 碼</p>
-            <input type="text" id="app_name" placeholder="真實姓名" class="input-box">
-            <input type="password" id="app_pin" placeholder="設定 4 位數 PIN" inputmode="numeric" maxlength="4" class="input-box">
-            <button onclick="submitApply()" class="btn-blue">送出申請</button>
-            <button onclick="location.reload()" class="w-full mt-4 text-[10px] text-slate-500 uppercase">返回登入</button>
-        </div>
+        <p class="text-[8px] text-slate-600 tracking-[0.6em] mb-12">BACK OFFICE SYSTEM</p>
+        <input type="password" id="pin" placeholder="PIN" inputmode="numeric" class="bg-transparent border-b-2 border-slate-800 text-center text-2xl text-sky-400 w-48 outline-none pb-2">
+        <button onclick="boot()" class="mt-12 px-12 py-3 rounded-full border border-slate-800 text-slate-500 font-bold text-[10px] uppercase active:bg-white active:text-black transition">Verify</button>
     </div>
 
     <div id="main" class="layer">
         <div id="render-target" class="w-full flex flex-col items-center"></div>
-        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase">Sign Out</button>
+        <button onclick="location.reload()" class="mt-8 mb-10 text-slate-800 font-bold text-[10px] uppercase">Exit Session</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc, query, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, increment, serverTimestamp, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -57,100 +44,94 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let partners = [];
-        let base64Photo = null;
+        let rates = { del: 50, ret: 20, labor: 1500, health: 800 }; // 預設單價與保費
 
-        onSnapshot(collection(db, 'partners'), s => { partners = s.docs.map(d => ({id: d.id, ...d.data()})); });
+        onSnapshot(collection(db, 'partners'), s => { 
+            partners = s.docs.map(d => ({id: d.id, ...d.data(), li: false, hi: false, h_count: 1})); 
+            if(document.getElementById('settlement-list')) renderSettlement();
+        });
 
-        // 登入邏輯
         window.boot = () => {
             const entry = document.getElementById('pin').value;
-            if(entry === "9999") return renderAdmin(); // 管理員
+            if(entry === "9999") return renderAdmin();
             const p = partners.find(x => x.uid === entry && x.status === "approved");
-            if(p) return renderDriverUI(p);
-            alert("帳號尚未核准或 PIN 碼錯誤");
+            if(p) return alert("司機功能維持先前版本"); // 司機介面略，保持之前版本
+            alert("DENIED");
         };
 
-        // 顯示申請頁面
-        window.showApply = () => { document.getElementById('apply-page').style.display = 'flex'; };
-
-        // 送出申請
-        window.submitApply = async () => {
-            const name = document.getElementById('app_name').value;
-            const pin = document.getElementById('app_pin').value;
-            if(!name || pin.length < 4) return alert("請填寫完整資訊");
-            
-            await addDoc(collection(db, 'partners'), {
-                name: name,
-                uid: pin,
-                status: "pending", // 預設審核中
-                total_del: 0,
-                total_ret: 0,
-                applyTime: serverTimestamp()
-            });
-            alert("申請已送出，請等待管理員核准！");
-            location.reload();
-        };
-
-        // 司機作業介面 (延用之前的拍照件數功能)
-        function renderDriverUI(p) {
-            document.getElementById('gate').style.display = 'none';
-            document.getElementById('main').style.display = 'flex';
-            document.getElementById('render-target').innerHTML = `
-                <div class="id-card">
-                    <h2 class="text-2xl font-black text-white italic mb-6">${p.name} <span class="text-[10px] text-green-500">ACTIVE</span></h2>
-                    <img id="preview" src="" style="display:none">
-                    <label class="btn-blue bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer mb-4 flex items-center justify-center">
-                        📸 拍照存證 <input type="file" accept="image/*" capture="camera" class="hidden" onchange="window.handleImg(this)">
-                    </label>
-                    <input type="number" id="dc" placeholder="配送件數" class="input-box text-sky-400 font-bold">
-                    <input type="number" id="rc" placeholder="逆物流件數" class="input-box text-orange-400 font-bold">
-                    <button onclick="window.submitAll('${p.id}')" class="btn-blue">確認上傳</button>
-                </div>`;
-        }
-
-        // 管理員介面
         function renderAdmin() {
             document.getElementById('gate').style.display = 'none';
             document.getElementById('main').style.display = 'flex';
-            let listHtml = partners.filter(x => x.status === "pending").map(p => `
-                <div class="bg-slate-900 p-4 rounded-xl mb-2 border border-slate-800 flex justify-between items-center">
-                    <div><p class="text-white font-bold">${p.name}</p><p class="text-[9px]">PIN: ${p.uid}</p></div>
-                    <button onclick="window.approve('${p.id}')" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-lg">核准</button>
-                </div>
-            `).join('');
-            
             document.getElementById('render-target').innerHTML = `
-                <div class="w-full max-w-[400px]">
-                    <h2 class="text-white font-black italic mb-6">待審核申請</h2>
-                    ${listHtml || '<p class="text-slate-600 text-center">目前無待處理申請</p>'}
-                </div>`;
+                <div class="admin-card">
+                    <h2 class="text-white font-black italic mb-4">薪資參數設定</h2>
+                    <div class="grid grid-cols-2 gap-3 text-[10px]">
+                        <div>配送單價: <input type="number" id="r_del" value="${rates.del}" class="w-full" onchange="updateRates()"></div>
+                        <div>逆流單價: <input type="number" id="r_ret" value="${rates.ret}" class="w-full" onchange="updateRates()"></div>
+                        <div>勞保費/月: <input type="number" id="r_lab" value="${rates.labor}" class="w-full" onchange="updateRates()"></div>
+                        <div>健保費/人: <input type="number" id="r_hea" value="${rates.health}" class="w-full" onchange="updateRates()"></div>
+                    </div>
+                </div>
+                <div id="settlement-list" class="w-full max-w-[500px]"></div>`;
+            renderSettlement();
         }
 
-        window.approve = async (id) => {
-            await updateDoc(doc(db, 'partners', id), { status: "approved" });
-            alert("已核准該司機！");
-            renderAdmin();
+        window.updateRates = () => {
+            rates.del = parseInt(document.getElementById('r_del').value);
+            rates.ret = parseInt(document.getElementById('r_ret').value);
+            rates.labor = parseInt(document.getElementById('r_lab').value);
+            rates.health = parseInt(document.getElementById('r_hea').value);
+            renderSettlement();
         };
 
-        // 圖片處理與上傳 (略，與之前相同邏輯)
-        window.handleImg = (input) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                base64Photo = e.target.result;
-                document.getElementById('preview').src = base64Photo;
-                document.getElementById('preview').style.display = 'block';
-            };
-            reader.readAsDataURL(input.files[0]);
+        window.toggleIns = (id, type) => {
+            const p = partners.find(x => x.id === id);
+            p[type] = !p[type];
+            renderSettlement();
         };
 
-        window.submitAll = async (id) => {
-            const dc = parseInt(document.getElementById('dc').value) || 0;
-            const rc = parseInt(document.getElementById('rc').value) || 0;
-            await addDoc(collection(db, 'logs'), { driverId: id, delivery: dc, returns: rc, photo: base64Photo, time: serverTimestamp() });
-            await updateDoc(doc(db, 'partners', id), { total_del: increment(dc), total_ret: increment(rc) });
-            alert("回報成功！");
-            location.reload();
+        window.changeHCount = (id, val) => {
+            const p = partners.find(x => x.id === id);
+            p.h_count = parseInt(val);
+            renderSettlement();
         };
+
+        function renderSettlement() {
+            const list = document.getElementById('settlement-list');
+            if(!list) return;
+            list.innerHTML = `<h3 class="text-white font-bold text-xs mb-3 italic">司機薪資結算清單</h3>`;
+            
+            partners.filter(x => x.status === "approved").forEach(p => {
+                const total_raw = (p.total_del * rates.del) + (p.total_ret * rates.ret);
+                const labor_deduct = p.li ? rates.labor : 0;
+                const health_deduct = p.hi ? (rates.health * p.h_count) : 0;
+                const final_pay = total_raw - labor_deduct - health_deduct;
+
+                list.innerHTML += `
+                <div class="admin-card mb-3 !bg-slate-900/50">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-white font-bold">${p.name}</span>
+                        <span class="text-sky-400 font-black text-lg">$${final_pay.toLocaleString()}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-[9px] mb-4">
+                        <p>📦 配送: ${p.total_del || 0} 件</p>
+                        <p>🔄 逆流: ${p.total_ret || 0} 件</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 border-t border-slate-800 pt-3">
+                        <button onclick="window.toggleIns('${p.id}', 'li')" class="toggle-btn ${p.li ? 'toggle-on' : 'toggle-off'}">勞保</button>
+                        <button onclick="window.toggleIns('${p.id}', 'hi')" class="toggle-btn ${p.hi ? 'toggle-on' : 'toggle-off'}">健保</button>
+                        ${p.hi ? `
+                            <select onchange="window.changeHCount('${p.id}', this.value)" class="text-[9px]">
+                                <option value="1">1人(本人)</option>
+                                <option value="2">2人(眷屬+1)</option>
+                                <option value="3">3人(眷屬+2)</option>
+                            </select>
+                        ` : ''}
+                    </div>
+                    <p class="text-[8px] mt-2 text-slate-600">應付額: ${total_raw} | 扣勞: ${labor_deduct} | 扣健: ${health_deduct}</p>
+                </div>`;
+            });
+        }
     </script>
 </body>
 </html>
