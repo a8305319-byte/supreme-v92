@@ -4,33 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- 🍎 沈浸式 PWA 標籤 -->
+    <!-- 🍎 App沈浸式體驗 (PWA標籤) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="在地物流">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#020617">
-    <title>在地物流系統 - 智慧雲端總控</title>
+    <title>在地物流 - 智慧管理系統</title>
     
+    <!-- 🚫 禁止快取，確保更新即時 -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
-        :root { --accent: #0ea5e9; --bg-dark: #020617; }
-        body { background: radial-gradient(circle at 50% 0%, #0f172a 0%, var(--bg-dark) 100%); background-attachment: fixed; color: #94a3b8; font-family: "Inter", "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         
-        /* 🛡️ 徹底消除 iOS 藍色點點(選取框)與長按選單 */
+        :root { --accent: #0ea5e9; --bg-dark: #020617; }
+        body { 
+            background: radial-gradient(circle at 50% 0%, #0f172a 0%, var(--bg-dark) 100%);
+            background-attachment: fixed;
+            color: #94a3b8; font-family: "Inter", "Microsoft JhengHei", sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            overflow-x: hidden;
+        }
+        
+        /* 🛡️ 徹底禁止 iOS 藍色點點與長按游標 (截圖核心修正) */
         * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         input, textarea, .selectable { -webkit-user-select: text; user-select: text; }
 
-        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .glass-panel { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
         .layer { display: none; position: fixed; inset: 0; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        .input-box { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 16px; width: 100%; color: #ffffff; outline: none; margin-bottom: 16px; font-size: 16px; text-align: center; transition: all 0.3s ease; }
+        .input-box { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 16px; width: 100%; color: #ffffff; outline: none; margin-bottom: 16px; font-size: 16px; text-align: center; }
         .input-box:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(14,165,233,0.3); }
         
-        .btn-prime { width: 100%; padding: 18px; border-radius: 1.2rem; background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #ffffff; font-weight: 800; font-size: 17px; cursor: pointer; border: none; box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.4); }
+        .btn-prime { width: 100%; padding: 18px; border-radius: 1.2rem; background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #ffffff; font-weight: 800; font-size: 17px; cursor: pointer; border: none; box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.4); transition: all 0.2s; }
         .btn-prime:active { transform: scale(0.96); }
+        .btn-prime:disabled { background: #1e293b; color: #475569; cursor: not-allowed; box-shadow: none; opacity: 0.8; }
 
         .admin-table-container { width: 100%; overflow-x: auto; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); max-height: 70vh; }
         .admin-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1200px; }
@@ -42,14 +56,15 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .custom-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(16px); z-index: 9000; display: none; justify-content: center; align-items: center; padding: 20px; }
-        #toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: rgba(14, 165, 233, 0.95); color: white; padding: 16px 32px; border-radius: 99px; font-weight: 800; font-size: 15px; z-index: 10000; transition: all 0.4s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: rgba(14, 165, 233, 0.95); color: white; padding: 16px 32px; border-radius: 99px; font-weight: 800; font-size: 15px; z-index: 10000; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #toast.show { top: 40px; opacity: 1; }
 
         .option-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.2rem; padding: 18px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; }
-        .option-card.selected { background: rgba(14, 165, 233, 0.2); border-color: var(--accent); }
+        .option-card.selected { background: rgba(14, 165, 233, 0.25); border-color: var(--accent); }
         .option-card input { width: 24px; height: 24px; accent-color: var(--accent); flex-shrink: 0; pointer-events: none; }
         .option-card span { color: #cbd5e1; font-weight: 700; font-size: 15px; pointer-events: none; }
-        
+        .option-card.selected span { color: white; }
+
         .ghost-input { background: transparent; border: 1px solid transparent; color: inherit; text-align: center; outline: none; transition: all 0.2s; border-radius: 0.5rem; }
         .ghost-input:focus { background: rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.2); }
     </style>
@@ -60,8 +75,8 @@
 
     <div id="loading-screen" class="loading-overlay">
         <div class="loader-ring"></div>
-        <p class="mt-6 text-sky-400 font-black tracking-[0.4em] text-sm animate-pulse">SYNCING SUPREME...</p>
-        <button onclick="window.forceEnter()" class="mt-12 text-slate-500 px-6 py-2 border border-slate-700 rounded-full text-xs">強制進入</button>
+        <p class="mt-6 text-sky-400 font-black tracking-[0.4em] text-sm animate-pulse">BOOTING SUPREME...</p>
+        <button onclick="window.forceEnter()" class="mt-12 text-slate-500 px-6 py-2 border border-slate-700 rounded-full text-xs">跳過並進入</button>
     </div>
 
     <!-- 刪除確認 -->
@@ -69,32 +84,30 @@
         <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full text-center relative shadow-2xl">
             <div class="text-rose-500 text-7xl mb-4">🗑️</div>
             <h3 class="text-white font-black text-2xl mb-4">確定永久刪除？</h3>
-            <p class="text-slate-400 text-sm mb-8">此操作將同步關閉該名司機手機端的連線權限。</p>
+            <p class="text-slate-400 text-sm mb-8 leading-relaxed">此操作將同步關閉該名司機手機端的連線權限，資料移除後無法復原。</p>
             <div class="flex gap-4">
                 <button onclick="window.closeModal('delete-modal')" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold">取消</button>
-                <button id="confirm_delete_btn" onclick="window.executeDelete()" class="flex-1 py-4 rounded-xl bg-rose-600 text-white font-black">確認移除</button>
+                <button id="confirm_delete_btn" onclick="window.executeDelete()" class="flex-1 py-4 rounded-xl bg-rose-600 text-white font-black shadow-lg">確認移除</button>
             </div>
         </div>
     </div>
 
-    <!-- 照片放大中 -->
+    <!-- 人事檔案卡片 -->
+    <div id="hr-detail-modal" class="custom-modal">
+        <div class="glass-panel p-6 md:p-8 rounded-[2rem] max-w-xl w-full relative max-h-[90vh] overflow-y-auto">
+            <button type="button" onclick="window.closeModal('hr-detail-modal')" class="absolute top-6 right-6 text-slate-400 text-4xl">&times;</button>
+            <h3 class="text-white font-black text-2xl mb-8 flex items-center gap-3 border-b border-slate-700/50 pb-4 italic"><span class="w-1.5 h-8 bg-sky-500 rounded-full"></span> 司機人事檔案</h3>
+            <div id="hr_detail_content"></div>
+            <button onclick="window.closeModal('hr-detail-modal')" class="w-full mt-8 py-4 rounded-xl bg-slate-800 text-white font-black shadow-lg">關閉檔案</button>
+        </div>
+    </div>
+
+    <!-- 照片放大 -->
     <div id="image-viewer-modal" class="custom-modal" style="z-index: 9999;" onclick="window.closeModal('image-viewer-modal')">
         <div class="relative p-2"><img id="fullscreen-image" src="" class="rounded-xl max-h-[85vh] object-contain border border-slate-700 shadow-2xl"></div>
     </div>
 
-    <!-- 行政：人事詳細卡片 -->
-    <div id="hr-detail-modal" class="custom-modal">
-        <div class="glass-panel p-6 md:p-8 rounded-[2rem] max-w-xl w-full relative max-h-[90vh] overflow-y-auto">
-            <button type="button" onclick="window.closeModal('hr-detail-modal')" class="absolute top-6 right-6 text-slate-400 text-4xl">&times;</button>
-            <h3 class="text-white font-black text-2xl mb-8 flex items-center gap-3 italic border-b border-slate-700/50 pb-4">
-                <span class="w-1.5 h-8 bg-sky-500 rounded-full"></span> 人事電子檔案
-            </h3>
-            <div id="hr_detail_content"></div>
-            <button type="button" onclick="window.closeModal('hr-detail-modal')" class="w-full mt-8 py-4 rounded-xl bg-slate-800 text-white font-black">關閉檔案</button>
-        </div>
-    </div>
-
-    <!-- 登入介面 -->
+    <!-- 登入頁 -->
     <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
         <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-sky-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         <div class="mb-12 text-center relative z-10 pt-12">
@@ -103,8 +116,8 @@
         </div>
         <div class="w-full max-w-[340px] space-y-5 relative z-10">
             <div class="glass-panel p-8 rounded-[2.5rem] shadow-2xl">
-                <input type="tel" id="login_phone" placeholder="登入號碼" class="input-box !mb-4 selectable" maxlength="10">
-                <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box !mb-4 selectable" maxlength="4">
+                <input type="tel" id="login_phone" placeholder="登入號碼" class="input-box selectable !mb-4" maxlength="10">
+                <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box selectable !mb-4" maxlength="4">
                 <div class="flex items-center justify-center gap-2 pb-6">
                     <input type="checkbox" id="remember_me" class="w-4 h-4 accent-sky-500 rounded bg-slate-800">
                     <label for="remember_me" class="text-slate-400 text-sm font-bold cursor-pointer">記住我 (自動登入)</label>
@@ -112,34 +125,45 @@
                 <button type="button" id="login_btn" onclick="window.handleLogin()" class="btn-prime py-5 text-lg shadow-[0_15px_30px_-5px_rgba(14,165,233,0.5)]">安全登入</button>
             </div>
             <div class="space-y-3 pt-4">
-                <button onclick="window.showLayer('onboarding')" class="w-full py-4 rounded-2xl border border-sky-500/30 text-sky-400 font-black text-sm bg-sky-900/20 shadow-lg">📋 夥伴職能評估</button>
-                <button onclick="window.showLayer('profile-gate')" class="w-full py-4 rounded-2xl border border-orange-500/30 text-orange-400 font-black text-sm bg-orange-900/20 shadow-lg">📁 司機人事建檔</button>
+                <button onclick="window.showLayer('onboarding')" class="w-full py-4 rounded-2xl border border-sky-500/30 text-sky-400 font-black text-sm bg-sky-900/20 hover:bg-sky-900/40 transition shadow-lg flex items-center justify-center gap-2">📋 夥伴職能評估</button>
+                <button onclick="window.showLayer('profile-gate')" class="w-full py-4 rounded-2xl border border-orange-500/30 text-orange-400 font-black text-sm bg-orange-900/20 hover:bg-orange-900/40 transition shadow-lg flex items-center justify-center gap-2">📁 司機人事建檔</button>
             </div>
         </div>
     </div>
 
-    <!-- 管理端 -->
+    <!-- 行政管理總台 -->
     <div id="admin-panel" class="layer !px-4 lg:!px-8 !pt-6">
         <div class="w-full max-w-[1500px]">
-            <div class="flex justify-between items-center mb-10">
-                <h2 class="text-white font-black text-4xl italic tracking-tighter">Admin Console</h2>
-                <button onclick="window.location.reload(true)" class="bg-slate-800 text-sky-400 px-5 py-2.5 rounded-xl text-xs font-black border border-slate-700">🔄 雲端重整</button>
+            <div class="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-10 gap-4">
+                <h2 class="text-white font-black text-4xl italic drop-shadow-md">Admin Hub <span class="text-sky-500">.</span></h2>
+                <div class="flex gap-2">
+                    <button onclick="window.exportToExcel()" class="bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg">📑 匯出 CSV 報表</button>
+                    <button onclick="window.location.reload(true)" class="bg-slate-800 text-sky-400 px-4 py-2 rounded-xl text-xs font-black border border-slate-700 shadow-md">🔄 雲端刷新</button>
+                </div>
             </div>
 
             <div class="glass-panel p-6 rounded-[2rem] mb-10 flex flex-col items-center gap-6">
+                <!-- 🚀 快速新增按鈕 -->
                 <button onclick="window.toggleQuickAdd(true)" class="w-full py-6 bg-sky-600 text-white rounded-2xl text-xl font-black shadow-lg border border-sky-400">➕ 快速新增司機人員</button>
+                
                 <div class="flex items-center gap-6 w-full px-2">
                     <div class="flex-1 glass-panel !bg-black/40 p-4 rounded-2xl border border-slate-700 flex items-center gap-3">
                         <span class="text-xl">🔍</span>
-                        <input type="text" id="admin_search" placeholder="搜尋姓名..." onkeyup="window.renderAdmin()" class="bg-transparent border-none outline-none text-white text-lg w-full font-bold selectable">
+                        <input type="text" id="admin_search" placeholder="搜尋司機姓名..." onkeyup="window.renderAdmin()" class="bg-transparent border-none outline-none text-white text-lg w-full font-bold selectable">
                     </div>
                     <button onclick="window.handleLogout()" class="text-rose-500 font-black underline text-sm py-4 px-2">🔒 安全登出</button>
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8 text-center font-black">
+                <div class="glass-panel p-6 rounded-3xl border-t-2 border-t-sky-500/50"><p class="text-slate-400 text-[10px] mb-1 uppercase tracking-widest">Delivery Total</p><p class="text-5xl font-black text-sky-400" id="dash_del">0</p></div>
+                <div class="glass-panel p-6 rounded-3xl border-t-2 border-t-emerald-500/50"><p class="text-slate-400 text-[10px] mb-1 uppercase tracking-widest">Payout Net</p><p class="text-5xl font-black text-emerald-400" id="dash_net">$0</p></div>
+                <div class="glass-panel p-6 rounded-3xl border-t-2 border-t-orange-500/50"><p class="text-slate-400 text-[10px] mb-1 uppercase tracking-widest">Active Staff</p><p class="text-5xl font-black text-orange-400" id="dash_count">0</p></div>
+            </div>
+
             <div class="admin-table-container shadow-2xl border border-slate-700/50 relative">
                 <table class="admin-table">
-                    <thead><tr><th class="w-24">狀態</th><th class="text-left w-64">夥伴 & 累積件數</th><th>單價設定</th><th>其他加扣</th><th>預計應發</th><th>系統操作</th></tr></thead>
+                    <thead><tr><th class="w-24">狀態</th><th class="text-left w-64">夥伴資訊 & 累計件數</th><th>單價設定</th><th>其他加扣</th><th>預計應發</th><th>系統操作</th></tr></thead>
                     <tbody id="admin-list"></tbody>
                 </table>
             </div>
@@ -157,33 +181,29 @@
             <div class="glass-panel p-6 sm:p-8 rounded-[2.5rem]">
                 <div class="mb-8 grid grid-cols-2 gap-4 text-center">
                     <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 shadow-inner">
-                        <p class="text-[10px] text-sky-500 font-black mb-2 uppercase">今日件數</p>
+                        <p class="text-[10px] text-sky-500 font-black mb-2 uppercase">今日回報件數</p>
                         <input type="number" id="rep_del" placeholder="0" class="ghost-input w-full text-4xl font-black text-white p-1 selectable">
                     </div>
-                    <button type="button" id="rep_submit_btn" onclick="window.handleSubmitReport()" class="btn-prime py-5 bg-gradient-to-r from-sky-600 to-sky-700 font-black shadow-lg">🚀 提交</button>
+                    <button type="button" id="rep_submit_btn" onclick="window.handleSubmitReport()" class="btn-prime py-5 bg-gradient-to-r from-sky-600 to-sky-700 font-black shadow-lg">🚀 提交數據</button>
                 </div>
-                
                 <div id="hub-live-sync-area" class="mt-8"></div>
-                
-                <button onclick="window.handleLogout()" class="mt-12 text-rose-500 text-sm font-black block w-full text-center hover:text-white transition">🔒 安全登出系統</button>
+                <button onclick="window.handleLogout()" class="mt-12 text-rose-500 text-sm font-black block w-full text-center hover:text-white transition">🔒 安全登出司機系統</button>
             </div>
         </div>
     </div>
 
-    <!-- 面試與評估頁面 -->
+    <!-- 面試頁面 -->
     <div id="onboarding" class="layer">
         <div class="w-full max-w-[500px]">
-            <button onclick="window.showLayer('gate')" class="text-slate-500 mb-6 text-sm font-bold flex items-center gap-2"><span>←</span> 放棄並返回</button>
+            <button onclick="window.showLayer('gate')" class="text-slate-500 mb-6 text-sm font-bold transition flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 rounded-xl w-max shadow-md"><span>←</span> 返回首頁</button>
             <div class="glass-panel p-8 rounded-[2.5rem]">
                 <h2 class="text-3xl font-black text-white mb-6 italic border-b border-slate-700/50 pb-5 text-center">夥伴實務評估</h2>
                 <div class="flex gap-3 mb-10">
-                    <input type="text" id="int_name" placeholder="真實姓名" class="input-box flex-1 selectable">
-                    <input type="tel" id="int_phone" placeholder="登入手機" class="input-box flex-[1.5] selectable" maxlength="10">
+                    <input type="text" id="int_name" placeholder="姓名" class="input-box flex-1 selectable">
+                    <input type="tel" id="int_phone" placeholder="手機" class="input-box flex-[1.5] selectable" maxlength="10">
                 </div>
-                <div id="interview-container" class="space-y-6 text-left">
-                    <!-- Q1-Q5 由腳本動態生成 -->
-                </div>
-                <button type="button" id="submit_interview_btn" onclick="window.handleSubmitInterview()" class="btn-prime mt-12 bg-sky-600 py-5 text-xl tracking-widest shadow-lg">正式送出評估卷</button>
+                <div id="interview-container" class="space-y-6 text-left"></div>
+                <button type="button" id="submit_interview_btn" onclick="window.handleSubmitInterview()" class="btn-prime mt-10 bg-sky-600 py-5 text-xl tracking-widest shadow-lg">正式送出評估卷</button>
             </div>
         </div>
     </div>
@@ -191,18 +211,17 @@
     <!-- 快速新增司機人員彈窗 -->
     <div id="quick-add-modal" class="custom-modal">
         <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full text-center relative shadow-2xl border border-sky-500/20">
-            <h3 class="text-white font-black text-2xl mb-6 italic">➕ 快速新增司機</h3>
-            <input type="text" id="qa_name" placeholder="真實姓名" class="input-box focus:border-sky-500 selectable">
+            <h3 class="text-white font-black text-2xl mb-6 italic">➕ 快速新增</h3>
+            <input type="text" id="qa_name" placeholder="司機姓名" class="input-box focus:border-sky-500 selectable">
             <input type="tel" id="qa_phone" placeholder="手機 09xxxxxxxx" class="input-box focus:border-sky-500 selectable" maxlength="10">
             <input type="tel" id="qa_pin" placeholder="設定 PIN (預設 0000)" class="input-box focus:border-sky-500 selectable" maxlength="4" value="0000">
             <div class="flex gap-4 mt-6">
-                <button onclick="window.toggleQuickAdd(false)" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold">取消</button>
+                <button onclick="window.toggleQuickAdd(false)" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">取消</button>
                 <button id="qa_submit_btn" onclick="window.processQuickAdd()" class="flex-[1.5] py-4 rounded-xl bg-sky-600 text-white font-black shadow-lg">建立帳號</button>
             </div>
         </div>
     </div>
 
-    <!-- 腳本引擎 -->
     <script>
         const FB_CONFIG = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92", storageBucket: "supreme-v92.firebasestorage.app", messagingSenderId: "485530156296", appId: "1:485530156296:web:6728c0ee08b98dedd800bd" };
 
@@ -214,22 +233,23 @@
         window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
         window.triggerFile = (id) => document.getElementById(id).click();
         window.toggleQuickAdd = (s) => s ? window.openModal('quick-add-modal') : window.closeModal('quick-add-modal');
+        window.viewFullscreen = (src) => { if(!src) return; document.getElementById('fullscreen-image').src = src; window.openModal('image-viewer-modal'); };
 
         window.pickOption = (q, v) => {
             const block = document.querySelector(`.q-block[data-q="${q}"]`);
-            block.querySelectorAll('.option-card').forEach(b => b.classList.remove('selected'));
+            block.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
             event.currentTarget.classList.add('selected');
             document.getElementById(`ans_${q}`).value = v;
         };
 
-        const quizArr = [
+        const quizDataArr = [
             { q: "發生輕微交通事故優先處理方式？", o: ["報警、拍照留存並回報公司", "私下和解，先送完貨再說"] },
             { q: "發現包裹有破損或滲漏時？", o: ["拍照異常，並聯繫客服暫緩", "裝沒看到，直接送達客戶"] },
             { q: "收件人不在且無保全代收？", o: ["電話聯繫，無果則回報異常", "隨便放在門口或圍牆內離開"] },
             { q: "收到客戶代收貨款時？", o: ["當面點清金額，並妥善保管", "直接塞進口袋，晚上再算"] },
             { q: "貨件過多可能造成嚴重延遲？", o: ["提前回報調度，尋求支援調整", "不管，自己慢慢送到半夜"] }
         ];
-        document.getElementById('interview-container').innerHTML = quizArr.map((q, i) => `
+        document.getElementById('interview-container').innerHTML = quizDataArr.map((q, i) => `
             <div class="q-block" data-q="${i+1}">
                 <p class="text-white text-sm font-bold mb-4 flex gap-2"><span class="text-sky-500">${i+1}.</span> ${q.q}</p>
                 <div class="option-card" onclick="window.pickOption(${i+1}, 1)"><input type="radio" name="q${i+1}" value="1"> <span>${q.o[0]}</span></div>
@@ -246,7 +266,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         let app, db, auth, partnersCol, isOnline = false, liveUnsubscribe = null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'logistics-live-v300';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'logistics-ultimate-v350';
         
         try {
             app = initializeApp(FB_CONFIG); db = getFirestore(app); auth = getAuth(app);
@@ -255,34 +275,29 @@
         } catch (e) { document.getElementById('offline-banner').classList.remove('hidden'); }
 
         let partners = [], sessionUser = null, deleteTargetId = null;
+        const getTodayString = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; };
 
-        // 登入邏輯：優化非阻塞，徹底解決記住我卡死
+        // 登入邏輯：非同步寫入記憶，保證首屏加載極速
         window.handleLogin = async () => {
             const ph = document.getElementById('login_phone').value.trim(); const pi = document.getElementById('login_pin').value.trim();
             const rem = document.getElementById('remember_me').checked;
-            
             if((ph === "0976017938" && pi === "0531") || (ph === "0988128172" && pi === "0172")) { 
                 if (rem && isOnline && auth?.currentUser) setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'session'), { phone: ph, pin: pi }).catch(e=>{});
                 window.showLayer('admin-panel'); return; 
             }
-            
             const p = partners.find(x => x.phone === ph && x.pin === pi);
             if(!p) return window.showToast("登入失敗：帳密錯誤", true);
-            if(p.status !== 'approved') return window.showToast("司機權限尚未核准", true);
-
+            if(p.status !== 'approved') return window.showToast("司機審核中", true);
             if (rem && isOnline && auth?.currentUser) setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'session'), { phone: ph, pin: pi }).catch(e=>{});
-            sessionUser = p; initDriverLiveSync(p.id); window.showLayer('partner-hub');
+            sessionUser = p; initLiveSync(p.id); window.showLayer('partner-hub');
         };
 
-        // 🎯 毫秒同步引擎 (司機端)
-        const initDriverLiveSync = (id) => {
+        // 🎯 毫秒同步核心 (司機端)
+        const initLiveSync = (id) => {
             if (liveUnsubscribe) liveUnsubscribe();
-            liveUnsubscribe = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), (docSnap) => {
-                if (!docSnap.exists()) {
-                    window.showToast("您的權限已被管理員撤銷", true);
-                    window.handleLogout(); return;
-                }
-                const data = docSnap.data(); sessionUser = { id: docSnap.id, ...data };
+            liveUnsubscribe = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), (snap) => {
+                if (!snap.exists()) { window.showToast("帳號已被移除", true); window.handleLogout(); return; }
+                const data = snap.data(); sessionUser = { id: snap.id, ...data };
                 renderHubRealtime(data);
             }, (e) => { window.handleLogout(); });
         };
@@ -292,11 +307,11 @@
             document.getElementById('hub_title').innerText = `夥伴 ${p.name}`;
             document.getElementById('hub-live-sync-area').innerHTML = `
                 <div class="p-6 bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2.5rem] border border-sky-500/40 shadow-2xl relative overflow-hidden">
-                    <div class="flex justify-between items-center mb-5 border-b border-slate-700/50 pb-4"><span class="text-sky-400 font-black text-sm uppercase">雲端實時計費對接</span><span class="text-[9px] text-emerald-500 font-black">● LIVE SYNC</span></div>
+                    <div class="flex justify-between items-center mb-5 border-b border-slate-700/50 pb-4"><span class="text-sky-400 font-black text-sm uppercase">雲端實時計費</span><span class="text-[9px] text-emerald-500 font-black animate-pulse">● LIVE SYNC</span></div>
                     <div class="bg-slate-950/70 p-5 rounded-2xl mb-6 text-xs text-slate-300 space-y-3 shadow-inner">
                         <div class="flex justify-between"><span>本月累積正件</span><span class="text-white font-black">${p.total_del||0} 件</span></div>
-                        <div class="flex justify-between"><span>目前設點單價</span><span class="text-sky-400 font-bold">$${dp} /件</span></div>
-                        <div class="flex justify-between text-emerald-400 pt-2 border-t border-slate-800 mt-1"><span>其他補貼/加項</span><span>+$${p.custom_adj||0}</span></div>
+                        <div class="flex justify-between"><span>目前單價設定</span><span class="text-sky-400 font-bold">$${dp} /件</span></div>
+                        <div class="flex justify-between text-emerald-400 pt-2 border-t border-slate-800 mt-1"><span>補貼與加項</span><span>+$${p.custom_adj||0}</span></div>
                     </div>
                     <div class="text-center mb-2"><p class="text-[10px] text-slate-500 font-black tracking-widest mb-1 uppercase">預計本期實發淨額</p><p class="text-5xl font-black text-white tracking-tighter drop-shadow-xl text-sky-400">$${(d_t + (p.custom_adj||0)).toLocaleString()}</p></div>
                 </div>`;
@@ -305,37 +320,16 @@
         window.handleLogout = async () => { 
             if (liveUnsubscribe) liveUnsubscribe(); sessionUser = null; 
             if (auth?.currentUser) try { await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'session')); } catch(e){}
-            window.showLayer('gate'); window.showToast('安全登出完成'); 
+            window.showLayer('gate'); window.showToast('已登出'); 
         };
 
-        window.triggerDelete = (id) => { deleteTargetId = id; window.openModal('delete-modal'); };
+        window.triggerDelete = (id) => { window.deleteTargetId = id; window.openModal('delete-modal'); };
         window.executeDelete = async () => {
-            if(!deleteTargetId || !isOnline) return;
-            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', deleteTargetId)); window.showToast("✅ 已成功移除人員並斷開連線"); window.closeModal('delete-modal'); } catch(e) {}
+            if(!window.deleteTargetId || !isOnline) return;
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', window.deleteTargetId)); window.showToast("✅ 已成功移除連線權限"); window.closeModal('delete-modal'); } catch(e) {}
         };
 
-        window.updatePartnerField = async (id, field, value) => { try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [field]: value }); } catch (e) {} };
-
-        window.renderAdmin = () => {
-            const tbody = document.getElementById('admin-list'); const query = document.getElementById('admin_search').value.trim().toLowerCase();
-            let filtered = partners.filter(p => p.name?.toLowerCase().includes(query) || p.phone?.includes(query));
-            if(!filtered.length){ tbody.innerHTML = '<tr><td colspan="6" class="py-32 text-center text-slate-700">目前尚無人員資料</td></tr>'; return; }
-            let html = '', sD = 0, sN = 0;
-            filtered.forEach(p => {
-                const det = (p.total_del || 0) * (p.custom_del||15); sD += p.total_del || 0; sN += det;
-                html += `<tr class="border-b border-slate-800 hover:bg-white/5 transition duration-200">
-                    <td><span class="text-2xl">${p.work_status==='leave'?'🔴':'🟢'}</span></td>
-                    <td class="text-left pl-5 border-l border-slate-800/50"><span class="font-black text-white text-base selectable">${p.name}</span><div class="mt-1 bg-slate-900/50 p-1.5 rounded border border-slate-800 w-max"><span class="text-[10px] text-slate-500">累積 </span><input type="number" class="ghost-input w-12 text-sky-400 font-black selectable" value="${p.total_del||0}" onchange="window.updatePartnerField('${p.id}', 'total_del', Number(this.value))"></div></td>
-                    <td><input type="number" class="ghost-input w-12 text-sky-500 font-black selectable" value="${p.custom_del||15}" onchange="window.updatePartnerField('${p.id}','custom_del',Number(this.value))"></td>
-                    <td><input type="number" class="ghost-input w-12 text-emerald-500 font-black selectable" value="${p.custom_adj||0}" onchange="window.updatePartnerField('${p.id}','custom_adj',Number(this.value))"></td>
-                    <td class="text-sky-400 font-black text-xl tracking-tighter">$${det.toLocaleString()}</td>
-                    <td><div class="flex gap-2 justify-center"><button onclick="window.viewHRDetail('${p.id}')" class="bg-indigo-900/40 text-indigo-300 p-3 rounded-2xl border border-indigo-800/50 shadow-lg active:scale-95 transition">📇 檔案</button><button onclick="window.triggerDelete('${p.id}')" class="bg-rose-900/40 text-rose-400 p-3 rounded-2xl border border-rose-800/50 shadow-lg active:scale-95 transition">🗑️ 移除</button></div></td>
-                </tr>`;
-            });
-            tbody.innerHTML = html; document.getElementById('dash_del').innerText = sD; document.getElementById('dash_net').innerText = "$"+sN.toLocaleString();
-        };
-
-        // 行政：調閱人事詳細檔案 (五證完整顯示)
+        // 行政：調閱旗艦級人事電子檔案
         window.viewHRDetail = (id) => {
             const p = partners.find(x => x.id === id); if(!p) return;
             document.getElementById('hr_detail_content').innerHTML = `
@@ -346,13 +340,13 @@
                     </div>
                     <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 text-center shadow-inner">
                         <p class="text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-widest">薪資匯款帳戶</p>
-                        <p class="text-emerald-400 font-black text-2xl tracking-tighter selectable">(${p.bank_code||'---'}) ${p.bank_account||'未建檔'}</p>
+                        <p class="text-emerald-400 font-black text-2xl selectable">(${p.bank_code||'---'}) ${p.bank_account||'未建檔'}</p>
                     </div>
                     <div class="bg-orange-950/20 border border-orange-900/30 p-5 rounded-2xl flex justify-between items-center text-orange-200 shadow-inner">
                         <div><p class="text-[10px] text-orange-500 font-bold uppercase mb-1">緊急聯絡人</p><p class="font-black text-lg selectable">${p.emergency_name||'未填'}</p></div>
-                        <a href="tel:${p.emergency_phone}" class="bg-orange-600 px-5 py-2.5 rounded-xl text-white font-black shadow-lg">📞 撥打電話</a>
+                        <a href="tel:${p.emergency_phone}" class="bg-orange-600 px-5 py-2.5 rounded-xl text-white font-black shadow-lg">📞 一鍵撥號</a>
                     </div>
-                    <div class="text-[10px] font-black text-sky-400 mt-6 mb-3 border-b border-sky-900/50 pb-2 uppercase tracking-widest">五證影像核對 (點擊照片放大)</div>
+                    <div class="text-[10px] font-black text-sky-400 mt-6 mb-3 border-b border-sky-900/50 pb-2 uppercase tracking-widest">五證影像櫥窗 (點擊放大)</div>
                     <div class="grid grid-cols-2 gap-4">
                         ${renderSlot("身分證正面", p.p_id_f)} ${renderSlot("身分證反面", p.p_id_b)}
                         ${renderSlot("駕照正面", p.p_lic)} ${renderSlot("存摺封面", p.p_book)}
@@ -363,32 +357,53 @@
         };
         const renderSlot = (label, b64) => `<div class="bg-slate-800/50 p-2.5 rounded-2xl border border-slate-700 shadow-inner"><p class="text-[9px] text-slate-500 mb-1.5 font-black uppercase text-center">${label}</p>${b64 ? `<img src="${b64}" class="w-full h-28 object-cover rounded-xl shadow-md cursor-pointer hover:scale-105 transition" onclick="window.viewFullscreen(this.src)">` : '<div class="h-28 flex items-center justify-center italic text-[9px] text-slate-800 font-black">尚未建檔</div>'}</div>`;
 
+        // 🎯 修復自動返回邏輯
         window.handleSubmitInterview = async () => {
-            const n = document.getElementById('int_name').value.trim(), ph = document.getElementById('int_phone').value.trim(); 
-            if(!n || !/^09\d{8}$/.test(ph)) return window.showToast("⚠️ 請填寫姓名與正確手機", true); 
-            for(let i=1; i<=5; i++){ if(!document.getElementById(`ans_${i}`).value) return window.showToast(`⚠️ 請務必作答第 ${i} 題`, true); }
-            const btn = document.getElementById('submit_interview_btn'); btn.innerText = "資料加密上傳中..."; btn.disabled = true;
+            const ph = document.getElementById('int_phone').value.trim(); const n = document.getElementById('int_name').value.trim();
+            if(!n || !ph) return window.showToast("⚠️ 請填寫姓名與正確手機", true); 
+            for(let i=1; i<=5; i++){ if(!document.getElementById(`ans_${i}`).value) return window.showToast(`⚠️ 請務必答第 ${i} 題`, true); }
+            const btn = document.getElementById('submit_interview_btn'); btn.innerText = "加密上傳中..."; btn.disabled = true;
             try { 
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${ph}`), { id:`p_${ph}`, name:n, phone:ph, pin:"0000", status:'pending_review', total_del:0, total_rev:0, custom_adj:0, work_status:'normal' }); 
-                window.showToast("✅ 評估已送出！主管核准後即可登入"); 
-                btn.innerText = "已成功提交";
-            } catch(e) { window.showToast("❌ 雲端連線失敗", true); btn.disabled = false; btn.innerText = "提交評估卷"; }
+                window.showToast("✅ 評估已成功送出！系統將自動返回..."); 
+                btn.innerText = "已成功提交"; btn.style.background = "#059669";
+                setTimeout(() => { window.showLayer('gate'); }, 2200); // 🚀 關鍵：自動導回
+            } catch(e) { window.showToast("傳輸失敗：請檢查授權網域設定", true); btn.disabled = false; btn.innerText = "提交評估卷"; }
         };
 
         window.processQuickAdd = async () => { 
             const n = document.getElementById('qa_name'), p = document.getElementById('qa_phone'), pin = document.getElementById('qa_pin');
             const cleanPhone = p.value.trim().replace(/\s/g, "");
             if(!n.value.trim() || !/^09\d{8}$/.test(cleanPhone)) return window.showToast("⚠️ 格式錯誤", true);
-            const btn = document.getElementById('qa_submit_btn'); btn.innerText = "同步中...";
-            try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${cleanPhone}`), { id:`p_${cleanPhone}`, name:n.value.trim(), phone:cleanPhone, pin: pin.value.trim()||"0000", status:'approved', total_del:0, total_rev:0, custom_adj:0, work_status:'normal' }); window.toggleQuickAdd(false); window.showToast("✅ 司機人員已建立"); } catch (e) { window.showToast("❌ 連線被拒", true); } finally { btn.innerText = "建立司機"; }
+            try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${cleanPhone}`), { id:`p_${cleanPhone}`, name:n.value.trim(), phone:cleanPhone, pin: pin.value.trim()||"0000", status:'approved', total_del:0, total_rev:0, custom_adj:0, work_status:'normal' }); window.toggleQuickAdd(false); window.showToast("✅ 人員已成功建立"); } catch (e) {}
+        };
+
+        window.renderAdmin = () => {
+            const tbody = document.getElementById('admin-list'); const query = document.getElementById('admin_search').value.trim().toLowerCase();
+            let filtered = partners.filter(p => p.name?.toLowerCase().includes(query) || p.phone?.includes(query));
+            if(!filtered.length){ tbody.innerHTML = '<tr><td colspan="6" class="py-32 text-center text-slate-700">無司機名單</td></tr>'; return; }
+            let html = '', sD = 0, sN = 0;
+            filtered.forEach(p => {
+                const det = (p.total_del || 0) * (p.custom_del||15); sD += p.total_del || 0; sN += det;
+                html += `<tr class="border-b border-slate-800 hover:bg-white/5 transition duration-200">
+                    <td><span class="text-2xl">${p.work_status==='leave'?'🔴':'🟢'}</span></td>
+                    <td class="text-left pl-5 border-l border-slate-800/50"><span class="font-black text-white text-base selectable">${p.name}</span><div class="mt-1 bg-slate-900/50 p-1.5 rounded border border-slate-800 w-max"><span class="text-[10px] text-slate-500">件數 </span><input type="number" class="ghost-input w-12 text-sky-400 font-black selectable" value="${p.total_del||0}" onchange="window.updatePartnerField('${p.id}', 'total_del', Number(this.value))"></div></td>
+                    <td><input type="number" class="ghost-input w-12 text-sky-500 font-black selectable" value="${p.custom_del||15}" onchange="window.updatePartnerField('${p.id}','custom_del',Number(this.value))"></td>
+                    <td><input type="number" class="ghost-input w-12 text-emerald-500 font-black selectable" value="${p.custom_adj||0}" onchange="window.updatePartnerField('${p.id}','custom_adj',Number(this.value))"></td>
+                    <td class="text-sky-400 font-black text-xl tracking-tighter drop-shadow-md">$${det.toLocaleString()}</td>
+                    <td><div class="flex gap-2 justify-center"><button onclick="window.viewHRDetail('${p.id}')" class="bg-indigo-900/40 text-indigo-300 p-3 rounded-2xl border border-indigo-800/50 shadow-lg active:scale-95 transition">📇 檔案</button><button onclick="window.triggerDelete('${p.id}')" class="bg-rose-900/40 text-rose-400 p-3 rounded-2xl border border-rose-800/50 shadow-lg active:scale-95 transition">🗑️ 移除</button></div></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html; document.getElementById('dash_del').innerText = sD; document.getElementById('dash_net').innerText = "$"+sN.toLocaleString(); document.getElementById('dash_count').innerText = partners.length;
         };
 
         window.exportToExcel = () => { 
-            if(!partners.length) return; 
-            let csv = '\uFEFF真實姓名,登入手機,累積正件,本月淨額\n'; 
+            if(!partners.length) return; let csv = '\uFEFF姓名,手機,累積件數,預估應發\n'; 
             partners.forEach(p => { csv += `${p.name},${p.phone},${p.total_del||0},${(p.total_del||0)*(p.custom_del||15)}\n`; }); 
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `營運報表_旗艦版.csv`; link.click(); 
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `營運報表_終極旗艦版.csv`; link.click(); 
         };
+
+        window.updatePartnerField = async (id, field, value) => { try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [field]: value }); } catch (e) {} };
 
         const init = async () => {
             try {
