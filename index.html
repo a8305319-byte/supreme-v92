@@ -1,386 +1,461 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#020617">
-  <title>在地物流營運總部 v56.0 - 滿血最終版</title>
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#020617">
+    <title>在地物流營運總部 v58.0 - 最終究極版</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
-  <style>
-    :root { --gold: #f59e0b; --bg: #020617; }
-    body { background-color: var(--bg); color: #f1f5f9; font-family: 'PingFang TC', system-ui; -webkit-tap-highlight-color: transparent; }
-    .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(245, 158, 11, 0.2); }
-    .gold-glow { box-shadow: 0 0 40px rgba(245, 158, 11, 0.15); border: 1px solid var(--gold); }
-    .premium-input { width: 100%; background: #0f172a; border: 1px solid #334155; padding: 14px; border-radius: 14px; color: white; font-weight: bold; outline: none; transition: 0.3s; }
-    .premium-input:focus { border-color: var(--gold); box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); }
-    .btn-main { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #000; font-weight: 950; border-radius: 16px; transition: 0.2s; cursor: pointer; border: none; letter-spacing: 1px; }
-    .btn-main:active { transform: scale(0.96); opacity: 0.9; }
-    .data-table { width: 100%; font-size: 13px; white-space: nowrap; border-collapse: collapse; }
-    .data-table th { padding: 12px; background: rgba(0,0,0,0.6); color: #64748b; font-size: 11px; text-transform: uppercase; }
-    .data-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; }
-    .ghost-input { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 6px; text-align: center; color: white; font-weight: 900; width: 60px; outline: none; }
-    .receipt { background: #fff; color: #000; padding: 30px; border-radius: 4px; font-family: monospace; box-shadow: 0 10px 50px rgba(0,0,0,0.5); }
-    .chat-bubble { padding: 12px 16px; border-radius: 18px; max-width: 85%; font-size: 14px; font-weight: bold; line-height: 1.6; white-space: pre-wrap; }
-    .bubble-bot { background: rgba(255,255,255,0.1); color: white; align-self: flex-start; }
-    .bubble-user { background: var(--gold); color: black; align-self: flex-end; margin-left: auto; }
-    .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-    .tag { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 900; }
-  </style>
+    <style>
+        :root { --gold: #f59e0b; --bg: #020617; }
+        body { background-color: var(--bg); color: #f1f5f9; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .gold-glow { box-shadow: 0 0 40px rgba(245, 158, 11, 0.15); border: 1px solid var(--gold); }
+        .premium-input { width: 100%; background: #0f172a; border: 1px solid #334155; padding: 14px; border-radius: 14px; color: white; font-weight: bold; outline: none; transition: 0.3s; }
+        .premium-input:focus { border-color: var(--gold); box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); }
+        .btn-main { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #000; font-weight: 950; border-radius: 16px; transition: 0.2s; cursor: pointer; border: none; letter-spacing: 2px; }
+        .btn-main:active { transform: scale(0.96); opacity: 0.9; }
+        .data-table { width: 100%; font-size: 13px; white-space: nowrap; border-collapse: collapse; }
+        .data-table th { padding: 14px; background: rgba(0,0,0,0.6); color: #94a3b8; font-size: 11px; font-weight: 900; }
+        .data-table td { padding: 14px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .ghost-input { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 6px; text-align: center; color: white; font-weight: 900; width: 60px; outline: none; }
+        .ghost-input:focus { border-color: var(--gold); }
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+        .tag { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 900; }
+        .receipt { background: #fff; color: #000; padding: 30px; border-radius: 4px; font-family: monospace; box-shadow: 0 10px 50px rgba(0,0,0,0.5); }
+        .chat-bubble { padding: 12px 16px; border-radius: 18px; max-width: 85%; font-size: 14px; font-weight: bold; line-height: 1.6; white-space: pre-wrap; }
+        .bubble-bot { background: rgba(255,255,255,0.1); color: white; align-self: flex-start; }
+        .bubble-user { background: var(--gold); color: black; align-self: flex-end; margin-left: auto; }
+        @media (max-width: 640px) { .hide-mobile { display: none; } }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
+    <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef } = React;
-    const firebaseConfig = {
-      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-      authDomain: "supreme-v92.firebaseapp.com",
-      projectId: "supreme-v92",
-      storageBucket: "supreme-v92.firebasestorage.app",
-      messagingSenderId: "485530156296",
-      appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-    };
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
 
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-    const appId = 'supreme-v92';
+        const firebaseConfig = window.__firebase_config || {
+            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+            authDomain: "supreme-v92.firebaseapp.com",
+            projectId: "supreme-v92",
+            storageBucket: "supreme-v92.firebasestorage.app",
+            messagingSenderId: "485530156296",
+            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
+        };
+        
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        const appId = 'supreme-v92';
 
-    const INSURANCE_TABLE = [
-      { sal: 29500, labor: 738, health: 458 }, { sal: 30300, labor: 758, health: 470 },
-      { sal: 31800, labor: 795, health: 493 }, { sal: 33300, labor: 833, health: 516 },
-      { sal: 34800, labor: 870, health: 540 }, { sal: 36300, labor: 908, health: 563 },
-      { sal: 38200, labor: 955, health: 592 }
-    ];
+        // 🎯 2026 精算引擎
+        const INSURANCE_TABLE = [
+            { sal: 29500, labor: 738, health: 458 }, { sal: 30300, labor: 758, health: 470 },
+            { sal: 31800, labor: 795, health: 493 }, { sal: 33300, labor: 833, health: 516 },
+            { sal: 34800, labor: 870, health: 540 }, { sal: 36300, labor: 908, health: 563 },
+            { sal: 38200, labor: 955, health: 592 }
+        ];
 
-    const shrink = (file) => new Promise(res => {
-      const reader = new FileReader(); reader.readAsDataURL(file);
-      reader.onload = (e) => {
-        const img = new Image(); img.src = e.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-          const scale = 1000 / img.width; canvas.width = 1000; canvas.height = img.height * scale;
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(res, 'image/jpeg', 0.6);
-        }
-      }
-    });
-
-    function App() {
-      const [u, setU] = useState(null); const [ps, setPs] = useState([]);
-      const [layer, setLayer] = useState('gate'); const [load, setLoad] = useState(true);
-      const [toast, setToast] = useState("");
-      const showToast = (m) => { setToast(m); setTimeout(()=>setToast(""), 3000); };
-
-      useEffect(() => {
-        const unlock = setTimeout(() => setLoad(false), 5000);
-        const unsub = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners')
-          .onSnapshot(snap => { 
-            const data = snap.docs.map(d => ({ id: d.id, ...d.data() })); setPs(data); 
-            if(u) setU(data.find(x => x.id === u.id) || u);
-            setLoad(false); clearTimeout(unlock);
-          });
-        return () => unsub();
-      }, [u?.id]);
-
-      const login = (ph, pin) => {
-        if ((ph === "0976017938" && pin === "0531") || (ph === "0988128172" && pin === "0172")) return setLayer('admin');
-        const target = ps.find(p => p.phone === ph && p.pin === pin && p.status === 'active');
-        if(target) { setU(target); setLayer('driver'); } else alert("查無帳號或資格審查中");
-      };
-
-      if (load) return <div className="h-screen flex items-center justify-center bg-black text-amber-500 font-black italic animate-pulse tracking-[0.5em]">在地物流 最終統計校正中...</div>;
-
-      return (
-        <div className="min-h-screen selection:bg-amber-500 selection:text-black">
-          <div className={`fixed left-1/2 -translate-x-1/2 z-[9999] transition-all duration-500 bg-emerald-500 text-black px-8 py-3 rounded-full font-black shadow-2xl ${toast ? 'top-8 opacity-100' : '-top-20 opacity-0'}`}>{toast}</div>
-          {layer === 'gate' && <Gate onLogin={login} setLayer={setLayer} />}
-          {layer === 'admin' && <AdminHub ps={ps} setLayer={setLayer} db={db} appId={appId} showToast={showToast} />}
-          {layer === 'driver' && <DriverHub u={u} setLayer={setLayer} db={db} appId={appId} showToast={showToast} storage={storage} />}
-          {layer === 'onboarding' && <Onboarding setLayer={setLayer} db={db} appId={appId} />}
-          {layer === 'upload' && <UploadFlow setLayer={setLayer} db={db} appId={appId} storage={storage} showToast={showToast} />}
-        </div>
-      );
-    }
-
-    // --- 1. 入口 ---
-    function Gate({ onLogin, setLayer }) {
-      const [ph, setPh] = useState(""); const [pin, setPin] = useState("");
-      return (
-        <div className="h-screen flex flex-col items-center justify-center p-6 bg-slate-950">
-          <div className="text-center mb-16">
-            <h1 className="text-8xl font-black text-white italic tracking-tighter mb-4 drop-shadow-[0_15px_30px_rgba(245,158,11,0.3)]">在地物流</h1>
-            <p className="text-amber-500 text-xs tracking-[0.5em] font-black uppercase border border-amber-500/20 px-4 py-1 rounded-full bg-amber-900/10">Operation Hub v56.0</p>
-          </div>
-          <div className="w-full max-w-[340px] space-y-6">
-            <div className="glass p-10 rounded-[4rem] gold-glow text-center">
-              <input type="tel" className="premium-input text-center text-xl mb-4 shadow-inner" placeholder="報帳手機" value={ph} onChange={e=>setPh(e.target.value)} />
-              <input type="password" className="premium-input text-center text-xl mb-10 tracking-[0.5em] shadow-inner" placeholder="PIN 碼" value={pin} onChange={e=>setPin(e.target.value)} maxLength={4}/>
-              <button onClick={()=>onLogin(ph, pin)} className="btn-main w-full py-5 text-xl italic shadow-2xl">登入系統</button>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <button onClick={()=>setLayer('onboarding')} className="py-5 rounded-3xl glass border border-amber-500/20 text-amber-500 font-black text-xs hover:bg-amber-900/10 transition">📋 應徵初試</button>
-              <button onClick={()=>setLayer('upload')} className="py-5 rounded-3xl glass border border-orange-500/20 text-orange-400 font-black text-xs hover:bg-orange-900/10 transition">📁 資料建檔</button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // --- 2. 管理大盤 ---
-    function AdminHub({ ps, setLayer, db, appId, showToast }) {
-      const [slip, setSlip] = useState(null); const [vImg, setVImg] = useState(null);
-      const [tool, setTool] = useState(false); const [search, setSearch] = useState("");
-      const [f, setF] = useState("all");
-      const today = new Date().toLocaleDateString('en-CA');
-      
-      const stats = useMemo(() => {
-        return ps.filter(p=>p.status==='active' && p.last_report?.date === today).reduce((acc, p) => {
-          acc.del += (p.total_del || 0); acc.pkp += (p.total_pkp || 0);
-          acc.cost += (p.total_del * (p.custom_del_price||15) + p.total_pkp * (p.custom_pkp_price||10) + (p.custom_adj||0) - (p.labor_fee||0) - (p.health_fee||0));
-          return acc;
-        }, { del:0, pkp:0, cost:0 });
-      }, [ps, today]);
-
-      const filtered = useMemo(() => {
-        return ps.filter(p => {
-          const match = p.name?.includes(search) || p.phone?.includes(search);
-          if(f === 'rep') return match && p.last_report?.date === today;
-          if(f === 'pend') return match && p.status === 'active' && p.last_report?.date !== today;
-          if(f === 'lv') return match && p.work_status === 'leave';
-          if(f === 'int') return match && p.status === 'interview_reviewing';
-          return match && p.status === 'active';
+        const shrink = (file) => new Promise(res => {
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    const scale = 1000 / img.width; canvas.width = 1000; canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(res, 'image/jpeg', 0.6);
+                }
+            }
         });
-      }, [ps, search, f, today]);
 
-      const update = async (p, field, v) => {
-        const n = Number(v); if(isNaN(n)) return;
-        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).update({ [field]: n, salary_status: 'pending' });
-        showToast("✅ 數據雲端同步成功");
-      };
+        function App() {
+            const [u, setU] = useState(null); const [ps, setPs] = useState([]);
+            const [layer, setLayer] = useState('gate'); const [load, setLoad] = useState(true);
+            const [toast, setToast] = useState("");
+            const showToast = (m) => { setToast(m); setTimeout(()=>setToast(""), 3000); };
 
-      return (
-        <div className="p-4 lg:p-12 pb-32 max-w-[1400px] mx-auto animate-in fade-in duration-700">
-          <div className="flex justify-between items-center mb-10 px-4">
-            <h2 className="text-4xl font-black italic tracking-tighter text-white">指揮中心<span className="text-amber-500">.</span></h2>
-            <div className="flex gap-3">
-              <button onClick={()=>setTool(true)} className="bg-sky-600 text-white px-6 py-2 rounded-2xl font-black text-xs shadow-lg shadow-sky-900/50">🛠️ 工具箱</button>
-              <button onClick={()=>setLayer('gate')} className="bg-slate-900 border border-slate-700 text-slate-500 px-6 py-2 rounded-2xl font-black text-xs">退出</button>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4 mb-10 text-center">
-            <div className="glass p-6 rounded-[2.5rem] border-t-4 border-sky-500"><p className="text-[10px] text-slate-500 font-black mb-1 uppercase">Today Delivery</p><p className="text-4xl font-black text-sky-400">{stats.del}</p></div>
-            <div className="glass p-6 rounded-[2.5rem] border-t-4 border-orange-500"><p className="text-[10px] text-slate-500 font-black mb-1 uppercase">Today Pickup</p><p className="text-4xl font-black text-orange-400">{stats.pkp}</p></div>
-            <div className="glass p-6 rounded-[2.5rem] border-t-4 border-emerald-500"><p className="text-[10px] text-slate-500 font-black mb-1 uppercase">Payroll Estimate</p><p className="text-4xl font-black text-emerald-400">${stats.cost.toLocaleString()}</p></div>
-          </div>
-          <div className="glass rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5">
-            <table className="data-table">
-              <thead>
-                <tr className="bg-black/60 text-amber-500 border-b border-white/5">
-                  <th className="text-left pl-8">狀態 / 夥伴資訊</th><th>當日實收對帳 (正/逆)</th><th>2026 級距精算</th><th>簽收</th><th>實領</th><th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(p => {
-                  const isRep = p.last_report?.date === today; const isLv = p.work_status === 'leave';
-                  const net = (p.total_del * (p.custom_del_price||15) + p.total_pkp * (p.custom_pkp_price||10) + (p.custom_adj||0) - (p.labor_fee||0) - (p.health_fee||0));
-                  return (
-                    <tr key={p.id} className="hover:bg-white/5 transition duration-200">
-                      <td className="text-left pl-8 py-5">
-                        <div className="flex items-center gap-3">
-                          <span className={`status-dot ${isLv ? 'bg-rose-500 shadow-[0_0_12px_#f43f5e]' : (isRep ? 'bg-emerald-400 shadow-[0_0_12px_#34d399]' : 'bg-slate-600')}`}></span>
-                          <span className="font-black text-white text-lg tracking-tight">{p.name}</span>
-                        </div>
-                      </td>
-                      <td className="bg-amber-900/5 px-4">
-                        <input type="number" defaultValue={p.total_del} onBlur={e=>update(p,'total_del',e.target.value)} className="ghost-input text-sky-400 mr-2 border-sky-900/30" />
-                        <input type="number" defaultValue={p.total_pkp} onBlur={e=>update(p,'total_pkp',e.target.value)} className="ghost-input text-orange-400 border-orange-900/30" />
-                      </td>
-                      <td>
-                        <select className="bg-transparent text-[11px] text-slate-400 font-black outline-none cursor-pointer" defaultValue={p.insured_salary} onChange={e=>{
-                          const v = Number(e.target.value); const brk = INSURANCE_TABLE.find(x=>x.sal===v) || {labor:0, health:0};
-                          db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).update({ insured_salary:v, labor_fee:brk.labor, health_fee: brk.health });
-                          showToast("✨ 勞健保級距精算同步");
-                        }}>
-                          <option value="0">未投保</option>
-                          {INSURANCE_TABLE.map(b=><option key={b.sal} value={b.sal}>${b.sal.toLocaleString()}</option>)}
-                        </select>
-                      </td>
-                      <td>{p.salary_status === 'signed' ? <span className="tag bg-emerald-600/20 text-emerald-400">已簽收</span> : <span className="text-slate-700 font-black italic">核帳中</span>}</td>
-                      <td className="text-amber-500 font-black text-2xl italic tracking-tighter">${Math.max(0, net).toLocaleString()}</td>
-                      <td><button onClick={()=>setSlip(p)} className="bg-white/10 border border-white/20 text-white px-5 py-2 rounded-2xl font-black text-[10px]">對帳</button></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {tool && (
-            <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[999] animate-in zoom-in duration-300">
-              <div className="glass p-12 rounded-[4rem] w-full max-w-sm gold-glow text-center">
-                <h3 className="text-white font-black text-3xl mb-10 italic border-b border-white/10 pb-6">指揮中心工具箱</h3>
-                <div className="space-y-4">
-                   <button onClick={async ()=>{
-                      const dP = Number(prompt("全體正件單價：", "15")); const pP = Number(prompt("全體逆收單價：", "10"));
-                      if(!dP || !pP) return; const b = db.batch(); ps.filter(p=>p.status==='active').forEach(p=>b.update(db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id),{custom_del_price:dP, custom_pkp_price:pP}));
-                      await b.commit(); showToast("💰 批次價格調控完成"); setTool(false);
-                   }} className="w-full py-5 bg-sky-950 text-sky-400 rounded-[2rem] font-black border border-sky-900 text-sm">💰 批次調整全站單價</button>
-                   <button onClick={()=>setTool(false)} className="text-slate-600 font-black uppercase text-xs pt-8">Exit Tools</button>
+            useEffect(() => {
+                const unlock = setTimeout(() => setLoad(false), 5000);
+                const unsub = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners')
+                    .onSnapshot(snap => { 
+                        const data = snap.docs.map(d => ({ id: d.id, ...d.data() })); setPs(data); 
+                        if(u) setU(data.find(x => x.id === u.id) || u);
+                        setLoad(false); clearTimeout(unlock);
+                    });
+                return () => unsub();
+            }, [u?.id]);
+
+            const login = (ph, pin) => {
+                if ((ph === "0976017938" && pin === "0531") || (ph === "0988128172" && pin === "0172")) return setLayer('admin');
+                const target = ps.find(p => p.phone === ph && p.pin === pin && p.status === 'active');
+                if(target) { setU(target); setLayer('driver'); } else alert("帳密錯誤，或帳號正由後台審核中");
+            };
+
+            if (load) return <div className="h-screen flex items-center justify-center bg-black text-amber-500 font-black italic animate-pulse tracking-[0.5em]">在地物流數據對接中...</div>;
+
+            return (
+                <div className="min-h-screen">
+                    <div className={`fixed left-1/2 -translate-x-1/2 z-[9999] transition-all duration-500 bg-emerald-500 text-black px-8 py-3 rounded-full font-black shadow-2xl ${toast ? 'top-8 opacity-100' : '-top-20 opacity-0'}`}>{toast}</div>
+                    {layer === 'gate' && <Gate onLogin={login} setLayer={setLayer} />}
+                    {layer === 'admin' && <AdminHub ps={ps} setLayer={setLayer} db={db} appId={appId} showToast={showToast} />}
+                    {layer === 'driver' && <DriverHub u={u} setLayer={setLayer} db={db} appId={appId} showToast={showToast} storage={storage} />}
+                    {layer === 'onboarding' && <Onboarding setLayer={setLayer} db={db} appId={appId} />}
+                    {layer === 'upload' && <UploadFlow setLayer={setLayer} db={db} appId={appId} storage={storage} showToast={showToast} />}
                 </div>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
+            );
+        }
 
-    // --- 3. 夥伴工作台 ---
-    function DriverHub({ u, setLayer, db, appId, showToast, storage }) {
-      const [d, setD] = useState(""); const [p, setP] = useState("");
-      const [img, setImg] = useState(null); const [pre, setPre] = useState(null);
-      const [up, setUp] = useState(false); const [pct, setPct] = useState(0);
-      const [slip, setSlip] = useState(false);
-      
-      const handleReport = async () => {
-        if(!d || !p || !img) return alert("件數與拍照為必填");
-        setUp(true); const bl = await shrink(img); const ref = storage.ref(`rep/${appId}/${u.id}_${Date.now()}`);
-        const t = ref.put(bl); t.on('state_changed', s => setPct(Math.round((s.bytesTransferred/s.totalBytes)*100)));
-        await t; const url = await ref.getDownloadURL();
-        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({
-          total_del:Number(d), total_pkp:Number(p), last_report:{date:new Date().toLocaleDateString('en-CA')}, report_img:url, salary_status:'pending', work_status:'online'
-        });
-        showToast("🚀 數據已同步大盤"); setUp(false); setPre(null); setImg(null); setD(""); setP("");
-      };
-
-      const net = (u.total_del * (u.custom_del_price||15) + u.total_pkp * (u.custom_pkp_price||10) + (u.custom_adj||0) - (u.labor_fee||0) - (u.health_fee||0));
-      return (
-        <div className="h-screen flex items-center justify-center p-6 bg-black">
-          <div className="w-full max-w-[440px] glass p-12 rounded-[5rem] gold-glow text-center relative overflow-y-auto max-h-[95vh] animate-in slide-in-from-bottom duration-700">
-            <h2 className="text-5xl text-white italic font-black mb-2 tracking-tighter">夥伴工作台</h2>
-            <div className="bg-amber-900/20 border-2 border-amber-500/20 p-8 rounded-[3rem] mb-12 shadow-2xl">
-               <button onClick={()=>setSlip(true)} className="bg-amber-500 text-black px-10 py-3 rounded-full font-black text-xs">查看明細與簽收</button>
-            </div>
-            <label className="block mb-10 cursor-pointer border-2 border-dashed border-slate-700 p-8 rounded-[4rem] h-48 flex items-center justify-center relative overflow-hidden hover:border-amber-500 transition-all duration-500">
-               {pre ? <img src={pre} className="absolute inset-0 w-full h-full object-cover" /> : <p className="text-amber-500 text-[11px] font-black uppercase tracking-widest">📸 拍下今日報表單據</p>}
-               <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>{setImg(e.target.files[0]); setPre(URL.createObjectURL(e.target.files[0]));}} />
-            </label>
-            <div className="grid grid-cols-2 gap-6 mb-12">
-               <div className="bg-slate-900/60 p-6 rounded-[2.5rem] border border-slate-800"><p className="text-sky-400 text-[10px] mb-3 font-black">Delivery</p><input type="number" value={d} onChange={e=>setD(e.target.value)} className="ghost-input w-full text-5xl" placeholder="0" /></div>
-               <div className="bg-slate-900/60 p-6 rounded-[2.5rem] border border-slate-800"><p className="text-orange-400 text-[10px] mb-3 font-black">Pickup</p><input type="number" value={p} onChange={e=>setP(e.target.value)} className="ghost-input w-full text-5xl" placeholder="0" /></div>
-            </div>
-            <button onClick={handleReport} disabled={up} className="btn-main w-full py-7 text-2xl italic shadow-2xl relative overflow-hidden">
-               {up ? `SYNCING ${pct}%` : '🚀 提交數據'}
-               {up && <div className="absolute inset-0 bg-white/20" style={{width:`${pct}%`, transition:'width 0.3s'}}></div>}
-            </button>
-            <div className="flex gap-4 mt-12"><button onClick={()=>setLayer('gate')} className="flex-1 py-5 bg-slate-900 text-slate-500 text-[11px] font-black rounded-3xl border border-slate-800">安全登出</button></div>
-          </div>
-          {slip && (
-            <div className="fixed inset-0 bg-black/98 flex items-center justify-center p-4 z-[999] backdrop-blur-3xl animate-in zoom-in duration-500">
-              <div className="glass p-12 rounded-[5rem] w-full max-w-sm gold-glow">
-                 <div className="bg-white p-10 rounded-[3rem] text-black font-mono shadow-2xl mb-12">
-                    <h3 className="text-center font-black border-b-2 border-black pb-4 mb-10 italic text-2xl">營運數據對帳</h3>
-                    <div className="space-y-4 font-bold text-sm">
-                       <div className="flex justify-between"><span>正件配送件數</span><span>{u.total_del}</span></div>
-                       <div className="flex justify-between"><span>逆收回件件數</span><span>{u.total_pkp}</span></div>
-                       <div className="border-t-4 border-double border-black pt-6 mt-10 flex justify-between font-black text-3xl text-indigo-700 italic"><span>實領總額</span><span>${net.toLocaleString()}</span></div>
+        // --- 1. 登入介面 ---
+        function Gate({ onLogin, setLayer }) {
+            const [ph, setPh] = useState(""); const [pin, setPin] = useState("");
+            return (
+                <div className="h-screen flex flex-col items-center justify-center p-6 bg-slate-950 text-center">
+                    <div className="mb-16">
+                        <h1 className="text-8xl font-black text-white italic tracking-tighter mb-4 drop-shadow-2xl">在地物流</h1>
+                        <p className="text-amber-500 text-xs tracking-[0.6em] font-black uppercase border border-amber-500/20 px-6 py-2 rounded-full bg-amber-900/10">營運總部 v58.0</p>
                     </div>
-                 </div>
-                 <button onClick={async ()=>{
-                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({ salary_status:'signed' });
-                    showToast("✅ 電子簽收完成"); setSlip(false);
-                 }} className="btn-main w-full py-6 text-xl mb-10 shadow-2xl">✅ 確認無誤 · 電子簽收</button>
-                 <button onClick={()=>setSlip(false)} className="w-full text-slate-600 font-bold text-xs">Return Workbench</button>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
+                    <div className="w-full max-w-[340px] glass p-10 rounded-[4rem] gold-glow shadow-2xl">
+                        <input type="tel" className="premium-input text-center text-xl mb-4" placeholder="報帳手機號碼" value={ph} onChange={e=>setPh(e.target.value)} />
+                        <input type="password" className="premium-input text-center text-xl mb-10 tracking-[0.5em]" placeholder="登入安全碼" value={pin} onChange={e=>setPin(e.target.value)} maxLength={4}/>
+                        <button onClick={()=>onLogin(ph, pin)} className="btn-main w-full py-5 text-xl italic shadow-2xl">進入營運系統中心</button>
+                    </div>
+                    <div className="mt-10 grid grid-cols-2 gap-4 w-full max-w-[340px]">
+                        <button onClick={()=>setLayer('onboarding')} className="py-4 rounded-2xl glass border border-amber-500/20 text-amber-500 font-black text-xs">📋 線上應徵測驗</button>
+                        <button onClick={()=>setLayer('upload')} className="py-4 rounded-2xl glass border border-orange-500/20 text-orange-400 font-black text-xs">📁 報到資料建檔</button>
+                    </div>
+                </div>
+            );
+        }
 
-    // --- 4. 初試與建檔 ---
-    function Onboarding({ setLayer, db, appId }) {
-      const [step, setStep] = useState('info');
-      const [n, setN] = useState(""); const [p, setP] = useState("");
-      const [curr, setCurr] = useState(0); const [att, setAtt] = useState("良好");
-      const [qa, setQa] = useState(["","",""]);
-      const quiz = [
-        { q: "車禍事故流程？", o: ["回報主管並報警", "私下解決"] }, { q: "挪用 COD 貨款？", o: ["絕對禁止", "明天補回"] },
-        { q: "客戶沒接電？", o: ["帶回報異常", "丟門口"] }, { q: "包裹損壞？", o: ["通報主管", "照樣送"] },
-        { q: "無法準時上班？", o: ["提早請假", "不聯絡"] }, { q: "闖紅燈趕件？", o: ["絕不違規", "可以變通"] },
-        { q: "奧客應對？", o: ["專業冷靜", "吵回去"] }, { q: "送錯地址？", o: ["立即收回", "不理會"] },
-        { q: "出車前檢查？", o: ["油水巡檢", "直接開走"] }, { q: "可疑物品？", o: ["隔離通報", "拆開看"] }
-      ];
-      const finish = async () => {
-        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${p}`).set({ id:`p_${p}`, name:n, phone:p, pin:"0000", status:'interview_reviewing', ai_comment:att, qna_answer:qa.join('\n'), created_at:firebase.firestore.FieldValue.serverTimestamp(), total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10, labor_fee:0, health_fee:0, salary_status:'pending', work_status:'offline' });
-        setStep('done');
-      };
-      return (
-        <div className="h-screen flex flex-col bg-slate-950 p-6 font-black animate-in fade-in duration-700">
-          <header className="p-4 flex justify-between items-center"><button onClick={()=>setLayer('gate')} className="text-slate-600 text-xs font-black uppercase tracking-widest border-b border-slate-900">← Back</button><h2 className="text-white italic text-xl tracking-widest">初試考評系統</h2><div></div></header>
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
-             <div className="chat-bubble bubble-bot shadow-xl border border-white/5">歡迎應徵「在地物流」，請如實填寫資料。</div>
-             {step==='quiz' && <div className="chat-bubble bubble-bot shadow-xl border border-white/5">考核題目：{quiz[curr].q}</div>}
-          </div>
-          <div className="glass p-12 rounded-[4rem] gold-glow mb-4">
-            {step==='info' && <div className="space-y-6"><input className="premium-input text-center text-xl shadow-inner" placeholder="真實姓名" value={n} onChange={e=>setN(e.target.value)} /><input className="premium-input text-center text-xl shadow-inner" placeholder="手機號碼" value={p} onChange={e=>setP(e.target.value)} /><button onClick={()=>setStep('quiz')} className="btn-main w-full py-6 italic text-xl shadow-2xl">開始在線測驗</button></div>}
-            {step==='quiz' && <div className="space-y-4">{quiz[curr].o.map((o,i)=><button key={i} onClick={()=>{if(i===1)setAtt("需注意"); if(curr<9)setCurr(curr+1); else setStep('qna');}} className="w-full py-7 bg-slate-900 rounded-[2.5rem] text-amber-500 border border-slate-800 shadow-2xl text-xl font-black hover:bg-slate-800 transition">{o}</button>)}</div>}
-            {step==='qna' && <div className="space-y-4">{["1.簡述過往物流經驗","2.如何調適體力負擔","3.為何加入我們"].map((q,i)=><textarea key={i} className="premium-input h-28 text-sm bg-slate-900/80 shadow-inner" placeholder={q} onChange={e=>{const n=[...qa];n[i]=e.target.value;setQa(n);}} />)}<button onClick={finish} className="btn-main w-full py-6 italic text-xl">提交初試數據</button></div>}
-            {step==='done' && <button onClick={()=>setLayer('gate')} className="btn-main w-full py-6 italic text-xl shadow-2xl">測驗結束，請等候通知</button>}
-          </div>
-        </div>
-      );
-    }
+        // --- 2. 管理大盤 ---
+        function AdminHub({ ps, setLayer, db, appId, showToast }) {
+            const [slip, setSlip] = useState(null); const [vImg, setVImg] = useState(null);
+            const [tool, setTool] = useState(false); const [search, setSearch] = useState("");
+            const [f, setF] = useState("all"); const today = new Date().toLocaleDateString('en-CA');
+            
+            const filtered = ps.filter(p => (p.name?.includes(search) || p.phone?.includes(search)) && (f === 'int' ? p.status==='interview_reviewing' : p.status==='active'));
 
-    function UploadFlow({ setLayer, db, appId, storage, showToast }) {
-      const [ph, setPh] = useState(""); const [c, setC] = useState(null);
-      const [f, setF] = useState({ emName:"", emTel:"", emRel:"", bankCode:"", bankAcc:"", addrP:"", addrM:"" });
-      const [img, setImg] = useState(null); const [up, setUp] = useState(false);
-      const find = async () => {
-        const d = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${ph}`).get();
-        if(d.exists) setC(d.data()); else alert("身分不符，請先通過初試考核");
-      };
-      const submit = async () => {
-        if(!img || !f.bankAcc) return alert("合照與撥款帳號為必填");
-        setUp(true); const b = await shrink(img); const ref = storage.ref(`docs/${appId}/${c.id}`); await ref.put(b); const url = await ref.getDownloadURL();
-        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(c.id).update({ ...f, document_img:url, status:'active' });
-        showToast("✅ 建檔完成並已開通！"); setLayer('gate');
-      };
-      return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900 font-black">
-          <div className="glass w-full max-w-[480px] p-12 rounded-[5rem] gold-glow relative overflow-y-auto max-h-[95vh] shadow-3xl">
-            <button onClick={()=>setLayer('gate')} className="absolute top-10 left-10 text-slate-600 font-black uppercase text-xs border-b border-slate-800 pb-1">← 返回</button>
-            <h2 className="text-3xl text-center mb-12 text-white italic font-black">報到資料建檔門戶</h2>
-            {!c ? (
-              <div className="space-y-8"><input className="premium-input text-center text-xl shadow-inner" placeholder="輸入初試手機" value={ph} onChange={e=>setPh(e.target.value)} /><button onClick={find} className="btn-main w-full py-6 italic text-xl shadow-2xl">驗證建檔權限</button></div>
-            ) : (
-              <div className="space-y-4 text-[11px]">
-                <div><span>銀行匯款帳號</span><input className="premium-input" placeholder="需實體帳號以免退匯" onChange={e=>setF({...f, bankAcc:e.target.value})} /></div>
-                <label className="block border-2 border-dashed border-slate-700 p-10 rounded-[3rem] text-center bg-slate-950/50 cursor-pointer mt-6 shadow-inner">
-                  <p className="text-amber-500 mb-2 text-xs font-black uppercase tracking-widest">📸 五證一摺大合照</p>
-                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>setImg(e.target.files[0])} />
-                </label>
-                <button onClick={submit} className="btn-main w-full mt-12 py-7 italic text-2xl shadow-2xl">{up?'ENCRYPTING...':'確認送出報到並開通'}</button>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
+            const update = async (p, field, v) => {
+                const n = Number(v); if(isNaN(n)) return;
+                const b = db.batch(); const ref = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id);
+                b.update(ref, { [field]: n, salary_status: 'draft' });
+                if(field.includes('total')) b.set(ref.collection('history').doc(today), { [field==='total_del'?'del':'pkp']: n, date: today }, { merge: true });
+                await b.commit(); 
+            };
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+            const handleSend = async (p) => {
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).update({ salary_status: 'sent', salary_error_msg: '' });
+                showToast(`🚀 已向 ${p.name} 發送對帳單`);
+            };
+
+            const exportCSV = () => {
+                const h = ["姓名","銀行代碼","銀行帳號","實領金額"];
+                const rows = ps.filter(p=>p.status==='active').map(p=>[p.name, p.bankCode, p.bankAcc, (p.total_del*p.custom_del_price + p.total_pkp*p.custom_pkp_price + (p.custom_adj||0) - p.labor_fee - p.health_fee)]);
+                const csv = "\uFEFF" + [h, ...rows].map(e=>e.join(",")).join("\n");
+                const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+                const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download=`在地物流結算大表_${today}.csv`; link.click();
+                showToast("📥 CSV 報表已匯出"); setTool(false);
+            };
+
+            return (
+                <div className="p-4 lg:p-12 pb-32 max-w-[1400px] mx-auto">
+                    <div className="flex justify-between items-center mb-10 px-4">
+                        <h2 className="text-4xl font-black italic text-white tracking-tighter">指揮中心大盤</h2>
+                        <div className="flex gap-2">
+                             <button onClick={()=>setTool(true)} className="bg-sky-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-lg shadow-sky-900/40">🛠️ 管理工具</button>
+                             <button onClick={()=>setLayer('gate')} className="bg-slate-900 border border-slate-700 text-slate-500 px-5 py-2 rounded-2xl font-black text-xs">系統退出</button>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 mb-6 px-2">
+                        <input type="text" placeholder="🔍 快速搜尋搜尋夥伴姓名或電話..." className="premium-input text-sm p-4 flex-1 bg-white/5 border-none shadow-inner" value={search} onChange={e=>setSearch(e.target.value)} />
+                        <select className="bg-slate-800 text-white rounded-2xl px-6 font-black text-xs outline-none border border-slate-700 shadow-xl" value={f} onChange={e=>setF(e.target.value)}>
+                            <option value="all">全體現役夥伴</option>
+                            <option value="int">🆕 新人面試待核</option>
+                        </select>
+                    </div>
+
+                    <div className="glass rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5">
+                        <div className="overflow-x-auto">
+                            <table className="data-table">
+                                <thead>
+                                    <tr className="bg-black/60 text-amber-500">
+                                        <th className="text-left pl-8 py-4">夥伴資訊</th><th>當日實收對帳 (正/逆)</th><th>對帳發送</th><th>簽收狀態</th><th>實領預計</th><th>功能</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filtered.map(p => {
+                                        const net = (p.total_del * p.custom_del_price + p.total_pkp * p.custom_pkp_price + (p.custom_adj||0) - p.labor_fee - p.health_fee);
+                                        return (
+                                            <tr key={p.id} className="hover:bg-white/5 transition duration-200">
+                                                <td className="text-left pl-8 py-5">
+                                                    <div className="font-black text-white text-lg tracking-tight">{p.name} {p.report_img && <span className="cursor-pointer text-xl" onClick={()=>setVImg(p.report_img)}>📸</span>}</div>
+                                                    <div className="text-[10px] text-slate-500 font-mono mt-1">{p.phone?.replace(/(\d{3})(\d{4})(\d{3})/, "$1****$3")} <span className="cursor-pointer hover:text-amber-500 ml-1" onClick={()=>{navigator.clipboard.writeText(p.phone); showToast("已複製手機");}}>📋</span></div>
+                                                </td>
+                                                <td className="bg-amber-900/5 px-4">
+                                                    <input type="number" defaultValue={p.total_del} onBlur={e=>update(p,'total_del',e.target.value)} className={`ghost-input text-sky-400 mr-2 ${p.salary_status==='draft'?'border-amber-500':''}`} />
+                                                    <input type="number" defaultValue={p.total_pkp} onBlur={e=>update(p,'total_pkp',e.target.value)} className={`ghost-input text-orange-400 ${p.salary_status==='draft'?'border-amber-500':''}`} />
+                                                </td>
+                                                <td>
+                                                    {(p.salary_status === 'draft' || p.salary_status === 'error') ? (
+                                                        <button onClick={()=>handleSend(p)} className="bg-sky-500 text-black px-4 py-1.5 rounded-full font-black text-[10px] animate-pulse">🚀 發送對帳</button>
+                                                    ) : (
+                                                        <span className="text-slate-600 text-[10px] font-black uppercase">Sent ✓</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                   {p.salary_status === 'signed' ? <span className="tag bg-emerald-600 text-white shadow-lg">已簽收</span> : 
+                                                    p.salary_status === 'error' ? <span className="tag bg-rose-600 text-white animate-pulse shadow-lg">報錯中</span> : 
+                                                    p.salary_status === 'sent' ? <span className="text-sky-400 font-black italic">已送達</span> : <span className="text-slate-700 italic">編集中</span>}
+                                                </td>
+                                                <td className="text-amber-500 font-black text-2xl italic tracking-tighter">${net.toLocaleString()}</td>
+                                                <td>
+                                                   <div className="flex gap-2 justify-center">
+                                                      <button onClick={()=>setSlip(p)} className="bg-white/10 border border-white/20 text-white px-5 py-2 rounded-2xl font-black text-[10px] hover:bg-white hover:text-black transition">查看</button>
+                                                      {p.status==='interview_reviewing' && <button onClick={()=>db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).update({status:'pending_upload'})} className="bg-amber-500 text-black px-5 py-2 rounded-2xl font-black text-[10px] shadow-lg shadow-amber-900/30">准予報到</button>}
+                                                   </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {tool && (
+                        <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[999] animate-in zoom-in duration-300">
+                            <div className="glass p-12 rounded-[4rem] w-full max-w-sm gold-glow text-center">
+                                <h3 className="text-white font-black text-3xl mb-10 italic border-b border-white/10 pb-6">系統管理武器庫</h3>
+                                <div className="space-y-4">
+                                    <button onClick={async ()=>{
+                                        const dP = Number(prompt("全體正件單價：", "15")); const pP = Number(prompt("全體逆收單價：", "10"));
+                                        if(!dP || !pP) return; const b = db.batch(); ps.filter(p=>p.status==='active').forEach(p=>b.update(db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id),{custom_del_price:dP, custom_pkp_price:pP}));
+                                        await b.commit(); showToast("💰 價格批次調控成功"); setTool(false);
+                                    }} className="w-full py-5 bg-sky-950 text-sky-400 rounded-2xl font-black border border-sky-900 text-sm shadow-xl">💰 批次調整全站單價</button>
+                                    <button onClick={exportCSV} className="w-full py-5 bg-emerald-950 text-emerald-400 rounded-2xl font-black border border-emerald-900 text-sm shadow-xl">📥 產出網銀 CSV 媒體檔</button>
+                                    <button onClick={async ()=>{
+                                        if(!confirm("確定月末結清重置？今日數據將清零。")) return;
+                                        const b = db.batch(); ps.forEach(p => b.update(db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id), { total_del:0, total_pkp:0, salary_status:'pending', work_status:'offline', salary_error_msg:'' }));
+                                        await b.commit(); showToast("🧹 數據已重置結清"); setTool(false);
+                                    }} className="w-full py-5 bg-rose-950 text-rose-400 rounded-2xl font-black border border-rose-900 text-sm shadow-xl">🛑 月末結清 / 全場歸零</button>
+                                    <button onClick={()=>setTool(false)} className="text-slate-600 font-black uppercase text-xs tracking-widest mt-8 border-b border-slate-800">關閉管理面板</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {slip && (
+                        <div className="fixed inset-0 bg-black/98 flex items-center justify-center p-4 z-[999] backdrop-blur-2xl animate-in fade-in duration-400">
+                            <div className="glass p-10 rounded-[4rem] w-full max-w-sm gold-glow relative">
+                                <button onClick={()=>setSlip(null)} className="absolute top-10 right-10 text-slate-600 text-3xl font-black">✕</button>
+                                <div className="receipt rounded-3xl mb-8 overflow-hidden">
+                                    <div className="bg-slate-50 p-10 text-black font-mono shadow-inner">
+                                        <h3 className="text-center font-black text-3xl border-b-2 border-black pb-4 mb-8 italic">在地物流結算明細</h3>
+                                        <div className="space-y-3 font-bold text-xs">
+                                            <p className="flex justify-between border-b border-slate-200 pb-1"><span>夥伴姓名</span><span>{slip.name}</span></p>
+                                            <p className="flex justify-between border-b border-slate-200 pb-1"><span>撥款帳號</span><span>({slip.bankCode}) {slip.bankAcc}</span></p>
+                                            <div className="border-t-2 border-dashed border-slate-300 pt-6 mt-6 flex justify-between font-black text-2xl text-indigo-700 italic tracking-tighter"><span>實領總額</span><span>${(slip.total_del*slip.custom_del_price + slip.total_pkp*slip.custom_pkp_price + (slip.custom_adj||0) - slip.labor_fee - slip.health_fee).toLocaleString()}</span></div>
+                                        </div>
+                                        {slip.salary_error_msg && <div className="mt-8 p-5 bg-rose-600 text-white rounded-3xl text-sm font-black shadow-xl animate-pulse">報錯留言：{slip.salary_error_msg}</div>}
+                                    </div>
+                                </div>
+                                <button onClick={()=>window.print()} className="btn-main w-full py-6 text-xl shadow-2xl">🖨️ 正式單據列印存證</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {vImg && (
+                        <div className="fixed inset-0 bg-black/98 flex items-center justify-center p-4 z-[1000] animate-in zoom-in duration-300" onClick={()=>setVImg(null)}>
+                            <img src={vImg} className="max-w-full max-h-[90vh] rounded-[2.5rem] shadow-2xl border-4 border-white/10" />
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- 3. 夥伴工作台 ---
+        function DriverHub({ u, setLayer, db, appId, showToast, storage }) {
+            const [d, setD] = useState(""); const [p, setP] = useState("");
+            const [img, setImg] = useState(null); const [pre, setPre] = useState(null);
+            const [up, setUp] = useState(false); const [pct, setPct] = useState(0);
+            const [slip, setSlip] = useState(false); const [err, setErr] = useState("");
+
+            const handleReport = async () => {
+                if(!d || !p || !img) return alert("件數與單據拍照為必填項！"); setUp(true);
+                const bl = await shrink(img); const ref = storage.ref(`rep/${appId}/${u.id}_${Date.now()}`);
+                const t = ref.put(bl); t.on('state_changed', s => setPct(Math.round((s.bytesTransferred/s.totalBytes)*100)));
+                await t; const url = await ref.getDownloadURL();
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({
+                    total_del:Number(d), total_pkp:Number(p), last_report:{date:new Date().toLocaleDateString('en-CA')}, report_img:url, salary_status:'pending', work_status:'online'
+                });
+                showToast("🚀 數據已同步更新至指揮中心"); setUp(false); setPre(null); setImg(null); setD(""); setP("");
+            };
+
+            const sign = async (st) => {
+                if(st==='error' && !err) return alert("請簡單描述錯誤原因");
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({ salary_status:st, salary_error_msg:err });
+                showToast(st==='signed'?"✅ 電子簽收完成，感謝您的辛苦工作":"❌ 報錯已送達後台修正"); setSlip(false);
+            };
+
+            const net = (u.total_del*u.custom_del_price + u.total_pkp*u.custom_pkp_price + (u.custom_adj||0) - u.labor_fee - u.health_fee);
+
+            return (
+                <div className="h-screen flex items-center justify-center p-6 bg-black">
+                    <div className="w-full max-w-[440px] glass p-10 rounded-[5rem] gold-glow text-center relative overflow-y-auto max-h-[95vh] animate-in slide-in-from-bottom duration-700">
+                        <h2 className="text-5xl text-white italic font-black mb-1.5 tracking-tighter">夥伴工作台</h2>
+                        <p className="text-amber-500 font-black mb-10 tracking-[0.4em] uppercase text-[10px]">{u.name} 線上通訊中</p>
+
+                        {(u.salary_status === 'sent' || u.salary_status === 'signed' || u.salary_status === 'error') ? (
+                            <div className="bg-amber-900/20 border-2 border-amber-500/30 p-8 rounded-[3rem] mb-12 shadow-2xl">
+                                <p className="text-amber-500 font-black text-base mb-5 italic animate-pulse">💰 本期營運結算單已發布</p>
+                                <button onClick={()=>setSlip(true)} className="bg-amber-500 text-black px-10 py-3 rounded-full font-black text-xs hover:scale-105 transition shadow-lg shadow-amber-900/50">查看詳情並進行簽收</button>
+                                {u.salary_status==='signed' && <p className="text-emerald-400 text-[10px] mt-4 font-black">✓ 數據確認無誤，已完成簽核</p>}
+                                {u.salary_status==='error' && <p className="text-rose-400 text-[10px] mt-4 font-black animate-pulse">! 數據回報有誤，正在校正中</p>}
+                            </div>
+                        ) : (
+                            <div className="bg-slate-900/50 p-8 rounded-[3rem] mb-12 text-slate-500 text-xs font-black italic border border-slate-800">
+                                ⌛ 後台今日校帳中，發布後即可簽核
+                            </div>
+                        )}
+
+                        <label className="block mb-10 cursor-pointer border-2 border-dashed border-slate-700 p-10 rounded-[4rem] h-48 flex items-center justify-center relative overflow-hidden group hover:border-amber-500 transition-all duration-500 shadow-inner">
+                            {pre ? <img src={pre} className="absolute inset-0 w-full h-full object-cover opacity-60 scale-105" /> : <div className="text-center"><span className="text-6xl mb-4 block">📸</span><p className="text-amber-500 text-[11px] font-black uppercase tracking-widest">拍下今日配送單據</p></div>}
+                            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>{setImg(e.target.files[0]); setPre(URL.createObjectURL(e.target.files[0]));}} />
+                        </label>
+
+                        <div className="grid grid-cols-2 gap-6 mb-12">
+                            <div className="bg-slate-900/60 p-6 rounded-[2.5rem] border border-slate-800"><p className="text-sky-400 uppercase text-[9px] mb-3 font-black tracking-widest">今日配送</p><input type="number" value={d} onChange={e=>setD(e.target.value)} className="ghost-input w-full text-5xl" placeholder="0" /></div>
+                            <div className="bg-slate-900/60 p-6 rounded-[2.5rem] border border-slate-800"><p className="text-orange-400 uppercase text-[9px] mb-3 font-black tracking-widest">今日逆收</p><input type="number" value={p} onChange={e=>setP(e.target.value)} className="ghost-input w-full text-5xl" placeholder="0" /></div>
+                        </div>
+
+                        <button onClick={handleReport} disabled={up} className="btn-main w-full py-7 text-2xl italic shadow-2xl relative overflow-hidden">
+                            {up ? `數據同步中 ${pct}%` : '🚀 提交當日報單'}
+                            {up && <div className="absolute inset-0 bg-white/20" style={{width:`${pct}%`, transition:'width 0.3s'}}></div>}
+                        </button>
+                        
+                        <div className="flex gap-4 mt-12">
+                            <button onClick={async ()=>{if(confirm("確定申請今日緊急請假？")) {await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({work_status:'leave',total_del:0,total_pkp:0}); showToast("🔴 已通報請假狀態");}}} className="flex-1 py-5 bg-rose-950/40 text-rose-400 text-[11px] font-black rounded-3xl border border-rose-900 hover:bg-rose-900 transition shadow-lg">🔴 今日請假</button>
+                            <button onClick={()=>setLayer('gate')} className="flex-1 py-5 bg-slate-900 text-slate-500 text-[11px] font-black rounded-3xl border border-slate-800 shadow-lg">安全登出</button>
+                        </div>
+                    </div>
+
+                    {slip && (
+                        <div className="fixed inset-0 bg-black/98 flex items-center justify-center p-4 z-[999] backdrop-blur-3xl animate-in zoom-in duration-500">
+                            <div className="glass p-12 rounded-[5rem] w-full max-w-sm gold-glow">
+                                <div className="bg-white p-10 rounded-[3rem] text-black font-mono shadow-2xl mb-12">
+                                    <h3 className="text-center font-black border-b-2 border-black pb-4 mb-10 italic text-2xl">數據對帳明細</h3>
+                                    <div className="space-y-4 font-bold text-sm">
+                                        <div className="flex justify-between border-b border-gray-100 pb-2"><span>正件配送量</span><span>{u.total_del} 件</span></div>
+                                        <div className="flex justify-between border-b border-gray-100 pb-2"><span>逆收回件量</span><span>{u.total_pkp} 件</span></div>
+                                        <div className="flex justify-between text-rose-600"><span>勞健保代扣</span><span>-${u.labor_fee+u.health_fee}</span></div>
+                                        <div className="border-t-4 border-double border-black pt-6 mt-10 flex justify-between font-black text-3xl text-indigo-700 italic tracking-tighter"><span>實領總額</span><span>${net.toLocaleString()}</span></div>
+                                    </div>
+                                </div>
+                                <button onClick={()=>sign('signed')} className="btn-main w-full py-6 text-xl mb-10 shadow-2xl">✅ 數據正確 · 電子簽收</button>
+                                <div className="pt-10 border-t border-white/10">
+                                    <textarea placeholder="若數據有誤，請描述原因後退回..." className="premium-input text-xs h-28 mb-6 bg-slate-800 shadow-inner" value={err} onChange={e=>setErr(e.target.value)} />
+                                    <button onClick={()=>sign('error')} className="w-full bg-rose-950 text-rose-400 py-5 rounded-3xl font-black text-sm border border-rose-900 shadow-xl">❌ 數據錯誤 · 回報修正</button>
+                                </div>
+                                <button onClick={()=>setSlip(false)} className="w-full text-slate-600 font-bold text-xs py-10 uppercase tracking-widest">返回上一頁</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- 4. 初試與建檔 ---
+        function Onboarding({ setLayer, db, appId }) {
+            const [step, setStep] = useState('info'); const [n, setN] = useState(""); const [p, setP] = useState("");
+            const [curr, setCurr] = useState(0); const [att, setAtt] = useState("良好"); const [qa, setQa] = useState(["","",""]);
+            const quiz = [
+                { q: "配送中發生事故處置？", o: ["報警並立即通報主管", "明天再送"] }, { q: "挪用 COD 代收款？", o: ["絕對禁止", "明天補回"] },
+                { q: "客戶未接電話處置？", o: ["拍照報異常帶回", "丟門口"] }, { q: "理貨發現包裹損壞？", o: ["隔離報主管", "照常配送"] },
+                { q: "無法準時上班處置？", o: ["提早請假告知", "消失不聯絡"] }, { q: "紅燈趕件？", o: ["絕對遵守交通規則", "可以變通"] },
+                { q: "奧客應對？", o: ["專業冷靜不衝突", "吵回去"] }, { q: "送錯地址？", o: ["立即收回報主管", "裝死"] },
+                { q: "出車巡檢？", o: ["檢查油水胎壓", "直接開走"] }, { q: "疑似違禁品？", o: ["通報主管隔離", "自己拆開"] }
+            ];
+            const finish = async () => {
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${p}`).set({ id:`p_${p}`, name:n, phone:p, pin:"0000", status:'interview_reviewing', ai_comment:att, qna_answer:qa.join('\n'), created_at:firebase.firestore.FieldValue.serverTimestamp(), total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10, labor_fee:0, health_fee:0, dependents:0, salary_status:'pending', work_status:'offline' });
+                setStep('done');
+            };
+            return (
+                <div className="h-screen flex flex-col bg-slate-950 p-6 font-black animate-in fade-in duration-700">
+                    <header className="p-4 flex justify-between items-center"><button onClick={()=>setLayer('gate')} className="text-slate-600 text-xs font-black uppercase border-b border-slate-900 pb-1">← 返回首頁</button><h2 className="text-white italic text-xl tracking-widest">初試考核中心</h2><div></div></header>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                        <div className="chat-bubble bubble-bot shadow-xl">歡迎加入「在地物流」，請填寫真實資料以供審核核分。</div>
+                        {step==='quiz' && <div className="chat-bubble bubble-bot shadow-xl">觀念測驗：{quiz[curr].q}</div>}
+                    </div>
+                    <div className="glass p-12 rounded-[4rem] gold-glow mb-4 shadow-3xl">
+                        {step==='info' && <div className="space-y-6"><input className="premium-input text-center text-xl shadow-inner" placeholder="真實姓名" value={n} onChange={e=>setN(e.target.value)} /><input className="premium-input text-center text-xl shadow-inner" placeholder="手機號碼" value={p} onChange={e=>setP(e.target.value)} /><button onClick={()=>setStep('quiz')} className="btn-main w-full py-6 italic text-xl shadow-2xl">開始測驗</button></div>}
+                        {step==='quiz' && <div className="space-y-5">{quiz[curr].o.map((o,i)=><button key={i} onClick={()=>{if(i===1)setAtt("需注意"); if(curr<9)setCurr(curr+1); else setStep('qna');}} className="w-full py-8 bg-slate-900 rounded-[2.5rem] text-amber-500 border border-slate-800 shadow-2xl text-xl font-black hover:bg-slate-800 transition">{o}</button>)}</div>}
+                        {step==='qna' && <div className="space-y-4">{["1.簡述過往物流經驗？","2.如何調適體力勞務？","3.為什麼想加入我們？"].map((q,i)=><textarea key={i} className="premium-input h-28 text-sm bg-slate-900 shadow-inner" placeholder={q} onChange={e=>{const n=[...qa];n[i]=e.target.value;setQa(n);}} />)}<button onClick={finish} className="btn-main w-full py-6 italic text-xl shadow-xl">送出初試考卷</button></div>}
+                        {step==='done' && <button onClick={()=>setLayer('gate')} className="btn-main w-full py-6 italic text-xl shadow-2xl">完成，等候後台通知</button>}
+                    </div>
+                </div>
+            );
+        }
+
+        function UploadFlow({ setLayer, db, appId, storage, showToast }) {
+            const [ph, setPh] = useState(""); const [c, setC] = useState(null); const [up, setUp] = useState(false);
+            const [f, setF] = useState({ emName:"", emTel:"", emRel:"", bankCode:"", bankAcc:"", addrP:"", addrM:"" });
+            const [img, setImg] = useState(null);
+            const find = async () => {
+                const d = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${ph}`).get();
+                if(d.exists && (d.data().status==='pending_upload' || d.data().status==='active')) setC(d.data());
+                else alert("資格不符，請先通過初試審查");
+            };
+            const submit = async () => {
+                if(!img || !f.bankAcc) return alert("照片與撥款帳號為建檔必填項！"); setUp(true);
+                const b = await shrink(img); const ref = storage.ref(`docs/${appId}/${c.id}`); await ref.put(b); const url = await ref.getDownloadURL();
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(c.id).update({ ...f, document_img:url, status:'active' });
+                showToast("✅ 資料建檔完成，帳號已開通！"); setLayer('gate');
+            };
+            return (
+                <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900 font-black animate-in fade-in duration-500">
+                    <div className="glass w-full max-w-[480px] p-12 rounded-[5rem] gold-glow relative overflow-y-auto max-h-[95vh] shadow-3xl">
+                        <button onClick={()=>setLayer('gate')} className="absolute top-10 left-10 text-slate-600 font-black uppercase text-xs border-b border-slate-800 pb-1">← BACK</button>
+                        <h2 className="text-3xl text-center mb-12 text-white italic font-black underline underline-offset-8 decoration-amber-500/40">報到建檔中心</h2>
+                        {!c ? (
+                            <div className="space-y-8"><input className="premium-input text-center text-xl shadow-inner" placeholder="輸入初試登記手機" value={ph} onChange={e=>setPh(e.target.value)} /><button onClick={find} className="btn-main w-full py-6 italic text-xl shadow-2xl">驗證建檔權限</button></div>
+                        ) : (
+                            <div className="space-y-4 text-[11px]">
+                                <div className="flex gap-4"><div className="flex-1"><span>緊急聯絡姓名</span><input className="premium-input" placeholder="王小明" onChange={e=>setF({...f, emName:e.target.value})} /></div><div className="w-1/3"><span>關係</span><input className="premium-input" placeholder="父子" onChange={e=>setF({...f, emRel:e.target.value})} /></div></div>
+                                <div><span>聯絡人電話</span><input className="premium-input" placeholder="09xxxxxxxx" onChange={e=>setF({...f, emTel:e.target.value})} /></div>
+                                <div className="flex gap-4"><div className="w-1/3"><span>銀行代碼</span><input className="premium-input" placeholder="822" onChange={e=>setF({...f, bankCode:e.target.value})} /></div><div className="flex-1"><span>正式撥款帳號</span><input className="premium-input" placeholder="實體帳號以免退匯" onChange={e=>setF({...f, bankAcc:e.target.value})} /></div></div>
+                                <div><span>戶籍地址</span><input className="premium-input" placeholder="縣市路段房號" onChange={e=>setF({...f, addrP:e.target.value})} /></div>
+                                <div><span>現居住地址</span><input className="premium-input" placeholder="若同戶籍請填同上" onChange={e=>setF({...f, addrM:e.target.value})} /></div>
+                                <label className="block border-2 border-dashed border-slate-700 p-10 rounded-[3rem] text-center bg-slate-950/50 cursor-pointer hover:border-amber-500 transition mt-6 shadow-inner">
+                                    <p className="text-amber-500 mb-2 text-xs font-black uppercase tracking-widest">📸 拍攝五證一摺合照</p>
+                                    <p className="text-slate-600 text-[9px] mb-4">包含身分證正反、駕照、行照、存摺封面</p>
+                                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e=>setImg(e.target.files[0])} />
+                                    {img && <p className="text-emerald-400 font-black animate-pulse tracking-widest">數據已加密 ✓</p>}
+                                </label>
+                                <button onClick={submit} className="btn-main w-full mt-12 py-7 italic text-2xl shadow-3xl shadow-amber-900/30">確認送出報到建檔</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
