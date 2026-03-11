@@ -157,7 +157,7 @@
     }
 
     // ==========================================
-    // 1. 入口層 (維持原樣)
+    // 1. 入口層
     // ==========================================
     function Gate({ onLogin, announcement, setLayer }) {
       const [ph, setPh] = useState("");
@@ -201,12 +201,12 @@
     }
 
     // ==========================================
-    // 2. 指揮中心 (加入 修改、刪除、CSV匯出 功能)
+    // 2. 指揮中心
     // ==========================================
     function AdminHub({ partners, onLogout, showSensitive, setShowSensitive, statusFilter, setStatusFilter, searchQuery, setSearchQuery, db, appId, showToast, announcement }) {
       const [historyData, setHistoryData] = useState(null);
-      const [editProfile, setEditProfile] = useState(null); // 🎯 控制修改人員視窗
-      const [showTools, setShowTools] = useState(false); // 控制工具選單
+      const [editProfile, setEditProfile] = useState(null);
+      const [showTools, setShowTools] = useState(false);
 
       const getToday = () => new Date().toLocaleDateString('en-CA');
 
@@ -254,11 +254,10 @@
         setHistoryData({ name: p.name, data: snap.docs.map(d => d.data()) });
       };
 
-      // 🎯 網銀匯出功能 (產生 CSV)
       const exportCSV = () => {
         const headers = "夥伴姓名,手機號碼,實領金額\n";
         const rows = filteredPartners.map(p => `${p.name},${p.phone},${calculateNet(p)}`).join("\n");
-        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), headers + rows], { type: 'text/csv;charset=utf-8;' }); // 加上 BOM 讓 Excel 正常讀取中文
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), headers + rows], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -267,7 +266,6 @@
         showToast("📥 網銀結算表已下載！");
       };
 
-      // 🎯 儲存修改的人事資料
       const saveProfileEdit = async () => {
         const newName = document.getElementById('edit_name').value;
         const newPhone = document.getElementById('edit_phone').value;
@@ -280,7 +278,6 @@
         showToast("✅ 人事檔案修改成功");
       };
 
-      // 🎯 刪除人員功能
       const deletePartner = async () => {
         if(window.confirm(`⚠️ 嚴重警告：確定要永久刪除夥伴【${editProfile.name}】的資料嗎？刪除後無法復原！`)) {
           await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(editProfile.id).delete();
@@ -296,7 +293,6 @@
             <div className="flex flex-wrap gap-2 relative">
               <button onClick={handlePublish} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md">💬 公告</button>
               
-              {/* ⚙️ 工具選單 */}
               <div className="relative">
                 <button onClick={() => setShowTools(!showTools)} className="bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md">⚙️ 工具</button>
                 {showTools && (
@@ -307,9 +303,7 @@
                 )}
               </div>
 
-              {/* 📥 網銀匯出 (已寫入功能) */}
               <button onClick={exportCSV} className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md">📥 匯出網銀</button>
-              
               <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-4 py-2 rounded-xl text-xs font-black border border-rose-500/20 shadow-md">退出系統</button>
             </div>
           </div>
@@ -382,7 +376,6 @@
                         <div className="flex gap-2 justify-center flex-wrap w-32">
                           <button onClick={() => viewHistory(p)} className="bg-slate-800 text-white px-2 py-1.5 rounded-lg text-[10px] font-black shadow-lg">📜 歷史</button>
                           <button onClick={() => window.print()} className="bg-amber-600 text-black px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">🖨️ 列印</button>
-                          {/* 🎯 這裡原本只跳提示的檔案按鈕，現在會打開 修改/刪除 介面 */}
                           <button onClick={() => setEditProfile(p)} className="bg-indigo-900/80 text-indigo-200 px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">📁 檔案</button>
                         </div>
                       </td>
@@ -393,7 +386,6 @@
             </table>
           </div>
 
-          {/* 🎯 修改與刪除的專屬面板 (點擊📁 檔案彈出) */}
           {editProfile && (
             <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[400] flex items-center justify-center p-4">
               <div className="glass-panel w-full max-w-sm rounded-[2rem] p-6 gold-border relative">
@@ -447,7 +439,7 @@
     }
 
     // ==========================================
-    // 3. 司機工作台 (維持原樣，包含歷史寫入)
+    // 3. 司機工作台
     // ==========================================
     function DriverHub({ partners, onLogout, user, appId, db, showToast }) {
       const [delCount, setDelCount] = useState("");
@@ -514,7 +506,7 @@
     }
 
     // ==========================================
-    // 4. AI 面試流程 (維持截圖 1 狀態)
+    // 4. AI 面試流程
     // ==========================================
     function OnboardingFlow({ setLayer, db, appId, showToast }) {
       const [messages, setMessages] = useState([{ type: 'bot', text: "您好！我是營運 AI 助手。在正式開始前，請先告訴我您的姓名與手機號碼。" }]);
