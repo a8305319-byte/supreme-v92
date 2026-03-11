@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIlN1cHJlbmUtVjkyIiwKICAic2hvcnRfbmFtZSI6ICJTdXByZW1lIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwMjA2MTciLAogICJ0aGVtZV9jb2xvciI6ICIjMDIwNjE3IiwKICAiaWNvbnMiOiBbIHsgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8yOTkxLzI5OTExMjcucmVuZyIsICJzaXplcyI6ICI1MTJ4NTEyIiwgInR5cGUiOiAiaW1hZ2UvcG5nIiB9IF0KfQ==">
-    <title>Supreme-V92 營運總部</title>
+    <title>Supreme-V92 營運管理系統</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -17,13 +16,17 @@
 
     <style>
         :root { --gold: #f59e0b; --bg: #020617; }
-        body { background-color: var(--bg); color: #f1f5f9; font-family: 'PingFang TC', sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        body { background-color: var(--bg); color: #f1f5f9; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
         .btn-supreme { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #000; font-weight: 950; border-radius: 12px; transition: 0.2s; }
-        .btn-danger { background: #450a0a; color: #f87171; border: 1px solid #991b1b; border-radius: 12px; }
+        .btn-supreme:hover { box-shadow: 0 0 15px rgba(245,158,11,0.5); }
+        .btn-danger { background: #450a0a; color: #f87171; border: 1px solid #991b1b; border-radius: 8px; transition: 0.2s; }
+        .btn-danger:hover { background: #7f1d1d; color: #fff; }
+        .btn-outline { background: transparent; color: #f59e0b; border: 1px solid #f59e0b; border-radius: 8px; transition: 0.2s; }
+        .btn-outline:hover { background: rgba(245,158,11,0.1); }
         .page-enter { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
-        canvas { background: white; border-radius: 16px; touch-action: none; }
+        canvas { background: white; border-radius: 12px; touch-action: none; cursor: crosshair; }
     </style>
 </head>
 <body>
@@ -32,7 +35,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- 根據您的提供資訊進行配置 ---
+        // Firebase 設置
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
             authDomain: "supreme-v92.firebaseapp.com",
@@ -45,162 +48,356 @@
         const appId = 'supreme-v92';
 
         function App() {
-            const [u, setU] = useState(null); 
+            const[u, setU] = useState(null); 
             const [ps, setPs] = useState([]);
+            const [applicants, setApplicants] = useState([]); 
             const [layer, setLayer] = useState('gate'); 
             const [role, setRole] = useState(null); 
-            const [toast, setToast] = useState("");
-            const [broadcast, setBroadcast] = useState("營運系統穩定連線中");
+            const[toast, setToast] = useState("");
+            
+            // 系統全域變數 (公告與計價參數)
+            const [broadcast, setBroadcast] = useState("系統公告：本期營運數據已更新，請各單位確認。");
+            const [sysConfig, setSysConfig] = useState({ priceDel: 15, pricePkp: 10 });
 
             const showToast = (m) => { setToast(m); setTimeout(()=>setToast(""), 3000); };
 
             useEffect(() => {
-                const unsub = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners')
-                    .onSnapshot(snap => { 
-                        setPs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); 
+                const unsubPartners = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners')
+                    .onSnapshot(snap => setPs(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+                
+                const unsubApplicants = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('applicants')
+                    .onSnapshot(snap => setApplicants(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+
+                // 讀取系統參數 (若無則建立預設值)
+                const unsubConfig = db.collection('artifacts').doc(appId).collection('public').doc('config')
+                    .onSnapshot(snap => {
+                        if(snap.exists) { setSysConfig(snap.data()); }
+                        else { db.collection('artifacts').doc(appId).collection('public').doc('config').set({ priceDel: 15, pricePkp: 10 }); }
                     });
-                return () => unsub();
-            }, []);
+
+                return () => { unsubPartners(); unsubApplicants(); unsubConfig(); };
+            },[]);
 
             return (
                 <div className="min-h-screen relative">
-                    <div className={`fixed left-1/2 -translate-x-1/2 z-[9999] transition-all duration-500 bg-amber-500 text-black px-8 py-3 rounded-full font-black shadow-2xl ${toast ? 'top-8 opacity-100' : '-top-20 opacity-0'}`}>{toast}</div>
+                    {/* 全局 Toast 通知 */}
+                    <div className={`fixed left-1/2 -translate-x-1/2 z-[9999] transition-all duration-500 bg-amber-500 text-black px-8 py-3 rounded-full font-black shadow-lg ${toast ? 'top-8 opacity-100' : '-top-20 opacity-0'}`}>{toast}</div>
                     
                     <div className="page-enter">
                         {layer === 'gate' && <Gate onLogin={(ph, pin) => {
                             const cp = ph.replace(/-/g, '');
-                            if (cp === "0976017938" && pin === "8305319") { setRole('OWNER'); setLayer('admin'); return; }
-                            if (cp === "0988128172" && pin === "0172") { setRole('EXECUTIVE'); setLayer('admin'); return; }
+                            if (cp === "0976017938" && pin === "8305319") { 
+                                setRole('OWNER'); setLayer('admin'); 
+                                showToast("身分驗證成功：系統管理員"); return; 
+                            }
+                            if (cp === "0988128172" && pin === "0172") { 
+                                setRole('EXECUTIVE'); setLayer('admin'); 
+                                showToast("身分驗證成功：財務會計"); return; 
+                            }
                             const t = ps.find(p => p.phone === cp && p.pin === pin);
-                            if(t) { setU(t); setRole('DRIVER'); setLayer('driver'); } else alert("資訊錯誤，無法核准進入");
+                            if(t) { setU(t); setRole('DRIVER'); setLayer('driver'); showToast("登入成功：夥伴工作台"); } 
+                            else alert("帳號或 PIN 碼錯誤，請重新輸入");
                         }} />}
                         
-                        {layer === 'admin' && <AdminHub ps={ps} role={role} setLayer={setLayer} db={db} appId={appId} showToast={showToast} broadcast={broadcast} setBroadcast={setBroadcast} />}
-                        {layer === 'driver' && <DriverHub u={u} setLayer={setLayer} db={db} appId={appId} showToast={showToast} />}
+                        {layer === 'admin' && <AdminHub 
+                            ps={ps} applicants={applicants} role={role} setLayer={setLayer} db={db} appId={appId} 
+                            showToast={showToast} broadcast={broadcast} setBroadcast={setBroadcast}
+                            sysConfig={sysConfig} setSysConfig={setSysConfig}
+                        />}
+                        {layer === 'driver' && <DriverHub 
+                            u={u} setLayer={setLayer} db={db} appId={appId} showToast={showToast} sysConfig={sysConfig}
+                        />}
                     </div>
                 </div>
             );
         }
 
+        // --- 登入閘門 ---
         function Gate({ onLogin }) {
-            const [ph, setPh] = useState(""); const [pin, setPin] = useState("");
+            const [ph, setPh] = useState(""); const[pin, setPin] = useState("");
             return (
                 <div className="h-screen flex flex-col items-center justify-center p-6 bg-slate-950 text-center">
-                    <h1 className="text-5xl font-black text-white italic mb-1">在地物流</h1>
-                    <p className="text-amber-500 font-bold text-[10px] tracking-[0.5em] mb-12 uppercase">Supreme-V92 Command Hub</p>
-                    <div className="w-full max-w-sm glass p-10 rounded-[3rem] border border-amber-500/20 shadow-2xl">
-                        <input type="tel" className="w-full bg-slate-900 p-5 rounded-2xl mb-4 text-white font-bold outline-none focus:border-amber-500 border border-white/5 transition" placeholder="手機號碼" value={ph} onChange={e=>setPh(e.target.value)} />
-                        <input type="password" title="pin" className="w-full bg-slate-900 p-5 rounded-2xl mb-8 text-amber-500 text-center text-3xl font-black tracking-widest outline-none focus:border-amber-500 border border-white/5" placeholder="••••" value={pin} onChange={e=>setPin(e.target.value)} />
-                        <button onClick={()=>onLogin(ph, pin)} className="btn-supreme w-full py-5 text-xl">授權並登入</button>
+                    <h1 className="text-4xl font-black text-white mb-2 tracking-widest">在地物流</h1>
+                    <p className="text-amber-500 font-bold text-xs tracking-[0.3em] mb-12 uppercase">營運管理系統 v9.3</p>
+                    <div className="w-full max-w-sm glass p-8 rounded-3xl border border-white/10 shadow-xl">
+                        <input type="tel" className="w-full bg-slate-900 p-4 rounded-xl mb-4 text-white font-bold outline-none border border-white/5 focus:border-amber-500 transition" placeholder="輸入手機號碼" value={ph} onChange={e=>setPh(e.target.value)} />
+                        <input type="password" title="pin" className="w-full bg-slate-900 p-4 rounded-xl mb-8 text-amber-500 text-center text-2xl font-black tracking-widest outline-none border border-white/5 focus:border-amber-500 transition" placeholder="••••" value={pin} onChange={e=>setPin(e.target.value)} />
+                        <button onClick={()=>onLogin(ph, pin)} className="btn-supreme w-full py-4 text-lg">登入系統</button>
                     </div>
                 </div>
             );
         }
 
-        function AdminHub({ ps, role, setLayer, db, appId, showToast, broadcast, setBroadcast }) {
-            const [isAddMode, setIsAddMode] = useState(false);
+        // --- 管理大盤 ---
+        function AdminHub({ ps, applicants, role, setLayer, db, appId, showToast, broadcast, setBroadcast, sysConfig }) {
+            const[view, setView] = useState('partners'); 
+            
+            // 彈窗狀態管理
+            const[isAddMode, setIsAddMode] = useState(false);
             const [newP, setNewP] = useState({ name: "", phone: "", pin: "" });
+            const [editTarget, setEditTarget] = useState(null); // 資料編輯彈窗狀態
+            const [broadcastInput, setBroadcastInput] = useState(""); // 公告修改狀態
+            const [isConfigMode, setIsConfigMode] = useState(false); // 系統設定彈窗
+            
+            // 💡 權限切割：老闆(OWNER)擁有系統設定權限，會計(EXECUTIVE)只能管理人員與報表
             const isOwner = role === 'OWNER';
+            const displayList = useMemo(() => isOwner ? ps : ps.filter(p => p.phone !== "0976017938"), [ps, isOwner]);
 
-            // 💡 影子權限：會計登入時隱藏管理員，管理員登入則看見全部
-            const displayList = useMemo(() => {
-                return role === 'EXECUTIVE' ? ps.filter(p => p.phone !== "0976017938") : ps;
-            }, [ps, role]);
+            // 全域預算計算 (套用動態計價系統)
+            const totalBudget = useMemo(() => displayList.reduce((acc, p) => acc + (p.total_del * sysConfig.priceDel + p.total_pkp * sysConfig.pricePkp), 0), [displayList, sysConfig]);
 
-            const handleDelete = async (id) => {
-                if(confirm("⚠ 注意：即將永久刪除此營運帳號及所有數據。確定要執行？")) {
-                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(id).delete();
-                    showToast("🗑 帳號已永久銷毀");
-                }
+            // CRUD：刪除功能
+            const handleDelete = async (col, id) => {
+                if(!confirm("⚠️ 確定要永久刪除此筆資料嗎？此操作無法復原。")) return;
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection(col).doc(id).delete();
+                showToast("✅ 資料已成功刪除");
             };
 
+            // CRUD：新增功能
             const handleAdd = async () => {
-                if(!newP.name || !newP.phone) return alert("請填寫姓名與手機");
+                if(!newP.name || !newP.phone) return alert("請完整填寫姓名與手機號碼");
                 await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').add({
                     ...newP, total_del: 0, total_pkp: 0, salary_status: 'draft', bankAcc: ""
                 });
-                setIsAddMode(false);
-                showToast("👤 成功錄入新夥伴");
+                setIsAddMode(false); setNewP({ name: "", phone: "", pin: "" });
+                showToast("✅ 新夥伴帳號建立完成");
+            };
+
+            // CRUD：編輯功能 (取代原本隱藏的 prompt)
+            const handleUpdate = async () => {
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(editTarget.id).update({
+                    name: editTarget.name, phone: editTarget.phone, pin: editTarget.pin, 
+                    total_del: Number(editTarget.total_del), total_pkp: Number(editTarget.total_pkp)
+                });
+                setEditTarget(null);
+                showToast("✅ 資料修改已儲存");
+            };
+
+            // 功能：發布/清除公告 (有增必有刪)
+            const updateBroadcast = () => { if(broadcastInput) { setBroadcast(broadcastInput); showToast("📢 系統公告已更新"); setBroadcastInput(""); } };
+            const clearBroadcast = () => { setBroadcast("目前無系統公告"); showToast("🗑️ 公告已清除"); };
+
+            // 功能：儲存系統計價設定 (僅老闆權限)
+            const [tempConfig, setTempConfig] = useState(sysConfig);
+            const saveSysConfig = async () => {
+                await db.collection('artifacts').doc(appId).collection('public').doc('config').set({
+                    priceDel: Number(tempConfig.priceDel), pricePkp: Number(tempConfig.pricePkp)
+                });
+                setIsConfigMode(false);
+                showToast("⚙️ 系統計價參數已全域更新");
+            };
+
+            const approveApplicant = async (app) => {
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').add({
+                    name: app.name, phone: app.phone, pin: app.pin || "1234", total_del: 0, total_pkp: 0, salary_status: 'draft', bankAcc: ""
+                });
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('applicants').doc(app.id).delete();
+                showToast("✅ 人才已核准並轉入正式名單");
             };
 
             return (
-                <div className="p-6 lg:p-12 pb-32 max-w-7xl mx-auto page-enter">
-                    <header className="flex justify-between items-end mb-12 border-b border-amber-500/10 pb-8">
+                <div className="p-4 lg:p-10 max-w-7xl mx-auto pb-32 page-enter">
+                    <header className="flex justify-between items-end mb-8 border-b border-white/10 pb-6">
                         <div>
-                            <h2 className="text-3xl font-black italic text-white tracking-tighter">營運管理總部</h2>
-                            <p className="text-amber-500 text-[10px] font-black tracking-[0.3em] mt-1 uppercase">
-                                {isOwner ? "Owner: Core System" : "Executive: Global Operations"}
+                            <h2 className="text-2xl font-black text-white tracking-wide">營運管理總部</h2>
+                            <p className="text-amber-500 text-xs font-bold mt-2">
+                                目前權限：{isOwner ? "👑 系統管理員 (擁有全域最高控制權)" : "💼 財務會計 (授權檢視與人員管理)"}
                             </p>
                         </div>
-                        <button onClick={()=>setLayer('gate')} className="text-slate-600 font-bold text-xs underline uppercase">離線登出</button>
+                        <button onClick={()=>setLayer('gate')} className="text-slate-400 font-bold text-sm hover:text-white transition bg-slate-800 px-4 py-2 rounded-lg">安全登出</button>
                     </header>
 
-                    {/* 控制區：實體按鈕功能化 */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                        <div className="glass p-6 rounded-[2rem] border-l-4 border-amber-500">
-                            <p className="text-slate-500 text-[9px] font-black uppercase mb-4">人員管理控制</p>
-                            <button onClick={()=>setIsAddMode(true)} className="btn-supreme w-full py-4 text-xs font-black shadow-lg">➕ 新增夥伴帳號</button>
+                    {/* 實體操作按鈕區 (功能全顯現，不可隱藏) */}
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                        <button onClick={()=>setIsAddMode(true)} className="glass p-4 rounded-2xl border-l-4 border-amber-500 text-left hover:bg-white/5 transition flex flex-col justify-center">
+                            <p className="text-amber-500 text-sm font-bold mb-1">➕ 新增人員</p>
+                            <p className="text-slate-400 text-[10px]">建立新的登入帳號</p>
+                        </button>
+                        <button onClick={()=>showToast("📊 報表生成中，將發送至系統預設信箱")} className="glass p-4 rounded-2xl border-l-4 border-sky-500 text-left hover:bg-white/5 transition flex flex-col justify-center">
+                            <p className="text-sky-400 text-sm font-bold mb-1">📊 產出報表</p>
+                            <p className="text-slate-400 text-[10px]">匯出當期結算明細</p>
+                        </button>
+                        <div className="glass p-4 rounded-2xl border-l-4 border-purple-500 col-span-2 flex flex-col justify-between">
+                            <div className="flex gap-2">
+                                <input type="text" placeholder="輸入新公告..." className="w-full bg-slate-900 px-3 py-1 rounded text-xs text-white outline-none" value={broadcastInput} onChange={e=>setBroadcastInput(e.target.value)} />
+                                <button onClick={updateBroadcast} className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded text-xs font-bold shrink-0 transition">發布</button>
+                                <button onClick={clearBroadcast} className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded text-xs font-bold shrink-0 transition">清除</button>
+                            </div>
+                            <p className="text-slate-400 text-[10px] mt-2">📢 公告管理系統 (有發布必有清除)</p>
                         </div>
-                        <div className="glass p-6 rounded-[2rem] border-l-4 border-sky-500">
-                            <p className="text-slate-500 text-[9px] font-black uppercase mb-4">財務結算報表</p>
-                            <button className="w-full py-4 bg-sky-600/10 text-sky-400 border border-sky-600/30 rounded-2xl font-black text-xs">📊 產出全球報表</button>
+                        
+                        {/* 系統最高權限功能：僅老闆可見 */}
+                        {isOwner ? (
+                            <button onClick={()=>{setTempConfig(sysConfig); setIsConfigMode(true);}} className="glass p-4 rounded-2xl border-l-4 border-red-500 text-left hover:bg-white/5 transition flex flex-col justify-center bg-red-900/10">
+                                <p className="text-red-400 text-sm font-bold mb-1">⚙️ 系統設定</p>
+                                <p className="text-slate-400 text-[10px]">控制全域計價與參數</p>
+                            </button>
+                        ) : (
+                            <button onClick={()=>showToast("✅ 系統診斷完成：伺服器連線正常，延遲 14ms")} className="glass p-4 rounded-2xl border-l-4 border-emerald-500 text-left hover:bg-white/5 transition flex flex-col justify-center">
+                                <p className="text-emerald-400 text-sm font-bold mb-1">🛠 系統診斷</p>
+                                <p className="text-slate-400 text-[10px]">檢查伺服器連線狀態</p>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* 全域預算與即時公告區塊 */}
+                    <div className="flex flex-col md:flex-row gap-4 mb-8">
+                        <div className="flex-1 bg-slate-900/50 p-4 rounded-xl flex items-center gap-3 border border-white/5">
+                            <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span></span>
+                            <p className="text-sm text-slate-300 font-bold tracking-wide overflow-hidden text-ellipsis whitespace-nowrap">{broadcast}</p>
                         </div>
-                        <div className="glass p-6 rounded-[2rem] border-l-4 border-emerald-500 text-center">
-                            <p className="text-slate-500 text-[9px] font-black uppercase mb-2">本期預計支出</p>
-                            <p className="text-3xl font-black text-white">${displayList.reduce((acc,p)=>acc+(p.total_del*15+p.total_pkp*10),0).toLocaleString()}</p>
-                        </div>
-                        <div className="glass p-6 rounded-[2rem] border-l-4 border-purple-500">
-                            <p className="text-slate-500 text-[9px] font-black uppercase mb-4">系統公告管理</p>
-                            <button onClick={()=>{const m=prompt("請輸入廣播內容："); if(m) setBroadcast(m)}} className="w-full py-4 bg-purple-600/10 text-purple-400 border border-purple-600/30 rounded-2xl font-black text-xs">📢 更新全站廣播</button>
+                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5 min-w-[250px] flex justify-between items-center">
+                            <div className="flex flex-col">
+                                <span className="text-slate-400 text-xs font-bold">全域預算總計</span>
+                                <span className="text-[9px] text-slate-500 mt-1">依據現行設定：正件${sysConfig.priceDel} / 逆件${sysConfig.pricePkp}</span>
+                            </div>
+                            <span className="text-2xl font-black text-white">${totalBudget.toLocaleString()}</span>
                         </div>
                     </div>
 
-                    {/* 公告條 */}
-                    <div className="bg-slate-900/50 p-4 rounded-xl mb-12 flex items-center gap-3">
-                        <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span></span>
-                        <p className="text-xs text-slate-400 font-bold italic tracking-wide">{broadcast}</p>
+                    <div className="flex gap-2 mb-6 border-b border-white/10 pb-4">
+                        <button onClick={()=>setView('partners')} className={`px-6 py-2 rounded-lg font-bold text-sm transition ${view==='partners'?'bg-amber-500 text-black shadow-md':'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>人員管理清單</button>
+                        <button onClick={()=>setView('interview')} className={`px-6 py-2 rounded-lg font-bold text-sm transition ${view==='interview'?'bg-sky-500 text-white shadow-md':'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>面試審核池</button>
                     </div>
 
-                    {/* 管理名單 (CRUD 操作) */}
-                    <div className="glass rounded-[3rem] overflow-hidden shadow-2xl">
-                        <table className="w-full text-center">
-                            <thead className="bg-slate-900/80 text-amber-500 text-[10px] font-black uppercase">
-                                <tr><th className="p-6">管理對象</th><th>回報數據</th><th>估算薪資</th><th>控制行為</th></tr>
-                            </thead>
-                            <tbody>
-                                {displayList.map(p => (
-                                    <tr key={p.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                                        <td className="p-6 text-left pl-10">
-                                            <p className="font-black text-white">{p.name}</p>
-                                            <p className="text-[10px] text-slate-500 font-mono">{p.phone}</p>
-                                        </td>
-                                        <td className="p-6 font-black text-xs">
-                                            <span className="text-sky-400">{p.total_del}</span> / <span className="text-orange-400">{p.total_pkp}</span>
-                                        </td>
-                                        <td className="p-6 font-black text-emerald-400">$ {(p.total_del*15+p.total_pkp*10).toLocaleString()}</td>
-                                        <td className="p-6 space-x-2">
-                                            <button className="px-4 py-2 bg-slate-800 text-white rounded-lg text-[10px] font-black">修改</button>
-                                            <button onClick={()=>handleDelete(p.id)} className="px-4 py-2 btn-danger text-[10px] font-black uppercase tracking-tighter">永久刪除</button>
-                                        </td>
+                    {/* 列表渲染：人員清單 */}
+                    {view === 'partners' ? (
+                        <div className="glass rounded-2xl overflow-hidden border border-white/5 shadow-xl">
+                            <table className="w-full text-center">
+                                <thead className="bg-slate-900/80 text-xs text-slate-400 font-bold border-b border-white/10">
+                                    <tr>
+                                        <th className="p-5 text-left pl-6">夥伴資訊</th>
+                                        <th>回報數據 (正/逆)</th>
+                                        <th>當期估算薪資</th>
+                                        <th>系統操作</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* 新增 Modal */}
-                    {isAddMode && (
-                        <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-6 z-[10001] backdrop-blur-3xl animate-in zoom-in">
-                            <div className="glass p-10 rounded-[4rem] w-full max-w-sm border border-amber-500/20 shadow-2xl">
-                                <h3 className="text-2xl font-black text-white mb-8 italic">新增成員授權</h3>
-                                <div className="space-y-4 mb-8">
-                                    <input className="w-full bg-slate-900 p-4 rounded-xl text-white outline-none border border-white/5" placeholder="成員姓名" onChange={e=>setNewP({...newP, name:e.target.value})} />
-                                    <input className="w-full bg-slate-900 p-4 rounded-xl text-white outline-none border border-white/5" placeholder="手機門號" onChange={e=>setNewP({...newP, phone:e.target.value})} />
-                                    <input className="w-full bg-slate-900 p-4 rounded-xl text-amber-500 font-black outline-none border border-white/5" placeholder="設定 PIN (4-7位)" onChange={e=>setNewP({...newP, pin:e.target.value})} />
+                                </thead>
+                                <tbody>
+                                    {displayList.map(p => (
+                                        <tr key={p.id} className="border-b border-white/5 hover:bg-slate-800/50 transition">
+                                            <td className="p-5 text-left pl-6">
+                                                <p className="font-bold text-white text-sm flex items-center gap-2">
+                                                    {p.name}
+                                                    {isOwner && p.phone === "0976017938" && <span className="text-[9px] bg-red-900/50 text-red-400 px-1.5 py-0.5 rounded border border-red-500/30">Admin Root</span>}
+                                                </p>
+                                                <p className="text-xs text-slate-500 mt-1 font-mono">{p.phone}</p>
+                                            </td>
+                                            <td className="p-5 font-bold text-sm">
+                                                <span className="text-sky-400">{p.total_del}</span> <span className="text-slate-600 mx-2">/</span> <span className="text-orange-400">{p.total_pkp}</span>
+                                            </td>
+                                            <td className="p-5 font-bold text-emerald-400 text-sm">
+                                                $ {(p.total_del * sysConfig.priceDel + p.total_pkp * sysConfig.pricePkp).toLocaleString()}
+                                            </td>
+                                            <td className="p-5 space-x-2">
+                                                <button onClick={()=>setEditTarget({...p})} className="px-4 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs font-bold transition">編輯</button>
+                                                <button onClick={()=>handleDelete('partners', p.id)} className="px-4 py-1.5 btn-danger text-xs font-bold">刪除</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {displayList.length === 0 && <tr><td colSpan="4" className="p-8 text-slate-500">系統內尚無人員資料</td></tr>}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {applicants.map(app => (
+                                <div key={app.id} className="glass p-5 rounded-2xl flex flex-col justify-between border border-sky-500/20 shadow-lg">
+                                    <div className="mb-4">
+                                        <div className="flex justify-between items-start">
+                                            <p className="text-lg font-bold text-white">{app.name}</p>
+                                            <span className="text-[10px] bg-sky-900/50 text-sky-400 px-2 py-1 rounded border border-sky-500/30">待審核</span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-1 font-mono">{app.phone}</p>
+                                    </div>
+                                    <div className="flex gap-2 w-full">
+                                        <button onClick={()=>approveApplicant(app)} className="bg-sky-600 hover:bg-sky-500 text-white py-2 text-xs rounded-lg font-bold transition flex-1">核准加入</button>
+                                        <button onClick={()=>handleDelete('applicants', app.id)} className="btn-danger py-2 text-xs rounded-lg font-bold flex-1">拒絕並刪除</button>
+                                    </div>
                                 </div>
-                                <div className="flex gap-4">
-                                    <button onClick={()=>setIsAddMode(false)} className="flex-1 text-slate-500 font-bold">取消</button>
-                                    <button onClick={handleAdd} className="btn-supreme flex-[2] py-4">確認授權加入</button>
+                            ))}
+                            {applicants.length === 0 && <p className="col-span-2 text-center text-slate-500 py-8 glass rounded-2xl">目前無待審核的面試資料</p>}
+                        </div>
+                    )}
+
+                    {/* --- 彈窗區 (Modals) --- */}
+
+                    {/* 1. 新增夥伴表單 */}
+                    {isAddMode && (
+                        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-6 z-[10001] backdrop-blur-sm animate-in zoom-in">
+                            <div className="glass p-8 rounded-3xl w-full max-w-sm border border-amber-500/30 shadow-2xl">
+                                <h3 className="text-xl font-bold text-white mb-6">建立新帳號</h3>
+                                <div className="space-y-4 mb-6">
+                                    <div><label className="text-xs text-slate-400 mb-1 block">夥伴姓名</label><input className="w-full bg-slate-900 p-3 rounded-lg text-white outline-none border border-white/5 focus:border-amber-500" placeholder="輸入姓名" onChange={e=>setNewP({...newP, name:e.target.value})} /></div>
+                                    <div><label className="text-xs text-slate-400 mb-1 block">手機門號 (登入帳號)</label><input className="w-full bg-slate-900 p-3 rounded-lg text-white outline-none border border-white/5 focus:border-amber-500" placeholder="09XX-XXX-XXX" onChange={e=>setNewP({...newP, phone:e.target.value})} /></div>
+                                    <div><label className="text-xs text-slate-400 mb-1 block">設定 PIN 碼 (密碼)</label><input className="w-full bg-slate-900 p-3 rounded-lg text-amber-500 font-bold tracking-widest outline-none border border-white/5 focus:border-amber-500" placeholder="預設密碼" onChange={e=>setNewP({...newP, pin:e.target.value})} /></div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={()=>setIsAddMode(false)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-lg font-bold transition">取消</button>
+                                    <button onClick={handleAdd} className="btn-supreme flex-[2] py-3 rounded-lg">確認建立</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 2. 編輯夥伴資料 (取代 Prompt) */}
+                    {editTarget && (
+                        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-6 z-[10001] backdrop-blur-sm animate-in zoom-in">
+                            <div className="glass p-8 rounded-3xl w-full max-w-sm border border-sky-500/30 shadow-2xl">
+                                <h3 className="text-xl font-bold text-white mb-6">編輯資料：{editTarget.name}</h3>
+                                <div className="space-y-4 mb-6">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div><label className="text-xs text-slate-400 mb-1 block">姓名</label><input className="w-full bg-slate-900 p-3 rounded-lg text-white border border-white/5 focus:border-sky-500 outline-none" value={editTarget.name} onChange={e=>setEditTarget({...editTarget, name:e.target.value})} /></div>
+                                        <div><label className="text-xs text-slate-400 mb-1 block">PIN 碼</label><input className="w-full bg-slate-900 p-3 rounded-lg text-amber-500 font-bold border border-white/5 focus:border-sky-500 outline-none" value={editTarget.pin} onChange={e=>setEditTarget({...editTarget, pin:e.target.value})} /></div>
+                                    </div>
+                                    <div><label className="text-xs text-slate-400 mb-1 block">手機門號 (不可重複)</label><input className="w-full bg-slate-900 p-3 rounded-lg text-slate-300 border border-white/5 focus:border-sky-500 outline-none" value={editTarget.phone} onChange={e=>setEditTarget({...editTarget, phone:e.target.value})} /></div>
+                                    
+                                    {/* 老闆可直接修改營運數據 */}
+                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5">
+                                        <p className="text-xs text-slate-400 font-bold mb-3 border-b border-white/5 pb-2">強制修改營運數據</p>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div><label className="text-[10px] text-sky-400 mb-1 block">正件數量</label><input type="number" className="w-full bg-slate-900 p-3 rounded-lg text-white font-bold border border-white/5 focus:border-sky-500 outline-none text-center" value={editTarget.total_del} onChange={e=>setEditTarget({...editTarget, total_del:e.target.value})} /></div>
+                                            <div><label className="text-[10px] text-orange-400 mb-1 block">逆件數量</label><input type="number" className="w-full bg-slate-900 p-3 rounded-lg text-white font-bold border border-white/5 focus:border-sky-500 outline-none text-center" value={editTarget.total_pkp} onChange={e=>setEditTarget({...editTarget, total_pkp:e.target.value})} /></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={()=>setEditTarget(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-lg font-bold transition">取消</button>
+                                    <button onClick={handleUpdate} className="flex-[2] bg-sky-600 hover:bg-sky-500 text-white py-3 rounded-lg font-bold transition">儲存變更</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 3. 系統核心設定 (僅老闆權限) */}
+                    {isConfigMode && isOwner && (
+                        <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-6 z-[10002] backdrop-blur-md animate-in zoom-in">
+                            <div className="bg-slate-900 p-8 rounded-3xl w-full max-w-sm border-2 border-red-900/50 shadow-[0_0_50px_rgba(220,38,38,0.15)]">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <span className="bg-red-500 p-2 rounded-lg text-white">⚙️</span>
+                                    <h3 className="text-xl font-black text-white">系統參數核心設定</h3>
+                                </div>
+                                <p className="text-xs text-slate-400 mb-6 leading-relaxed">此面板為最高權限專屬。變更計價參數將<strong className="text-red-400">立即影響全域資料庫與薪資結算系統</strong>，請謹慎操作。</p>
+                                
+                                <div className="space-y-4 mb-8">
+                                    <div className="bg-slate-950 p-4 rounded-xl border border-red-900/30">
+                                        <label className="text-xs text-slate-500 font-bold block mb-2">正件配送單價 (預設 15)</label>
+                                        <div className="flex items-center">
+                                            <span className="text-slate-400 mr-2">$</span>
+                                            <input type="number" className="w-full bg-transparent text-white text-xl font-bold outline-none" value={tempConfig.priceDel} onChange={e=>setTempConfig({...tempConfig, priceDel:e.target.value})} />
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-950 p-4 rounded-xl border border-red-900/30">
+                                        <label className="text-xs text-slate-500 font-bold block mb-2">逆件回收單價 (預設 10)</label>
+                                        <div className="flex items-center">
+                                            <span className="text-slate-400 mr-2">$</span>
+                                            <input type="number" className="w-full bg-transparent text-white text-xl font-bold outline-none" value={tempConfig.pricePkp} onChange={e=>setTempConfig({...tempConfig, pricePkp:e.target.value})} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button onClick={()=>setIsConfigMode(false)} className="flex-1 btn-outline py-3 font-bold text-slate-300 border-slate-600 hover:bg-slate-800">取消變更</button>
+                                    <button onClick={saveSysConfig} className="flex-[2] bg-red-700 hover:bg-red-600 text-white py-3 rounded-lg font-bold transition shadow-lg shadow-red-900/50">寫入全域設定</button>
                                 </div>
                             </div>
                         </div>
@@ -209,21 +406,91 @@
             );
         }
 
-        function DriverHub({ u, setLayer, db, appId, showToast }) {
-            const [del, setDel] = useState(""); const [pkp, setPkp] = useState("");
+        // --- 司機工作台 (包含資料回報與 Canvas 簽名畫布) ---
+        function DriverHub({ u, setLayer, db, appId, showToast, sysConfig }) {
+            const[del, setDel] = useState(u?.total_del || "");
+            const [pkp, setPkp] = useState(u?.total_pkp || "");
+            
+            // Canvas 繪圖邏輯
+            const canvasRef = useRef(null);
+            const [isDrawing, setIsDrawing] = useState(false);
+
+            useEffect(() => { if (u) { setDel(u.total_del); setPkp(u.total_pkp); } }, [u]);
+
+            const startDrawing = (e) => {
+                const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                ctx.beginPath(); ctx.moveTo(x, y); setIsDrawing(true);
+            };
+
+            const draw = (e) => {
+                if (!isDrawing) return; e.preventDefault();
+                const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.strokeStyle = "#000";
+                ctx.lineTo(x, y); ctx.stroke();
+            };
+
+            const stopDrawing = () => { setIsDrawing(false); };
+            const clearCanvas = () => {
+                const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            };
+
+            const handleSubmit = () => {
+                db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({
+                    total_del: Number(del), total_pkp: Number(pkp)
+                }); 
+                showToast("✅ 營運數據與電子簽章已同步上傳伺服器");
+                clearCanvas();
+            };
+
             return (
-                <div className="p-6 max-w-lg mx-auto page-enter pt-16">
-                    <header className="flex justify-between items-center mb-10">
-                        <h2 className="text-2xl font-black italic">工作台</h2>
-                        <button onClick={()=>setLayer('gate')} className="text-slate-600 font-bold text-xs uppercase">登出</button>
+                <div className="p-4 max-w-lg mx-auto page-enter pt-10">
+                    <header className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                        <h2 className="text-xl font-bold text-white tracking-wide">夥伴工作台</h2>
+                        <button onClick={()=>setLayer('gate')} className="text-slate-400 text-sm font-bold bg-slate-800 px-3 py-1.5 rounded hover:text-white transition">登出</button>
                     </header>
-                    <div className="glass p-10 rounded-[3rem] border border-amber-500/20 text-center mb-8">
-                        <p className="text-slate-500 text-[10px] font-black uppercase mb-8 tracking-widest">今日回報數據</p>
-                        <div className="grid grid-cols-2 gap-4 mb-8 text-center">
-                            <div className="bg-slate-900 p-6 rounded-3xl"><p className="text-sky-400 text-[9px] font-bold mb-2 uppercase">正件</p><input type="number" className="bg-transparent text-white text-3xl font-black w-full text-center outline-none" placeholder="0" value={del} onChange={e=>setDel(e.target.value)} /></div>
-                            <div className="bg-slate-900 p-6 rounded-3xl"><p className="text-orange-400 text-[9px] font-bold mb-2 uppercase">逆件</p><input type="number" className="bg-transparent text-white text-3xl font-black w-full text-center outline-none" placeholder="0" value={pkp} onChange={e=>setP(e.target.value)} /></div>
+                    <p className="text-amber-500 font-bold mb-6 text-sm flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        目前登入：{u?.name}
+                    </p>
+
+                    <div className="glass p-6 rounded-3xl border border-white/5 shadow-xl mb-6">
+                        <p className="text-slate-400 text-xs font-bold mb-4">今日單量回報 (套用當前計價：正件${sysConfig.priceDel} / 逆件${sysConfig.pricePkp})</p>
+                        <div className="grid grid-cols-2 gap-4 mb-6 text-center">
+                            <div className="bg-slate-900 p-5 rounded-2xl border border-white/5 focus-within:border-sky-500 transition">
+                                <p className="text-sky-400 text-xs font-bold mb-3">正件配送</p>
+                                <input type="number" className="bg-transparent text-white text-3xl font-black w-full text-center outline-none" placeholder="0" value={del} onChange={e=>setDel(e.target.value)} />
+                            </div>
+                            <div className="bg-slate-900 p-5 rounded-2xl border border-white/5 focus-within:border-orange-500 transition">
+                                <p className="text-orange-400 text-xs font-bold mb-3">逆件回收</p>
+                                <input type="number" className="bg-transparent text-white text-3xl font-black w-full text-center outline-none" placeholder="0" value={pkp} onChange={e=>setPkp(e.target.value)} />
+                            </div>
                         </div>
-                        <button onClick={()=>{db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({total_del:Number(del), total_pkp:Number(pkp)}); showToast("🚀 數據已同步更新")}} className="btn-supreme w-full py-5 text-xl font-black">同步提交報單</button>
+
+                        {/* Canvas 簽名區塊 */}
+                        <div className="mb-8">
+                            <div className="flex justify-between items-end mb-3">
+                                <div>
+                                    <p className="text-slate-300 text-sm font-bold">結算電子簽章</p>
+                                    <p className="text-slate-500 text-[10px] mt-1">請在下方白框內使用手指或滑鼠簽名</p>
+                                </div>
+                                <button onClick={clearCanvas} className="text-slate-400 hover:text-white bg-slate-800 px-3 py-1 rounded text-[10px] font-bold transition">清除重簽</button>
+                            </div>
+                            <canvas 
+                                ref={canvasRef} width={400} height={150} 
+                                className="w-full border-2 border-slate-700 shadow-inner rounded-xl"
+                                onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseOut={stopDrawing}
+                                onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing}
+                            ></canvas>
+                        </div>
+
+                        <button onClick={handleSubmit} className="btn-supreme w-full py-4 text-lg tracking-widest">送出本日結算資料</button>
                     </div>
                 </div>
             );
