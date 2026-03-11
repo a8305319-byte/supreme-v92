@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>金耀智慧營運總部 v35.0 (實務管理升級版)</title>
+  <title>金耀智慧營運總部 v36.1 (完整功能修復版)</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -34,6 +34,14 @@
     .dot-leave { background-color: #f43f5e; box-shadow: 0 0 8px #f43f5e; }
     .dot-pending { background-color: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
     .receipt-paper { background: #fff; color: #111; padding: 20px; border-radius: 8px; font-family: monospace; border-top: 4px dashed #ccc; border-bottom: 4px dashed #ccc; }
+    .chat-bubble { padding: 12px 16px; border-radius: 16px; max-width: 80%; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
+    .bubble-bot { background: rgba(255,255,255,0.1); color: white; align-self: flex-start; }
+    .bubble-user { background: #f59e0b; color: black; align-self: flex-end; margin-left: auto; }
+    
+    ::-webkit-scrollbar { height: 8px; width: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
   </style>
 </head>
 <body>
@@ -79,22 +87,16 @@
       const [loading, setLoading] = useState(true);
       const [announcement, setAnnouncement] = useState("");
       const [searchQuery, setSearchQuery] = useState("");
-      const [statusFilter, setStatusFilter] = useState('active'); // 預設只顯示在職人員
+      const [statusFilter, setStatusFilter] = useState('active'); 
       const [showSensitive, setShowSensitive] = useState({}); 
       const [toastMsg, setToastMsg] = useState("");
 
-      const showToast = (msg) => {
-        setToastMsg(msg);
-        setTimeout(() => setToastMsg(""), 3000);
-      };
+      const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); };
 
       useEffect(() => {
         auth.signInAnonymously();
         const unsubPartners = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners')
-          .onSnapshot(snap => {
-            setPartners(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            setLoading(false);
-          });
+          .onSnapshot(snap => { setPartners(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))); setLoading(false); });
         const unsubAnn = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc('announcement')
           .onSnapshot(snap => { if (snap.exists) setAnnouncement(snap.data().content); });
         
@@ -142,10 +144,7 @@
         }
       };
 
-      const handleLogout = () => {
-        localStorage.removeItem('ggsoc_sid');
-        setUser(null); setRole('guest'); setLayer('gate');
-      };
+      const handleLogout = () => { localStorage.removeItem('ggsoc_sid'); setUser(null); setRole('guest'); setLayer('gate'); };
 
       if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-amber-500 font-black animate-pulse">連線資料庫中...</p></div>;
 
@@ -165,14 +164,12 @@
     // 1. 入口層
     // ==========================================
     function Gate({ onLogin, announcement, setLayer }) {
-      const [ph, setPh] = useState("");
-      const [pin, setPin] = useState("");
-      const [rem, setRem] = useState(false);
+      const [ph, setPh] = useState(""); const [pin, setPin] = useState(""); const [rem, setRem] = useState(false);
       return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
           <div className="mb-12 text-center relative z-10">
             <h1 className="text-7xl font-black text-white italic tracking-tighter mb-2 drop-shadow-2xl">在地物流</h1>
-            <p className="text-amber-500 text-[10px] tracking-[0.5em] font-black border border-amber-500/30 px-4 py-1.5 rounded-full inline-block uppercase shadow-lg">Operation Hub v35.0</p>
+            <p className="text-amber-500 text-[10px] tracking-[0.5em] font-black border border-amber-500/30 px-4 py-1.5 rounded-full inline-block uppercase shadow-lg">Operation Hub v36.1</p>
           </div>
           <div className="w-full max-w-[340px] space-y-5 relative z-10 font-bold">
             <div className="glass-panel p-8 rounded-[2.5rem] shadow-2xl gold-border">
@@ -200,28 +197,28 @@
     }
 
     // ==========================================
-    // 2. 指揮中心 (加入 薪資條 / 排班 / 離職)
+    // 2. 指揮中心 (審核照片修復版)
     // ==========================================
     function AdminHub({ partners, onLogout, showSensitive, setShowSensitive, statusFilter, setStatusFilter, searchQuery, setSearchQuery, db, appId, showToast, announcement }) {
       const [historyData, setHistoryData] = useState(null);
       const [editProfile, setEditProfile] = useState(null);
-      const [showTools, setShowTools] = useState(false);
       const [reviewReport, setReviewReport] = useState(null);
-      
-      const [showSalaryFor, setShowSalaryFor] = useState(null); // 🎯 薪資條面板
-      const [showScheduleFor, setShowScheduleFor] = useState(null); // 🎯 排班面板
+      const [showSalaryFor, setShowSalaryFor] = useState(null); 
+      const [showScheduleFor, setShowScheduleFor] = useState(null); 
+      const [monthlyData, setMonthlyData] = useState(null);
+      const [isGeneratingMonth, setIsGeneratingMonth] = useState(false);
+      const [showTools, setShowTools] = useState(false);
 
       const getToday = () => new Date().toLocaleDateString('en-CA');
+      const getCurrentMonthStr = () => getToday().substring(0, 7); 
 
       const filteredPartners = useMemo(() => {
         let result = partners.filter(p => (p.name && p.name.includes(searchQuery)) || (p.phone && p.phone.includes(searchQuery)));
-        
-        // 🎯 狀態過濾包含「在職/停權」
         if (statusFilter === 'active') result = result.filter(p => p.status === 'active');
         if (statusFilter === 'inactive') result = result.filter(p => p.status === 'inactive');
         
         const today = getToday();
-        if (statusFilter === 'pending') result = result.filter(p => p.status === 'active' && p.last_report?.date !== today && !p.schedule?.[today]);
+        if (statusFilter === 'pending') result = result.filter(p => p.status === 'active' && p.report_status === 'pending');
         if (statusFilter === 'leave') result = result.filter(p => p.status === 'active' && p.schedule?.[today] === 'leave');
         return result;
       }, [partners, searchQuery, statusFilter]);
@@ -230,16 +227,19 @@
         return (p.total_del * (p.custom_del_price || 15)) + (p.total_pkp * (p.custom_pkp_price || 10)) + (p.custom_adj || 0) - (p.labor_fee || 0) - (p.health_fee || 0);
       };
 
-      const handleUpdateField = async (id, field, val) => {
-        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(id).update({ [field]: Number(val) });
-      };
+      const totals = useMemo(() => {
+        return filteredPartners.reduce((acc, p) => {
+          if (p.report_status === 'rejected') return acc;
+          return { del: acc.del + (p.total_del || 0), pkp: acc.pkp + (p.total_pkp || 0), net: acc.net + calculateNet(p) };
+        }, { del: 0, pkp: 0, net: 0 });
+      }, [filteredPartners]);
 
-      // --- 省略部分重複的 Helper 函數 (包含勞健保級距變更等)，保持運作 ---
+      const handleUpdateField = async (id, field, val) => await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(id).update({ [field]: Number(val) });
+
       const handleBracketChange = async (p, val) => {
         const newSalary = Number(val);
         if (newSalary === 0) {
-           await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).update({ insured_salary: 0, labor_fee: 0, health_fee: 0 });
-          return;
+           await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).update({ insured_salary: 0, labor_fee: 0, health_fee: 0 }); return;
         }
         const bracket = INSURANCE_BRACKETS.find(b => b.salary === newSalary);
         if (bracket) {
@@ -266,13 +266,75 @@
       
       const handleReject = async () => {
         if(window.confirm("確定要退回此單據嗎？")) {
-          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(reviewReport.id).update({
-            report_status: 'rejected', total_del: 0, total_pkp: 0, work_status: 'offline', last_report: firebase.firestore.FieldValue.delete()
-          });
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(reviewReport.id).update({ report_status: 'rejected', total_del: 0, total_pkp: 0, work_status: 'offline', last_report: firebase.firestore.FieldValue.delete() });
           showToast("❌ 已退回單據"); setReviewReport(null);
         }
       };
 
+      const handleBatchApprove = async () => {
+        const pendingPartners = partners.filter(p => p.report_status === 'pending');
+        if (pendingPartners.length === 0) return showToast("⚠️ 目前沒有需要審核的單據喔！");
+        
+        if(window.confirm(`⚡ 確定要一鍵通過這 ${pendingPartners.length} 筆待審核單據嗎？`)) {
+          const batch = db.batch();
+          pendingPartners.forEach(p => {
+            const ref = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id);
+            batch.update(ref, { report_status: 'approved' });
+          });
+          await batch.commit(); showToast(`✅ 已成功批次核准 ${pendingPartners.length} 筆單據！`);
+        }
+      };
+
+      const generateMonthlyReport = async () => {
+        setIsGeneratingMonth(true);
+        const currentMonth = getCurrentMonthStr(); 
+        let generatedReport = [];
+        try {
+          const activePartners = partners.filter(p => p.status === 'active');
+          for(let p of activePartners) {
+            const snap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).collection('history')
+              .where('date', '>=', `${currentMonth}-01`).where('date', '<=', `${currentMonth}-31`).get();
+            let mDel = 0, mPkp = 0, workDays = 0;
+            snap.forEach(doc => { mDel += doc.data().del || 0; mPkp += doc.data().pkp || 0; workDays += 1; });
+            const gross = (mDel * (p.custom_del_price||15)) + (mPkp * (p.custom_pkp_price||10)) + (p.custom_adj||0);
+            const net = gross - (p.labor_fee||0) - (p.health_fee||0); 
+            generatedReport.push({ ...p, mDel, mPkp, workDays, gross, net });
+          }
+          setMonthlyData({ month: currentMonth, data: generatedReport }); showToast("📊 本月結算大表已生成！");
+        } catch(err) { showToast("❌ 產出報表失敗：" + err.message); } finally { setIsGeneratingMonth(false); }
+      };
+
+      const exportMonthlyCSV = () => {
+        if(!monthlyData) return;
+        const headers = "夥伴姓名,出勤天數,整月正件數,整月逆收數,正件單價,逆收單價,系統獎金,扣勞保,扣健保,本月實領總額\n";
+        const rows = monthlyData.data.map(p => `${p.name},${p.workDays},${p.mDel},${p.mPkp},${p.custom_del_price||15},${p.custom_pkp_price||10},${p.custom_adj||0},${p.labor_fee||0},${p.health_fee||0},${p.net}`).join("\n");
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), headers + rows], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a"); link.href = url; link.download = `營運總部_${monthlyData.month}_月結總表.csv`; link.click();
+        showToast("📥 月結算表已下載完成！");
+      };
+
+      const handleBatchReset = async () => {
+        if(window.confirm("⚠️ 確定要將所有夥伴的今日數據歸零嗎？(此動作通常在跨日時執行)")) {
+          const batch = db.batch();
+          partners.forEach(p => {
+            const ref = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id);
+            batch.update(ref, { total_del: 0, total_pkp: 0, work_status: 'offline', last_report: firebase.firestore.FieldValue.delete() });
+          });
+          await batch.commit(); showToast("✅ 今日數據已全數歸零");
+        }
+      };
+
+      const handlePublish = async () => {
+        const text = window.prompt("發布最新通報：", announcement);
+        if (text !== null) { await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc('announcement').set({ content: text }, { merge: true }); showToast("📢 公告已發布"); }
+      };
+
+      const viewHistory = async (p) => {
+        const snap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).collection('history').orderBy('date', 'desc').limit(30).get();
+        setHistoryData({ name: p.name, data: snap.docs.map(d => d.data()) });
+      };
+      
       const saveProfileEdit = async () => {
         const newName = document.getElementById('edit_name').value;
         const newPhone = document.getElementById('edit_phone').value;
@@ -281,120 +343,134 @@
         setEditProfile(null); showToast("✅ 人事檔案修改成功");
       };
 
-      // 🎯 替換原本的刪除，改為停權/離職
       const handleSuspendPartner = async () => {
         if(window.confirm(`⚠️ 確定要將【${editProfile.name}】設為離職/停權嗎？\n此操作不會刪除歷史帳務，但該員將無法登入系統。`)) {
           await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(editProfile.id).update({ status: 'inactive' });
           setEditProfile(null); showToast("🛑 人員已停權/離職");
         }
       };
-      
-      // 🎯 排班功能更新
+
       const toggleSchedule = async (dateStr) => {
         const currentSchedule = showScheduleFor.schedule || {};
         const isLeave = currentSchedule[dateStr] === 'leave';
         const updatedSchedule = { ...currentSchedule, [dateStr]: isLeave ? 'work' : 'leave' };
-        
         await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(showScheduleFor.id).update({ schedule: updatedSchedule });
         setShowScheduleFor({ ...showScheduleFor, schedule: updatedSchedule });
       };
-
-      // 產生未來 7 天日期陣列
-      const next7Days = Array.from({length: 7}, (_, i) => {
-        const d = new Date(); d.setDate(d.getDate() + i);
-        return d.toLocaleDateString('en-CA');
-      });
+      const next7Days = Array.from({length: 7}, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return d.toLocaleDateString('en-CA'); });
 
       return (
         <div className="p-4 lg:p-10 max-w-[1700px] mx-auto overflow-x-auto relative">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 relative">
-            <h2 className="text-white font-black text-5xl italic tracking-tighter flex items-center gap-2">數據指揮中心 <span className="text-amber-500 font-black">.</span></h2>
-            <div className="flex flex-wrap gap-2 relative">
-              <button onClick={() => setShowTools(!showTools)} className="bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md">⚙️ 工具</button>
-              {showTools && (
-                <div className="absolute top-10 right-0 w-48 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-50 p-2">
-                  <button onClick={() => alert("匯出功能準備中")} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-slate-700 rounded-lg">📥 匯出網銀 CSV</button>
-                  <button onClick={() => setShowTools(false)} className="w-full text-left px-3 py-2 text-sm text-rose-400 hover:bg-slate-700 rounded-lg">關閉選單</button>
-                </div>
-              )}
-              <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-4 py-2 rounded-xl text-xs font-black border border-rose-500/20 shadow-md">退出系統</button>
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 relative bg-slate-900/50 p-6 rounded-[2rem] border border-slate-700">
+            <div>
+              <h2 className="text-white font-black text-4xl italic tracking-tighter flex items-center gap-2 mb-2">營運指揮中心 <span className="text-amber-500 font-black">.</span></h2>
+              <p className="text-slate-400 text-sm font-bold">目前顯示日期：<span className="text-amber-400">{getToday()}</span></p>
+            </div>
+            
+            <div className="flex flex-col gap-3 w-full md:w-auto">
+              <div className="flex gap-2 bg-black/40 p-2 rounded-xl justify-end">
+                <span className="text-[10px] text-slate-500 font-bold self-center mr-2 uppercase">日常操作</span>
+                <button onClick={handlePublish} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-black hover:bg-indigo-500 transition">💬 發布公告</button>
+                <button onClick={handleBatchApprove} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-black hover:bg-emerald-500 transition shadow-[0_0_10px_rgba(52,211,153,0.3)]">⚡ 一鍵審核</button>
+                <button onClick={handleBatchReset} className="bg-rose-900 text-rose-300 px-4 py-2 rounded-lg text-xs font-black hover:bg-rose-800 transition">🛑 批次歸零</button>
+              </div>
+              <div className="flex gap-2 bg-black/40 p-2 rounded-xl justify-end">
+                <span className="text-[10px] text-slate-500 font-bold self-center mr-2 uppercase">財務報表</span>
+                <button onClick={generateMonthlyReport} disabled={isGeneratingMonth} className="bg-amber-600 text-black px-4 py-2 rounded-lg text-xs font-black hover:bg-amber-500 transition shadow-[0_0_10px_rgba(245,158,11,0.3)]">
+                  {isGeneratingMonth ? '資料爬梳中...' : '📊 產出本月結算大表'}
+                </button>
+                <button onClick={onLogout} className="bg-slate-800 text-slate-400 px-4 py-2 rounded-lg text-xs font-black border border-slate-700 hover:text-white transition">退出</button>
+              </div>
             </div>
           </div>
 
-          <div className="glass-panel p-4 rounded-[2rem] mb-10 flex flex-col md:flex-row gap-4 gold-border">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 text-center font-black">
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-amber-500/50"><p className="text-slate-400 text-[11px] mb-1">今日總配送</p><p className="text-3xl text-amber-500">{totals.del}</p></div>
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-orange-500/50"><p className="text-slate-400 text-[11px] mb-1">今日總逆收</p><p className="text-3xl text-orange-400">{totals.pkp}</p></div>
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-emerald-500/50"><p className="text-slate-400 text-[11px] mb-1">今日結算預估</p><p className="text-3xl text-emerald-400">${totals.net.toLocaleString()}</p></div>
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-slate-500/50"><p className="text-slate-400 text-[11px] mb-1">名單人數</p><p className="text-3xl text-white">{filteredPartners.length}</p></div>
+          </div>
+
+          <div className="glass-panel p-4 rounded-[2rem] mb-6 flex flex-col md:flex-row gap-4 gold-border">
             <div className="flex-1 flex items-center bg-slate-900 p-3 rounded-2xl border border-slate-700">
               <span className="text-amber-500 mx-2">🔍</span>
               <input type="text" placeholder="搜尋姓名或手機..." className="bg-transparent border-none outline-none text-white text-sm w-full font-bold" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
-            <select className="bg-slate-800 text-white rounded-xl px-4 py-3 text-xs font-bold border border-slate-700 outline-none w-full md:w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <select className="bg-slate-800 text-white rounded-xl px-4 py-3 text-sm font-bold border border-slate-700 outline-none w-full md:w-auto focus:border-amber-500" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="active">🟢 現役在職人員</option>
+              <option value="pending">⚡ 待審核單據 (優先處理)</option>
+              <option value="leave">🏖️ 今日排休人員</option>
               <option value="inactive">🛑 已離職/停權人員</option>
-              <option value="pending">⚠️ 今日未報帳</option>
-              <option value="leave">🏖️ 今日休假人員</option>
             </select>
           </div>
 
-          <div className="glass-panel rounded-3xl overflow-hidden overflow-x-auto">
+          <div className="glass-panel rounded-[2rem] overflow-hidden overflow-x-auto shadow-2xl">
             <table className="admin-table">
               <thead>
-                <tr>
-                  <th className="w-28">今日狀態</th>
-                  <th className="text-left w-52">夥伴資訊 & 帳務</th>
-                  <th>正/逆價</th>
-                  <th>投保薪資</th>
-                  <th>眷屬</th>
-                  <th>加扣款</th>
-                  <th>預計實領</th>
-                  <th>管理功能</th>
+                <tr className="bg-black/60">
+                  <th className="w-28 text-amber-500">今日狀態</th>
+                  <th className="text-left w-52 text-amber-500">夥伴資訊</th>
+                  <th className="text-sky-400">正/逆收單價</th>
+                  <th className="text-rose-400">投保薪資級距</th>
+                  <th className="text-rose-400">眷屬</th>
+                  <th className="text-emerald-400">加扣款</th>
+                  <th className="text-amber-500">今日預估薪資</th>
+                  <th className="text-slate-300">管理功能區塊</th>
                 </tr>
               </thead>
               <tbody>
+                {filteredPartners.length === 0 && <tr><td colSpan="8" className="py-12 text-slate-500 font-bold">此篩選條件下無符合資料</td></tr>}
                 {filteredPartners.map(p => {
                   const net = calculateNet(p);
-                  const isLeave = p.schedule?.[getToday()] === 'leave'; // 🎯 依照排班系統判定休假
+                  const isLeave = p.schedule?.[getToday()] === 'leave'; 
                   const hasReported = p.last_report?.date === getToday();
                   const isMasked = !showSensitive[p.id];
                   const isPending = hasReported && p.report_status === 'pending';
                   const isApproved = hasReported && p.report_status === 'approved';
                   
                   return (
-                    <tr key={p.id} className={p.status === 'inactive' ? 'opacity-50 grayscale' : ''}>
+                    <tr key={p.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition ${p.status === 'inactive' ? 'opacity-50 grayscale' : ''}`}>
                       <td>
-                        <span className={`status-dot ${isLeave ? 'dot-leave' : (isApproved ? 'dot-online' : (isPending ? 'dot-pending' : 'dot-offline'))}`}></span>
-                        <span className={`text-[10px] ${isLeave ? 'text-rose-400' : (isApproved ? 'text-emerald-400' : 'text-slate-500')}`}>
-                          {p.status === 'inactive' ? '離職' : (isLeave ? '排休' : (hasReported ? (isPending ? '待審核' : '已核准') : '未報'))}
-                        </span>
-                        {(isPending || isApproved) && p.report_img && (
-                          <button onClick={() => setReviewReport(p)} className="block mx-auto mt-2 bg-amber-600 text-black px-2 py-1 rounded text-[10px] font-black">📸 看單</button>
-                        )}
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <div>
+                            <span className={`status-dot ${isLeave ? 'dot-leave' : (isApproved ? 'dot-online' : (isPending ? 'dot-pending' : 'dot-offline'))}`}></span>
+                            <span className={`text-xs font-black ${isLeave ? 'text-rose-400' : (isApproved ? 'text-emerald-400' : (isPending ? 'text-amber-400' : 'text-slate-500'))}`}>
+                              {p.status === 'inactive' ? '離職' : (isLeave ? '休假' : (hasReported ? (isPending ? '待審核' : '已核准') : '未報'))}
+                            </span>
+                          </div>
+                          {/* 📸 修復：只要有上傳照片，按鈕就一定會出現 */}
+                          {p.report_img && (
+                            <button onClick={() => setReviewReport(p)} className="bg-amber-600/20 text-amber-500 border border-amber-500/50 hover:bg-amber-500 hover:text-black px-3 py-1 rounded-full text-[10px] font-black transition shadow-lg mt-1">📸 看單據</button>
+                          )}
+                        </div>
                       </td>
-                      <td className="text-left">
-                        <span className="text-white font-black text-lg mr-2">{p.name}</span>
+                      <td className="text-left pl-4">
+                        <span className="text-white font-black text-xl mr-2">{p.name}</span>
                         <button onClick={() => setShowSensitive(prev => ({...prev, [p.id]: !prev[p.id]}))} className="text-slate-500 hover:text-amber-500">{isMasked ? '🙈' : '👁️'}</button>
-                        <p className="text-[10px] font-black italic mt-1 text-slate-500">📞 {isMasked ? p.phone?.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p>
+                        <p className="text-xs font-black mt-1 text-slate-500">📞 {isMasked ? p.phone?.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p>
                       </td>
                       <td>
                         <div className="flex flex-col items-center gap-1">
-                          <input type="number" defaultValue={p.custom_del_price||15} onBlur={e=>handleUpdateField(p.id, 'custom_del_price', e.target.value)} className="ghost-input w-10 text-[10px] text-sky-400 bg-slate-800 rounded p-1" />
-                          <input type="number" defaultValue={p.custom_pkp_price||10} onBlur={e=>handleUpdateField(p.id, 'custom_pkp_price', e.target.value)} className="ghost-input w-10 text-[10px] text-orange-400 bg-slate-800 rounded p-1" />
+                          <div className="flex items-center"><span className="text-[10px] text-sky-500 mr-1 font-black">正</span><input type="number" defaultValue={p.custom_del_price||15} onBlur={e=>handleUpdateField(p.id, 'custom_del_price', e.target.value)} className="ghost-input w-12 text-sm text-sky-400 bg-slate-900 rounded-md p-1 border border-slate-700" /></div>
+                          <div className="flex items-center"><span className="text-[10px] text-orange-500 mr-1 font-black">逆</span><input type="number" defaultValue={p.custom_pkp_price||10} onBlur={e=>handleUpdateField(p.id, 'custom_pkp_price', e.target.value)} className="ghost-input w-12 text-sm text-orange-400 bg-slate-900 rounded-md p-1 border border-slate-700" /></div>
                         </div>
                       </td>
                       <td>
-                        <select value={p.insured_salary || 0} onChange={e => handleBracketChange(p, e.target.value)} className="bg-slate-800 text-amber-400 font-bold border border-slate-600 rounded-lg p-2 text-[10px] outline-none">
-                          <option value="0">未投保</option>
+                        <select value={p.insured_salary || 0} onChange={e => handleBracketChange(p, e.target.value)} className="bg-slate-900 text-rose-300 font-bold border border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-rose-500">
+                          <option value="0">未投保 ($0)</option>
                           {INSURANCE_BRACKETS.map(b => <option key={b.salary} value={b.salary}>${b.salary.toLocaleString()}</option>)}
                         </select>
                       </td>
-                      <td><input type="number" defaultValue={p.dependents||0} onBlur={e=>handleDependentsChange(p, e.target.value)} min="0" className="ghost-input w-8 text-white bg-slate-800 rounded-lg p-1" /></td>
-                      <td><input type="number" defaultValue={p.custom_adj||0} onBlur={e=>handleUpdateField(p.id, 'custom_adj', e.target.value)} className="ghost-input w-12 text-emerald-400 bg-slate-800 rounded-lg p-2" /></td>
-                      <td className="text-amber-500 font-black italic text-xl">${net.toLocaleString()}</td>
+                      <td><input type="number" defaultValue={p.dependents||0} onBlur={e=>handleDependentsChange(p, e.target.value)} min="0" className="ghost-input w-10 text-white bg-slate-900 border border-slate-700 rounded-lg p-1.5 focus:border-white" /></td>
+                      <td><input type="number" defaultValue={p.custom_adj||0} onBlur={e=>handleUpdateField(p.id, 'custom_adj', e.target.value)} className="ghost-input w-16 text-emerald-400 bg-slate-900 border border-slate-700 rounded-lg p-2 font-black focus:border-emerald-500" /></td>
+                      <td className="text-amber-500 font-black italic text-2xl">${net.toLocaleString()}</td>
                       <td>
                         <div className="grid grid-cols-2 gap-2 w-32 mx-auto">
-                          {/* 🎯 新功能按鈕配置 */}
-                          <button onClick={() => setShowSalaryFor(p)} className="bg-emerald-600/80 text-white px-2 py-1.5 rounded text-[10px] font-black shadow-lg">💰 薪資</button>
-                          <button onClick={() => setShowScheduleFor(p)} className="bg-sky-600/80 text-white px-2 py-1.5 rounded text-[10px] font-black shadow-lg">📅 排班</button>
-                          <button onClick={() => viewHistory(p)} className="bg-slate-700 text-white px-2 py-1.5 rounded text-[10px] font-black shadow-lg">📜 日誌</button>
-                          <button onClick={() => setEditProfile(p)} className="bg-indigo-900/80 text-indigo-200 px-2 py-1.5 rounded text-[10px] font-black shadow-lg">📁 檔案</button>
+                          <button onClick={() => setShowSalaryFor(p)} className="bg-emerald-900/50 text-emerald-400 border border-emerald-700/50 hover:bg-emerald-600 hover:text-white px-2 py-2 rounded-lg text-[10px] font-black transition">💰 薪資</button>
+                          <button onClick={() => setShowScheduleFor(p)} className="bg-sky-900/50 text-sky-400 border border-sky-700/50 hover:bg-sky-600 hover:text-white px-2 py-2 rounded-lg text-[10px] font-black transition">📅 排班</button>
+                          <button onClick={() => viewHistory(p)} className="bg-slate-800 text-slate-300 border border-slate-600 hover:bg-slate-700 px-2 py-2 rounded-lg text-[10px] font-black transition">📜 日誌</button>
+                          <button onClick={() => setEditProfile(p)} className="bg-indigo-900/50 text-indigo-300 border border-indigo-700/50 hover:bg-indigo-600 hover:text-white px-2 py-2 rounded-lg text-[10px] font-black transition">⚙️ 設定</button>
                         </div>
                       </td>
                     </tr>
@@ -404,7 +480,53 @@
             </table>
           </div>
 
-          {/* 🎯 新增：薪資條彈窗 */}
+          {/* 月結算大表 */}
+          {monthlyData && (
+            <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[800] flex items-center justify-center p-4">
+              <div className="glass-panel w-full max-w-6xl rounded-[2rem] p-8 gold-border relative flex flex-col max-h-[90vh]">
+                <button onClick={() => setMonthlyData(null)} className="absolute top-6 right-8 text-slate-400 hover:text-white text-3xl font-black">✕</button>
+                <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                  <div>
+                    <h3 className="font-black text-3xl text-amber-500">📊 營運總部月結算大表</h3>
+                    <p className="text-white font-bold mt-1">結算月份：{monthlyData.month}</p>
+                  </div>
+                  <button onClick={exportMonthlyCSV} className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black shadow-lg hover:bg-emerald-500 transition">📥 匯出 Excel (CSV)</button>
+                </div>
+                <div className="flex-1 overflow-auto rounded-xl border border-slate-700">
+                  <table className="admin-table w-full">
+                    <thead className="bg-slate-900 sticky top-0">
+                      <tr>
+                        <th className="text-left pl-4">夥伴姓名</th>
+                        <th>出勤天數</th>
+                        <th>整月正件</th>
+                        <th>整月逆收</th>
+                        <th>系統加扣款</th>
+                        <th className="text-rose-400">月扣勞保</th>
+                        <th className="text-rose-400">月扣健保</th>
+                        <th className="text-amber-500 text-lg">結算實領總額</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monthlyData.data.map((row, i) => (
+                        <tr key={i} className="border-b border-slate-800 hover:bg-slate-800/50">
+                          <td className="text-left pl-4 text-white font-black text-lg">{row.name}</td>
+                          <td className="font-bold text-sky-300">{row.workDays} 天</td>
+                          <td className="font-bold">{row.mDel} 件</td>
+                          <td className="font-bold">{row.mPkp} 件</td>
+                          <td className="font-bold text-emerald-400">${row.custom_adj||0}</td>
+                          <td className="font-bold text-rose-400">-${row.labor_fee||0}</td>
+                          <td className="font-bold text-rose-400">-${row.health_fee||0}</td>
+                          <td className="font-black text-amber-500 text-2xl italic">${row.net.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 薪資條 */}
           {showSalaryFor && (
             <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[600] flex items-center justify-center p-4">
               <div className="glass-panel w-full max-w-sm rounded-[2rem] p-6 gold-border relative">
@@ -422,24 +544,22 @@
                   <div className="border-t border-dashed border-gray-400 my-2"></div>
                   <div className="flex justify-between font-black text-lg mt-2"><span>實領總額</span><span>${calculateNet(showSalaryFor).toLocaleString()}</span></div>
                 </div>
-                <button onClick={() => showToast("📸 截圖功能請使用手機內建截圖")} className="w-full mt-4 bg-amber-500 text-black font-black py-3 rounded-xl">複製或截圖發送</button>
+                <button onClick={() => showToast("📸 請使用手機內建截圖")} className="w-full mt-4 bg-amber-500 text-black font-black py-3 rounded-xl">複製或截圖發送</button>
               </div>
             </div>
           )}
 
-          {/* 🎯 新增：排班管理彈窗 */}
+          {/* 排班 */}
           {showScheduleFor && (
             <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[600] flex items-center justify-center p-4">
               <div className="glass-panel w-full max-w-sm rounded-[2rem] p-6 gold-border relative">
                 <h3 className="font-black text-xl text-white mb-6">📅 {showScheduleFor.name} - 排班表</h3>
-                <p className="text-slate-400 text-xs mb-4">點擊切換未來 7 天的出勤狀態</p>
                 <div className="space-y-2 mb-6">
                   {next7Days.map(date => {
                     const isLeave = showScheduleFor.schedule?.[date] === 'leave';
                     return (
                       <div key={date} onClick={() => toggleSchedule(date)} className={`p-4 rounded-xl cursor-pointer flex justify-between items-center font-bold border transition ${isLeave ? 'bg-rose-900/30 border-rose-500/50 text-rose-300' : 'bg-slate-800 border-slate-600 text-emerald-400 hover:bg-slate-700'}`}>
-                        <span>{date}</span>
-                        <span>{isLeave ? '🏖️ 排休' : '🟢 上班'}</span>
+                        <span>{date}</span><span>{isLeave ? '🏖️ 排休' : '🟢 上班'}</span>
                       </div>
                     );
                   })}
@@ -449,38 +569,65 @@
             </div>
           )}
 
-          {/* 單據審核與人事檔案 Modal */}
+          {/* 單據審核 (📸 看單據) */}
           {reviewReport && (
             <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[500] flex items-center justify-center p-4">
               <div className="glass-panel w-full max-w-lg rounded-[2rem] p-6 gold-border flex flex-col max-h-[90vh] relative">
-                <h3 className="font-black text-xl text-white mb-4">📸 審核單據 - {reviewReport.name}</h3>
-                <div className="flex-1 overflow-auto bg-slate-900 rounded-xl mb-6 flex justify-center min-h-[300px]">
-                   {reviewReport.report_img ? <img src={reviewReport.report_img} className="max-w-full h-auto object-contain rounded-lg" /> : <p className="text-slate-500 mt-10">無圖片</p>}
+                <h3 className="font-black text-xl text-white mb-4">📸 檢視單據 - {reviewReport.name}</h3>
+                <div className="flex-1 overflow-auto bg-slate-900 rounded-xl mb-6 flex justify-center items-center min-h-[300px] border border-slate-700">
+                   {reviewReport.report_img ? <img src={reviewReport.report_img} className="max-w-full h-auto object-contain rounded-lg shadow-xl" /> : <p className="text-slate-500 font-bold">無圖片資料</p>}
                 </div>
-                <div className="flex gap-4">
-                  <button onClick={handleApprove} className="flex-1 bg-emerald-600 text-white font-black py-4 rounded-xl">✅ 通過</button>
-                  <button onClick={handleReject} className="flex-1 bg-rose-700 text-white font-black py-4 rounded-xl">❌ 退回</button>
-                </div>
-                <button onClick={() => setReviewReport(null)} className="absolute top-6 right-6 text-slate-400 text-2xl">✕</button>
+                {/* 如果狀態還是 pending，才顯示通過跟退回按鈕 */}
+                {reviewReport.report_status === 'pending' ? (
+                  <div className="flex gap-4">
+                    <button onClick={handleApprove} className="flex-1 bg-emerald-600 text-white font-black py-4 rounded-xl shadow-lg">✅ 通過</button>
+                    <button onClick={handleReject} className="flex-1 bg-rose-700 text-white font-black py-4 rounded-xl shadow-lg">❌ 退回</button>
+                  </div>
+                ) : (
+                  <div className="text-center text-amber-500 font-black py-2">✅ 此單據已核准完成</div>
+                )}
+                <button onClick={() => setReviewReport(null)} className="absolute top-6 right-6 text-slate-400 hover:text-white text-3xl font-black">✕</button>
               </div>
             </div>
           )}
 
+          {/* 人事檔案設定 */}
           {editProfile && (
             <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[400] flex items-center justify-center p-4">
               <div className="glass-panel w-full max-w-sm rounded-[2rem] p-6 gold-border relative">
                 <h3 className="font-black text-xl text-white mb-6">⚙️ 人事檔案管理</h3>
                 <div className="space-y-4">
                   <div><label className="text-xs text-slate-400 ml-2">夥伴姓名</label><input id="edit_name" defaultValue={editProfile.name} className="input-box !mb-0" /></div>
-                  <div><label className="text-xs text-slate-400 ml-2">手機號碼</label><input id="edit_phone" defaultValue={editProfile.phone} className="input-box !mb-0" /></div>
+                  <div><label className="text-xs text-slate-400 ml-2">手機號碼 (登入帳號)</label><input id="edit_phone" defaultValue={editProfile.phone} className="input-box !mb-0" /></div>
                   <div><label className="text-xs text-slate-400 ml-2">PIN 安全碼</label><input id="edit_pin" defaultValue={editProfile.pin} className="input-box !mb-0" /></div>
                 </div>
                 <div className="mt-8 flex gap-3">
                   <button onClick={saveProfileEdit} className="flex-1 bg-emerald-600 text-white font-black py-3 rounded-xl">💾 儲存</button>
-                  {/* 🎯 替換掉刪除按鈕 */}
                   <button onClick={handleSuspendPartner} className="flex-1 bg-slate-800 text-rose-500 font-black py-3 rounded-xl border border-rose-900 hover:bg-rose-900 transition">🛑 停權/離職</button>
                 </div>
-                <button onClick={() => setEditProfile(null)} className="absolute top-6 right-6 text-slate-400 text-xl">✕</button>
+                <button onClick={() => setEditProfile(null)} className="absolute top-6 right-6 text-slate-400 text-2xl font-black">✕</button>
+              </div>
+            </div>
+          )}
+
+          {/* 歷史日誌 */}
+          {historyData && (
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] flex items-center justify-center p-4">
+              <div className="glass-panel w-full max-w-xl rounded-[2rem] p-6 max-h-[80vh] flex flex-col gold-border">
+                <div className="flex justify-between mb-4 border-b border-white/10 pb-4">
+                  <h3 className="font-black text-xl text-amber-500">{historyData.name} - 歷史日誌</h3>
+                  <button onClick={() => setHistoryData(null)} className="text-slate-500 hover:text-white text-xl">✕ 關閉</button>
+                </div>
+                <div className="flex-1 overflow-y-auto pr-2">
+                  {historyData.data.length === 0 ? <p className="text-center text-slate-500 py-10">尚無歷史數據</p> : 
+                    historyData.data.map((r, i) => (
+                    <div key={i} className="flex justify-between border-b border-white/5 py-4 text-sm items-center">
+                      <span className="font-mono text-slate-400 bg-slate-900 px-2 py-1 rounded">{r.date}</span>
+                      <span className="font-bold text-sky-400">配 {r.del} / 逆 {r.pkp}</span>
+                      <span className="text-amber-500 font-black text-lg">${((r.del * r.del_price) + (r.pkp * r.pkp_price)).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -489,24 +636,24 @@
     }
 
     // ==========================================
-    // 3. 司機工作台 (加入預先請假申請)
+    // 3. 司機工作台 (更新個資功能回歸)
     // ==========================================
     function DriverHub({ partners, onLogout, user, appId, db, showToast, storage }) {
-      const [delCount, setDelCount] = useState("");
-      const [pkpCount, setPkpCount] = useState("");
+      const [delCount, setDelCount] = useState(""); const [pkpCount, setPkpCount] = useState("");
       const [isSubmitting, setIsSubmitting] = useState(false);
-      const [showLeaveModal, setShowLeaveModal] = useState(false); // 🎯 請假面板
+      
+      const [showLeaveModal, setShowLeaveModal] = useState(false); 
       const [leaveDate, setLeaveDate] = useState("");
       
+      const [showEdit, setShowEdit] = useState(false); // 🛠️ 個資面板
+      const currentPartner = partners.find(p => p.id === user.id) || user;
+      const [editName, setEditName] = useState(currentPartner.name);
+      const [editPin, setEditPin] = useState(currentPartner.pin);
+
       const [imageFile, setImageFile] = useState(null); 
       const [imagePreview, setImagePreview] = useState(null); 
 
-      const currentPartner = partners.find(p => p.id === user.id) || user;
-      
-      const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) { setImageFile(file); setImagePreview(URL.createObjectURL(file)); }
-      };
+      const handleImageChange = (e) => { const file = e.target.files[0]; if (file) { setImageFile(file); setImagePreview(URL.createObjectURL(file)); } };
 
       const handleSubmit = async () => {
         if (!delCount || !pkpCount) return showToast("⚠️ 請輸入今日數量");
@@ -516,8 +663,7 @@
           const today = new Date().toLocaleDateString('en-CA');
           let imgUrl = "";
           const imgRef = storage.ref(`reports/${appId}/${currentPartner.id}_${today}_${Date.now()}`);
-          await imgRef.put(imageFile);
-          imgUrl = await imgRef.getDownloadURL();
+          await imgRef.put(imageFile); imgUrl = await imgRef.getDownloadURL();
 
           const batch = db.batch();
           const pRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id);
@@ -526,33 +672,30 @@
           batch.update(pRef, { total_del: parseInt(delCount), total_pkp: parseInt(pkpCount), last_report: { date: today, timestamp: firebase.firestore.FieldValue.serverTimestamp() }, work_status: 'online', report_status: 'pending', report_img: imgUrl });
           batch.set(hRef, { date: today, del: parseInt(delCount), pkp: parseInt(pkpCount), del_price: currentPartner.custom_del_price || 15, pkp_price: currentPartner.custom_pkp_price || 10, img: imgUrl, ts: firebase.firestore.FieldValue.serverTimestamp() });
 
-          await batch.commit();
-          showToast("🚀 單據已送出審核！"); 
-          setDelCount(""); setPkpCount(""); setImageFile(null); setImagePreview(null);
-        } catch (err) { alert("❌ 提交失敗：" + err.message); } 
-        finally { setIsSubmitting(false); }
+          await batch.commit(); showToast("🚀 單據已送出審核！"); setDelCount(""); setPkpCount(""); setImageFile(null); setImagePreview(null);
+        } catch (err) { alert("❌ 提交失敗：" + err.message); } finally { setIsSubmitting(false); }
       };
 
-      // 🎯 預先請假申請功能
       const submitLeaveRequest = async () => {
         if(!leaveDate) return showToast("⚠️ 請選擇日期");
         try {
           const currentSchedule = currentPartner.schedule || {};
           const updatedSchedule = { ...currentSchedule, [leaveDate]: 'leave' };
-          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id).update({
-            schedule: updatedSchedule
-          });
-          showToast(`✅ 已成功劃休 ${leaveDate}`);
-          setShowLeaveModal(false);
-        } catch(e) {
-          showToast("❌ 劃休失敗");
-        }
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id).update({ schedule: updatedSchedule });
+          showToast(`✅ 已成功劃休 ${leaveDate}`); setShowLeaveModal(false);
+        } catch(e) { showToast("❌ 劃休失敗"); }
       };
 
-      const getTomorrowDate = () => {
-        const d = new Date(); d.setDate(d.getDate() + 1);
-        return d.toLocaleDateString('en-CA');
+      // 🛠️ 更新個資邏輯
+      const handleUpdateProfile = async () => {
+        if (!editName || !editPin) return showToast("⚠️ 姓名或密碼不能為空");
+        try {
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id).update({ name: editName, pin: editPin });
+          showToast("✅ 個資更新成功"); setShowEdit(false);
+        } catch(err) { showToast("❌ 更新失敗"); }
       };
+
+      const getTomorrowDate = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA'); };
 
       return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950 font-black relative overflow-y-auto">
@@ -592,23 +735,19 @@
               {isSubmitting ? '傳輸中...' : '🚀 提交單據與數據'}
             </button>
             <div className="flex gap-4 mb-8">
-              {/* 🎯 改為預先請假申請 */}
               <button onClick={() => {setLeaveDate(getTomorrowDate()); setShowLeaveModal(true);}} className="flex-1 py-4 rounded-2xl bg-indigo-900/30 text-indigo-400 text-xs shadow-lg border border-indigo-900 hover:bg-indigo-600 hover:text-white transition italic">📅 預先請假</button>
-              <button onClick={() => showToast("個資修改功能略")} className="flex-1 py-4 rounded-2xl bg-slate-800 border border-slate-700 text-amber-500 hover:bg-amber-900 transition text-xs italic shadow-lg">🛠️ 更新個資</button>
+              <button onClick={() => setShowEdit(true)} className="flex-1 py-4 rounded-2xl bg-slate-800 border border-slate-700 text-amber-500 hover:bg-amber-900 transition text-xs italic shadow-lg">🛠️ 更新個資</button>
             </div>
             <button onClick={onLogout} className="text-rose-500 text-sm font-black underline underline-offset-8 decoration-rose-500/30">🔒 登出系統</button>
           </div>
 
-          {/* 🎯 司機請假申請面板 */}
+          {/* 🏖️ 請假面板 */}
           {showLeaveModal && (
             <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[400] flex items-center justify-center p-4">
               <div className="glass-panel w-full max-w-sm rounded-[2rem] p-6 gold-border relative">
                 <h3 className="font-black text-xl text-white mb-6">📅 提出請假/劃休申請</h3>
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-slate-400 ml-2">選擇休假日期</label>
-                    <input type="date" min={getTomorrowDate()} value={leaveDate} onChange={e=>setLeaveDate(e.target.value)} className="input-box !mb-0 text-center" />
-                  </div>
+                  <div><label className="text-xs text-slate-400 ml-2">選擇休假日期</label><input type="date" min={getTomorrowDate()} value={leaveDate} onChange={e=>setLeaveDate(e.target.value)} className="input-box !mb-0 text-center" /></div>
                   <p className="text-xs text-slate-500 italic text-center">排定後，管理員將在排班表中看見您的休假狀態。</p>
                 </div>
                 <div className="mt-8 flex gap-3">
@@ -618,30 +757,169 @@
               </div>
             </div>
           )}
+
+          {/* 🛠️ 更新個資面板重出江湖！ */}
+          {showEdit && (
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[400] flex items-center justify-center p-4">
+              <div className="glass-panel w-full max-w-sm rounded-[2rem] p-6 gold-border relative">
+                <h3 className="font-black text-xl text-white mb-6">🛠️ 更新您的資料</h3>
+                <div className="space-y-4">
+                  <div><label className="text-xs text-slate-400 ml-2">顯示姓名</label><input value={editName} onChange={e=>setEditName(e.target.value)} className="input-box !mb-0" /></div>
+                  <div><label className="text-xs text-slate-400 ml-2">登入 PIN 碼 (4碼)</label><input type="password" value={editPin} onChange={e=>setEditPin(e.target.value)} maxLength="4" className="input-box !mb-0" /></div>
+                </div>
+                <button onClick={handleUpdateProfile} className="mt-8 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition shadow-lg">💾 確認儲存</button>
+                <button onClick={() => setShowEdit(false)} className="absolute top-6 right-6 text-slate-400 hover:text-white text-xl">✕</button>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
 
     // ==========================================
-    // 4 & 5. AI 面試與上傳流程 (保持功能即可)
+    // 4. AI 面試流程 (完整還原)
     // ==========================================
-    function OnboardingFlow({ setLayer, db, appId, showToast }) { 
+    function OnboardingFlow({ setLayer, db, appId, showToast }) {
+      const [messages, setMessages] = useState([{ type: 'bot', text: "您好！我是營運 AI 助手。在正式開始前，請先告訴我您的姓名與手機號碼。" }]);
+      const [step, setStep] = useState('info'); 
+      const [name, setName] = useState("");
+      const [phone, setPhone] = useState("");
+      const [currentQ, setCurrentQ] = useState(0);
+      const [attitude, setAttitude] = useState("良好");
+      const chatEndRef = useRef(null);
+
+      const quizDB = [
+        { q: "若配送中不幸發生車禍，您的處理順序是？", o: ["1.報警 2.拍照 3.回報管理處", "1.自行私下和解 2.繼續送完貨"] },
+        { q: "若發現包裹破損內容物滲漏，會怎麼做？", o: ["拍照回報客服暫緩配送", "裝沒看到直接送達離開"] },
+        { q: "收到代收貨款時的操作規範？", o: ["當面點清並存入公款包", "直接塞口袋回家再算"] },
+        { q: "懷疑包裹內含違禁品時？", o: ["保持現狀報警並通報指揮部", "自己打開確認"] },
+        { q: "收件地址電話未接且無保全代收？", o: ["聯繫三次無果帶回報異常", "丟在門口自行離開"] }
+      ];
+
+      useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+      const addMsg = (type, text) => setMessages(prev => [...prev, { type, text }]);
+
+      const startQuiz = () => {
+        if (!name || !phone) return showToast("⚠️ 請輸入姓名與手機");
+        setStep('quiz');
+        addMsg('bot', `太棒了，${name}。讓我們開始實務評估。第一題：${quizDB[0].q}`);
+      };
+
+      const handlePick = async (idx, text) => {
+        addMsg('user', text);
+        if (idx === 1) setAttitude("需注意");
+        if (currentQ < quizDB.length - 1) {
+          const next = currentQ + 1;
+          setCurrentQ(next);
+          setTimeout(() => { addMsg('bot', `第 ${next + 1} 題：${quizDB[next].q}`); }, 600);
+        } else {
+          setStep('done');
+          setTimeout(async () => {
+            addMsg('bot', "實務評估已完成！系統已記錄您的面試紀錄。請返回首頁進行第二步：人事建檔影像上傳。");
+            try {
+              await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${phone}`).set({
+                id: `p_${phone}`, name, phone, pin: "0000", status: 'pending_upload', attitude, 
+                total_del: 0, total_pkp: 0, custom_del_price: 15, custom_pkp_price: 10, custom_adj: 0, 
+                insured_salary: 0, labor_fee: 0, health_fee: 0, dependents: 0, created_at: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            } catch (e) { console.error(e); }
+          }, 600);
+        }
+      };
+
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 p-6 text-center">
-          <div className="glass-panel p-10 rounded-[3rem] gold-border">
-            <p className="text-amber-500 font-bold mb-6">AI 面試模組已封裝，點擊返回</p>
-            <button onClick={() => setLayer('gate')} className="btn-prime">返回首頁</button>
+        <div className="h-screen flex flex-col p-6 bg-[#020617] font-black">
+          <header className="p-6 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex justify-between items-center rounded-t-3xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-black font-black">AI</div>
+              <div><h3 className="text-white text-sm">招募評估助手</h3><p className="text-[9px] text-emerald-400">● 連線紀錄中</p></div>
+            </div>
+            <button onClick={() => setLayer('gate')} className="text-slate-400 text-xs px-4 py-2 border border-white/10 rounded-xl">結束退出</button>
+          </header>
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 mb-4 bg-slate-950">
+            {messages.map((m, i) => <div key={i} className={`chat-bubble ${m.type === 'bot' ? 'bubble-bot' : 'bubble-user'}`}>{m.text}</div>)}
+            <div ref={chatEndRef} />
+          </div>
+          <div className="bg-slate-900/80 rounded-b-3xl p-6 gold-border shadow-2xl border-t border-white/5">
+            {step === 'info' && (
+              <div className="space-y-3 font-bold">
+                <input type="text" placeholder="您的姓名" className="input-box !mb-0" value={name} onChange={e => setName(e.target.value)} />
+                <input type="tel" placeholder="您的手機" className="input-box" value={phone} onChange={e => setPhone(e.target.value)} maxLength="10"/>
+                <button onClick={startQuiz} className="btn-prime">確認並開始對話</button>
+              </div>
+            )}
+            {step === 'quiz' && (
+              <div className="grid gap-3 font-bold">
+                {quizDB[currentQ].o.map((o, i) => (
+                  <button key={i} onClick={() => handlePick(i, o)} className="w-full py-4 bg-slate-800 border border-white/10 rounded-2xl text-amber-500 text-sm font-bold shadow-lg text-left px-6">{o}</button>
+                ))}
+              </div>
+            )}
+            {step === 'done' && <button onClick={() => setLayer('gate')} className="btn-prime font-bold">返回首頁進行下一步</button>}
           </div>
         </div>
       );
     }
-    
-    function UploadFlow({ setLayer, db, appId, showToast }) { 
+
+    // ==========================================
+    // 5. 資料上傳通道 (完整還原)
+    // ==========================================
+    function UploadFlow({ setLayer, db, appId, showToast }) {
+      const [searchPhone, setSearchPhone] = useState("");
+      const [candidate, setCandidate] = useState(null);
+      const [uploading, setUploading] = useState(false);
+
+      const findCandidate = async () => {
+        if(!searchPhone) return;
+        try {
+          const docRef = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${searchPhone}`).get();
+          if(docRef.exists && docRef.data().status === 'pending_upload') {
+            setCandidate(docRef.data());
+          } else if(docRef.exists && docRef.data().status !== 'pending_upload') {
+            showToast("⚠️ 您的資料已建檔或不在等待上傳名單中。");
+          } else {
+            showToast("❌ 找不到您的面試紀錄，請先完成 AI 實務對話。");
+          }
+        } catch(e) { showToast("❌ 查詢失敗"); }
+      };
+
+      const handleSimulateUpload = async () => {
+        setUploading(true);
+        setTimeout(async () => {
+          try {
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(candidate.id).update({ status: 'active', documents_submitted: true });
+            showToast("✅ 建檔完成！您現在可以用預設密碼 0000 登入系統。"); setLayer('gate');
+          } catch(e) { showToast("❌ 建檔失敗，請聯絡管理員。"); setUploading(false); }
+        }, 1500); 
+      };
+
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 p-6 text-center">
-          <div className="glass-panel p-10 rounded-[3rem] gold-border">
-            <p className="text-amber-500 font-bold mb-6">建檔上傳通道已封裝，點擊返回</p>
-            <button onClick={() => setLayer('gate')} className="btn-prime">返回首頁</button>
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
+          <div className="glass-panel w-full max-w-[400px] rounded-[2rem] p-8 gold-border relative">
+            <button onClick={() => setLayer('gate')} className="absolute top-6 left-6 text-slate-400 hover:text-white text-xl">←</button>
+            <h2 className="text-2xl font-black text-center text-white mb-2 mt-4">📁 資料上傳通道</h2>
+            <p className="text-amber-500 text-xs text-center mb-8 font-bold">完成面試後，請驗證手機並上傳證件照</p>
+
+            {!candidate ? (
+              <div className="space-y-4">
+                <input type="tel" placeholder="請輸入面試時填寫的手機號碼" value={searchPhone} onChange={e=>setSearchPhone(e.target.value)} className="input-box" maxLength="10"/>
+                <button onClick={findCandidate} className="btn-prime">查詢面試紀錄</button>
+              </div>
+            ) : (
+              <div className="space-y-4 text-center">
+                <div className="bg-slate-900 p-4 rounded-xl border border-white/10 mb-6">
+                  <p className="text-slate-400 text-xs">歡迎您加入</p>
+                  <p className="text-xl font-black text-white">{candidate.name}</p>
+                </div>
+                <div className="border-2 border-dashed border-amber-500/30 bg-amber-900/10 p-8 rounded-2xl relative">
+                  <p className="text-amber-500 font-bold text-sm mb-2">📸 請上傳您的證件照片</p>
+                  <p className="text-slate-400 text-xs mb-4">(目前為測試模式，點擊下方按鈕即可模擬上傳)</p>
+                  <button onClick={handleSimulateUpload} disabled={uploading} className="bg-amber-600 text-black px-6 py-2 rounded-full font-black text-sm">
+                    {uploading ? '資料傳輸中...' : '選擇檔案並上傳'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );
