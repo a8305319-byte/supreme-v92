@@ -3,459 +3,526 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>在地物流 - 數位營運總控</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#020617">
+    <title>在地物流 - 營運總控系統</title>
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --accent: #0ea5e9; --bg-dark: #020617; --card-bg: #0f172a; }
-        body { background: var(--bg-dark); color: #94a3b8; font-family: "Inter", "Microsoft JhengHei", sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
         
-        /* 平滑轉場動畫 */
-        .layer { display: none; position: fixed; inset: 0; background: var(--bg-dark); z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        :root { --accent: #0ea5e9; --bg-dark: #020617; }
+        body { 
+            background: radial-gradient(circle at 50% 0%, #0f172a 0%, var(--bg-dark) 100%);
+            background-attachment: fixed;
+            color: #94a3b8; font-family: "Inter", "Microsoft JhengHei", sans-serif; 
+            -webkit-tap-highlight-color: transparent; overflow-x: hidden; user-select: none;
+        }
         
-        .id-card { width: 100%; max-width: 500px; background: var(--card-bg); border-radius: 2rem; padding: 24px; border: 1px solid #1e293b; margin-bottom: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .input-box { background: rgba(30, 41, 59, 0.4); border: 1px solid #334155; border-radius: 1rem; padding: 14px; width: 100%; color: #ffffff; outline: none; margin-bottom: 12px; font-size: 16px; text-align: center; transition: all 0.3s; }
-        .input-box:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(14, 165, 233, 0.2); }
-        .btn-prime { width: 100%; padding: 16px; border-radius: 1rem; background: var(--accent); color: #ffffff; font-weight: 700; font-size: 17px; cursor: pointer; border: none; transition: all 0.2s; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3); }
-        .btn-prime:active { transform: scale(0.97); opacity: 0.9; }
-        .btn-prime:disabled { background: #1e293b; color: #475569; cursor: not-allowed; opacity: 0.7; box-shadow: none; }
+        /* 旗艦級毛玻璃特效 */
+        .glass-panel { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        
+        /* 平滑轉場 */
+        .layer { display: none; position: fixed; inset: 0; z-index: 100; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .error-shake { animation: shake 0.4s ease-in-out; border-color: #ef4444 !important; }
 
-        /* 管理端表格優化：Sticky Header */
-        .admin-table-container { width: 100%; overflow-x: auto; border-radius: 1.5rem; border: 1px solid #1e293b; background: #0f172a; max-height: 70vh; }
-        .admin-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1300px; }
-        .admin-table th { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(8px); color: #64748b; font-size: 11px; padding: 16px 8px; text-align: center; font-weight: 800; white-space: nowrap; border-bottom: 1px solid #0f172a; position: sticky; top: 0; z-index: 20; }
-        .admin-table td { padding: 14px 8px; border-bottom: 1px solid #1e293b; font-size: 13px; text-align: center; color: #cbd5e1; vertical-align: middle; }
-        .admin-table tr:nth-child(even) { background-color: rgba(30, 41, 59, 0.2); }
+        .id-card { width: 100%; max-width: 500px; border-radius: 2rem; padding: 28px; margin-bottom: 20px; }
+        
+        /* 優化版輸入框 */
+        .input-box { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 16px; width: 100%; color: #ffffff; outline: none; margin-bottom: 16px; font-size: 16px; text-align: center; transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); user-select: auto; }
+        .input-box:focus { border-color: var(--accent); background: rgba(0,0,0,0.5); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 0 15px rgba(14,165,233,0.3); transform: translateY(-1px); }
+        
+        /* 旗艦級按鈕 */
+        .btn-prime { width: 100%; padding: 18px; border-radius: 1.2rem; background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #ffffff; font-weight: 800; font-size: 17px; letter-spacing: 1px; cursor: pointer; border: none; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.4), inset 0 2px 0 rgba(255,255,255,0.2); }
+        .btn-prime:active { transform: scale(0.96); box-shadow: 0 5px 15px -5px rgba(14, 165, 233, 0.4); }
+        .btn-prime:disabled { background: #1e293b; color: #475569; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        .loading-overlay { position: fixed; inset: 0; background: var(--bg-dark); z-index: 3000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 48px; height: 48px; border: 4px solid #1e293b; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        /* 總控台表格凍結優化 */
+        .admin-table-container { width: 100%; overflow-x: auto; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); max-height: 75vh; backdrop-filter: blur(10px); }
+        .admin-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1400px; }
+        .admin-table th { background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(10px); color: #94a3b8; font-size: 11px; padding: 18px 10px; text-align: center; font-weight: 900; letter-spacing: 1px; white-space: nowrap; border-bottom: 2px solid rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 20; text-transform: uppercase; }
+        .admin-table td { padding: 14px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; text-align: center; color: #e2e8f0; vertical-align: middle; transition: background 0.2s; }
+        .admin-table tr:hover td { background: rgba(255,255,255,0.03); }
+        
+        /* 總控台內部透明輸入框 */
+        .ghost-input { background: transparent; border: 1px solid transparent; color: inherit; text-align: center; outline: none; transition: all 0.2s; border-radius: 0.5rem; }
+        .ghost-input:focus, .ghost-input:hover { background: rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.2); }
+
+        /* 載入畫面 */
+        .loading-overlay { position: fixed; inset: 0; background: var(--bg-dark); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.5s ease; }
+        .loader-ring { width: 60px; height: 60px; border: 4px solid rgba(14,165,233,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; box-shadow: 0 0 30px rgba(14,165,233,0.2); }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* 模態視窗加入高級毛玻璃背景 */
-        .custom-modal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); z-index: 4000; display: none; justify-content: center; align-items: center; padding: 20px; animation: fadeIn 0.2s ease-out; }
+        /* 彈窗遮罩 */
+        .custom-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 8000; display: none; justify-content: center; align-items: center; padding: 20px; animation: fadeIn 0.3s ease-out; }
         
-        /* 提示框動畫優化 */
-        #toast { position: fixed; top: -50px; left: 50%; transform: translateX(-50%); background: #0ea5e9; color: white; padding: 12px 28px; border-radius: 99px; font-weight: bold; font-size: 14px; z-index: 5000; opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 10px 30px rgba(14, 165, 233, 0.5); }
-        #toast.show { top: 30px; opacity: 1; }
+        /* Toast 提示 */
+        #toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: rgba(14,165,233,0.95); backdrop-filter: blur(8px); color: white; padding: 16px 32px; border-radius: 99px; font-weight: 800; font-size: 15px; z-index: 10000; opacity: 0; pointer-events: none; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(14,165,233,0.4); border: 1px solid rgba(255,255,255,0.2); display: flex; items-center; gap: 8px; }
+        #toast.show { top: 40px; opacity: 1; }
         
         .marquee-container { overflow: hidden; white-space: nowrap; position: relative; border-radius: 99px; }
-        .marquee-content { display: inline-block; animation: marquee 15s linear infinite; padding-left: 100%; }
-        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+        .marquee-content { display: inline-block; animation: marquee 20s linear infinite; padding-left: 100%; }
 
-        .upload-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
-        .photo-slot { background: rgba(30, 41, 59, 0.4); border: 1.5px dashed #475569; border-radius: 1rem; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
-        .photo-slot:active { transform: scale(0.96); background: rgba(30, 41, 59, 0.7); }
-        .photo-slot.completed { border-style: solid; border-color: #0ea5e9; background: rgba(14, 165, 233, 0.1); }
-        .photo-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 0.9rem; z-index: 5; transition: transform 0.3s; }
-        .photo-slot.completed:hover img { transform: scale(1.05); }
-        .slot-label { font-size: 11px; font-weight: 800; color: #94a3b8; margin-top: 6px; pointer-events: none; z-index: 2; position: relative; }
-        .slot-icon { font-size: 26px; opacity: 0.7; pointer-events: none; z-index: 2; position: relative; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .is-required::after { content: "*必填"; color: #ef4444; margin-left: 4px; font-size: 9px; }
+        /* 證件上傳網格 */
+        .upload-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 24px; }
+        .photo-slot { background: rgba(0, 0, 0, 0.3); border: 1.5px dashed rgba(255,255,255,0.2); border-radius: 1.2rem; padding: 16px 10px; text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); position: relative; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); }
+        .photo-slot:active { transform: scale(0.95); }
+        .photo-slot:hover { border-color: rgba(255,255,255,0.4); background: rgba(0,0,0,0.5); }
+        .photo-slot.completed { border-style: solid; border-color: #0ea5e9; background: rgba(14, 165, 233, 0.1); box-shadow: 0 0 20px rgba(14,165,233,0.15); }
+        .photo-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 1.1rem; z-index: 5; transition: transform 0.5s; pointer-events: none;}
+        .photo-slot.completed:hover img { transform: scale(1.08); }
+        .slot-label { font-size: 11px; font-weight: 800; color: #cbd5e1; margin-top: 8px; pointer-events: none; z-index: 2; position: relative; letter-spacing: 0.5px; }
+        .slot-icon { font-size: 28px; opacity: 0.8; pointer-events: none; z-index: 2; position: relative; text-shadow: 0 4px 15px rgba(0,0,0,0.8); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        .is-required::after { content: "*必傳"; color: #f43f5e; margin-left: 4px; font-size: 10px; font-weight: 900; background: rgba(244,63,94,0.1); padding: 2px 4px; border-radius: 4px; }
 
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
         ::-webkit-scrollbar-track { background: transparent; }
+        
+        button, input, select { touch-action: manipulation; }
     </style>
 </head>
 <body>
 
-    <!-- 優化版 Toast -->
-    <div id="toast">提示訊息</div>
+    <div id="toast"><span id="toast-icon">ℹ️</span><span id="toast-msg">提示訊息</span></div>
+
+    <!-- ================= 系統級載入防護 ================= -->
+    <div id="loading-screen" class="loading-overlay">
+        <div class="loader-ring"></div>
+        <p class="mt-6 text-sky-400 font-black tracking-[0.4em] text-sm uppercase animate-pulse drop-shadow-lg">System Booting...</p>
+        <p class="mt-2 text-slate-500 text-[10px] font-bold">載入企業核心資料庫</p>
+        <button type="button" onclick="window.forceEnter()" class="mt-12 text-slate-400 px-6 py-2.5 border border-slate-700/50 rounded-full text-xs hover:bg-slate-800 hover:text-white transition shadow-lg">強制進入介面</button>
+    </div>
 
     <!-- ================= 模態視窗區 ================= -->
-    
-    <!-- 全新：手機桌面安裝教學 Modal -->
     <div id="tutorial-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-slate-700 p-6 rounded-3xl max-w-sm w-full shadow-2xl relative max-h-[85vh] overflow-y-auto">
-            <button type="button" onclick="window.closeModal('tutorial-modal')" class="absolute top-4 right-5 text-slate-400 hover:text-white text-3xl leading-none">&times;</button>
-            <h3 class="text-white font-black text-xl mb-4 text-center border-b border-slate-800 pb-4">📱 將系統安裝至桌面</h3>
-            
-            <div class="space-y-6">
-                <!-- iOS 教學 -->
-                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
-                    <h4 class="text-sky-400 font-bold mb-3 flex items-center gap-2"><span class="text-xl">🍎</span> Apple iOS (iPhone/iPad)</h4>
-                    <ol class="text-slate-300 text-sm space-y-2 list-decimal pl-5">
-                        <li>請務必使用 <span class="text-white font-bold">Safari</span> 瀏覽器開啟本網頁。</li>
-                        <li>點擊下方工具列的 <span class="bg-slate-700 px-1.5 py-0.5 rounded text-white">分享 ⍐</span> 圖示。</li>
-                        <li>往下滑動，點選 <span class="text-sky-400 font-bold">「加入主畫面 ➕」</span>。</li>
-                        <li>點擊右上角的「新增」即可。</li>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full relative max-h-[85vh] overflow-y-auto">
+            <button type="button" onclick="window.closeModal('tutorial-modal')" class="absolute top-5 right-6 text-slate-400 hover:text-white text-3xl leading-none">&times;</button>
+            <h3 class="text-white font-black text-2xl mb-6 text-center">📱 安裝至桌面</h3>
+            <div class="space-y-5">
+                <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-700/50 shadow-inner">
+                    <h4 class="text-sky-400 font-bold mb-3 flex items-center gap-2"><span class="text-2xl">🍎</span> iOS (iPhone)</h4>
+                    <ol class="text-slate-300 text-sm space-y-2 list-decimal pl-5 font-medium">
+                        <li>使用 <span class="text-white font-bold bg-slate-800 px-1 rounded">Safari</span> 開啟本網頁。</li>
+                        <li>點擊下方 <span class="bg-slate-700 px-1.5 py-0.5 rounded text-white shadow">分享 ⍐</span> 圖示。</li>
+                        <li>下滑點選 <span class="text-sky-400 font-bold">「加入主畫面 ➕」</span>。</li>
                     </ol>
                 </div>
-                
-                <!-- Android 教學 -->
-                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
-                    <h4 class="text-emerald-400 font-bold mb-3 flex items-center gap-2"><span class="text-xl">🤖</span> Android (安卓手機)</h4>
-                    <ol class="text-slate-300 text-sm space-y-2 list-decimal pl-5">
-                        <li>請務必使用 <span class="text-white font-bold">Chrome</span> 瀏覽器開啟本網頁。</li>
-                        <li>點擊右上角的 <span class="bg-slate-700 px-1.5 py-0.5 rounded text-white">設定 ⋮</span> 圖示。</li>
-                        <li>選擇 <span class="text-emerald-400 font-bold">「加到主畫面」</span> 或 「安裝應用程式」。</li>
-                        <li>點擊「新增」或「安裝」即可。</li>
+                <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-700/50 shadow-inner">
+                    <h4 class="text-emerald-400 font-bold mb-3 flex items-center gap-2"><span class="text-2xl">🤖</span> Android (安卓)</h4>
+                    <ol class="text-slate-300 text-sm space-y-2 list-decimal pl-5 font-medium">
+                        <li>使用 <span class="text-white font-bold bg-slate-800 px-1 rounded">Chrome</span> 開啟本網頁。</li>
+                        <li>點擊右上角 <span class="bg-slate-700 px-1.5 py-0.5 rounded text-white shadow">設定 ⋮</span> 圖示。</li>
+                        <li>選擇 <span class="text-emerald-400 font-bold">「加到主畫面」</span>。</li>
                     </ol>
                 </div>
             </div>
-            <button type="button" onclick="window.closeModal('tutorial-modal')" class="w-full mt-6 py-3 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition">我知道了</button>
+            <button type="button" onclick="window.closeModal('tutorial-modal')" class="w-full mt-8 py-4 rounded-xl bg-slate-800 text-white font-black hover:bg-slate-700 transition shadow-lg">我知道了</button>
         </div>
     </div>
 
     <!-- 刪除確認 -->
     <div id="delete-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-rose-900 p-6 rounded-3xl max-w-sm w-full text-center shadow-2xl">
-            <div class="text-rose-500 text-5xl mb-4 drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]">⚠️</div><h3 class="text-white font-bold text-xl mb-2">確定要刪除嗎？</h3>
-            <div class="flex gap-3 mt-6">
-                <button type="button" onclick="window.closeModal('delete-modal')" class="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 font-bold">取消</button>
-                <button type="button" onclick="window.executeDelete()" class="flex-1 py-3 rounded-xl bg-rose-600 text-white font-bold shadow-lg shadow-rose-900/50">確認刪除</button>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full text-center">
+            <div class="text-rose-500 text-6xl mb-4 drop-shadow-[0_0_20px_rgba(244,63,94,0.6)]">⚠️</div><h3 class="text-white font-black text-2xl mb-2">確定刪除紀錄？</h3>
+            <p class="text-slate-400 text-sm mb-8 font-medium">此操作無法復原，雲端資料將永久清除。</p>
+            <div class="flex gap-4">
+                <button type="button" onclick="window.closeModal('delete-modal')" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">取消</button>
+                <button type="button" onclick="window.executeDelete()" class="flex-1 py-4 rounded-xl bg-rose-600 text-white font-black shadow-[0_0_20px_rgba(244,63,94,0.4)] hover:bg-rose-500 transition">確認刪除</button>
             </div>
         </div>
     </div>
     
     <!-- 月結歸檔 -->
     <div id="settle-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-sky-900 p-6 rounded-3xl max-w-sm w-full text-center shadow-2xl">
-            <div class="text-sky-500 text-5xl mb-4 drop-shadow-[0_0_15px_rgba(14,165,233,0.5)]">📅</div><h3 class="text-white font-bold text-xl mb-2">確認執行月結？</h3>
-            <p class="text-slate-400 text-xs mb-6">將結算本月淨額存入歷史紀錄，件數與加扣款將自動歸零。</p>
-            <div class="flex gap-3 mt-2">
-                <button type="button" onclick="window.closeModal('settle-modal')" class="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 font-bold">取消</button>
-                <button type="button" onclick="window.executeSettle()" class="flex-1 py-3 rounded-xl bg-sky-600 text-white font-bold shadow-lg shadow-sky-900/50">確認結算</button>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full text-center">
+            <div class="text-sky-500 text-6xl mb-4 drop-shadow-[0_0_20px_rgba(14,165,233,0.6)]">📅</div><h3 class="text-white font-black text-2xl mb-2">執行全站月結？</h3>
+            <p class="text-slate-400 text-sm mb-8 font-medium">當月淨額將封存至歷史紀錄，所有件數與加扣款自動歸零。</p>
+            <div class="flex gap-4">
+                <button type="button" onclick="window.closeModal('settle-modal')" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">取消</button>
+                <button type="button" onclick="window.executeSettle()" class="flex-1 py-4 rounded-xl bg-sky-600 text-white font-black shadow-[0_0_20px_rgba(14,165,233,0.4)] hover:bg-sky-500 transition">確認結算</button>
             </div>
         </div>
     </div>
     
     <!-- 群發薪資 -->
     <div id="batch-send-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-emerald-900 p-6 rounded-3xl max-w-sm w-full text-center shadow-2xl">
-            <div class="text-emerald-500 text-5xl mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]">🚀</div><h3 class="text-white font-bold text-xl mb-2">一鍵群發薪資條</h3>
-            <p class="text-slate-400 text-xs mb-6">發送含詳細明細的薪資單給所有人。</p>
-            <div class="flex gap-3 mt-2">
-                <button type="button" onclick="window.closeModal('batch-send-modal')" class="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 font-bold">取消</button>
-                <button type="button" onclick="window.executeBatchSend()" class="flex-1 py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-900/50">確認群發</button>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full text-center">
+            <div class="text-emerald-500 text-6xl mb-4 drop-shadow-[0_0_20px_rgba(16,185,129,0.6)]">🚀</div><h3 class="text-white font-black text-2xl mb-2">一鍵群發薪資</h3>
+            <p class="text-slate-400 text-sm mb-8 font-medium">將發送包含詳細明細的電子薪資憑單給全體人員。</p>
+            <div class="flex gap-4">
+                <button type="button" onclick="window.closeModal('batch-send-modal')" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">取消</button>
+                <button type="button" onclick="window.executeBatchSend()" class="flex-1 py-4 rounded-xl bg-emerald-600 text-white font-black shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:bg-emerald-500 transition">確認群發</button>
             </div>
         </div>
     </div>
 
     <!-- 照片放大鏡 -->
-    <div id="image-viewer-modal" class="custom-modal" style="z-index: 6000;" onclick="window.closeModal('image-viewer-modal')">
-        <div class="relative w-full max-w-3xl flex justify-center items-center p-2">
-            <img id="fullscreen-image" src="" class="rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.8)] max-h-[85vh] max-w-full object-contain">
-            <button class="absolute -top-10 right-0 text-slate-300 hover:text-white text-5xl font-light drop-shadow-md">&times;</button>
+    <div id="image-viewer-modal" class="custom-modal" style="z-index: 9000;" onclick="window.closeModal('image-viewer-modal')">
+        <div class="relative w-full max-w-4xl flex justify-center items-center p-4">
+            <img id="fullscreen-image" src="" class="rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-h-[85vh] max-w-full object-contain pointer-events-none border border-slate-700">
+            <button class="absolute -top-4 right-4 text-white hover:text-sky-400 text-5xl font-light drop-shadow-lg transition bg-black/50 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md">&times;</button>
         </div>
     </div>
 
     <!-- 完整人事檔案調閱 -->
     <div id="hr-detail-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-sky-900 p-6 rounded-3xl max-w-xl w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button type="button" onclick="window.closeModal('hr-detail-modal')" class="absolute top-4 right-5 text-slate-400 hover:text-white text-3xl leading-none">&times;</button>
-            <h3 class="text-white font-black text-2xl mb-6 italic flex items-center gap-2"><span class="w-1.5 h-6 bg-sky-500 rounded-full"></span>電子人事檔案</h3>
+        <div class="glass-panel p-6 md:p-8 rounded-[2rem] max-w-xl w-full relative max-h-[90vh] overflow-y-auto">
+            <button type="button" onclick="window.closeModal('hr-detail-modal')" class="absolute top-6 right-6 text-slate-400 hover:text-white text-4xl leading-none">&times;</button>
+            <h3 class="text-white font-black text-2xl mb-8 italic flex items-center gap-3 border-b border-slate-700/50 pb-4">
+                <span class="w-1.5 h-8 bg-gradient-to-b from-sky-400 to-sky-600 rounded-full"></span>電子人事檔案
+            </h3>
             <div id="hr_detail_content"></div>
-            <button type="button" onclick="window.closeModal('hr-detail-modal')" class="w-full mt-6 py-4 rounded-2xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition shadow-lg">關閉檔案</button>
+            <button type="button" onclick="window.closeModal('hr-detail-modal')" class="w-full mt-8 py-4 rounded-xl bg-slate-800 text-white font-black hover:bg-slate-700 transition shadow-lg">關閉檔案</button>
         </div>
     </div>
 
-    <!-- 發送薪資單 -->
+    <!-- 發送/回覆單一薪資單 -->
     <div id="send-payslip-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-sky-900 p-6 rounded-3xl max-w-sm w-full shadow-2xl">
-            <h3 class="text-white font-bold text-xl mb-4 text-center">📤 發送薪資單</h3>
-            <div id="sp_dispute_box" class="bg-rose-900/30 border border-rose-800 p-3 rounded-xl mb-4 hidden">
-                <div class="text-rose-400 text-[10px] font-bold mb-1">⚠️ 司機申訴理由：</div>
-                <div id="sp_dispute_text" class="text-rose-200 text-sm"></div>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full">
+            <h3 class="text-white font-black text-2xl mb-6 text-center flex items-center justify-center gap-2"><span>📤</span> 薪資核發作業</h3>
+            <div id="sp_dispute_box" class="bg-rose-950/40 border border-rose-800/50 p-4 rounded-2xl mb-5 hidden shadow-inner">
+                <div class="text-rose-400 text-[10px] font-bold mb-1.5 uppercase tracking-widest flex items-center gap-1"><span>⚠️</span> 司機申訴理由</div>
+                <div id="sp_dispute_text" class="text-rose-100 text-sm font-medium"></div>
             </div>
-            <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mb-4 text-sm text-slate-300 space-y-2">
-                <div class="flex justify-between"><span>正件小計</span><span id="sp_del_total"></span></div>
-                <div class="flex justify-between"><span>逆件小計</span><span id="sp_rev_total"></span></div>
-                <div class="flex justify-between text-rose-400"><span>勞健保扣款</span><span id="sp_ins_total"></span></div>
-                <div class="flex justify-between"><span>加/扣款</span><span id="sp_adj_total"></span></div>
-                <hr class="border-slate-700">
-                <div class="flex justify-between text-white font-black text-lg"><span>預計實發</span><span id="sp_net_total" class="text-sky-400"></span></div>
+            <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-700/50 mb-5 text-sm text-slate-300 space-y-3 shadow-inner">
+                <div class="flex justify-between items-center"><span class="font-medium text-slate-400">正件小計</span><span id="sp_del_total" class="font-bold"></span></div>
+                <div class="flex justify-between items-center"><span class="font-medium text-slate-400">逆件小計</span><span id="sp_rev_total" class="font-bold"></span></div>
+                <div class="flex justify-between items-center text-rose-400"><span class="font-medium">勞健保扣款</span><span id="sp_ins_total" class="font-bold"></span></div>
+                <div class="flex justify-between items-center"><span class="font-medium text-slate-400">其他加/扣款</span><span id="sp_adj_total" class="font-bold"></span></div>
+                <div class="h-px bg-slate-700/50 w-full my-2"></div>
+                <div class="flex justify-between items-end text-white font-black"><span class="text-xs text-slate-400 uppercase tracking-widest">預計實發</span><span id="sp_net_total" class="text-3xl text-sky-400 drop-shadow-md"></span></div>
             </div>
-            <input type="text" id="sp_reply_input" placeholder="會計備註 (選填)..." class="input-box !text-left !text-sm">
-            <div class="flex gap-3 mt-2">
-                <button type="button" onclick="window.closeModal('send-payslip-modal')" class="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300">取消</button>
-                <button type="button" onclick="window.confirmSendPayslip()" class="flex-1 py-3 rounded-xl bg-sky-600 text-white font-bold shadow-lg shadow-sky-900/50">確認發送</button>
+            <input type="text" id="sp_reply_input" placeholder="會計備註留言 (選填)..." class="input-box !text-left !text-sm !py-4 focus:!border-sky-500">
+            <div class="flex gap-4 mt-2">
+                <button type="button" onclick="window.closeModal('send-payslip-modal')" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">取消</button>
+                <button type="button" onclick="window.confirmSendPayslip()" class="flex-[1.5] py-4 rounded-xl bg-sky-600 text-white font-black shadow-[0_0_20px_rgba(14,165,233,0.4)] hover:bg-sky-500 transition">核發並推送</button>
             </div>
         </div>
     </div>
 
+    <!-- 單據相簿 -->
     <div id="admin-photos-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-slate-700 p-6 rounded-3xl max-w-md w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button type="button" onclick="window.closeModal('admin-photos-modal')" class="absolute top-4 right-5 text-slate-400 hover:text-white text-3xl leading-none">&times;</button>
-            <h3 class="text-white font-bold text-xl mb-6 text-center" id="admin_photos_title">單據照片</h3>
+        <div class="glass-panel p-6 md:p-8 rounded-[2rem] max-w-md w-full relative max-h-[90vh] overflow-y-auto">
+            <button type="button" onclick="window.closeModal('admin-photos-modal')" class="absolute top-4 right-5 text-slate-400 hover:text-white text-4xl leading-none">&times;</button>
+            <h3 class="text-white font-black text-2xl mb-6 text-center border-b border-slate-700/50 pb-4">回單與附件照片</h3>
             <div id="admin_photos_content" class="space-y-6"></div>
         </div>
     </div>
 
+    <!-- 司機申訴 -->
     <div id="dispute-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-rose-900 p-6 rounded-3xl max-w-sm w-full shadow-2xl">
-            <h3 class="text-white font-bold text-lg mb-4 text-center">回報薪資單異常</h3>
-            <textarea id="dispute_reason_input" class="input-box !mb-6 !text-left h-24 resize-none" placeholder="請述明有誤的原因..."></textarea>
-            <div class="flex gap-3">
-                <button type="button" onclick="window.closeModal('dispute-modal')" class="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 font-bold">取消</button>
-                <button type="button" onclick="window.submitDispute()" class="flex-1 py-3 rounded-xl bg-rose-600 text-white font-bold shadow-lg shadow-rose-900/50">送出回報</button>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full">
+            <h3 class="text-white font-black text-2xl mb-2 text-center text-rose-500">薪資單申訴</h3>
+            <p class="text-xs text-slate-400 mb-5 text-center font-medium">若發現件數或金額有誤，請詳細說明原因。</p>
+            <textarea id="dispute_reason_input" class="input-box !mb-6 !text-left h-32 resize-none focus:!border-rose-500" placeholder="例如：正件數應為 120 件，漏算了..."></textarea>
+            <div class="flex gap-4">
+                <button type="button" onclick="window.closeModal('dispute-modal')" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">取消</button>
+                <button type="button" onclick="window.submitDispute()" class="flex-1 py-4 rounded-xl bg-rose-600 text-white font-black shadow-[0_0_20px_rgba(244,63,94,0.4)] hover:bg-rose-500">提交申訴</button>
             </div>
         </div>
     </div>
 
+    <!-- 異常回報 -->
     <div id="status-reason-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-yellow-900 p-6 rounded-3xl max-w-sm w-full shadow-2xl">
-            <h3 class="text-white font-bold text-lg mb-4 text-center">回報詳細原因</h3>
-            <input type="text" id="status_reason_input" placeholder="拋錨、家中有事..." class="input-box !mb-6 !text-left">
-            <div class="flex gap-3">
-                <button type="button" onclick="window.closeModal('status-reason-modal')" class="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 font-bold">取消</button>
-                <button type="button" onclick="window.confirmStatusReason()" class="flex-1 py-3 rounded-xl bg-yellow-600 text-white font-bold shadow-lg shadow-yellow-900/50">送出回報</button>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full">
+            <h3 class="text-white font-black text-2xl mb-6 text-center text-yellow-500" id="sr_title">狀況回報</h3>
+            <input type="text" id="status_reason_input" placeholder="請簡述原因 (例如: 機車拋錨)..." class="input-box !mb-8 !text-left !py-4 focus:!border-yellow-500">
+            <div class="flex gap-4">
+                <button type="button" onclick="window.closeModal('status-reason-modal')" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">取消</button>
+                <button type="button" onclick="window.confirmStatusReason()" class="flex-1 py-4 rounded-xl bg-yellow-600 text-white font-black shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:bg-yellow-500">確認回報</button>
             </div>
         </div>
     </div>
     
+    <!-- 排假申請 -->
     <div id="leave-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-purple-900 p-6 rounded-3xl max-w-sm w-full shadow-2xl">
-            <h3 class="text-white font-bold text-lg mb-4 text-center">📅 預約排假申請</h3>
-            <input type="date" id="leave_date_input" class="input-box !mb-4 !text-left min-h-[52px]">
-            <input type="text" id="leave_reason_input" placeholder="請假事由..." class="input-box !mb-6 !text-left">
-            <div class="flex gap-3">
-                <button type="button" onclick="window.closeModal('leave-modal')" class="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 font-bold">取消</button>
-                <button type="button" onclick="window.submitLeave()" class="flex-1 py-3 rounded-xl bg-purple-600 text-white font-bold shadow-lg shadow-purple-900/50">送出申請</button>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full">
+            <h3 class="text-white font-black text-2xl mb-6 text-center text-purple-400 flex items-center justify-center gap-2"><span>📅</span> 預約排假申請</h3>
+            <label class="block text-xs text-slate-400 font-bold mb-2 ml-1 uppercase tracking-wider">選擇休假日期</label>
+            <input type="date" id="leave_date_input" class="input-box !mb-5 !text-left min-h-[56px] focus:!border-purple-500">
+            <label class="block text-xs text-slate-400 font-bold mb-2 ml-1 uppercase tracking-wider">休假事由 (選填)</label>
+            <input type="text" id="leave_reason_input" placeholder="例如: 醫院回診、私事處理..." class="input-box !mb-8 !text-left focus:!border-purple-500">
+            <div class="flex gap-4">
+                <button type="button" onclick="window.closeModal('leave-modal')" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">取消</button>
+                <button type="button" onclick="window.submitLeave()" class="flex-[1.5] py-4 rounded-xl bg-purple-600 text-white font-black shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:bg-purple-500">正式提出申請</button>
             </div>
         </div>
     </div>
     
+    <!-- 管理端看排假 -->
     <div id="view-leave-modal" class="custom-modal">
-        <div class="bg-slate-900 border border-slate-700 p-6 rounded-3xl max-w-sm w-full shadow-2xl">
-            <h3 class="text-white font-bold text-lg mb-4 text-center" id="view_leave_title">排假紀錄</h3>
-            <div id="view_leave_content" class="space-y-2 mb-6 max-h-48 overflow-y-auto pr-2"></div>
-            <button type="button" onclick="window.closeModal('view-leave-modal')" class="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold transition">關閉</button>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full">
+            <h3 class="text-white font-black text-2xl mb-6 text-center border-b border-slate-700/50 pb-4" id="view_leave_title">排假紀錄</h3>
+            <div id="view_leave_content" class="space-y-3 mb-8 max-h-64 overflow-y-auto pr-2"></div>
+            <button type="button" onclick="window.closeModal('view-leave-modal')" class="w-full py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black transition shadow-lg">關閉視窗</button>
         </div>
     </div>
 
+    <!-- 快速新增 -->
     <div id="quick-add-modal" class="custom-modal">
-        <div class="id-card !mb-0 shadow-2xl border-sky-500/30 text-center relative">
-            <h3 class="text-white font-black text-2xl mb-6 italic"><span class="w-2 h-6 bg-sky-500 mr-3 rounded-full inline-block align-middle"></span>快速建檔</h3>
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full text-center">
+            <h3 class="text-white font-black text-2xl mb-6 italic flex items-center justify-center gap-2"><span class="w-1.5 h-6 bg-sky-500 rounded-full"></span>快速建檔通道</h3>
             <input type="text" id="qa_name" placeholder="輸入真實姓名" class="input-box focus:border-sky-500">
             <input type="tel" id="qa_phone" placeholder="輸入手機號碼 (09xxxxxxxx)" class="input-box focus:border-sky-500" maxlength="10">
             <input type="tel" id="qa_pin" placeholder="設定登入 PIN 碼 (預設0000)" class="input-box focus:border-sky-500" maxlength="4" value="0000">
-            <div class="flex gap-3 pt-4">
-                <button type="button" onclick="window.toggleQuickAdd(false)" class="flex-1 py-4 rounded-xl border border-slate-700 text-slate-400 font-bold hover:bg-slate-800 transition">取消</button>
-                <button type="button" id="qa_submit_btn" onclick="window.processQuickAdd()" class="flex-1 py-4 rounded-xl bg-sky-600 text-white font-black shadow-lg shadow-sky-900/50 hover:bg-sky-500 transition">建立人員</button>
+            <div class="flex gap-4 pt-4">
+                <button type="button" onclick="window.toggleQuickAdd(false)" class="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">取消</button>
+                <button type="button" id="qa_submit_btn" onclick="window.processQuickAdd()" class="flex-[1.5] py-4 rounded-xl bg-sky-600 text-white font-black shadow-[0_0_20px_rgba(14,165,233,0.4)] hover:bg-sky-500 transition">建立人員</button>
             </div>
         </div>
     </div>
 
-    <div id="loading-screen" class="loading-overlay">
-        <div class="spinner"></div><p class="mt-5 text-sky-500 font-bold tracking-[0.3em] text-xs uppercase animate-pulse">Connecting System...</p>
-        <button type="button" onclick="window.forceEnter()" class="mt-10 text-slate-500 px-6 py-2 border border-slate-700 rounded-full text-xs hover:text-white hover:border-slate-500 transition">強制跳過</button>
-    </div>
-
     <!-- ============================================== -->
-    <!-- 頁面圖層區 -->
+    <!-- 頁面圖層區 (Layer Pages) -->
     <!-- ============================================== -->
     
-    <!-- 登入閘口 -->
-    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 relative">
-        <!-- 背景裝飾 -->
-        <div class="absolute top-0 right-0 w-64 h-64 bg-sky-900/20 rounded-full blur-[100px] pointer-events-none"></div>
-        <div class="absolute bottom-0 left-0 w-64 h-64 bg-indigo-900/20 rounded-full blur-[100px] pointer-events-none"></div>
+    <!-- 登入首頁 -->
+    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-sky-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-        <div class="mb-10 text-center relative z-10">
-            <h1 class="text-6xl font-black text-white italic tracking-tighter mb-2 drop-shadow-lg">在地物流</h1>
-            <p class="text-sky-500 text-[10px] tracking-[0.4em] uppercase font-bold bg-sky-500/10 px-3 py-1 rounded-full inline-block">Cloud Operation System</p>
+        <div class="mb-12 text-center relative z-10">
+            <h1 class="text-7xl font-black text-white italic tracking-tighter mb-3 drop-shadow-[0_0_25px_rgba(255,255,255,0.2)]">在地物流</h1>
+            <p class="text-sky-400 text-[10px] tracking-[0.5em] font-black bg-sky-900/30 border border-sky-500/30 px-4 py-1.5 rounded-full inline-block shadow-lg">CLOUD SYSTEM</p>
         </div>
-        <div class="w-full max-w-[340px] space-y-4 relative z-10">
-            <div class="bg-slate-900/80 p-8 rounded-[2.5rem] border border-slate-700/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-                <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box" maxlength="10">
-                <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box" maxlength="4">
-                <div class="flex items-center gap-2 px-1 pb-5 pt-1">
-                    <input type="checkbox" id="remember_me" class="w-4 h-4 accent-sky-500 rounded cursor-pointer">
-                    <label for="remember_me" class="text-slate-400 text-sm cursor-pointer select-none hover:text-slate-300 transition">記住帳密，下次自動登入</label>
+        
+        <div class="w-full max-w-[360px] space-y-5 relative z-10">
+            <div class="glass-panel p-8 rounded-[2.5rem]">
+                <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box !mb-4 !py-4" maxlength="10">
+                <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box !mb-3 !py-4" maxlength="4">
+                <div class="flex items-center justify-center gap-2 px-1 pb-6 pt-2">
+                    <input type="checkbox" id="remember_me" class="w-4 h-4 accent-sky-500 rounded cursor-pointer border-slate-600 bg-slate-800">
+                    <label for="remember_me" class="text-slate-400 text-sm font-medium cursor-pointer select-none hover:text-white transition">保持登入狀態</label>
                 </div>
-                <button type="button" onclick="window.handleLogin()" class="btn-prime shadow-sky-500/20 shadow-xl hover:bg-sky-500 hover:-translate-y-0.5">登入系統</button>
+                <button type="button" onclick="window.handleLogin()" class="btn-prime py-5 text-lg shadow-[0_15px_30px_-5px_rgba(14,165,233,0.5)] hover:shadow-[0_20px_40px_-5px_rgba(14,165,233,0.6)] hover:-translate-y-1 transition-all duration-300">安全登入</button>
             </div>
             
-            <div class="space-y-3 pt-2 text-center">
-                <button type="button" onclick="window.showLayer('onboarding')" class="w-full py-4 rounded-xl border border-sky-500/30 text-sky-400 font-bold text-sm bg-sky-500/10 hover:bg-sky-500/20 transition shadow-lg">新進人員面試評估</button>
-                <button type="button" onclick="window.showLayer('profile-gate')" class="w-full py-4 rounded-xl border border-orange-500/30 text-orange-400 font-bold text-sm bg-orange-500/10 hover:bg-orange-500/20 transition shadow-lg">企業人事建檔通道</button>
-                <!-- 新增：手機安裝教學入口 -->
-                <button type="button" onclick="window.openModal('tutorial-modal')" class="w-full py-3 mt-2 text-slate-400 text-xs font-bold underline hover:text-white transition">📥 如何將系統安裝至手機桌面？</button>
+            <div class="space-y-3 pt-2">
+                <button type="button" onclick="window.showLayer('onboarding')" class="w-full py-4 rounded-2xl border border-sky-500/30 text-sky-400 font-black text-sm bg-sky-900/20 hover:bg-sky-900/40 transition shadow-lg backdrop-blur-sm flex items-center justify-center gap-2"><span>📋</span> 新進人員職能評估</button>
+                <button type="button" onclick="window.showLayer('profile-gate')" class="w-full py-4 rounded-2xl border border-orange-500/30 text-orange-400 font-bold text-sm bg-orange-900/20 hover:bg-orange-900/40 transition shadow-lg backdrop-blur-sm flex items-center justify-center gap-2"><span>📁</span> 企業人事建檔通道</button>
+                <button type="button" onclick="window.openModal('tutorial-modal')" class="w-full py-4 mt-2 text-slate-400 text-xs font-bold underline hover:text-white transition flex items-center justify-center gap-1"><span>📥</span> 手機版 App 安裝指南</button>
             </div>
         </div>
     </div>
 
     <!-- 行政總表 -->
-    <div id="admin-panel" class="layer !px-4 lg:!px-8">
-        <div class="w-full max-w-[1400px]">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6 mt-4">
-                <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-2xl border border-sky-900/50 flex items-center justify-between shadow-xl"><div class="flex-1"><p class="text-slate-400 text-xs font-bold mb-1 uppercase tracking-widest">Today's Delivery</p><p class="text-4xl font-black text-sky-400 drop-shadow-md" id="dash_del">0</p></div><div class="text-5xl opacity-20 filter grayscale">📦</div></div>
-                <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-2xl border border-orange-900/50 flex items-center justify-between shadow-xl"><div class="flex-1"><p class="text-slate-400 text-xs font-bold mb-1 uppercase tracking-widest">Today's Returns</p><p class="text-4xl font-black text-orange-400 drop-shadow-md" id="dash_rev">0</p></div><div class="text-5xl opacity-20 filter grayscale">🔄</div></div>
-                <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-2xl border border-emerald-900/50 flex items-center justify-between shadow-xl"><div class="flex-1"><p class="text-slate-400 text-xs font-bold mb-1 uppercase tracking-widest">Estimated Payout</p><p class="text-4xl font-black text-emerald-400 drop-shadow-md" id="dash_net">$0</p></div><div class="text-5xl opacity-20 filter grayscale">💰</div></div>
+    <div id="admin-panel" class="layer !px-4 lg:!px-8 !pt-6">
+        <div class="w-full max-w-[1500px]">
+            <div class="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-white font-black text-3xl italic tracking-tighter drop-shadow-md">Admin Console <span class="text-sky-500">.</span></h2>
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mt-1 ml-1">Logistics Dashboard</p>
+                </div>
+                <button type="button" onclick="window.location.reload(true)" class="bg-slate-800/80 text-sky-400 px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700 transition flex items-center gap-2 shadow-lg border border-slate-700 backdrop-blur-sm"><span class="text-lg">🔄</span> 強制資料同步</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                <div class="glass-panel p-6 rounded-3xl flex items-center justify-between border-t-2 border-t-sky-500/50"><div class="flex-1"><p class="text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest">今日全站正件</p><p class="text-5xl font-black text-sky-400 drop-shadow-lg" id="dash_del">0</p></div><div class="text-6xl opacity-10 filter grayscale drop-shadow-2xl">📦</div></div>
+                <div class="glass-panel p-6 rounded-3xl flex items-center justify-between border-t-2 border-t-orange-500/50"><div class="flex-1"><p class="text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest">今日全站逆件</p><p class="text-5xl font-black text-orange-400 drop-shadow-lg" id="dash_rev">0</p></div><div class="text-6xl opacity-10 filter grayscale drop-shadow-2xl">🔄</div></div>
+                <div class="glass-panel p-6 rounded-3xl flex items-center justify-between border-t-2 border-t-emerald-500/50"><div class="flex-1"><p class="text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest">預估總發放金額</p><p class="text-5xl font-black text-emerald-400 drop-shadow-lg" id="dash_net">$0</p></div><div class="text-6xl opacity-10 filter grayscale drop-shadow-2xl">💰</div></div>
             </div>
 
             <header class="mb-6 flex flex-col gap-4">
                 <div class="flex flex-col lg:flex-row gap-4">
-                    <div class="flex-1 bg-slate-800/80 border border-slate-700 p-2.5 rounded-2xl flex items-center gap-3 shadow-inner"><span class="text-xl ml-2">📢</span><input type="text" id="admin_announcement" placeholder="在此輸入跑馬燈公告..." class="bg-transparent border-none outline-none text-white text-sm w-full font-medium"><button type="button" onclick="window.publishAnnouncement()" class="bg-sky-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-sky-500 transition shadow-lg">發佈</button></div>
-                    <div class="lg:w-80 bg-slate-900/80 border border-slate-700 p-2.5 rounded-2xl flex items-center gap-3 shadow-inner"><span class="text-slate-500 ml-2 text-lg">🔍</span><input type="text" id="admin_search" placeholder="搜尋姓名或手機..." onkeyup="window.renderAdmin()" class="bg-transparent border-none outline-none text-white text-sm w-full"></div>
+                    <div class="flex-1 glass-panel p-3 rounded-2xl flex items-center gap-3"><span class="text-2xl ml-2">📢</span><input type="text" id="admin_announcement" placeholder="在此輸入跑馬燈全局公告..." class="bg-transparent border-none outline-none text-white text-sm w-full font-medium"><button type="button" onclick="window.publishAnnouncement()" class="bg-sky-600 text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-sky-500 transition shadow-[0_0_15px_rgba(14,165,233,0.3)]">發佈</button></div>
+                    <div class="lg:w-80 glass-panel p-3 rounded-2xl flex items-center gap-3"><span class="text-slate-400 ml-2 text-xl">🔍</span><input type="text" id="admin_search" placeholder="搜尋姓名或手機..." onkeyup="window.renderAdmin()" class="bg-transparent border-none outline-none text-white text-sm w-full font-medium"></div>
                 </div>
-                <div class="flex flex-col md:flex-row items-center justify-between bg-slate-800/50 p-4 rounded-2xl border border-slate-700/80 gap-4">
+                <div class="flex flex-col md:flex-row items-center justify-between glass-panel p-4 rounded-2xl gap-4">
                     <div class="flex flex-wrap justify-center gap-3 items-center w-full md:w-auto">
-                        <button type="button" onclick="window.toggleQuickAdd(true)" class="bg-sky-600 text-white px-5 py-2.5 rounded-xl text-xs font-black hover:bg-sky-500 transition shadow-[0_0_15px_rgba(14,165,233,0.3)]">➕ 快速新增</button>
-                        <button type="button" onclick="window.openModal('batch-send-modal')" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-black hover:bg-emerald-500 transition shadow-[0_0_15px_rgba(16,185,129,0.3)]">🚀 群發薪資</button>
-                        <button type="button" onclick="window.openModal('settle-modal')" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-black hover:bg-indigo-500 transition shadow-[0_0_15px_rgba(99,102,241,0.3)]">📅 月結歸檔</button>
-                        <button type="button" onclick="window.exportToExcel()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-lg border border-slate-600">📑 匯出 Excel</button>
+                        <button type="button" onclick="window.toggleQuickAdd(true)" class="bg-sky-600 text-white px-5 py-3 rounded-xl text-xs font-black hover:bg-sky-500 transition shadow-[0_5px_15px_rgba(14,165,233,0.3)] flex items-center gap-1"><span>➕</span> 快速建檔</button>
+                        <button type="button" onclick="window.openModal('batch-send-modal')" class="bg-emerald-600 text-white px-5 py-3 rounded-xl text-xs font-black hover:bg-emerald-500 transition shadow-[0_5px_15px_rgba(16,185,129,0.3)] flex items-center gap-1"><span>🚀</span> 群發薪資</button>
+                        <button type="button" onclick="window.openModal('settle-modal')" class="bg-indigo-600 text-white px-5 py-3 rounded-xl text-xs font-black hover:bg-indigo-500 transition shadow-[0_5px_15px_rgba(99,102,241,0.3)] flex items-center gap-1"><span>📅</span> 月結歸檔</button>
+                        <button type="button" onclick="window.exportToExcel()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-5 py-3 rounded-xl text-xs font-bold transition shadow-lg border border-slate-600 flex items-center gap-1"><span>📑</span> 匯出 Excel</button>
                     </div>
-                    <button type="button" onclick="window.handleLogout()" class="text-rose-400 text-sm font-bold underline px-4 py-2 hover:text-rose-300 transition w-full md:w-auto text-center">安全登出系統</button>
+                    <button type="button" onclick="window.handleLogout()" class="text-rose-400 text-sm font-bold px-5 py-2 hover:bg-rose-950/50 rounded-xl transition w-full md:w-auto text-center border border-transparent hover:border-rose-900/50">🔒 安全登出</button>
                 </div>
             </header>
 
-            <!-- 表格區塊優化：圓角、陰影、滾動條 -->
-            <div class="admin-table-container shadow-2xl border border-slate-700/50 relative">
+            <div class="admin-table-container shadow-2xl relative">
                 <table class="admin-table">
-                    <thead><tr><th>狀態 / 出勤</th><th>夥伴資訊 / 結算件數</th><th>預設單價 (正/逆)</th><th>勞健保級距與眷屬</th><th>額外加扣款</th><th>本期實發淨額</th><th>系統與檔案操作</th></tr></thead>
+                    <thead><tr><th class="w-24">狀態/出勤</th><th class="text-left w-64">夥伴資訊 & 件數結算</th><th>單價設定(正/逆)</th><th>勞健保級距與扣款</th><th>其他加扣款</th><th>本期應發淨額</th><th class="w-48">系統操作</th></tr></thead>
                     <tbody id="admin-list"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- 面試評估 -->
+    <!-- 司機面試題 -->
     <div id="onboarding" class="layer">
         <div class="w-full max-w-[500px]">
-            <button type="button" onclick="window.showLayer('gate')" class="text-slate-500 mb-6 text-xs uppercase font-bold hover:text-white transition flex items-center gap-1"><span>←</span> 返回首頁</button>
-            <div class="id-card">
-                <h2 class="text-2xl font-black text-white mb-6 italic border-b border-slate-800 pb-4">夥伴職能評估</h2>
-                <input type="text" id="int_name" placeholder="請輸入真實姓名" class="input-box focus:border-sky-500">
-                <input type="tel" id="int_phone" placeholder="請輸入手機號碼 (登入帳號用)" class="input-box focus:border-sky-500" maxlength="10">
+            <button type="button" onclick="window.showLayer('gate')" class="text-slate-400 mb-6 text-sm font-bold hover:text-white transition flex items-center gap-2 px-2 py-1 bg-slate-800/50 rounded-lg w-max backdrop-blur-sm border border-slate-700"><span class="text-lg leading-none pb-0.5">←</span> 放棄並返回</button>
+            <div class="glass-panel p-6 sm:p-8 rounded-[2.5rem]">
+                <h2 class="text-3xl font-black text-white mb-6 italic border-b border-slate-700/50 pb-5">夥伴實務評估</h2>
+                <div class="flex gap-3 mb-6">
+                    <input type="text" id="int_name" placeholder="真實姓名" class="input-box !mb-0 flex-1 focus:border-sky-500">
+                    <input type="tel" id="int_phone" placeholder="手機號碼" class="input-box !mb-0 flex-[1.5] focus:border-sky-500" maxlength="10">
+                </div>
                 
-                <div class="space-y-4 text-left mt-6">
-                    <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700/80 shadow-inner">
-                        <p class="text-white text-sm font-bold mb-3">1. 發生輕微交通事故優先？</p>
-                        <label class="block text-sm text-slate-300 p-3 mb-2 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q1" value="1" class="mr-3 accent-sky-500 w-4 h-4">報警、拍照留存並回報</label>
-                        <label class="block text-sm text-slate-300 p-3 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q1" value="0" class="mr-3 accent-sky-500 w-4 h-4">私下和解，先送完貨</label>
+                <div class="space-y-4 text-left">
+                    <div class="p-5 bg-slate-800/60 rounded-2xl border border-slate-700/50 shadow-inner">
+                        <p class="text-white text-sm font-bold mb-4">1. 發生輕微交通事故優先處理方式？</p>
+                        <label class="block text-sm text-slate-300 p-3.5 mb-2.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q1" value="1" class="mr-3 accent-sky-500 w-4 h-4 align-middle">報警、拍照留存並回報公司</label>
+                        <label class="block text-sm text-slate-300 p-3.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q1" value="0" class="mr-3 accent-sky-500 w-4 h-4 align-middle">私下和解，先送完貨再說</label>
                     </div>
-                    <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700/80 shadow-inner">
-                        <p class="text-white text-sm font-bold mb-3">2. 包裹有破損或滲漏時？</p>
-                        <label class="block text-sm text-slate-300 p-3 mb-2 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q2" value="1" class="mr-3 accent-sky-500 w-4 h-4">拍照異常，並聯繫客服</label>
-                        <label class="block text-sm text-slate-300 p-3 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q2" value="0" class="mr-3 accent-sky-500 w-4 h-4">裝沒看到，直接送達</label>
+                    <div class="p-5 bg-slate-800/60 rounded-2xl border border-slate-700/50 shadow-inner">
+                        <p class="text-white text-sm font-bold mb-4">2. 發現包裹有破損或滲漏時？</p>
+                        <label class="block text-sm text-slate-300 p-3.5 mb-2.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q2" value="1" class="mr-3 accent-sky-500 w-4 h-4 align-middle">拍照異常，並聯繫客服暫緩</label>
+                        <label class="block text-sm text-slate-300 p-3.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q2" value="0" class="mr-3 accent-sky-500 w-4 h-4 align-middle">裝沒看到，直接送達客戶</label>
                     </div>
-                    <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700/80 shadow-inner">
-                        <p class="text-white text-sm font-bold mb-3">3. 收件人不在且無保全代收？</p>
-                        <label class="block text-sm text-slate-300 p-3 mb-2 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q3" value="1" class="mr-3 accent-sky-500 w-4 h-4">電話聯繫，無果則回報異常</label>
-                        <label class="block text-sm text-slate-300 p-3 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q3" value="0" class="mr-3 accent-sky-500 w-4 h-4">隨便放在門口或圍牆內離開</label>
+                    <div class="p-5 bg-slate-800/60 rounded-2xl border border-slate-700/50 shadow-inner">
+                        <p class="text-white text-sm font-bold mb-4">3. 收件人不在且無保全代收？</p>
+                        <label class="block text-sm text-slate-300 p-3.5 mb-2.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q3" value="1" class="mr-3 accent-sky-500 w-4 h-4 align-middle">電話聯繫，無果則回報異常</label>
+                        <label class="block text-sm text-slate-300 p-3.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q3" value="0" class="mr-3 accent-sky-500 w-4 h-4 align-middle">隨便放在門口或圍牆內離開</label>
                     </div>
-                    <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700/80 shadow-inner">
-                        <p class="text-white text-sm font-bold mb-3">4. 收到客戶代收貨款時？</p>
-                        <label class="block text-sm text-slate-300 p-3 mb-2 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q4" value="1" class="mr-3 accent-sky-500 w-4 h-4">當面點清金額，並妥善保管</label>
-                        <label class="block text-sm text-slate-300 p-3 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q4" value="0" class="mr-3 accent-sky-500 w-4 h-4">直接塞進口袋，晚上再算</label>
+                    <div class="p-5 bg-slate-800/60 rounded-2xl border border-slate-700/50 shadow-inner">
+                        <p class="text-white text-sm font-bold mb-4">4. 收到客戶代收貨款時？</p>
+                        <label class="block text-sm text-slate-300 p-3.5 mb-2.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q4" value="1" class="mr-3 accent-sky-500 w-4 h-4 align-middle">當面點清金額，並妥善保管</label>
+                        <label class="block text-sm text-slate-300 p-3.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q4" value="0" class="mr-3 accent-sky-500 w-4 h-4 align-middle">直接塞進口袋，晚上再算</label>
                     </div>
-                    <div class="p-4 bg-slate-800/80 rounded-2xl border border-slate-700/80 shadow-inner">
-                        <p class="text-white text-sm font-bold mb-3">5. 貨件過多可能造成嚴重延遲？</p>
-                        <label class="block text-sm text-slate-300 p-3 mb-2 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q5" value="1" class="mr-3 accent-sky-500 w-4 h-4">提前回報調度，尋求支援調整</label>
-                        <label class="block text-sm text-slate-300 p-3 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-slate-500"><input type="radio" name="q5" value="0" class="mr-3 accent-sky-500 w-4 h-4">不管，自己慢慢送到半夜為止</label>
+                    <div class="p-5 bg-slate-800/60 rounded-2xl border border-slate-700/50 shadow-inner">
+                        <p class="text-white text-sm font-bold mb-4">5. 貨件過多可能造成嚴重延遲？</p>
+                        <label class="block text-sm text-slate-300 p-3.5 mb-2.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q5" value="1" class="mr-3 accent-sky-500 w-4 h-4 align-middle">提前回報調度，尋求支援</label>
+                        <label class="block text-sm text-slate-300 p-3.5 bg-slate-900/80 rounded-xl cursor-pointer hover:bg-slate-700 transition border border-transparent hover:border-sky-500/50 font-medium"><input type="radio" name="q5" value="0" class="mr-3 accent-sky-500 w-4 h-4 align-middle">不管，自己慢慢送到半夜</label>
                     </div>
                 </div>
-                <button type="button" onclick="window.handleSubmitInterview()" class="btn-prime mt-8 bg-sky-600 hover:bg-sky-500 shadow-lg shadow-sky-900/50">提交評估審核</button>
+                <button type="button" id="submit_interview_btn" onclick="window.handleSubmitInterview()" class="btn-prime mt-8 bg-sky-600 hover:bg-sky-500 py-4 text-lg shadow-[0_10px_25px_rgba(14,165,233,0.4)] tracking-wider">送出評估卷</button>
             </div>
         </div>
     </div>
 
     <!-- 人事建檔驗證 -->
     <div id="profile-gate" class="layer">
-        <div class="w-full max-w-[360px]">
-            <button type="button" onclick="window.showLayer('gate')" class="text-slate-500 mb-6 text-xs uppercase font-bold hover:text-white transition flex items-center gap-1"><span>←</span> 返回首頁</button>
-            <div class="id-card">
-                <h3 class="text-white font-black mb-6 italic text-2xl border-b border-slate-800 pb-4">建檔身分驗證</h3>
-                <p class="text-xs text-slate-400 mb-4">請輸入主管核准的預設帳密進行企業標準建檔。</p>
-                <input type="tel" id="pg_phone" placeholder="手機號碼" class="input-box focus:border-orange-500" maxlength="10">
-                <input type="password" id="pg_pin" placeholder="PIN碼 (預設0000)" class="input-box focus:border-orange-500" maxlength="4">
-                <button type="button" onclick="window.handleProfileVerify()" class="btn-prime bg-orange-600 hover:bg-orange-500 shadow-lg shadow-orange-900/50 mt-4">驗證進入建檔系統</button>
+        <div class="w-full max-w-[380px]">
+            <button type="button" onclick="window.showLayer('gate')" class="text-slate-400 mb-6 text-sm font-bold hover:text-white transition flex items-center gap-2 px-2 py-1 bg-slate-800/50 rounded-lg w-max backdrop-blur-sm border border-slate-700"><span class="text-lg leading-none pb-0.5">←</span> 返回</button>
+            <div class="glass-panel p-8 rounded-[2.5rem] text-center">
+                <h3 class="text-white font-black mb-2 italic text-2xl">建檔安全驗證</h3>
+                <p class="text-xs text-slate-400 mb-8 font-medium">請輸入核准的登入帳密以進入企業建檔系統。</p>
+                <input type="tel" id="pg_phone" placeholder="手機號碼" class="input-box focus:border-orange-500 !py-4" maxlength="10">
+                <input type="password" id="pg_pin" placeholder="PIN 碼" class="input-box focus:border-orange-500 !py-4 !mb-8" maxlength="4">
+                <button type="button" onclick="window.handleProfileVerify()" class="btn-prime bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 shadow-[0_10px_25px_rgba(249,115,22,0.4)] py-4 text-lg">驗證身分</button>
             </div>
         </div>
     </div>
 
-    <!-- 企業標準人事建檔 (網格五證一摺強制上傳區) -->
+    <!-- 企業標準人事建檔 (防漏填紅光閃爍版) -->
     <div id="profile-setup" class="layer">
-        <div class="w-full max-w-[500px]">
-            <div class="id-card">
-                <h2 class="text-2xl font-black text-white mb-6 border-b border-slate-800 pb-4 italic">企業標準人事建檔</h2>
-                <div class="space-y-4 text-left">
-                    <div><label class="text-[10px] text-slate-500 font-bold ml-1 block mb-1">基本與金融資料</label><input type="text" id="setup_id_no" placeholder="身分證字號 (10碼)" class="input-box uppercase" maxlength="10"></div>
-                    <div class="flex gap-2"><input type="tel" id="setup_bank_code" placeholder="銀行代碼" class="input-box !w-1/3 focus:border-orange-500" maxlength="3"><input type="tel" id="setup_bank_acc" placeholder="薪資匯款帳號" class="input-box !w-2/3 focus:border-orange-500"></div>
-                    <div class="mt-4"><label class="text-[10px] text-slate-500 font-bold ml-1 block mb-1">通訊與車輛</label><input type="text" id="setup_addr" placeholder="現居通訊地址" class="input-box focus:border-orange-500"></div>
-                    <div class="flex gap-2"><select id="setup_vehicle_type" class="input-box !w-1/3 !text-sm bg-slate-800 focus:border-orange-500"><option value="機車">機車</option><option value="貨車">貨車</option></select><input type="text" id="setup_plate" placeholder="車牌號碼" class="input-box !w-2/3 uppercase focus:border-orange-500"></div>
-                    
-                    <div class="mt-6 mb-2 flex items-center justify-between">
-                        <span class="text-xs text-orange-400 font-black uppercase tracking-widest">五證一摺影像</span>
-                        <span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded font-bold border border-rose-500/30">前5項必傳</span>
+        <div class="w-full max-w-[550px]">
+            <div class="glass-panel p-6 sm:p-8 rounded-[2.5rem]">
+                <h2 class="text-2xl font-black text-white mb-6 border-b border-slate-700/50 pb-5 italic flex items-center gap-3"><span class="w-1.5 h-8 bg-orange-500 rounded-full"></span>企業標準人事建檔</h2>
+                
+                <div class="space-y-5 text-left" id="setup_form_container">
+                    <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 shadow-inner group transition-colors">
+                        <label class="text-[10px] text-slate-400 font-bold ml-1 block mb-2 uppercase tracking-widest group-hover:text-sky-400 transition">基本與金融資料</label>
+                        <input type="text" id="setup_id_no" placeholder="身分證字號 (1碼英文+9碼數字)" class="input-box uppercase !bg-slate-900/80 focus:!border-sky-500" maxlength="10">
+                        <div class="flex gap-3">
+                            <input type="tel" id="setup_bank_code" placeholder="銀行代碼 (3碼)" class="input-box !w-1/3 !bg-slate-900/80 focus:!border-sky-500" maxlength="3">
+                            <input type="tel" id="setup_bank_acc" placeholder="薪資匯款帳號" class="input-box !w-2/3 !bg-slate-900/80 focus:!border-sky-500">
+                        </div>
                     </div>
-                    <div class="upload-grid">
-                        <div class="photo-slot hover:border-orange-500/50" id="slot_id_f" onclick="window.triggerFile('file_id_f')">
-                            <span class="slot-icon">🆔</span><span class="slot-label is-required">身分證正面</span>
+                    
+                    <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 shadow-inner group transition-colors">
+                        <label class="text-[10px] text-slate-400 font-bold ml-1 block mb-2 uppercase tracking-widest group-hover:text-sky-400 transition">通訊與車輛</label>
+                        <input type="text" id="setup_addr" placeholder="現居通訊地址" class="input-box !bg-slate-900/80 focus:!border-sky-500">
+                        <div class="flex gap-3">
+                            <select id="setup_vehicle_type" class="input-box !w-1/3 !text-sm !bg-slate-900/80 focus:!border-sky-500"><option value="機車">機車</option><option value="貨車">貨車</option></select>
+                            <input type="text" id="setup_plate" placeholder="車牌號碼" class="input-box !w-2/3 uppercase !bg-slate-900/80 focus:!border-sky-500">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 mb-3 flex items-center justify-between px-1">
+                        <span class="text-sm text-orange-400 font-black uppercase tracking-widest flex items-center gap-2"><span>📸</span> 五證一摺影像</span>
+                        <span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-1 rounded font-black border border-rose-500/30 tracking-wider">前5項必傳</span>
+                    </div>
+                    
+                    <!-- 上傳區塊，加入 id 供錯誤時觸發震動 -->
+                    <div class="upload-grid" id="photo_grid_area">
+                        <div class="photo-slot hover:border-orange-500/50 group" id="slot_id_f" onclick="window.triggerFile('file_id_f')">
+                            <span class="slot-icon group-hover:scale-110 transition">🆔</span><span class="slot-label is-required">身分證正面</span>
                             <input type="file" id="file_id_f" class="hidden" accept="image/*" onchange="window.handleSlotUpload(event, 'slot_id_f', 'b64_id_f')"><input type="hidden" id="b64_id_f">
                         </div>
-                        <div class="photo-slot hover:border-orange-500/50" id="slot_id_b" onclick="window.triggerFile('file_id_b')">
-                            <span class="slot-icon">🆔</span><span class="slot-label is-required">身分證反面</span>
+                        <div class="photo-slot hover:border-orange-500/50 group" id="slot_id_b" onclick="window.triggerFile('file_id_b')">
+                            <span class="slot-icon group-hover:scale-110 transition">🆔</span><span class="slot-label is-required">身分證反面</span>
                             <input type="file" id="file_id_b" class="hidden" accept="image/*" onchange="window.handleSlotUpload(event, 'slot_id_b', 'b64_id_b')"><input type="hidden" id="b64_id_b">
                         </div>
-                        <div class="photo-slot hover:border-orange-500/50" id="slot_lic" onclick="window.triggerFile('file_lic')">
-                            <span class="slot-icon">🪪</span><span class="slot-label is-required">駕照正面</span>
+                        <div class="photo-slot hover:border-orange-500/50 group" id="slot_lic" onclick="window.triggerFile('file_lic')">
+                            <span class="slot-icon group-hover:scale-110 transition">🪪</span><span class="slot-label is-required">駕照正面</span>
                             <input type="file" id="file_lic" class="hidden" accept="image/*" onchange="window.handleSlotUpload(event, 'slot_lic', 'b64_lic')"><input type="hidden" id="b64_lic">
                         </div>
-                        <div class="photo-slot hover:border-orange-500/50" id="slot_book" onclick="window.triggerFile('file_book')">
-                            <span class="slot-icon">🏦</span><span class="slot-label is-required">存摺封面</span>
+                        <div class="photo-slot hover:border-orange-500/50 group" id="slot_book" onclick="window.triggerFile('file_book')">
+                            <span class="slot-icon group-hover:scale-110 transition">🏦</span><span class="slot-label is-required">存摺封面</span>
                             <input type="file" id="file_book" class="hidden" accept="image/*" onchange="window.handleSlotUpload(event, 'slot_book', 'b64_book')"><input type="hidden" id="b64_book">
                         </div>
-                        <div class="photo-slot hover:border-orange-500/50" id="slot_reg" onclick="window.triggerFile('file_reg')">
-                            <span class="slot-icon">🚚</span><span class="slot-label is-required">行車執照</span>
+                        <div class="photo-slot hover:border-orange-500/50 group" id="slot_reg" onclick="window.triggerFile('file_reg')">
+                            <span class="slot-icon group-hover:scale-110 transition">🚚</span><span class="slot-label is-required">行車執照</span>
                             <input type="file" id="file_reg" class="hidden" accept="image/*" onchange="window.handleSlotUpload(event, 'slot_reg', 'b64_reg')"><input type="hidden" id="b64_reg">
                         </div>
-                        <div class="photo-slot hover:border-orange-500/50" id="slot_cr" onclick="window.triggerFile('file_cr')">
-                            <span class="slot-icon">📄</span><span class="slot-label">良民證 (選填)</span>
+                        <div class="photo-slot hover:border-sky-500/50 group" id="slot_cr" onclick="window.triggerFile('file_cr')">
+                            <span class="slot-icon group-hover:scale-110 transition opacity-30">📄</span><span class="slot-label">良民證 (選填)</span>
                             <input type="file" id="file_cr" class="hidden" accept="image/*" onchange="window.handleSlotUpload(event, 'slot_cr', 'b64_cr')"><input type="hidden" id="b64_cr">
                         </div>
                     </div>
 
-                    <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80 shadow-inner mt-4">
-                        <label class="text-[10px] text-slate-500 font-bold ml-1 block mb-2">緊急聯絡人資訊</label>
-                        <input type="text" id="setup_em_name" placeholder="聯絡人真實姓名" class="input-box !py-3 !mb-3 focus:border-orange-500">
-                        <input type="tel" id="setup_em_phone" placeholder="聯絡人手機號碼" class="input-box !py-3 !mb-0 focus:border-orange-500" maxlength="10">
+                    <div class="bg-orange-900/10 p-5 rounded-2xl border border-orange-900/30 shadow-inner mt-4">
+                        <label class="text-[10px] text-orange-400 font-bold ml-1 block mb-3 uppercase tracking-widest">緊急聯絡人資訊</label>
+                        <input type="text" id="setup_em_name" placeholder="聯絡人真實姓名" class="input-box !bg-slate-900/80 !mb-3 focus:!border-orange-500">
+                        <input type="tel" id="setup_em_phone" placeholder="聯絡人手機號碼" class="input-box !bg-slate-900/80 !mb-0 focus:!border-orange-500" maxlength="10">
                     </div>
-                    <button type="button" id="profile_submit_btn" onclick="window.handleSaveProfile()" class="btn-prime bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 mt-6 shadow-[0_10px_25px_rgba(249,115,22,0.4)] font-black text-lg py-4">正式提交建檔資料</button>
+                    
+                    <button type="button" id="profile_submit_btn" onclick="window.handleSaveProfile()" class="btn-prime bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-400 hover:to-rose-500 mt-6 shadow-[0_10px_30px_rgba(244,63,94,0.4)] font-black text-lg py-5 tracking-widest">🚀 正式提交企業建檔</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 夥伴工作台 -->
-    <div id="partner-hub" class="layer">
-        <div id="hub-announcement" class="w-full max-w-[450px] bg-sky-900/40 border border-sky-500/30 rounded-full mb-6 py-2.5 px-5 marquee-container hidden shadow-lg backdrop-blur-sm">
+    <div id="partner-hub" class="layer !px-4">
+        <div id="hub-announcement" class="w-full max-w-[480px] bg-sky-900/40 border border-sky-500/30 rounded-full mb-6 py-2.5 px-5 marquee-container hidden shadow-lg backdrop-blur-md">
             <span class="text-sky-300 text-sm font-bold marquee-content tracking-wide" id="hub-announcement-text"></span>
         </div>
-        <div class="w-full max-w-[450px] space-y-6">
-            <div class="flex justify-between items-end mb-4 px-2">
-                <h2 id="hub_title" class="text-3xl font-black text-white italic drop-shadow-md">夥伴工作台</h2>
+        
+        <div class="w-full max-w-[480px] space-y-6">
+            <div class="flex justify-between items-center mb-2 px-2">
+                <h2 id="hub_title" class="text-3xl font-black text-white italic drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">夥伴工作台</h2>
+                <button type="button" onclick="window.location.reload(true)" class="text-sky-400 bg-slate-800/80 backdrop-blur-sm border border-slate-700 p-2.5 rounded-xl shadow-lg transition active:scale-95"><span class="text-xl leading-none block">🔄</span></button>
             </div>
             
-            <div class="id-card !pb-8 !pt-6">
-                <div class="mb-6 bg-slate-900/60 p-5 rounded-3xl border border-slate-700/50 shadow-inner">
+            <div class="glass-panel p-6 sm:p-8 rounded-[2.5rem]">
+                
+                <div class="mb-6 bg-slate-900/50 p-5 rounded-[1.5rem] border border-slate-700/50 shadow-inner">
                     <div class="flex justify-between items-center mb-4">
-                        <span class="text-[11px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><span class="w-1 h-3 bg-slate-500 rounded-full"></span> 狀態回報</span>
-                        <button type="button" onclick="window.openModal('leave-modal')" class="text-[11px] bg-purple-600/20 text-purple-400 border border-purple-900/50 px-3 py-1.5 rounded-full font-bold hover:bg-purple-600 hover:text-white transition shadow-sm">📅 預約排假</button>
+                        <span class="text-[11px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2"><span class="w-1.5 h-3.5 bg-slate-500 rounded-full block"></span> 狀態回報</span>
+                        <button type="button" onclick="window.openModal('leave-modal')" class="text-[10px] bg-purple-900/40 text-purple-300 border border-purple-700/50 px-3 py-1.5 rounded-full font-bold hover:bg-purple-600 hover:text-white transition shadow-sm">📅 預約排假</button>
                     </div>
-                    <div class="flex gap-2.5">
-                        <button type="button" onclick="window.updateMyStatus('normal')" id="btn-n" class="flex-1 py-3 rounded-2xl text-xs font-bold border transition shadow-sm">🟢 正常出勤</button>
-                        <button type="button" onclick="window.triggerStatusReason('leave')" id="btn-l" class="flex-1 py-3 rounded-2xl text-xs font-bold border transition shadow-sm">🔴 臨時請假</button>
-                        <button type="button" onclick="window.triggerStatusReason('issue')" id="btn-i" class="flex-1 py-3 rounded-2xl text-xs font-bold border transition shadow-sm">🟡 狀況異常</button>
+                    <div class="flex gap-2 sm:gap-3">
+                        <button type="button" onclick="window.updateMyStatus('normal')" id="btn-n" class="flex-1 py-3.5 rounded-xl text-xs font-bold border transition shadow-sm bg-slate-800 border-slate-700 text-slate-400">🟢 正常出勤</button>
+                        <button type="button" onclick="window.triggerStatusReason('leave')" id="btn-l" class="flex-1 py-3.5 rounded-xl text-xs font-bold border transition shadow-sm bg-slate-800 border-slate-700 text-slate-400">🔴 臨時請假</button>
+                        <button type="button" onclick="window.triggerStatusReason('issue')" id="btn-i" class="flex-1 py-3.5 rounded-xl text-xs font-bold border transition shadow-sm bg-slate-800 border-slate-700 text-slate-400">🟡 狀況異常</button>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div class="bg-slate-800/30 p-3 rounded-2xl border border-slate-700/50 text-center"><span class="text-[11px] text-sky-400 font-bold block mb-2 uppercase tracking-widest">今日正件</span><input type="number" id="rep_del" placeholder="0" class="input-box !bg-transparent !border-b-2 !border-t-0 !border-l-0 !border-r-0 !border-sky-900 !rounded-none !text-3xl !font-black !p-1 focus:!border-sky-500 !mb-0 transition-colors"></div>
-                    <div class="bg-slate-800/30 p-3 rounded-2xl border border-slate-700/50 text-center"><span class="text-[11px] text-orange-400 font-bold block mb-2 uppercase tracking-widest">今日逆件</span><input type="number" id="rep_rev" placeholder="0" class="input-box !bg-transparent !border-b-2 !border-t-0 !border-l-0 !border-r-0 !border-orange-900 !rounded-none !text-3xl !font-black !p-1 focus:!border-orange-500 !mb-0 transition-colors"></div>
+                    <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 text-center shadow-inner group"><span class="text-[11px] text-sky-500 font-black block mb-2 uppercase tracking-widest">今日正件</span><input type="number" id="rep_del" placeholder="0" class="ghost-input w-full text-4xl font-black text-white p-1 mb-0 focus:text-sky-400"></div>
+                    <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 text-center shadow-inner group"><span class="text-[11px] text-orange-500 font-black block mb-2 uppercase tracking-widest">今日逆件</span><input type="number" id="rep_rev" placeholder="0" class="ghost-input w-full text-4xl font-black text-white p-1 mb-0 focus:text-orange-400"></div>
                 </div>
                 
                 <div class="mb-6">
-                    <label class="photo-slot !min-h-[140px] hover:border-sky-500/50 shadow-inner bg-slate-900/40" id="slot_rep" onclick="window.triggerFile('file_rep')">
-                        <span class="slot-icon text-3xl mb-1">📸</span><span class="slot-label text-sm font-bold">點擊拍攝今日單據</span><span class="text-[9px] text-slate-500 mt-1">(選填，作為佐證附件)</span>
+                    <label class="photo-slot !min-h-[140px] hover:border-sky-500/50 shadow-inner bg-slate-900/40 !rounded-2xl" id="slot_rep" onclick="window.triggerFile('file_rep')">
+                        <span class="slot-icon text-4xl mb-2 drop-shadow-md">📸</span><span class="slot-label text-sm font-black text-white tracking-wider">點擊拍攝今日單據</span><span class="text-[10px] text-slate-500 mt-1 font-medium">(選填佐證附件)</span>
                         <input type="file" id="file_rep" class="hidden" accept="image/*" capture="environment" onchange="window.handleSlotUpload(event, 'slot_rep', 'b64_rep')">
                         <input type="hidden" id="b64_rep">
                     </label>
                 </div>
                 
-                <button type="button" id="rep_submit_btn" onclick="window.handleSubmitReport()" class="btn-prime bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 shadow-[0_10px_25px_rgba(14,165,233,0.4)] py-4 text-lg font-black tracking-wide">🚀 提交今日數據</button>
+                <button type="button" id="rep_submit_btn" onclick="window.handleSubmitReport()" class="btn-prime bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 shadow-[0_15px_30px_-5px_rgba(14,165,233,0.4)] py-4 sm:py-5 text-lg font-black tracking-widest">🚀 提交今日數據</button>
                 
                 <div id="hub-payslip-area" class="mt-8 mb-6"></div>
                 
@@ -464,47 +531,45 @@
                     <div id="hub-history-area" class="hidden p-4 border-t border-slate-700/50 max-h-48 overflow-y-auto space-y-2"></div>
                 </div>
                 
-                <div class="mt-8 text-center pt-6 border-t border-slate-800">
-                    <button type="button" onclick="window.handleLogout()" class="text-rose-500 text-sm font-bold flex items-center justify-center gap-2 mx-auto px-6 py-2 rounded-full hover:bg-rose-950/30 transition border border-transparent hover:border-rose-900/50">🔒 安全登出帳號</button>
+                <div class="mt-8 text-center pt-6 border-t border-slate-700/50">
+                    <button type="button" onclick="window.handleLogout()" class="text-rose-500 text-sm font-bold flex items-center justify-center gap-2 mx-auto px-6 py-2.5 rounded-full hover:bg-rose-950/40 transition border border-transparent hover:border-rose-900/50 backdrop-blur-sm">🔒 安全登出帳號</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- ============================================== -->
-    <!-- 腳本引擎區 (保證無重複代碼) -->
+    <!-- 腳本引擎區 (旗艦優化版) -->
     <!-- ============================================== -->
     <script>
-        // 核心 UI 控制：Toast 優化為滑落式動畫
+        // 優化版動畫 Toast
         window.showToast = (m, e = false) => { 
             const t = document.getElementById('toast'); 
-            t.innerText = m; 
-            t.style.background = e ? '#e11d48' : '#0ea5e9'; 
+            t.innerHTML = `<span class="text-lg leading-none">${e?'⚠️':'✅'}</span> <span class="tracking-wide">${m}</span>`; 
+            t.style.background = e ? 'rgba(225, 29, 72, 0.95)' : 'rgba(14, 165, 233, 0.95)'; 
             t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000); 
+            setTimeout(() => t.classList.remove('show'), 3500); 
         };
         
-        window.hideLoading = () => { document.querySelectorAll('.loading-overlay').forEach(el => el.style.display = 'none'); };
-        window.forceEnter = () => { window.hideLoading(); window.showLayer('gate'); window.showToast("已解除載入鎖定", true); };
+        window.hideLoading = () => { const l = document.getElementById('loading-screen'); if(l) { l.style.opacity = '0'; setTimeout(()=>l.style.display = 'none', 500); } };
+        window.forceEnter = () => { window.hideLoading(); window.showLayer('gate'); window.showToast("已解除載入鎖定"); };
         
-        window.showLayer = (id) => { document.querySelectorAll('.layer, #gate').forEach(el => el.style.display = 'none'); const target = document.getElementById(id); if(target) { target.style.display = 'flex'; window.scrollTo(0,0); } };
+        window.showLayer = (id) => { document.querySelectorAll('.layer, #gate').forEach(el => el.style.display = 'none'); const target = document.getElementById(id); if(target) { target.style.display = 'flex'; window.scrollTo({top:0, behavior:'smooth'}); } };
         window.openModal = (id) => { const m = document.getElementById(id); if(m) m.style.display = 'flex'; };
         window.closeModal = (id) => { const m = document.getElementById(id); if(m) m.style.display = 'none'; };
         window.toggleHistory = () => { const a = document.getElementById('hub-history-area'); const r = document.getElementById('history-arrow'); if(a) { a.classList.toggle('hidden'); r.style.transform = a.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)'; } };
         window.triggerFile = (id) => { const f = document.getElementById(id); if(f) f.click(); };
         window.toggleQuickAdd = (s) => { if(s) window.openModal('quick-add-modal'); else { window.closeModal('quick-add-modal'); document.getElementById('qa_name').value=''; document.getElementById('qa_phone').value=''; document.getElementById('qa_submit_btn').innerText = "建立人員"; document.getElementById('qa_submit_btn').disabled = false; } };
         
-        // 防閃退照片全螢幕預覽
         window.viewFullscreen = (src) => { if(!src) return; document.getElementById('fullscreen-image').src = src; window.openModal('image-viewer-modal'); };
 
-        // 智能壓縮引擎 (確保五證一摺絕不爆表)
+        // 影像智能極致壓縮引擎
         window.handleSlotUpload = (e, slotId, b64Id) => {
             const f = e.target.files[0]; if(!f) return; 
-            window.showToast("處理與壓縮中...");
+            window.showToast("影像處理壓縮中...");
             const r = new FileReader(); r.onload = (ev) => {
                 const img = new Image(); img.onload = () => {
                     const c = document.createElement('canvas'); 
-                    // 縮減尺寸，提升成功率。針對文件只要字能看清即可。
                     const M = 600; let w = img.width, h = img.height;
                     if(w>h && w>M){ h*=M/w; w=M; } else if(h>M){ w*=M/h; h=M; }
                     c.width=w; c.height=h; const ctx = c.getContext('2d'); ctx.drawImage(img, 0,0,w,h);
@@ -516,7 +581,7 @@
                     slot.classList.add('completed');
                     if(!slot.querySelector('img')){ const newImg = document.createElement('img'); slot.appendChild(newImg); }
                     slot.querySelector('img').src = du;
-                    window.showToast("✅ 影像準備完成！");
+                    window.showToast("照片處理完成");
                 };
                 img.src = ev.target.result;
             };
@@ -526,13 +591,7 @@
         let pendingStatus = ''; 
         window.triggerStatusReason = (s) => { pendingStatus = s; document.getElementById('status_reason_input').value = ''; window.openModal('status-reason-modal'); };
         
-        // 強化防卡死保護：5 秒超時自動返回登入
-        setTimeout(() => { 
-            const loader = document.getElementById('loading-screen');
-            if (loader && loader.style.display !== 'none') {
-                window.forceEnter();
-            }
-        }, 5000);
+        setTimeout(() => { const loader = document.getElementById('loading-screen'); if (loader && loader.style.display !== 'none') { window.forceEnter(); } }, 5000);
     </script>
 
     <script type="module">
@@ -542,7 +601,7 @@
 
         let app, db, auth, partnersCol, settingsDoc;
         let isOnline = false;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'logistics-final-v160';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'logistics-ultimate-v100';
         
         try {
             const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : "{}";
@@ -561,15 +620,13 @@
 
         const getTodayString = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; };
 
-        // 登出並清除自動登入狀態
         window.handleLogout = async () => { 
             sessionUser = null; 
             if (auth?.currentUser) { await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'session')).catch(e=>{}); }
             document.getElementById('login_phone').value = ''; document.getElementById('login_pin').value = ''; document.getElementById('remember_me').checked = false;
-            window.showLayer('gate'); window.showToast('已安全登出，記憶狀態已清除'); 
+            window.showLayer('gate'); window.showToast('已安全登出系統'); 
         };
 
-        // 登入邏輯：支援手動與自動
         window.handleLogin = async (isAuto = false) => {
             const ph = document.getElementById('login_phone').value.trim(); const pi = document.getElementById('login_pin').value.trim();
             const remember = document.getElementById('remember_me').checked;
@@ -580,7 +637,7 @@
                 window.showLayer('admin-panel'); window.renderAdmin(); if(!isAuto) window.showToast("歡迎進入營運總控台"); return; 
             }
 
-            if(!isOnline && !partners.length) { if(!isAuto) window.showToast("連線異常，請確認網路", true); return; }
+            if(!isOnline && !partners.length) { if(!isAuto) window.showToast("連線異常，請確認網路狀態", true); return; }
             
             const p = partners.find(x => x.phone === ph && x.pin === pi);
             if(!p) { if (isAuto && auth?.currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'session')).catch(e=>{}); else if (!isAuto) window.showToast("帳號或 PIN 碼錯誤", true); return; }
@@ -591,30 +648,29 @@
 
             sessionUser = p; document.getElementById('hub_title').innerText = `夥伴 ${p.name}`; 
             window.renderPartnerHub(); window.showLayer('partner-hub');
-            if(isAuto) window.showToast(`歡迎回來，${p.name}！`); else window.showToast("登入成功");
+            if(isAuto) window.showToast(`自動登入成功，歡迎 ${p.name}`); else window.showToast("登入成功");
         };
 
-        window.publishAnnouncement = async () => { if(!isOnline) return; await setDoc(settingsDoc, { announcement: document.getElementById('admin_announcement').value.trim() }, { merge: true }); window.showToast("全局跑馬燈已更新"); };
+        window.publishAnnouncement = async () => { if(!isOnline) return; await setDoc(settingsDoc, { announcement: document.getElementById('admin_announcement').value.trim() }, { merge: true }); window.showToast("全局公告已發佈"); };
         
-        // 企業級人事檔案卡片渲染
         window.viewHRDetail = (id) => {
             const p = partners.find(x => x.id === id); if(!p) return;
             const content = `
-                <div class="space-y-6">
+                <div class="space-y-5">
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-slate-800 p-3 rounded-2xl border border-slate-700 shadow-inner"><p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">真實姓名</p><p class="text-white font-bold text-lg">${p.name}</p></div>
-                        <div class="bg-slate-800 p-3 rounded-2xl border border-slate-700 shadow-inner"><p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">身分證字號</p><p class="text-white font-bold text-lg tracking-widest">${p.id_number||'---'}</p></div>
+                        <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 shadow-inner"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">真實姓名</p><p class="text-white font-black text-xl">${p.name}</p></div>
+                        <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 shadow-inner"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">身分證字號</p><p class="text-white font-black text-xl tracking-widest">${p.id_number||'---'}</p></div>
                     </div>
-                    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-inner flex flex-col items-center justify-center">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">指定薪資匯款帳戶</p>
-                        <p class="text-emerald-400 font-black text-2xl tracking-wider">(${p.bank_code||'---'}) ${p.bank_account||'未填'}</p>
+                    <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700 shadow-inner flex flex-col items-center justify-center text-center">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">指定薪資匯款帳戶</p>
+                        <p class="text-emerald-400 font-black text-3xl tracking-widest drop-shadow-md">(${p.bank_code||'---'}) ${p.bank_account||'未填'}</p>
                     </div>
-                    <div class="bg-orange-900/10 border border-orange-900/30 p-4 rounded-2xl text-center"><p class="text-[9px] text-orange-500 font-bold uppercase tracking-wider mb-1">緊急聯絡人資訊</p>
-                        <p class="text-orange-200 font-bold text-lg">${p.emergency_name||'未填'} <span class="mx-2 text-orange-500/50">|</span> ${p.emergency_phone||'未填'}</p>
+                    <div class="bg-orange-950/30 border border-orange-900/50 p-4 rounded-2xl text-center shadow-inner"><p class="text-[10px] text-orange-500 font-bold uppercase tracking-wider mb-1">緊急聯絡人資訊</p>
+                        <p class="text-orange-200 font-black text-xl">${p.emergency_name||'未填'} <span class="mx-3 text-orange-500/50 font-light">|</span> ${p.emergency_phone||'未填'}</p>
                     </div>
-                    <div class="text-xs font-black text-sky-400 mt-6 mb-3 border-b border-sky-900/50 pb-2 flex items-center justify-between">
-                        <span>📋 五證一摺影像核對區</span>
-                        <span class="text-[9px] bg-sky-900/50 text-sky-300 px-2 py-0.5 rounded border border-sky-700">點擊可全螢幕檢視</span>
+                    <div class="text-xs font-black text-sky-400 mt-8 mb-4 border-b border-sky-900/50 pb-2 flex items-center justify-between">
+                        <span class="text-sm">📋 五證一摺影像核對區</span>
+                        <span class="text-[9px] bg-sky-900/50 text-sky-300 px-2.5 py-1 rounded-lg border border-sky-700 font-bold">點擊可全螢幕檢視</span>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         ${renderPhotoCard("身分證正面", p.p_id_f)} ${renderPhotoCard("身分證反面", p.p_id_b)}
@@ -626,9 +682,9 @@
             document.getElementById('hr_detail_content').innerHTML = content; window.openModal('hr-detail-modal');
         };
         const renderPhotoCard = (label, b64) => `
-            <div class="bg-slate-800/50 p-2.5 rounded-xl border border-slate-700 hover:border-sky-500/50 transition group">
-                <p class="text-[9px] text-slate-400 mb-2 font-bold tracking-widest uppercase">${label}</p>
-                ${b64 ? `<div class="relative rounded-lg overflow-hidden h-28 border border-slate-800 shadow-inner cursor-pointer" onclick="window.viewFullscreen('${b64}')"><img src="${b64}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center"><span class="text-white opacity-0 group-hover:opacity-100 text-2xl drop-shadow-md">🔍</span></div></div>` : '<div class="h-28 flex flex-col items-center justify-center italic text-[9px] text-slate-600 bg-slate-900/50 rounded-lg border border-dashed border-slate-700"><span>尚無影像</span></div>'}
+            <div class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700 hover:border-sky-500/50 transition group shadow-inner">
+                <p class="text-[10px] text-slate-400 mb-2.5 font-bold tracking-widest uppercase">${label}</p>
+                ${b64 ? `<div class="relative rounded-xl overflow-hidden h-32 border border-slate-800 shadow-md cursor-pointer" onclick="window.viewFullscreen('${b64}')"><img src="${b64}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center"><span class="text-white opacity-0 group-hover:opacity-100 text-3xl drop-shadow-lg scale-50 group-hover:scale-100 transition-all duration-300">🔍</span></div></div>` : '<div class="h-32 flex flex-col items-center justify-center italic text-[10px] text-slate-600 bg-slate-900/50 rounded-xl border border-dashed border-slate-700 font-bold tracking-wider"><span>尚未上傳</span></div>'}
             </div>
         `;
 
@@ -642,13 +698,13 @@
 
         window.updatePartnerField = async (id, field, value) => {
             if(!isOnline) return window.showToast("網路異常，無法更新", true); 
-            try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [field]: value }); if(field === 'status' && value === 'approved') window.showToast("✅ 已成功核准該名夥伴！"); } catch (err) { window.showToast("更新失敗", true); }
+            try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [field]: value }); if(field === 'status' && value === 'approved') window.showToast("已成功核准"); } catch (err) { window.showToast("更新失敗", true); }
         };
 
         window.openSendPayslipModal = (id) => {
             const p = partners.find(x => x.id === id); if(!p) return; currentSendPartnerId = id; const d = calculatePayslipDetails(p);
-            document.getElementById('sp_del_total').innerText = `$${d.del_total} (${d.del_count}件)`; document.getElementById('sp_rev_total').innerText = `$${d.rev_total} (${d.rev_count}件)`;
-            document.getElementById('sp_ins_total').innerText = `-$${d.ins_total}`; document.getElementById('sp_adj_total').innerText = `${d.adj_total>=0?'+':''}$${d.adj_total}`;
+            document.getElementById('sp_del_total').innerText = `$${d.del_total.toLocaleString()} (${d.del_count}件)`; document.getElementById('sp_rev_total').innerText = `$${d.rev_total.toLocaleString()} (${d.rev_count}件)`;
+            document.getElementById('sp_ins_total').innerText = `-$${d.ins_total.toLocaleString()}`; document.getElementById('sp_adj_total').innerText = `${d.adj_total>=0?'+':''}$${d.adj_total.toLocaleString()}`;
             document.getElementById('sp_net_total').innerText = `$${d.net_total.toLocaleString()}`;
             const box = document.getElementById('sp_dispute_box'); if(p.payslip_today?.disputed){ box.classList.remove('hidden'); document.getElementById('sp_dispute_text').innerText = p.payslip_today.dispute_reason; } else box.classList.add('hidden');
             document.getElementById('sp_reply_input').value = ''; window.openModal('send-payslip-modal');
@@ -657,51 +713,59 @@
         window.confirmSendPayslip = async () => {
             if(!isOnline || !currentSendPartnerId) return; const p = partners.find(x => x.id === currentSendPartnerId); const det = calculatePayslipDetails(p);
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', currentSendPartnerId), { payslip_today: { date: getTodayString(), amount: det.net_total, details: det, admin_reply: document.getElementById('sp_reply_input').value.trim(), sent_time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute:'2-digit' }), signed: false, disputed: false } });
-            window.closeModal('send-payslip-modal'); window.showToast("電子薪資憑單已發送！");
+            window.closeModal('send-payslip-modal'); window.showToast("電子薪資單發送成功");
         };
 
         window.executeBatchSend = async () => {
             if(!isOnline) return; window.closeModal('batch-send-modal'); const today = getTodayString(); const time = new Date().toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
             const updates = partners.filter(p => p.status === 'approved').map(p => { const det = calculatePayslipDetails(p); return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', p.id), { payslip_today: { date: today, amount: det.net_total, details: det, sent_time: time, signed: false, disputed: false } }); });
-            await Promise.all(updates); window.showToast(`成功群發給 ${updates.length} 位夥伴`);
+            await Promise.all(updates); window.showToast(`群發完成 (${updates.length} 人)`);
         };
 
-        window.signPayslip = async () => { if(!sessionUser || !isOnline) return; await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', sessionUser.id), { 'payslip_today.signed': true, 'payslip_today.disputed': false, 'payslip_today.signed_time': new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute:'2-digit' }) }); window.showToast("已完成電子簽收！"); };
-        window.submitDispute = async () => { if(!sessionUser || !isOnline) return; const r = document.getElementById('dispute_reason_input').value.trim(); if(!r) return window.showToast("請輸入原因", true); await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', sessionUser.id), { 'payslip_today.disputed': true, 'payslip_today.dispute_reason': r }); window.closeModal('dispute-modal'); window.showToast("申訴已送出，請等待會計處理"); };
-        window.executeSettle = async () => { if(!isOnline) return; window.closeModal('settle-modal'); const month = new Date().toISOString().slice(0, 7); const updates = partners.map(p => { const det = calculatePayslipDetails(p); let h = [...(p.history||[])]; h.unshift({ month, del: p.total_del||0, rev: p.total_rev||0, adj: p.custom_adj||0, net: det.net_total, date: getTodayString() }); return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', p.id), { history: h, total_del: 0, total_rev: 0, custom_adj: 0, payslip_today: null, work_status: 'normal', work_status_remark: '' }); }); await Promise.all(updates); window.showToast("全站月結歸檔完畢！"); };
+        window.signPayslip = async () => { if(!sessionUser || !isOnline) return; await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', sessionUser.id), { 'payslip_today.signed': true, 'payslip_today.disputed': false, 'payslip_today.signed_time': new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute:'2-digit' }) }); window.showToast("已完成電子簽收"); };
+        window.submitDispute = async () => { if(!sessionUser || !isOnline) return; const r = document.getElementById('dispute_reason_input').value.trim(); if(!r) return window.showToast("請輸入原因", true); await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', sessionUser.id), { 'payslip_today.disputed': true, 'payslip_today.dispute_reason': r }); window.closeModal('dispute-modal'); window.showToast("申訴已送出"); };
+        window.executeSettle = async () => { if(!isOnline) return; window.closeModal('settle-modal'); const month = new Date().toISOString().slice(0, 7); const updates = partners.map(p => { const det = calculatePayslipDetails(p); let h = [...(p.history||[])]; h.unshift({ month, del: p.total_del||0, rev: p.total_rev||0, adj: p.custom_adj||0, net: det.net_total, date: getTodayString() }); return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', p.id), { history: h, total_del: 0, total_rev: 0, custom_adj: 0, payslip_today: null, work_status: 'normal', work_status_remark: '' }); }); await Promise.all(updates); window.showToast("月結歸檔完畢"); };
 
         window.renderAdmin = () => {
             const tbody = document.getElementById('admin-list'); const query = document.getElementById('admin_search').value.trim().toLowerCase();
             let filtered = partners.filter(p => p.name?.toLowerCase().includes(query) || p.phone?.includes(query));
-            let sD = 0, sR = 0, sN = 0; if(!filtered.length){ tbody.innerHTML = '<tr><td colspan="7" class="py-32 text-center text-slate-500 font-bold tracking-widest bg-slate-900/50">NO DATA FOUND</td></tr>'; return; }
+            let sD = 0, sR = 0, sN = 0; if(!filtered.length){ tbody.innerHTML = '<tr><td colspan="7" class="py-32 text-center text-slate-500 font-bold tracking-widest bg-slate-900/30">無相符資料</td></tr>'; return; }
             let html = '';
             filtered.forEach(p => {
                 const det = calculatePayslipDetails(p); sD += det.del_count; sR += det.rev_count; sN += det.net_total;
-                let stIcon = '🟢'; if(p.work_status === 'leave') stIcon = '🔴'; else if(p.work_status === 'issue') stIcon = '🟡';
-                let payLabel = ''; if(p.payslip_today?.date === getTodayString()){ if(p.payslip_today.signed) payLabel = `<div class="text-emerald-400 text-[10px] font-bold mt-1.5 bg-emerald-900/30 px-1 py-0.5 rounded shadow-inner">✅ 已簽收</div>`; else if(p.payslip_today.disputed) payLabel = `<div class="text-rose-400 text-[10px] font-bold mt-1.5 bg-rose-900/50 px-1 py-0.5 rounded shadow-inner animate-pulse cursor-pointer border border-rose-500" onclick="window.openSendPayslipModal('${p.id}')">⚠️ 申訴回覆</div>`; else payLabel = `<div class="text-orange-400 text-[10px] font-bold mt-1.5 bg-orange-900/30 px-1 py-0.5 rounded shadow-inner">⏳ 待簽收</div>`; }
+                
+                let stBtn = 'bg-slate-800 text-slate-400 border-slate-700'; let stText = '正常'; let stIcon = '🟢';
+                if(p.work_status === 'leave') { stBtn = 'bg-rose-900/30 text-rose-400 border-rose-800'; stText = '請假'; stIcon = '🔴'; } 
+                else if(p.work_status === 'issue') { stBtn = 'bg-yellow-900/30 text-yellow-400 border-yellow-800'; stText = '異常'; stIcon = '🟡'; }
+                
+                const remarkHtml = p.work_status_remark ? `<div class="text-[9px] text-slate-400 mt-1.5 truncate max-w-[80px] font-medium bg-slate-900/80 px-1 py-0.5 rounded" title="${p.work_status_remark}">${p.work_status_remark}</div>` : '';
+                const leaveCount = p.future_leaves ? p.future_leaves.length : 0;
+                const leaveBtnHtml = leaveCount > 0 ? `<button type="button" onclick="window.viewAdminLeaves('${p.id}')" class="mt-2 text-[9px] bg-purple-900/40 text-purple-300 px-2 py-1 rounded-md border border-purple-800 hover:bg-purple-700 transition shadow-sm font-bold flex items-center gap-1"><span>📅</span> ${leaveCount}筆假</button>` : '';
+
+                let payLabel = ''; if(p.payslip_today?.date === getTodayString()){ if(p.payslip_today.signed) payLabel = `<div class="text-emerald-400 text-[9px] font-black mt-1.5 bg-emerald-900/30 px-1.5 py-0.5 rounded shadow-inner">✅ 已簽收</div>`; else if(p.payslip_today.disputed) payLabel = `<div class="text-rose-400 text-[9px] font-black mt-1.5 bg-rose-900/50 px-1.5 py-0.5 rounded shadow-inner animate-pulse cursor-pointer border border-rose-500/50" onclick="window.openSendPayslipModal('${p.id}')">⚠️ 申訴</div>`; else payLabel = `<div class="text-orange-400 text-[9px] font-bold mt-1.5 bg-orange-900/30 px-1.5 py-0.5 rounded shadow-inner">⏳ 待簽</div>`; }
                 
                 const actionIcons = `
                     <div class="flex flex-col gap-2 items-center">
-                        <button type="button" onclick="window.viewHRDetail('${p.id}')" class="bg-indigo-900/50 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-700 p-2 rounded-xl transition shadow-md" title="調閱完整電子人事檔案">📇</button>
-                        ${p.last_photo ? `<button type="button" onclick="window.viewAdminPhotos('${p.id}')" class="bg-emerald-900/50 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-700 p-2 rounded-xl transition shadow-md" title="查看今日回單照片">📸</button>` : ''}
+                        <button type="button" onclick="window.viewHRDetail('${p.id}')" class="bg-indigo-900/40 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-700/60 p-2 rounded-xl transition shadow-md" title="調閱電子檔案">📇</button>
+                        ${p.last_photo ? `<button type="button" onclick="window.viewAdminPhotos('${p.id}')" class="bg-emerald-900/40 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-700/60 p-2 rounded-xl transition shadow-md" title="檢視回單">📸</button>` : ''}
                     </div>
                 `;
 
                 html += `
-                    <tr class="hover:bg-slate-800/40 transition duration-200">
-                        <td><div class="flex flex-col items-center">${p.status==='pending_review'?`<button type="button" onclick="window.updatePartnerField('${p.id}','status','approved')" class="bg-sky-600 hover:bg-sky-500 active:scale-95 text-white px-3 py-1.5 rounded-lg text-[11px] font-black border border-sky-400 shadow-[0_0_10px_rgba(14,165,233,0.4)] relative z-10 cursor-pointer pointer-events-auto transition">✔️ 允許核准</button>`:`<span class="text-2xl drop-shadow-md">${stIcon}</span>`}<p class="text-[10px] mt-1.5 font-bold text-slate-400">${p.work_status_remark||''}</p></div></td>
-                        <td class="text-left pl-5">
-                            <span class="font-black text-white text-sm tracking-wide">${p.name}</span> <span class="text-[10px] text-sky-500 font-bold bg-sky-900/30 px-1.5 py-0.5 rounded ml-1">${p.phone}</span><br>
-                            <div class="flex gap-1 mt-2 items-center">
-                                <span class="text-[10px] font-bold text-slate-500">正件</span><input type="number" class="w-14 bg-slate-900 border border-slate-700 text-sky-400 font-bold text-center text-xs rounded py-1 focus:border-sky-500 outline-none transition" value="${p.total_del||0}" onchange="window.updatePartnerField('${p.id}', 'total_del', Number(this.value))">
-                                <span class="text-[10px] font-bold text-slate-500 ml-1">逆件</span><input type="number" class="w-14 bg-slate-900 border border-slate-700 text-orange-400 font-bold text-center text-xs rounded py-1 focus:border-orange-500 outline-none transition" value="${p.total_rev||0}" onchange="window.updatePartnerField('${p.id}', 'total_rev', Number(this.value))">
+                    <tr>
+                        <td><div class="flex flex-col items-center justify-center h-full">${p.status==='pending_review'?`<button type="button" onclick="window.updatePartnerField('${p.id}','status','approved')" class="bg-gradient-to-r from-sky-500 to-sky-600 active:scale-95 text-white px-3 py-2 rounded-lg text-[11px] font-black border border-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.4)] transition">核准</button>`:`<div class="flex flex-col items-center"><span class="px-2 py-1 text-[10px] font-black rounded-lg border flex items-center gap-1 ${stBtn}"><span>${stIcon}</span>${stText}</span>${remarkHtml}</div>`}${leaveBtnHtml}</div></td>
+                        <td class="text-left pl-3 sm:pl-5 border-l border-slate-700/30">
+                            <div class="flex items-baseline gap-2 mb-1"><span class="font-black text-white text-sm sm:text-base tracking-wide">${p.name}</span> <span class="text-[9px] text-sky-400 font-bold bg-sky-900/20 border border-sky-800/50 px-1.5 py-0.5 rounded shadow-inner tracking-wider">${p.phone}</span></div>
+                            <div class="flex gap-1.5 mt-2 items-center bg-slate-900/50 w-max p-1.5 rounded-xl border border-slate-700/50 shadow-inner">
+                                <span class="text-[10px] font-black text-slate-500 ml-1">正</span><input type="number" class="ghost-input w-12 text-sky-400 font-black text-sm" value="${p.total_del||0}" onchange="window.updatePartnerField('${p.id}', 'total_del', Number(this.value))">
+                                <span class="text-[10px] font-black text-slate-500 ml-1 border-l border-slate-700 pl-2">逆</span><input type="number" class="ghost-input w-12 text-orange-400 font-black text-sm" value="${p.total_rev||0}" onchange="window.updatePartnerField('${p.id}', 'total_rev', Number(this.value))">
                             </div>
                         </td>
-                        <td><div class="flex flex-col gap-1.5 items-center"><input type="number" class="w-12 bg-slate-900 border border-slate-800 text-[11px] p-1 text-sky-400 rounded text-center focus:border-sky-500 outline-none" value="${det.del_price}" onchange="window.updatePartnerField('${p.id}','custom_del',Number(this.value))"><input type="number" class="w-12 bg-slate-900 border border-slate-800 text-[11px] p-1 text-orange-400 rounded text-center focus:border-orange-500 outline-none" value="${det.rev_price}" onchange="window.updatePartnerField('${p.id}','custom_rev',Number(this.value))"></div></td>
-                        <td><div class="flex flex-col items-center"><button type="button" onclick="window.updatePartnerField('${p.id}','ins_toggle',${!p.ins_toggle})" class="text-[10px] font-bold px-3 py-0.5 mb-1.5 rounded-full shadow-inner ${p.ins_toggle!==false?'bg-emerald-900/40 text-emerald-400 border border-emerald-800':'bg-slate-800 text-slate-500'}">${p.ins_toggle!==false?'-$'+det.ins_total:'未投保'}</button><select class="bg-slate-900 text-[10px] border border-slate-700 rounded py-0.5 px-1 outline-none focus:border-sky-500" onchange="window.updatePartnerField('${p.id}','ins_base',Number(this.value))">${SALARY_GRADES.map(g=>`<option value="${g}" ${p.ins_base===g?'selected':''}>${g===0?'不保':g.toLocaleString()}</option>`).join('')}</select></div></td>
-                        <td><input type="number" class="w-16 bg-slate-900 border border-slate-700 text-xs font-bold text-center py-1.5 rounded focus:border-sky-500 outline-none" value="${p.custom_adj||''}" placeholder="0" onchange="window.updatePartnerField('${p.id}','custom_adj',Number(this.value))"></td>
-                        <td class="text-sky-400 font-black text-lg tracking-tighter drop-shadow-md">$${det.net_total.toLocaleString()}</td>
-                        <td><div class="flex gap-2.5 justify-center items-start pt-1"><div class="flex flex-col items-center"><button type="button" onclick="window.openSendPayslipModal('${p.id}')" class="text-sky-400 hover:text-white bg-sky-900/30 hover:bg-sky-600 border border-sky-900/50 p-2 rounded-xl text-lg transition shadow-md" title="發送電子薪資單">📤</button>${payLabel}</div>${actionIcons}<button type="button" onclick="window.openModal('delete-modal'); deleteTargetId='${p.id}'" class="text-rose-500 hover:text-white bg-rose-900/30 hover:bg-rose-600 border border-rose-900/50 p-2 rounded-xl text-lg transition shadow-md" title="刪除人員">🗑️</button></div></td>
+                        <td class="border-l border-slate-700/30"><div class="flex flex-col gap-1.5 items-center"><input type="number" class="w-14 bg-slate-900/80 border border-slate-700 text-[11px] p-1.5 text-sky-400 font-bold rounded-lg text-center focus:border-sky-500 outline-none transition shadow-inner" value="${det.del_price}" onchange="window.updatePartnerField('${p.id}','custom_del',Number(this.value))"><input type="number" class="w-14 bg-slate-900/80 border border-slate-700 text-[11px] p-1.5 text-orange-400 font-bold rounded-lg text-center focus:border-orange-500 outline-none transition shadow-inner" value="${det.rev_price}" onchange="window.updatePartnerField('${p.id}','custom_rev',Number(this.value))"></div></td>
+                        <td class="border-l border-slate-700/30"><div class="flex flex-col items-center gap-2"><button type="button" onclick="window.updatePartnerField('${p.id}','ins_toggle',${!p.ins_toggle})" class="text-[10px] font-black px-3 py-1 rounded-lg transition shadow-inner border ${p.ins_toggle!==false?'bg-emerald-900/30 text-emerald-400 border-emerald-800':'bg-slate-800/80 text-slate-500 border-slate-700'}">${p.ins_toggle!==false?'-$'+det.ins_total:'未投保'}</button><select class="bg-slate-900/80 text-[10px] font-medium text-slate-300 border border-slate-700 rounded-lg py-1 px-1 outline-none focus:border-sky-500 shadow-inner" onchange="window.updatePartnerField('${p.id}','ins_base',Number(this.value))">${SALARY_GRADES.map(g=>`<option value="${g}" ${p.ins_base===g?'selected':''}>${g===0?'無':g.toLocaleString()}</option>`).join('')}</select></div></td>
+                        <td class="border-l border-slate-700/30"><input type="number" class="w-16 bg-slate-900/80 border border-slate-700 text-sm font-black text-center py-2 rounded-xl focus:border-sky-500 outline-none transition shadow-inner" value="${p.custom_adj||''}" placeholder="0" onchange="window.updatePartnerField('${p.id}','custom_adj',Number(this.value))"></td>
+                        <td class="border-l border-slate-700/30"><div class="text-sky-400 font-black text-xl tracking-tighter drop-shadow-[0_0_8px_rgba(14,165,233,0.3)]">$${det.net_total.toLocaleString()}</div></td>
+                        <td class="border-l border-slate-700/30"><div class="flex gap-2.5 justify-center items-center"><div class="flex flex-col items-center"><button type="button" onclick="window.openSendPayslipModal('${p.id}')" class="text-sky-400 hover:text-white bg-sky-900/40 hover:bg-sky-600 border border-sky-800/50 p-2 rounded-xl text-lg transition shadow-md" title="核發薪資">📤</button>${payLabel}</div>${actionIcons}<button type="button" onclick="window.openModal('delete-modal'); deleteTargetId='${p.id}'" class="text-rose-500 hover:text-white bg-rose-900/30 hover:bg-rose-600 border border-rose-900/50 p-2 rounded-xl text-lg transition shadow-md ml-1" title="刪除">🗑️</button></div></td>
                     </tr>
                 `;
             });
@@ -714,117 +778,126 @@
             if(globalSettings.announcement) { annBox.classList.remove('hidden'); document.getElementById('hub-announcement-text').innerText = `📢 最新公告：${globalSettings.announcement}`; }
             else annBox.classList.add('hidden');
 
+            const status = sessionUser.work_status || 'normal';
+            document.getElementById('btn-n').className = `flex-1 py-3.5 rounded-2xl text-xs font-black border transition shadow-md ${status === 'normal' ? 'bg-emerald-600 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-slate-800/80 border-slate-700/50 text-slate-400 hover:bg-slate-700'}`;
+            document.getElementById('btn-l').className = `flex-1 py-3.5 rounded-2xl text-xs font-black border transition shadow-md ${status === 'leave' ? 'bg-rose-600 text-white border-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : 'bg-slate-800/80 border-slate-700/50 text-slate-400 hover:bg-slate-700'}`;
+            document.getElementById('btn-i').className = `flex-1 py-3.5 rounded-2xl text-xs font-black border transition shadow-md ${status === 'issue' ? 'bg-yellow-600 text-white border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'bg-slate-800/80 border-slate-700/50 text-slate-400 hover:bg-slate-700'}`;
+
             const slip = sessionUser.payslip_today;
             const area = document.getElementById('hub-payslip-area');
             if (slip && slip.date === getTodayString()) {
                 let det = slip.details;
-                let replyHtml = slip.admin_reply ? `<div class="mb-3 p-3 bg-sky-900/30 border-l-4 border-sky-500 rounded text-sky-300 text-[11px] font-bold leading-relaxed shadow-inner">💬 會計回覆：${slip.admin_reply}</div>` : '';
+                let replyHtml = slip.admin_reply ? `<div class="mb-4 p-3.5 bg-sky-900/40 border-l-4 border-sky-500 rounded-xl text-sky-200 text-xs font-bold leading-relaxed shadow-inner">💬 會計備註：${slip.admin_reply}</div>` : '';
                 area.innerHTML = `
-                    <div class="p-6 bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl border border-sky-500/30 payslip-anim shadow-[0_15px_40px_rgba(0,0,0,0.5)]">
-                        <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-3"><span class="text-sky-400 font-black text-sm tracking-widest uppercase flex items-center gap-1.5"><span class="text-lg">📥</span> 電子薪資憑單</span><span class="text-[10px] text-slate-500 font-bold bg-slate-900 px-2 py-1 rounded-full">${slip.sent_time}</span></div>
-                        <div class="bg-slate-900/80 p-4 rounded-2xl mb-4 text-[11px] text-slate-400 space-y-2 border border-slate-800 shadow-inner">
-                            <div class="flex justify-between font-bold text-slate-300"><span>正件小計 (${det.del_count}件)</span><span>$${det.del_total.toLocaleString()}</span></div>
-                            <div class="flex justify-between font-bold text-slate-300"><span>逆件小計 (${det.rev_count}件)</span><span>$${det.rev_total.toLocaleString()}</span></div>
-                            <div class="flex justify-between text-rose-400 font-bold border-t border-slate-700/50 pt-2 mt-1"><span>勞健保費代扣</span><span>-$${det.ins_total.toLocaleString()}</span></div>
-                            <div class="flex justify-between font-bold ${det.adj_total>=0?'text-emerald-400':'text-rose-400'}"><span>其他獎金/扣款</span><span>${det.adj_total>=0?'+':''}$${det.adj_total.toLocaleString()}</span></div>
+                    <div class="p-6 bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] border border-sky-500/40 payslip-anim shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-[50px]"></div>
+                        <div class="flex justify-between items-center mb-5 border-b border-slate-700/50 pb-4 relative z-10"><span class="text-sky-400 font-black text-sm tracking-widest uppercase flex items-center gap-2"><span class="text-xl">📥</span> 電子薪資憑單</span><span class="text-[10px] text-slate-400 font-bold bg-slate-950/80 px-2.5 py-1 rounded-full shadow-inner border border-slate-800">${slip.sent_time} 發佈</span></div>
+                        <div class="bg-slate-950/50 p-5 rounded-2xl mb-4 text-xs text-slate-400 space-y-3 border border-slate-800/80 shadow-inner relative z-10">
+                            <div class="flex justify-between font-bold text-slate-200"><span class="flex items-center gap-2"><span class="w-1 h-1 bg-sky-500 rounded-full"></span>正件 (${det.del_count}件)</span><span class="font-black">$${det.del_total.toLocaleString()}</span></div>
+                            <div class="flex justify-between font-bold text-slate-200"><span class="flex items-center gap-2"><span class="w-1 h-1 bg-orange-500 rounded-full"></span>逆件 (${det.rev_count}件)</span><span class="font-black">$${det.rev_total.toLocaleString()}</span></div>
+                            <div class="flex justify-between text-rose-400 font-bold border-t border-slate-800 pt-3 mt-1"><span class="flex items-center gap-2">🛡️ 勞健保費代扣</span><span>-$${det.ins_total.toLocaleString()}</span></div>
+                            <div class="flex justify-between font-bold ${det.adj_total>=0?'text-emerald-400':'text-rose-400'}"><span class="flex items-center gap-2">💰 其他獎金/扣款</span><span>${det.adj_total>=0?'+':''}$${det.adj_total.toLocaleString()}</span></div>
                         </div>
                         ${replyHtml}
-                        <div class="text-center my-5">
-                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">本期實發淨額</p>
-                            <p class="text-4xl font-black text-white tracking-tighter drop-shadow-lg text-sky-400">$${(slip.amount||0).toLocaleString()}</p>
+                        <div class="text-center my-6 relative z-10">
+                            <p class="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">本期實發淨額</p>
+                            <p class="text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(14,165,233,0.3)] text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-sky-500">$${(slip.amount||0).toLocaleString()}</p>
                         </div>
-                        ${slip.signed ? `<div class="mt-4 bg-emerald-900/30 border border-emerald-500/50 text-emerald-400 text-sm font-black py-3 rounded-2xl text-center shadow-inner">✅ 已確認簽收完成<br><span class="text-[10px] font-normal opacity-80">${slip.signed_time}</span></div>` : `<div class="flex gap-3 mt-4"><button type="button" onclick="window.openModal('dispute-modal')" class="flex-1 py-3.5 rounded-2xl border border-rose-900/80 text-rose-400 text-xs font-bold hover:bg-rose-900/30 transition shadow-inner bg-slate-900">⚠️ 有誤申訴</button><button type="button" onclick="window.signPayslip()" class="flex-[2] py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 shadow-[0_10px_20px_rgba(16,185,129,0.3)] rounded-2xl text-white text-[13px] font-black transition tracking-wider">✍️ 金額無誤，立刻簽收</button></div>`}
+                        <div class="relative z-10">
+                        ${slip.signed ? `<div class="bg-emerald-900/40 border border-emerald-500/50 text-emerald-400 text-sm font-black py-3.5 rounded-2xl text-center shadow-inner flex flex-col items-center justify-center"><span>✅ 薪資無誤，已簽收歸檔</span><span class="text-[10px] font-normal opacity-70 mt-0.5">${slip.signed_time}</span></div>` : `<div class="flex gap-3"><button type="button" onclick="window.openModal('dispute-modal')" class="flex-[0.8] py-4 rounded-2xl border border-rose-900/80 text-rose-400 text-xs font-black hover:bg-rose-900/40 transition shadow-inner bg-slate-900/80">⚠️ 有誤申訴</button><button type="button" onclick="window.signPayslip()" class="flex-[2] py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 shadow-[0_10px_25px_rgba(16,185,129,0.3)] rounded-2xl text-white text-sm font-black transition tracking-wider flex justify-center items-center gap-2"><span class="text-xl">✍️</span> 確認無誤，電子簽收</button></div>`}
+                        </div>
                     </div>`;
-            } else area.innerHTML = `<div class="p-6 border border-slate-700/50 border-dashed rounded-3xl text-center bg-slate-900/30"><div class="text-4xl opacity-30 mb-2">📭</div><span class="text-slate-500 text-xs font-bold tracking-widest">今日尚未收到薪資單</span></div>`;
+            } else area.innerHTML = `<div class="p-8 border border-slate-700/50 border-dashed rounded-[2rem] text-center bg-slate-900/30 shadow-inner"><div class="text-5xl opacity-20 mb-3 grayscale filter">📭</div><span class="text-slate-500 text-xs font-black tracking-widest uppercase">今日尚未核發薪資單</span></div>`;
         };
 
         window.viewAdminPhotos = (id) => {
             const p = partners.find(x => x.id === id); if(!p) return; document.getElementById('admin_photos_title').innerText = `${p.name} 的回單附件`;
-            let html = ''; if(p.last_photo) html += `<div><h4 class="text-emerald-400 text-xs font-bold mb-2">📸 最新回單/單據 (${p.last_photo_date || '未知'})</h4><div class="relative group cursor-pointer" onclick="window.viewFullscreen('${p.last_photo}')"><img src="${p.last_photo}" class="w-full rounded-xl border border-slate-700 shadow-xl group-hover:opacity-80 transition"><div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-3xl drop-shadow-lg text-white">🔍</span></div></div></div>`;
-            document.getElementById('admin_photos_content').innerHTML = html || '<div class="text-center text-slate-500 py-6 font-bold tracking-widest">NO PHOTOS UPLOADED</div>'; window.openModal('admin-photos-modal');
+            let html = ''; if(p.last_photo) html += `<div><h4 class="text-emerald-400 text-xs font-bold mb-3 tracking-widest">📸 最新單據紀錄 (${p.last_photo_date || '未知'})</h4><div class="relative group cursor-pointer rounded-2xl overflow-hidden border border-slate-700 shadow-xl" onclick="window.viewFullscreen('${p.last_photo}')"><img src="${p.last_photo}" class="w-full object-cover group-hover:scale-105 transition duration-500"><div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition"><span class="text-4xl drop-shadow-2xl text-white scale-50 group-hover:scale-100 transition-transform">🔍</span></div></div></div>`;
+            document.getElementById('admin_photos_content').innerHTML = html || '<div class="text-center text-slate-600 py-10 font-black tracking-[0.3em] uppercase">No Photos Uploaded</div>'; window.openModal('admin-photos-modal');
         };
 
         window.viewAdminLeaves = (id) => {
-            const p = partners.find(x => x.id === id); if(!p || !p.future_leaves || p.future_leaves.length === 0) return window.showToast("目前無排假紀錄", true);
-            const content = p.future_leaves.map(l => ` <div class="bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-slate-700 shadow-inner"> <div><span class="text-purple-400 font-black text-sm tracking-wide">${l.date}</span><p class="text-[11px] text-slate-400 mt-1 font-bold">${l.reason || '無事由'}</p></div> <button type="button" onclick="window.deleteLeave('${p.id}', '${l.date}')" class="text-rose-400 text-[10px] font-bold px-3 py-1.5 bg-rose-900/30 border border-rose-900/50 rounded-lg hover:bg-rose-600 hover:text-white transition">刪除紀錄</button> </div> `).join('');
+            const p = partners.find(x => x.id === id); if(!p || !p.future_leaves || p.future_leaves.length === 0) return window.showToast("無排假紀錄");
+            const content = p.future_leaves.map(l => ` <div class="bg-slate-800/80 p-4 rounded-2xl flex justify-between items-center border border-slate-700 shadow-inner"> <div><span class="text-purple-400 font-black text-sm tracking-wide">${l.date}</span><p class="text-[11px] text-slate-400 mt-1.5 font-bold">${l.reason || '無填寫事由'}</p></div> <button type="button" onclick="window.deleteLeave('${p.id}', '${l.date}')" class="text-rose-400 text-[10px] font-black px-3 py-2 bg-rose-950/50 border border-rose-900/50 rounded-xl hover:bg-rose-600 hover:text-white transition">刪除紀錄</button> </div> `).join('');
             document.getElementById('view_leave_title').innerText = `${p.name} 的排假預約`; document.getElementById('view_leave_content').innerHTML = content; window.openModal('view-leave-modal');
         };
-        window.deleteLeave = async (partnerId, date) => { const p = partners.find(x => x.id === partnerId); if(!p) return; const newLeaves = p.future_leaves.filter(l => l.date !== date); await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId), { future_leaves: newLeaves }); window.closeModal('view-leave-modal'); window.showToast("✅ 成功刪除排假紀錄"); };
+        window.deleteLeave = async (partnerId, date) => { const p = partners.find(x => x.id === partnerId); if(!p) return; const newLeaves = p.future_leaves.filter(l => l.date !== date); await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId), { future_leaves: newLeaves }); window.closeModal('view-leave-modal'); window.showToast("排假紀錄已刪除"); };
 
         window.handleSubmitReport = async () => { 
             if(!sessionUser) return; 
             const btn = document.getElementById('rep_submit_btn');
             const d = parseInt(document.getElementById('rep_del').value)||0, r = parseInt(document.getElementById('rep_rev').value)||0, p = document.getElementById('b64_rep').value; 
-            if(d===0&&r===0&&!p) return window.showToast("⚠️ 請至少輸入件數或上傳單據", true); 
+            if(d===0&&r===0&&!p) return window.showToast("⚠️ 請輸入件數或上傳單據", true); 
             
-            btn.innerText = "資料上傳中..."; btn.disabled = true;
+            btn.innerText = "資料加密上傳中..."; btn.disabled = true;
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', sessionUser.id), { total_del: (sessionUser.total_del||0)+d, total_rev: (sessionUser.total_rev||0)+r, last_photo: p||null, last_photo_date: getTodayString() }); 
-                window.showToast("🚀 數據已成功同步至雲端！"); 
+                window.showToast("🚀 數據同步完成！"); 
                 document.getElementById('rep_del').value=''; document.getElementById('rep_rev').value=''; document.getElementById('b64_rep').value=''; document.getElementById('slot_rep').classList.remove('completed'); document.getElementById('slot_rep').querySelector('img')?.remove();
-            } catch(e) {
-                window.showToast("❌ 上傳失敗，請檢查網路連線", true);
-            } finally {
-                btn.innerText = "🚀 提交今日數據"; btn.disabled = false;
-            }
+            } catch(e) { window.showToast("❌ 傳輸失敗，請檢查網路", true); } finally { btn.innerHTML = "🚀 提交今日數據"; btn.disabled = false; }
         };
         
         window.handleSubmitInterview = async () => { 
             const n = document.getElementById('int_name').value.trim(); const ph = document.getElementById('int_phone').value.trim(); 
             if(!n||!/^09\d{8}$/.test(ph)) return window.showToast("⚠️ 姓名未填或手機格式錯誤", true); 
-            let score = 0;
-            for(let i=1; i<=5; i++){ const val = document.querySelector(`input[name="q${i}"]:checked`)?.value; if(!val) return window.showToast(`⚠️ 請完成第 ${i} 題作答`, true); score += parseInt(val); }
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${ph}`), { id:`p_${ph}`, name:n, phone:ph, pin:"0000", status:'pending_review', ai_score: score, total_del:0, total_rev:0, custom_adj:0, ins_base:29500, ins_fm:1, ins_toggle:true, work_status:'normal' }); 
-            window.showToast("✅ 評估完成！請等待主管審核。預設PIN碼為 0000"); window.handleLogout(); 
+            let score = 0; const btn = document.getElementById('submit_interview_btn');
+            for(let i=1; i<=5; i++){ const val = document.querySelector(`input[name="q${i}"]:checked`)?.value; if(!val) return window.showToast(`⚠️ 發現遺漏：請作答第 ${i} 題`, true); score += parseInt(val); }
+            btn.innerText = "送出中..."; btn.disabled = true;
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${ph}`), { id:`p_${ph}`, name:n, phone:ph, pin:"0000", status:'pending_review', ai_score: score, total_del:0, total_rev:0, custom_adj:0, ins_base:29500, ins_fm:1, ins_toggle:true, work_status:'normal' }); 
+                window.showToast("✅ 評估完成！請等待主管審核 (預設PIN碼為0000)"); window.handleLogout(); 
+            } catch(e) { window.showToast("傳輸失敗", true); } finally { btn.innerText = "送出評估卷"; btn.disabled = false; }
         };
 
         window.exportToExcel = () => { 
-            if(!partners.length) return window.showToast("⚠️ 目前尚無資料可匯出", true); 
+            if(!partners.length) return window.showToast("無資料可匯出", true); 
             let csv = '\uFEFF系統狀態,真實姓名,登入號碼,身分證字號,銀行代碼,匯款帳號,累積正件,累積逆件,額外加扣款,本期預估淨額\n'; 
             partners.forEach(p => { const det = calculatePayslipDetails(p); csv += `${p.status==='approved'?'Active':'Pending'},${p.name||''},${p.phone||''},${p.id_number||''},${p.bank_code||''},${p.bank_account||''},${det.del_count},${det.rev_count},${det.adj_total},${det.net_total}\n`; }); 
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `物流營運總表_${getTodayString()}.csv`; link.click(); window.showToast("✅ Excel 報表已成功匯出下載！"); 
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `物流營運總表_${getTodayString()}.csv`; link.click(); window.showToast("✅ 報表匯出成功"); 
         };
 
         window.handleSaveProfile = async () => {
-            const id_f = document.getElementById('b64_id_f').value, id_b = document.getElementById('b64_id_b').value, lic = document.getElementById('b64_lic').value, book = document.getElementById('b64_book').value, reg = document.getElementById('b64_reg').value, cr = document.getElementById('b64_cr').value;
+            const f = document.getElementById('b64_id_f').value, b = document.getElementById('b64_id_b').value, l = document.getElementById('b64_lic').value, bk = document.getElementById('b64_book').value, r = document.getElementById('b64_reg').value, c = document.getElementById('b64_cr').value;
             
-            if(!id_f || !id_b || !lic || !book || !reg) { return window.showToast("🚫 阻擋提交：五證一摺尚未補齊 (前5項影像必填)！", true); }
+            // 防呆表單驗證：漏照片
+            if(!f){ document.getElementById('slot_id_f').classList.add('error-shake'); setTimeout(()=>document.getElementById('slot_id_f').classList.remove('error-shake'),400); return window.showToast("🚫 缺少身分證正面", true); }
+            if(!b){ document.getElementById('slot_id_b').classList.add('error-shake'); setTimeout(()=>document.getElementById('slot_id_b').classList.remove('error-shake'),400); return window.showToast("🚫 缺少身分證反面", true); }
+            if(!l){ document.getElementById('slot_lic').classList.add('error-shake'); setTimeout(()=>document.getElementById('slot_lic').classList.remove('error-shake'),400); return window.showToast("🚫 缺少駕照照片", true); }
+            if(!bk){ document.getElementById('slot_book').classList.add('error-shake'); setTimeout(()=>document.getElementById('slot_book').classList.remove('error-shake'),400); return window.showToast("🚫 缺少存摺照片", true); }
+            if(!r){ document.getElementById('slot_reg').classList.add('error-shake'); setTimeout(()=>document.getElementById('slot_reg').classList.remove('error-shake'),400); return window.showToast("🚫 缺少行照照片", true); }
+            
+            // 防呆表單驗證：身分證邏輯
             const idNo = document.getElementById('setup_id_no').value.trim().toUpperCase(); 
-            if(!/^[A-Z][12]\d{8}$/.test(idNo)) return window.showToast("🚫 身分證字號格式錯誤 (需為1碼英文+9碼數字)", true);
+            if(!/^[A-Z][12]\d{8}$/.test(idNo)) { document.getElementById('setup_id_no').classList.add('error-shake'); setTimeout(()=>document.getElementById('setup_id_no').classList.remove('error-shake'),400); return window.showToast("🚫 身分證字號格式錯誤", true); }
 
-            const btn = document.getElementById('profile_submit_btn');
-            btn.innerText = "資料加密上傳中..."; btn.disabled = true;
+            const btn = document.getElementById('profile_submit_btn'); btn.innerText = "資料加密上傳中..."; btn.disabled = true;
             
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', sessionUser.id), { 
                     id_number: idNo, bank_code: document.getElementById('setup_bank_code').value, bank_account: document.getElementById('setup_bank_acc').value, 
                     address: document.getElementById('setup_addr').value, vehicle_type: document.getElementById('setup_vehicle_type').value, vehicle_plate: document.getElementById('setup_plate').value.toUpperCase(), 
                     emergency_name: document.getElementById('setup_em_name').value, emergency_phone: document.getElementById('setup_em_phone').value, 
-                    p_id_f: id_f, p_id_b: id_b, p_lic: lic, p_book: book, p_reg: reg, p_cr: cr, 
-                    profile_completed: true 
+                    p_id_f: f, p_id_b: b, p_lic: l, p_book: bk, p_reg: r, p_cr: c, profile_completed: true 
                 });
-                window.showToast("✅ 企業標準人事檔案建立成功！"); 
-                window.handleLogout();
-            } catch (err) { window.showToast("❌ 儲存失敗，請確認網路狀態後重試", true); } finally { btn.innerText = "正式提交建檔資料"; btn.disabled = false; }
+                window.showToast("✅ 企業檔案建檔完成"); window.handleLogout();
+            } catch (err) { window.showToast("❌ 上傳失敗，請重試", true); } finally { btn.innerText = "🚀 正式提交企業建檔"; btn.disabled = false; }
         };
 
         window.processQuickAdd = async () => { 
-            if(!isOnline) return window.showToast("系統未連線", true);
-            const n = document.getElementById('qa_name').value.trim(); const p = document.getElementById('qa_phone').value.trim(); const pin = document.getElementById('qa_pin').value.trim() || "0000";
-            if(!n) return window.showToast("⚠️ 請輸入真實姓名", true);
-            if(!/^09\d{8}$/.test(p)) return window.showToast("⚠️ 手機格式錯誤 (需為09開頭10碼)", true);
-            if(!/^\d{4}$/.test(pin)) return window.showToast("⚠️ PIN碼限制為4位數字", true);
-            if(partners.some(x => x.phone === p)) return window.showToast("🚫 阻擋：此手機號碼已存在系統中！", true);
+            if(!isOnline) return window.showToast("無網路連線", true);
+            const n = document.getElementById('qa_name').value.trim(), p = document.getElementById('qa_phone').value.trim(), pin = document.getElementById('qa_pin').value.trim() || "0000";
+            if(!n) return window.showToast("⚠️ 姓名必填", true); if(!/^09\d{8}$/.test(p)) return window.showToast("⚠️ 手機格式為09開頭10碼", true); if(!/^\d{4}$/.test(pin)) return window.showToast("⚠️ PIN碼限4位數", true);
+            if(partners.some(x => x.phone === p)) return window.showToast("🚫 此號碼已存在", true);
 
-            const btn = document.getElementById('qa_submit_btn'); btn.innerText = "建立中..."; btn.disabled = true;
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${p}`), { id:`p_${p}`, name:n, phone:p, pin: pin, status:'approved', total_del:0, total_rev:0, custom_adj:0, ins_base:29500, ins_fm:1, ins_toggle:true, work_status:'normal' }); 
-                window.toggleQuickAdd(false); window.showToast("✅ 人員建檔成功！"); 
-            } catch (e) { window.showToast("❌ 建立失敗", true); } finally { btn.innerText = "建立人員"; btn.disabled = false; }
+            const btn = document.getElementById('qa_submit_btn'); btn.innerText = "寫入中..."; btn.disabled = true;
+            try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${p}`), { id:`p_${p}`, name:n, phone:p, pin: pin, status:'approved', total_del:0, total_rev:0, custom_adj:0, ins_base:29500, ins_fm:1, ins_toggle:true, work_status:'normal' }); window.toggleQuickAdd(false); window.showToast("✅ 新增成功"); } catch (e) { window.showToast("❌ 建立失敗", true); } finally { btn.innerText = "建立人員"; btn.disabled = false; }
         };
 
-        window.handleProfileVerify = () => { const ph = document.getElementById('pg_phone').value, pi = document.getElementById('pg_pin').value; const p = partners.find(x => x.phone === ph && x.pin === pi && x.status === 'approved'); if(!p) return window.showToast("驗證失敗，請確認帳密或審核狀態", true); sessionUser = p; window.showLayer('profile-setup'); };
-        window.executeDelete = async () => { if(deleteTargetId) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', deleteTargetId)); window.closeModal('delete-modal'); window.showToast("✅ 已永久刪除該名人員紀錄"); };
+        window.handleProfileVerify = () => { const ph = document.getElementById('pg_phone').value, pi = document.getElementById('pg_pin').value; const p = partners.find(x => x.phone === ph && x.pin === pi && x.status === 'approved'); if(!p) return window.showToast("驗證失敗", true); sessionUser = p; window.showLayer('profile-setup'); };
+        window.executeDelete = async () => { if(deleteTargetId) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', deleteTargetId)); window.closeModal('delete-modal'); window.showToast("已清除紀錄"); };
+
+        // 喚醒偵測 (從背景回來自動重整)
+        document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && isOnline) { if (document.getElementById('admin-panel').style.display === 'flex') window.renderAdmin(); if (document.getElementById('partner-hub').style.display === 'flex') window.renderPartnerHub(); } });
 
         const init = async () => {
             if(!isOnline) { window.hideLoading(); return; }
@@ -834,12 +907,10 @@
                     if(u){
                         try {
                             const sessionSnap = await getDoc(doc(db, 'artifacts', appId, 'users', u.uid, 'settings', 'session'));
-                            if (sessionSnap.exists()) { const data = sessionSnap.data(); document.getElementById('login_phone').value = data.phone; document.getElementById('login_pin').value = data.pin; document.getElementById('remember_me').checked = true; } 
-                            else { autoLoginAttempted = true; }
+                            if (sessionSnap.exists()) { const data = sessionSnap.data(); document.getElementById('login_phone').value = data.phone; document.getElementById('login_pin').value = data.pin; document.getElementById('remember_me').checked = true; } else autoLoginAttempted = true; 
                         } catch(e) { autoLoginAttempted = true; }
 
-                        onSnapshot(settingsDoc, (s) => { if(s.exists()) globalSettings = s.data(); if(document.getElementById('admin-panel').style.display === 'flex') window.renderAdmin(); if(sessionUser && document.getElementById('partner-hub').style.display === 'flex') window.renderPartnerHub(); });
-                        
+                        onSnapshot(settingsDoc, (s) => { if(s.exists()) globalSettings = s.data(); if(document.getElementById('admin-panel').style.display === 'flex') window.renderAdmin(); if(sessionUser) window.renderPartnerHub(); });
                         onSnapshot(partnersCol, (s) => { 
                             partners = s.docs.map(d => ({id: d.id, ...d.data()})); 
                             if (!autoLoginAttempted && document.getElementById('remember_me').checked) { autoLoginAttempted = true; window.handleLogin(true); }
