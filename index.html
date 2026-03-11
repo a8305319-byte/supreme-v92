@@ -3,13 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>金耀智慧營運總部</title>
+  <title>金耀智慧營運總部 v34.2 完整版</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
+  
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
   <style>
     body { background-color: #020617; color: #e2e8f0; font-family: sans-serif; }
     .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(245, 158, 11, 0.2); }
@@ -24,11 +30,25 @@
     .admin-table td { padding: 16px 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
     .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
     .dot-online { background-color: #34d399; box-shadow: 0 0 8px #34d399; }
+    .dot-offline { background-color: #64748b; }
     .dot-leave { background-color: #f43f5e; box-shadow: 0 0 8px #f43f5e; }
     .chat-bubble { padding: 12px 16px; border-radius: 16px; max-width: 80%; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
     .bubble-bot { background: rgba(255,255,255,0.1); color: white; align-self: flex-start; }
     .bubble-user { background: #f59e0b; color: black; align-self: flex-end; margin-left: auto; }
   </style>
+
+  <script>
+    window.__firebase_config = JSON.stringify({
+      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+      authDomain: "supreme-v92.firebaseapp.com",
+      projectId: "supreme-v92",
+      storageBucket: "supreme-v92.firebasestorage.app",
+      messagingSenderId: "485530156296",
+      appId: "1:485530156296:web:6728c0ee08b98dedd800bd",
+      measurementId: "G-JF36CHXE9Z"
+    });
+    window.__app_id = 'supreme-v92';
+  </script>
 </head>
 <body>
   <div id="root"></div>
@@ -36,107 +56,296 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
 
-    // 模擬資料 (確保介面能渲染)
-    const MOCK_PARTNERS = [
-      { id: 'p_1', name: '王大明', phone: '0987654321', pin: '1111', total_del: 45, total_pkp: 12, work_status: 'online', custom_del_price: 15, custom_pkp_price: 10, labor_fee: 650, health_fee: 400 },
-      { id: 'p_2', name: '李小華', phone: '0912345678', pin: '2222', total_del: 0, total_pkp: 0, work_status: 'leave', custom_del_price: 15, custom_pkp_price: 10, labor_fee: 650, health_fee: 400 }
-    ];
+    const firebaseConfig = JSON.parse(window.__firebase_config);
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const appId = window.__app_id;
+
+    const BRACKETS = [29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
+    const LABOR_RATE = 0.125 * 0.20; 
+    const HEALTH_RATE = 0.0517 * 0.30; 
 
     function App() {
+      const [user, setUser] = useState(null);
+      const [role, setRole] = useState('guest'); 
+      const [partners, setPartners] = useState([]);
       const [layer, setLayer] = useState('gate'); 
+      const [loading, setLoading] = useState(true);
+      const [announcement, setAnnouncement] = useState("");
+      const [searchQuery, setSearchQuery] = useState("");
+      const [statusFilter, setStatusFilter] = useState('all');
+      const [showSensitive, setShowSensitive] = useState({}); 
       const [toastMsg, setToastMsg] = useState("");
-      const [currentUser, setCurrentUser] = useState(null);
 
       const showToast = (msg) => {
         setToastMsg(msg);
         setTimeout(() => setToastMsg(""), 3000);
       };
 
-      const handleLogin = (phone, pin) => {
-        if (phone === "0976017938" && pin === "0531") {
-          setLayer('admin');
-          showToast("🔑 管理員登入成功");
-        } else if (phone === "0987654321" && pin === "1111") {
-          setCurrentUser(MOCK_PARTNERS[0]);
-          setLayer('driver');
-          showToast("🔑 夥伴登入成功");
-        } else {
-          alert("測試帳號：\n管理員：0976017938 / 0531\n司機：0987654321 / 1111");
+      useEffect(() => {
+        auth.signInAnonymously().catch(e => {
+          console.error("Auth Error", e);
+          setLoading(false); 
+        });
+
+        const unsubscribe = auth.onAuthStateChanged((u) => {
+          if (u) {
+            setUser(u);
+            checkSession(u.uid);
+          } else {
+            setLoading(false);
+          }
+        });
+        return () => unsubscribe();
+      }, []);
+
+      useEffect(() => {
+        if (!user) return;
+        
+        const partnersRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners');
+        const unsubPartners = partnersRef.onSnapshot(snap => {
+          const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setPartners(data);
+          setLoading(false);
+        }, err => {
+          console.error("Firestore Error", err);
+          setLoading(false);
+        });
+
+        const annRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc('announcement');
+        const unsubAnn = annRef.onSnapshot(snap => {
+          if (snap.exists) setAnnouncement(snap.data().content);
+        });
+
+        return () => { unsubPartners(); unsubAnn(); };
+      }, [user]);
+
+      const checkSession = async (uid) => {
+        const sid = localStorage.getItem('ggsoc_sid');
+        if (sid) {
+          try {
+            const snap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('sessions').doc(sid).get();
+            if (snap.exists) {
+              const s = snap.data();
+              handleAutoNavigation(s.phone, s.pin);
+            }
+          } catch (e) { console.error("Session check failed", e); }
         }
       };
+
+      const handleAutoNavigation = (phone, pin) => {
+        if ((phone === "0976017938" && pin === "0531") || (phone === "0988128172" && pin === "0172")) {
+          setRole('admin'); setLayer('admin');
+        } else {
+          const p = partners.find(x => x.phone === phone && x.pin === pin);
+          if (p) { setRole('driver'); setLayer('driver'); }
+        }
+      };
+
+      const handleLogin = async (phone, pin, remember) => {
+        if ((phone === "0976017938" && pin === "0531") || (phone === "0988128172" && pin === "0172")) {
+          if (remember) {
+            const sid = btoa(phone + Date.now());
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('sessions').doc(sid).set({ phone, pin, role: 'admin' });
+            localStorage.setItem('ggsoc_sid', sid);
+          }
+          setRole('admin'); setLayer('admin'); showToast("🔑 管理員登入成功"); return;
+        }
+
+        const p = partners.find(x => x.phone === phone && x.pin === pin);
+        if (p) {
+          if (remember) {
+            const sid = btoa(phone + Date.now());
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('sessions').doc(sid).set({ phone, pin, role: 'driver' });
+            localStorage.setItem('ggsoc_sid', sid);
+          }
+          setRole('driver'); setLayer('driver'); showToast("🔑 夥伴登入成功");
+        } else {
+          alert("帳號驗證失敗，請檢查手機號碼與 PIN 碼");
+        }
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem('ggsoc_sid');
+        setRole('guest'); setLayer('gate');
+      };
+
+      const autoCalculateInsurance = async (partnerId, gross, dependents) => {
+        const tier = BRACKETS.find(b => gross <= b) || BRACKETS[BRACKETS.length - 1];
+        const labor = Math.round(tier * LABOR_RATE);
+        const health = Math.round(tier * HEALTH_RATE * (1 + Math.min(dependents || 0, 3)));
+        
+        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(partnerId).update({
+          labor_fee: labor, health_fee: health
+        });
+        showToast("✨ 2026 級距精算已完成同步");
+      };
+
+      if (loading) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center">
+            <div className="w-12 h-12 border-4 border-amber-500/10 border-t-amber-500 rounded-full animate-spin"></div>
+            <p className="mt-6 text-amber-500 font-black tracking-widest animate-pulse">連線資料庫中...</p>
+          </div>
+        );
+      }
 
       return (
         <div className="min-h-screen text-slate-200">
           <div className={`fixed left-1/2 -translate-x-1/2 bg-amber-500 text-black px-8 py-4 rounded-full font-black z-[10000] shadow-2xl transition-all duration-500 ${toastMsg ? 'top-[40px] opacity-100' : 'top-[-100px] opacity-0 pointer-events-none'}`}>
             {toastMsg}
           </div>
-          
-          {layer === 'gate' && <Gate onLogin={handleLogin} setLayer={setLayer} />}
-          {layer === 'admin' && <AdminHub partners={MOCK_PARTNERS} onLogout={() => setLayer('gate')} showToast={showToast} />}
-          {layer === 'driver' && <DriverHub partner={currentUser} onLogout={() => setLayer('gate')} showToast={showToast} />}
-          {layer === 'onboarding' && <OnboardingFlow setLayer={setLayer} />}
+
+          {layer === 'gate' && <Gate onLogin={handleLogin} announcement={announcement} setLayer={setLayer} />}
+          {layer === 'admin' && (
+            <AdminHub partners={partners} onLogout={handleLogout} autoInsur={autoCalculateInsurance} showSensitive={showSensitive} setShowSensitive={setShowSensitive} statusFilter={statusFilter} setStatusFilter={setStatusFilter} searchQuery={searchQuery} setSearchQuery={setSearchQuery} db={db} appId={appId} showToast={showToast} announcement={announcement} />
+          )}
+          {layer === 'driver' && <DriverHub partners={partners} onLogout={handleLogout} user={user} db={db} appId={appId} showToast={showToast} />}
+          {layer === 'onboarding' && <OnboardingFlow setLayer={setLayer} db={db} appId={appId} showToast={showToast} />}
         </div>
       );
     }
 
-    // --- 登入頁面 ---
-    function Gate({ onLogin, setLayer }) {
+    // ==========================================
+    // 1. 入口層
+    // ==========================================
+    function Gate({ onLogin, announcement, setLayer }) {
       const [ph, setPh] = useState("");
       const [pin, setPin] = useState("");
+      const [rem, setRem] = useState(false);
+
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6">
-          <div className="mb-12 text-center">
-            <h1 className="text-7xl font-black text-white italic tracking-tighter mb-2">在地物流</h1>
-            <p className="text-amber-500 text-[10px] tracking-[0.5em] font-black border border-amber-500/30 px-4 py-1.5 rounded-full inline-block">穩定展示版</p>
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+          <div className="mb-12 text-center relative z-10">
+            <h1 className="text-7xl font-black text-white italic tracking-tighter mb-2 drop-shadow-2xl">在地物流</h1>
+            <p className="text-amber-500 text-[10px] tracking-[0.5em] font-black border border-amber-500/30 px-4 py-1.5 rounded-full inline-block uppercase shadow-lg">Operation Hub v34.2</p>
           </div>
-          <div className="w-full max-w-[340px] space-y-5 font-bold">
-            <div className="glass-panel p-8 rounded-[2.5rem] gold-border">
-              <input type="tel" placeholder="手機 (試打:0976017938)" className="input-box" value={ph} onChange={e => setPh(e.target.value)} maxLength={10} />
-              <input type="password" placeholder="PIN (試打:0531)" className="input-box" value={pin} onChange={e => setPin(e.target.value)} maxLength={4} />
-              <button onClick={() => onLogin(ph, pin)} className="btn-prime italic tracking-widest mt-2">進入中心</button>
+
+          <div className="w-full max-w-[340px] space-y-5 relative z-10 font-bold">
+            <div className="glass-panel p-8 rounded-[2.5rem] shadow-2xl gold-border">
+              <input type="tel" placeholder="手機號碼" className="input-box" value={ph} onChange={e => setPh(e.target.value)} maxLength={10} />
+              <input type="password" placeholder="PIN 安全碼" className="input-box" value={pin} onChange={e => setPin(e.target.value)} maxLength={4} />
+              
+              <div className="flex items-center justify-center gap-2 pb-6">
+                <input type="checkbox" id="rem_me" checked={rem} onChange={e => setRem(e.target.checked)} className="w-4 h-4 accent-amber-500 rounded bg-slate-800" />
+                <label htmlFor="rem_me" className="text-slate-400 text-[11px] font-black cursor-pointer italic">記住我</label>
+              </div>
+
+              <button onClick={() => onLogin(ph, pin, rem)} className="btn-prime italic tracking-widest">進入中心</button>
             </div>
-            <button onClick={() => setLayer('onboarding')} className="w-full py-4 rounded-2xl border border-amber-500/30 text-amber-500 font-bold text-sm bg-slate-900">📋 司機面試：AI 實務對話</button>
+
+            {announcement && (
+              <div className="glass-panel p-5 rounded-2xl bg-amber-900/10 border border-amber-500/20 text-center">
+                <p className="text-amber-500 font-bold text-xs uppercase mb-1 tracking-widest animate-pulse">📢 最新通報</p>
+                <p className="text-white text-sm font-black leading-relaxed">{announcement}</p>
+              </div>
+            )}
+
+            <div className="space-y-3 pt-4 text-center">
+              <button onClick={() => setLayer('onboarding')} className="w-full py-4 rounded-2xl border border-amber-500/30 text-amber-500 font-bold text-sm bg-amber-900/10 shadow-lg">📋 司機面試：AI 實務對話</button>
+            </div>
           </div>
         </div>
       );
     }
 
-    // --- 指揮中心 ---
-    function AdminHub({ partners, onLogout, showToast }) {
-      const [searchQuery, setSearchQuery] = useState("");
-      
-      const filtered = useMemo(() => {
-        return partners.filter(p => p.name.includes(searchQuery) || p.phone.includes(searchQuery));
-      }, [partners, searchQuery]);
+    // ==========================================
+    // 2. 指揮中心
+    // ==========================================
+    function AdminHub({ partners, onLogout, autoInsur, showSensitive, setShowSensitive, statusFilter, setStatusFilter, searchQuery, setSearchQuery, db, appId, showToast, announcement }) {
+      const getToday = () => new Date().toLocaleDateString('en-CA');
+
+      const filteredPartners = useMemo(() => {
+        let result = partners.filter(p => (p.name && p.name.includes(searchQuery)) || (p.phone && p.phone.includes(searchQuery)));
+        const today = getToday();
+        if (statusFilter === 'pending') result = result.filter(p => p.last_report?.date !== today && p.work_status !== 'leave');
+        else if (statusFilter === 'reported') result = result.filter(p => p.last_report?.date === today);
+        else if (statusFilter === 'leave') result = result.filter(p => p.work_status === 'leave' && p.leave_date === today);
+        return result;
+      }, [partners, searchQuery, statusFilter]);
+
+      const totals = useMemo(() => {
+        return filteredPartners.reduce((acc, p) => {
+          const net = (p.total_del * (p.custom_del_price || 15)) + (p.total_pkp * (p.custom_pkp_price || 10)) + (p.custom_adj || 0) - (p.labor_fee || 0) - (p.health_fee || 0);
+          return { del: acc.del + (p.total_del || 0), pkp: acc.pkp + (p.total_pkp || 0), net: acc.net + net };
+        }, { del: 0, pkp: 0, net: 0 });
+      }, [filteredPartners]);
+
+      const handleUpdateField = async (id, field, val) => {
+        try {
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(id).update({ [field]: Number(val) });
+          showToast("✅ 資料已自動儲存");
+        } catch(e) { showToast("❌ 儲存失敗"); }
+      };
+
+      const handlePublish = async () => {
+        const text = window.prompt("發布最新通報：", announcement);
+        if (text !== null) {
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc('announcement').set({ content: text }, { merge: true });
+          showToast("📢 公告已發布");
+        }
+      };
 
       return (
-        <div className="p-4 lg:p-10 max-w-[1200px] mx-auto overflow-x-auto">
+        <div className="p-4 lg:p-10 max-w-[1700px] mx-auto overflow-x-auto">
           <div className="flex justify-between items-center mb-10">
-            <h2 className="text-white font-black text-3xl md:text-5xl italic tracking-tighter">指揮中心</h2>
-            <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-4 py-2 rounded-xl text-xs font-black border border-rose-500/20">退出</button>
+            <h2 className="text-white font-black text-3xl md:text-5xl italic tracking-tighter">數據指揮中心 <span className="text-amber-500">.</span></h2>
+            <div className="flex gap-2">
+              <button onClick={handlePublish} className="bg-indigo-600 text-white px-3 py-2 rounded-xl text-xs font-black">💬 公告</button>
+              <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-3 py-2 rounded-xl text-xs font-black">退出</button>
+            </div>
           </div>
-          
-          <div className="glass-panel p-4 rounded-[2rem] mb-6 flex items-center gap-4 gold-border">
-            <input type="text" placeholder="🔍 搜尋姓名..." className="bg-slate-900 p-3 rounded-2xl border border-slate-700 text-white flex-1 outline-none" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}/>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 text-center font-black">
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-amber-500/50"><p className="text-slate-400 text-[11px] mb-1">總配送數</p><p className="text-3xl text-amber-500">{totals.del}</p></div>
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-orange-500/50"><p className="text-slate-400 text-[11px] mb-1">總逆收數</p><p className="text-3xl text-orange-400">{totals.pkp}</p></div>
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-emerald-500/50"><p className="text-slate-400 text-[11px] mb-1">結算預估</p><p className="text-3xl text-emerald-400">${totals.net.toLocaleString()}</p></div>
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-slate-500/50"><p className="text-slate-400 text-[11px] mb-1">現役夥伴</p><p className="text-3xl text-white">{filteredPartners.length}</p></div>
+          </div>
+
+          <div className="glass-panel p-4 rounded-[2rem] mb-10 flex gap-4 gold-border overflow-hidden">
+            <input type="text" placeholder="🔍 搜尋姓名..." className="bg-slate-900 p-3 rounded-2xl border border-slate-700 text-white flex-1 outline-none" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <select className="bg-slate-800 text-white rounded-xl px-4 text-xs font-bold border border-slate-700 outline-none" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="all">全部狀態</option>
+              <option value="pending">⚠️ 未報帳</option>
+              <option value="reported">✅ 已報帳</option>
+              <option value="leave">🛑 休假</option>
+            </select>
           </div>
 
           <div className="glass-panel rounded-3xl overflow-hidden overflow-x-auto">
             <table className="admin-table">
-              <thead>
-                <tr><th>狀態</th><th>夥伴資訊</th><th>預計實領</th><th>功能</th></tr>
-              </thead>
+              <thead><tr><th>狀態</th><th>夥伴資訊</th><th>正件</th><th>逆收</th><th>眷屬</th><th>勞保</th><th>健保</th><th>加扣</th><th>預計實領</th></tr></thead>
               <tbody>
-                {filtered.map(p => {
-                  const net = (p.total_del * p.custom_del_price) + (p.total_pkp * p.custom_pkp_price) - p.labor_fee - p.health_fee;
+                {filteredPartners.map(p => {
+                  const net = (p.total_del * (p.custom_del_price || 15)) + (p.total_pkp * (p.custom_pkp_price || 10)) + (p.custom_adj || 0) - (p.labor_fee || 0) - (p.health_fee || 0);
+                  const isLeave = p.work_status === 'leave' && p.leave_date === getToday();
+                  const hasReported = p.last_report?.date === getToday();
+                  const isMasked = !showSensitive[p.id];
+                  
                   return (
                     <tr key={p.id}>
-                      <td><span className={`status-dot ${p.work_status === 'leave' ? 'dot-leave' : 'dot-online'}`}></span></td>
+                      <td><span className={`status-dot ${isLeave ? 'dot-leave' : (hasReported ? 'dot-online' : 'dot-offline')}`}></span></td>
                       <td className="text-left">
-                        <span className="text-white font-black block">{p.name}</span>
-                        <span className="text-slate-500 text-xs">{p.phone}</span>
+                        <span className="text-white font-black text-lg mr-2">{p.name}</span>
+                        <button onClick={() => setShowSensitive(prev => ({...prev, [p.id]: !prev[p.id]}))} className="text-slate-500">{isMasked ? '🙈' : '👁️'}</button>
+                        <p className="text-[10px] text-slate-500 mt-1">📞 {isMasked ? p.phone?.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p>
                       </td>
-                      <td className="text-amber-500 font-black italic">${net.toLocaleString()}</td>
-                      <td><button onClick={() => showToast("✅ 資料已模擬儲存")} className="bg-amber-600 text-black px-3 py-1 rounded-lg text-xs font-black">儲存</button></td>
+                      <td><input type="number" defaultValue={p.custom_del_price||15} onBlur={e=>handleUpdateField(p.id, 'custom_del_price', e.target.value)} className="ghost-input w-10 text-sky-400" /></td>
+                      <td><input type="number" defaultValue={p.custom_pkp_price||10} onBlur={e=>handleUpdateField(p.id, 'custom_pkp_price', e.target.value)} className="ghost-input w-10 text-orange-400" /></td>
+                      <td><input type="number" defaultValue={p.dependents||0} onBlur={e=>handleUpdateField(p.id, 'dependents', e.target.value)} className="ghost-input w-8 text-white" /></td>
+                      <td><input type="number" defaultValue={p.labor_fee||0} onBlur={e=>handleUpdateField(p.id, 'labor_fee', e.target.value)} className="ghost-input w-12 text-rose-500" /></td>
+                      <td>
+                        <div className="flex justify-center gap-1">
+                          <input type="number" defaultValue={p.health_fee||0} onBlur={e=>handleUpdateField(p.id, 'health_fee', e.target.value)} className="ghost-input w-12 text-rose-500" />
+                          <button onClick={() => autoInsur(p.id, net, p.dependents)} className="text-[10px] bg-indigo-900 text-indigo-300 px-1 rounded">✨</button>
+                        </div>
+                      </td>
+                      <td><input type="number" defaultValue={p.custom_adj||0} onBlur={e=>handleUpdateField(p.id, 'custom_adj', e.target.value)} className="ghost-input w-12 text-emerald-500" /></td>
+                      <td className="text-amber-500 font-black italic text-xl">${net.toLocaleString()}</td>
                     </tr>
                   );
                 })}
@@ -147,42 +356,116 @@
       );
     }
 
-    // --- 司機工作台 ---
-    function DriverHub({ partner, onLogout, showToast }) {
+    // ==========================================
+    // 3. 司機工作台
+    // ==========================================
+    function DriverHub({ partners, onLogout, user, appId, db, showToast }) {
       const [delCount, setDelCount] = useState("");
       const [pkpCount, setPkpCount] = useState("");
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      const currentPartner = partners.find(p => p.phone === user?.phoneNumber || p.id === `p_${user?.uid}`);
+
+      const handleSubmit = async () => {
+        if (!delCount || !pkpCount) return showToast("⚠️ 請輸入完整數量");
+        setIsSubmitting(true);
+        try {
+          const today = new Date().toLocaleDateString('en-CA');
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id).update({
+            total_del: parseInt(delCount), total_pkp: parseInt(pkpCount), last_report: { date: today, timestamp: firebase.firestore.FieldValue.serverTimestamp() }, work_status: 'online'
+          });
+          showToast("🚀 報帳成功！"); setDelCount(""); setPkpCount("");
+        } catch (err) { showToast("❌ 提交失敗"); } finally { setIsSubmitting(false); }
+      };
+
+      const handleLeave = async () => {
+        if(!window.confirm("確定申請今日請假嗎？")) return;
+        try {
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id).update({
+            work_status: 'leave', leave_date: new Date().toLocaleDateString('en-CA')
+          });
+          showToast("🛑 已完成請假");
+        } catch(err) { showToast("❌ 申請失敗"); }
+      };
 
       return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950 font-black">
           <div className="glass-panel p-10 rounded-[3rem] w-full max-w-[480px] text-center gold-border">
             <h2 className="text-3xl font-black text-white italic mb-2">夥伴工作台</h2>
-            <p className="text-amber-500 text-xs mb-10 tracking-widest">{partner?.name} 您好</p>
+            <p className="text-amber-500 text-xs mb-10 tracking-widest">{currentPartner?.name || '夥伴'} 您好</p>
             <div className="grid grid-cols-2 gap-4 mb-10">
-              <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5">
+              <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-700">
                 <p className="text-[10px] text-sky-500 mb-2">今日配送</p>
                 <input type="number" value={delCount} onChange={e=>setDelCount(e.target.value)} placeholder="0" className="ghost-input w-full text-4xl" />
               </div>
-              <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5">
+              <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-700">
                 <p className="text-[10px] text-orange-500 mb-2">今日逆收</p>
                 <input type="number" value={pkpCount} onChange={e=>setPkpCount(e.target.value)} placeholder="0" className="ghost-input w-full text-4xl" />
               </div>
             </div>
-            <button onClick={() => showToast("🚀 數據報帳成功！")} className="btn-prime mb-10">🚀 提交今日數據</button>
-            <button onClick={onLogout} className="text-rose-500 text-sm font-black underline underline-offset-8">🔒 安全登出系統</button>
+            <button onClick={handleSubmit} disabled={isSubmitting} className="btn-prime mb-8">🚀 提交今日數據</button>
+            <div className="flex gap-4 mb-8">
+              <button onClick={handleLeave} className="flex-1 py-4 rounded-2xl bg-rose-900/30 text-rose-400 text-xs shadow-lg border border-rose-900">🔴 緊急請假</button>
+            </div>
+            <button onClick={onLogout} className="text-rose-500 text-sm font-black underline underline-offset-8">🔒 安全登出</button>
           </div>
         </div>
       );
     }
 
-    // --- AI 招募面試 ---
-    function OnboardingFlow({ setLayer }) {
-      const [messages, setMessages] = useState([{ type: 'bot', text: "您好！我是營運 AI 助手。這是緊急應變測試題：若發生車禍，處理順序是？" }]);
+    // ==========================================
+    // 4. AI 面試流程
+    // ==========================================
+    function OnboardingFlow({ setLayer, db, appId, showToast }) {
+      const [messages, setMessages] = useState([{ type: 'bot', text: "您好！我是營運 AI 助手。請先告訴我您的姓名與手機號碼。" }]);
+      const [step, setStep] = useState('info'); 
+      const [name, setName] = useState("");
+      const [phone, setPhone] = useState("");
+      const chatEndRef = useRef(null);
+
+      useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+      const addMsg = (type, text) => setMessages(prev => [...prev, { type, text }]);
+
+      const startQuiz = () => {
+        if (!name || !phone) return;
+        setStep('quiz');
+        addMsg('bot', `太棒了，${name}。第一題：若配送中不幸發生車禍，您的處理順序是？`);
+      };
+
+      const handlePick = async (text) => {
+        addMsg('user', text);
+        setStep('done');
+        setTimeout(async () => {
+          addMsg('bot', "實務評估已完成！已將您的資料傳送至指揮中心。");
+          try {
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${phone}`).set({
+              id: `p_${phone}`, name, phone, pin: "0000", status: 'pending', total_del: 0, total_pkp: 0, custom_del_price: 15, custom_pkp_price: 10, custom_adj: 0, labor_fee: 0, health_fee: 0, dependents: 0, created_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          } catch (e) { console.error(e); }
+        }, 600);
+      };
+
       return (
         <div className="h-screen flex flex-col p-6">
-          <div className="flex justify-between mb-4"><h3 className="text-white">🤖 AI 招募評估</h3><button onClick={() => setLayer('gate')} className="text-slate-400">退出</button></div>
-          <div className="flex-1 flex flex-col space-y-4">
+          <div className="flex justify-between mb-4"><h3 className="text-white font-black">🤖 AI 招募評估</h3><button onClick={() => setLayer('gate')} className="text-slate-400 font-bold">退出</button></div>
+          <div className="flex-1 flex flex-col space-y-4 overflow-y-auto mb-4">
             {messages.map((m, i) => <div key={i} className={`chat-bubble ${m.type === 'bot' ? 'bubble-bot' : 'bubble-user'}`}>{m.text}</div>)}
-            <button onClick={() => setMessages([...messages, {type:'user', text:'1.報警 2.拍照'}, {type:'bot', text:'實務評估已完成！'}])} className="btn-prime mt-auto">回答並完成測試</button>
+            <div ref={chatEndRef} />
+          </div>
+          <div className="bg-slate-900/80 rounded-3xl p-6 gold-border">
+            {step === 'info' && (
+              <div className="space-y-3 font-bold">
+                <input type="text" placeholder="您的姓名" className="input-box" value={name} onChange={e => setName(e.target.value)} />
+                <input type="tel" placeholder="您的手機" className="input-box" value={phone} onChange={e => setPhone(e.target.value)} maxLength="10"/>
+                <button onClick={startQuiz} className="btn-prime">確認並開始對話</button>
+              </div>
+            )}
+            {step === 'quiz' && (
+              <div className="grid gap-3 font-bold">
+                <button onClick={() => handlePick("1.報警 2.拍照 3.回報管理處")} className="p-4 bg-slate-800 rounded-2xl text-amber-500">1.報警 2.拍照 3.回報管理處</button>
+                <button onClick={() => handlePick("1.自行私下和解")} className="p-4 bg-slate-800 rounded-2xl text-amber-500">1.自行私下和解</button>
+              </div>
+            )}
+            {step === 'done' && <button onClick={() => setLayer('gate')} className="btn-prime font-bold">返回首頁</button>}
           </div>
         </div>
       );
