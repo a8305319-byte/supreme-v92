@@ -18,7 +18,7 @@ import {
 // ⚙️ 系統配置與版本定義 (System Config)
 // ==========================================
 const SYS_NAME = "金耀智慧營運總部";
-const SYS_VER = "v34.1 Optimized"; // 更新版本號
+const SYS_VER = "v34.2 Enhanced"; 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'ggsoc-ultimate-v34';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
@@ -28,7 +28,6 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 export default function App() {
-  // --- 狀態管理 (States) ---
   const [user, setUser] = useState(null);
   const [role, setRole] = useState('guest'); 
   const [partners, setPartners] = useState([]);
@@ -38,16 +37,12 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState('all');
   const [showSensitive, setShowSensitive] = useState({}); 
-  
-  // 🌟 優化：將 Toast 改為 React State 控制
   const [toastMsg, setToastMsg] = useState("");
 
-  // --- 2026 精算參數 ---
   const BRACKETS = [29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
   const LABOR_RATE = 0.125 * 0.20; 
   const HEALTH_RATE = 0.0517 * 0.30; 
 
-  // --- 初始化與自動登入 (Init & Persistence) ---
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -71,7 +66,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // 監控數據 (Firestore Real-time)
   useEffect(() => {
     if (!user) return;
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
@@ -92,7 +86,6 @@ export default function App() {
     return () => unsub();
   }, [user]);
 
-  // --- 業務邏輯 (Business Logic) ---
   const checkSession = async (uid) => {
     const sid = localStorage.getItem('ggsoc_sid');
     if (sid) {
@@ -161,13 +154,11 @@ export default function App() {
     showToast("✨ 2026 級距精算已完成同步");
   };
 
-  // 🌟 優化：React 狀態化 Toast 函式
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => { setToastMsg(""); }, 3000);
   };
 
-  // --- UI 元件 (Components) ---
   if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center">
@@ -179,14 +170,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen text-slate-200">
-      {/* 🌟 優化：基於狀態的 Toast UI */}
       <div className={`fixed left-1/2 -translate-x-1/2 bg-amber-500 text-black px-8 py-4 rounded-full font-black z-[10000] shadow-2xl transition-all duration-500 ${toastMsg ? 'top-[40px] opacity-100' : 'top-[-100px] opacity-0 pointer-events-none'}`}>
         {toastMsg}
       </div>
 
       {layer === 'gate' && <Gate onLogin={handleLogin} announcement={announcement} setLayer={setLayer} />}
-      {layer === 'admin' && <AdminHub partners={partners} onLogout={handleLogout} autoInsur={autoCalculateInsurance} showSensitive={showSensitive} setShowSensitive={setShowSensitive} statusFilter={statusFilter} setStatusFilter={setStatusFilter} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
-      {layer === 'driver' && <DriverHub partners={partners} onLogout={handleLogout} user={user} db={db} appId={appId} showToast={showToast} />}
+      
+      {layer === 'admin' && (
+        <AdminHub 
+          partners={partners} onLogout={handleLogout} autoInsur={autoCalculateInsurance} 
+          showSensitive={showSensitive} setShowSensitive={setShowSensitive} 
+          statusFilter={statusFilter} setStatusFilter={setStatusFilter} 
+          searchQuery={searchQuery} setSearchQuery={setSearchQuery} 
+          db={db} appId={appId} showToast={showToast} announcement={announcement}
+        />
+      )}
+      
+      {layer === 'driver' && (
+        <DriverHub 
+          partners={partners} onLogout={handleLogout} user={user} 
+          db={db} appId={appId} showToast={showToast} 
+        />
+      )}
+      
       {layer === 'onboarding' && <OnboardingFlow setLayer={setLayer} partners={partners} db={db} appId={appId} />}
     </div>
   );
@@ -206,7 +212,7 @@ function Gate({ onLogin, announcement, setLayer }) {
       
       <div className="mb-12 text-center">
         <h1 className="text-7xl font-black text-white italic tracking-tighter mb-2 drop-shadow-2xl">在地物流</h1>
-        <p className="text-amber-500 text-[10px] tracking-[0.5em] font-black bg-amber-900/20 border border-amber-500/30 px-4 py-1.5 rounded-full inline-block uppercase shadow-lg">Operation Hub v34.1</p>
+        <p className="text-amber-500 text-[10px] tracking-[0.5em] font-black bg-amber-900/20 border border-amber-500/30 px-4 py-1.5 rounded-full inline-block uppercase shadow-lg">Operation Hub v34.2</p>
       </div>
 
       <div className="w-full max-w-[340px] space-y-5 relative z-10 font-bold">
@@ -242,7 +248,6 @@ function Gate({ onLogin, announcement, setLayer }) {
 
         <div className="space-y-3 pt-4 text-center">
           <button onClick={() => setLayer('onboarding')} className="w-full py-4 rounded-2xl border border-amber-500/30 text-amber-500 font-bold text-sm bg-amber-900/10 hover:bg-amber-900/20 transition shadow-lg">📋 司機面試：AI 實務對話</button>
-          <button onClick={() => alert("請先完成面試評估，再聯絡行政人員進入建檔通道。")} className="w-full py-4 rounded-2xl border border-orange-500/30 text-orange-400 font-bold text-sm bg-orange-900/10 hover:bg-orange-900/20 transition shadow-lg">📁 司機建檔：資料上傳通道</button>
         </div>
       </div>
     </div>
@@ -254,11 +259,11 @@ function Gate({ onLogin, announcement, setLayer }) {
 // ==========================================
 function AdminHub({ 
   partners, onLogout, autoInsur, showSensitive, setShowSensitive, 
-  statusFilter, setStatusFilter, searchQuery, setSearchQuery 
+  statusFilter, setStatusFilter, searchQuery, setSearchQuery,
+  db, appId, showToast, announcement
 }) {
   const getToday = () => new Date().toLocaleDateString('en-CA');
 
-  // 🌟 優化：使用 useMemo 提升過濾效能
   const filteredPartners = useMemo(() => {
     let result = partners.filter(p => 
       (p.name && p.name.toLowerCase().includes(searchQuery.toLowerCase())) || 
@@ -276,7 +281,6 @@ function AdminHub({
     return result;
   }, [partners, searchQuery, statusFilter]);
 
-  // 🌟 優化：使用 useMemo 提升計算效能
   const totals = useMemo(() => {
     return filteredPartners.reduce((acc, p) => {
       const net = (p.total_del * (p.custom_del_price || 15)) + 
@@ -290,6 +294,28 @@ function AdminHub({
     }, { del: 0, pkp: 0, net: 0 });
   }, [filteredPartners]);
 
+  // 🌟 增強：資料即時更新函式
+  const handleUpdatePartnerField = async (partnerId, field, value) => {
+    try {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId), {
+        [field]: Number(value)
+      });
+      showToast("✅ 資料已自動儲存");
+    } catch (err) {
+      console.error(err);
+      showToast("❌ 儲存失敗");
+    }
+  };
+
+  // 🌟 增強：發布公告函式
+  const handlePublishAnnouncement = async () => {
+    const newText = window.prompt("請輸入最新的系統通報內容：", announcement || "");
+    if (newText !== null) {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'announcement'), { content: newText }, { merge: true });
+      showToast("📢 最新通報已發布至首頁");
+    }
+  };
+
   return (
     <div className="p-4 lg:p-10 max-w-[1700px] mx-auto animate-fadeIn">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
@@ -297,10 +323,8 @@ function AdminHub({
           數據指揮中心 <span className="text-amber-500 font-black">.</span>
         </h2>
         <div className="flex flex-wrap gap-2">
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md flex items-center gap-2"><MessageSquare size={14} /> 公告</button>
-          <button className="bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md flex items-center gap-2"><Settings size={14} /> 工具</button>
-          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md flex items-center gap-2"><Download size={14} /> 匯出網銀</button>
-          <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-4 py-2 rounded-xl text-xs font-black border border-rose-500/20 shadow-md">退出</button>
+          <button onClick={handlePublishAnnouncement} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md flex items-center gap-2 transition"><MessageSquare size={14} /> 公告</button>
+          <button onClick={onLogout} className="bg-slate-800 hover:bg-rose-900/50 text-rose-500 px-4 py-2 rounded-xl text-xs font-black border border-rose-500/20 shadow-md transition">退出系統</button>
         </div>
       </div>
 
@@ -358,7 +382,6 @@ function AdminHub({
               <th>健保扣</th>
               <th>獎金加扣</th>
               <th>預計實領</th>
-              <th>功能</th>
             </tr>
           </thead>
           <tbody>
@@ -373,7 +396,7 @@ function AdminHub({
                   <td>
                     <div className="flex items-center justify-center font-bold">
                       <span className={`status-dot ${isLeave ? 'dot-leave' : (hasReported ? 'dot-online' : 'dot-offline')}`}></span>
-                      <span className={`text-[10px] ${hasReported ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      <span className={`text-[10px] ${hasReported ? 'text-emerald-400' : (isLeave ? 'text-rose-400' : 'text-slate-500')}`}>
                         {isLeave ? '休假' : (hasReported ? '已報' : '未報')}
                       </span>
                     </div>
@@ -389,24 +412,19 @@ function AdminHub({
                       📞 {isMasked ? p.phone?.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}
                     </p>
                   </td>
-                  <td>$<input type="number" defaultValue={p.custom_del_price || 15} className="ghost-input w-10 text-sky-400" /></td>
-                  <td>$<input type="number" defaultValue={p.custom_pkp_price || 10} className="ghost-input w-10 text-orange-400" /></td>
-                  <td><input type="number" defaultValue={p.dependents || 0} className="ghost-input w-6 text-white" /></td>
-                  <td><input type="number" defaultValue={p.labor_fee || 0} className="ghost-input w-12 text-rose-500" /></td>
+                  {/* 🌟 增強：綁定 onBlur 自動儲存 */}
+                  <td>$<input type="number" defaultValue={p.custom_del_price || 15} onBlur={(e) => handleUpdatePartnerField(p.id, 'custom_del_price', e.target.value)} className="ghost-input w-10 text-sky-400" /></td>
+                  <td>$<input type="number" defaultValue={p.custom_pkp_price || 10} onBlur={(e) => handleUpdatePartnerField(p.id, 'custom_pkp_price', e.target.value)} className="ghost-input w-10 text-orange-400" /></td>
+                  <td><input type="number" defaultValue={p.dependents || 0} onBlur={(e) => handleUpdatePartnerField(p.id, 'dependents', e.target.value)} className="ghost-input w-6 text-white" /></td>
+                  <td><input type="number" defaultValue={p.labor_fee || 0} onBlur={(e) => handleUpdatePartnerField(p.id, 'labor_fee', e.target.value)} className="ghost-input w-12 text-rose-500" /></td>
                   <td>
                     <div className="flex items-center justify-center gap-1">
-                      <input type="number" defaultValue={p.health_fee || 0} className="ghost-input w-12 text-rose-500" />
+                      <input type="number" defaultValue={p.health_fee || 0} onBlur={(e) => handleUpdatePartnerField(p.id, 'health_fee', e.target.value)} className="ghost-input w-12 text-rose-500" />
                       <button onClick={() => autoInsur(p.id, net, p.dependents)} className="text-[9px] bg-indigo-900/30 text-indigo-400 px-1 rounded hover:bg-indigo-500 hover:text-white transition">✨</button>
                     </div>
                   </td>
-                  <td><input type="number" defaultValue={p.custom_adj || 0} className="ghost-input w-12 text-emerald-500 font-bold" /></td>
+                  <td><input type="number" defaultValue={p.custom_adj || 0} onBlur={(e) => handleUpdatePartnerField(p.id, 'custom_adj', e.target.value)} className="ghost-input w-12 text-emerald-500 font-bold" /></td>
                   <td className="text-amber-500 font-black text-2xl tracking-tighter italic">${net.toLocaleString()}</td>
-                  <td>
-                    <div className="flex gap-2 justify-center">
-                      <button className="bg-amber-600 text-black px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg"><Printer size={12} /></button>
-                      <button className="bg-indigo-900/40 text-indigo-300 px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">檔案</button>
-                    </div>
-                  </td>
                 </tr>
               );
             })}
@@ -421,7 +439,6 @@ function AdminHub({
 // 3. 夥伴工作台 (Driver Hub) 
 // ==========================================
 function DriverHub({ partners, onLogout, user, appId, db, showToast }) {
-  // 🌟 優化：實作司機報帳邏輯
   const [delCount, setDelCount] = useState("");
   const [pkpCount, setPkpCount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -434,9 +451,7 @@ function DriverHub({ partners, onLogout, user, appId, db, showToast }) {
     setIsSubmitting(true);
     try {
       const today = new Date().toLocaleDateString('en-CA');
-      const partnerRef = doc(db, 'artifacts', appId, 'public', 'data', 'partners', currentPartner.id);
-      
-      await updateDoc(partnerRef, {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', currentPartner.id), {
         total_del: parseInt(delCount),
         total_pkp: parseInt(pkpCount),
         last_report: {
@@ -457,6 +472,21 @@ function DriverHub({ partners, onLogout, user, appId, db, showToast }) {
     }
   };
 
+  // 🌟 增強：實作緊急請假功能
+  const handleLeave = async () => {
+    if(!window.confirm("確定要申請今日緊急請假嗎？這將會同步至指揮中心。")) return;
+    try {
+      const today = new Date().toLocaleDateString('en-CA');
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', currentPartner.id), {
+        work_status: 'leave',
+        leave_date: today
+      });
+      showToast("🛑 已完成今日請假手續");
+    } catch(err) {
+      showToast("❌ 請假申請失敗");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950 font-black">
       <div className="glass-panel p-10 rounded-[3rem] w-full max-w-[480px] shadow-2xl border border-amber-500/20 text-center">
@@ -464,14 +494,14 @@ function DriverHub({ partners, onLogout, user, appId, db, showToast }) {
         <p className="text-amber-500 text-xs mb-10 tracking-widest">{currentPartner?.name || '夥伴'} 您好</p>
         
         <div className="grid grid-cols-2 gap-4 mb-10">
-          <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5">
+          <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 focus-within:border-amber-500/50 transition">
             <p className="text-[10px] text-sky-500 mb-2 uppercase font-black tracking-widest">今日配送</p>
             <input 
               type="number" value={delCount} onChange={e => setDelCount(e.target.value)} 
               placeholder="0" className="ghost-input w-full text-4xl text-white font-black text-center" 
             />
           </div>
-          <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5">
+          <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 focus-within:border-orange-500/50 transition">
             <p className="text-[10px] text-orange-500 mb-2 uppercase font-black tracking-widest">今日逆收</p>
             <input 
               type="number" value={pkpCount} onChange={e => setPkpCount(e.target.value)} 
@@ -488,18 +518,18 @@ function DriverHub({ partners, onLogout, user, appId, db, showToast }) {
         </button>
 
         <div className="flex gap-4 mb-10 font-black">
-          <button className="flex-1 py-4 rounded-2xl bg-rose-900/30 border border-rose-500/40 text-rose-400 text-xs italic">🔴 緊急請假</button>
-          <button className="flex-1 py-4 rounded-2xl bg-slate-800 border border-slate-700 text-amber-500 text-xs italic">🛠️ 更新個資</button>
+          <button onClick={handleLeave} className="flex-1 py-4 rounded-2xl bg-rose-900/30 border border-rose-500/40 text-rose-400 hover:bg-rose-500 hover:text-white transition text-xs italic shadow-lg">🔴 緊急請假</button>
+          <button onClick={() => showToast("🛠️ 功能開發中...")} className="flex-1 py-4 rounded-2xl bg-slate-800 border border-slate-700 text-amber-500 hover:bg-amber-900 hover:text-amber-300 transition text-xs italic shadow-lg">🛠️ 更新個資</button>
         </div>
 
-        <button onClick={onLogout} className="text-rose-500 text-sm font-black underline underline-offset-8 decoration-rose-500/30">🔒 安全登出系統</button>
+        <button onClick={onLogout} className="text-rose-500 hover:text-rose-400 transition text-sm font-black underline underline-offset-8 decoration-rose-500/30">🔒 安全登出系統</button>
       </div>
     </div>
   );
 }
 
 // ==========================================
-// 4. 🤖 AI 招募對話 (Onboarding Flow)
+// 4. 🤖 AI 招募對話 (Onboarding Flow) 保持不變，維持流程穩定
 // ==========================================
 function OnboardingFlow({ setLayer, partners, db, appId }) {
   const [messages, setMessages] = useState([{ type: 'bot', text: "您好！我是營運 AI 助手。在正式開始前，請先告訴我您的姓名與手機號碼。" }]);
