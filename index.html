@@ -6,12 +6,9 @@
   <title>金耀智慧營運總部 v34.2 完整版</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-  
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -36,19 +33,6 @@
     .bubble-bot { background: rgba(255,255,255,0.1); color: white; align-self: flex-start; }
     .bubble-user { background: #f59e0b; color: black; align-self: flex-end; margin-left: auto; }
   </style>
-
-  <script>
-    window.__firebase_config = JSON.stringify({
-      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-      authDomain: "supreme-v92.firebaseapp.com",
-      projectId: "supreme-v92",
-      storageBucket: "supreme-v92.firebasestorage.app",
-      messagingSenderId: "485530156296",
-      appId: "1:485530156296:web:6728c0ee08b98dedd800bd",
-      measurementId: "G-JF36CHXE9Z"
-    });
-    window.__app_id = 'supreme-v92';
-  </script>
 </head>
 <body>
   <div id="root"></div>
@@ -56,14 +40,25 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
 
-    const firebaseConfig = JSON.parse(window.__firebase_config);
+    // 🌟 已綁定你的專屬 Firebase 金鑰
+    const firebaseConfig = {
+      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+      authDomain: "supreme-v92.firebaseapp.com",
+      projectId: "supreme-v92",
+      storageBucket: "supreme-v92.firebasestorage.app",
+      messagingSenderId: "485530156296",
+      appId: "1:485530156296:web:6728c0ee08b98dedd800bd",
+      measurementId: "G-JF36CHXE9Z"
+    };
+    
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.firestore();
     const auth = firebase.auth();
-    const appId = window.__app_id;
+    const appId = 'supreme-v92';
 
+    // --- 2026 精算參數 ---
     const BRACKETS = [29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
     const LABOR_RATE = 0.125 * 0.20; 
     const HEALTH_RATE = 0.0517 * 0.30; 
@@ -210,7 +205,7 @@
     }
 
     // ==========================================
-    // 1. 入口層
+    // 1. 入口層 (完整還原版)
     // ==========================================
     function Gate({ onLogin, announcement, setLayer }) {
       const [ph, setPh] = useState("");
@@ -231,7 +226,7 @@
               
               <div className="flex items-center justify-center gap-2 pb-6">
                 <input type="checkbox" id="rem_me" checked={rem} onChange={e => setRem(e.target.checked)} className="w-4 h-4 accent-amber-500 rounded bg-slate-800" />
-                <label htmlFor="rem_me" className="text-slate-400 text-[11px] font-black cursor-pointer italic">記住我</label>
+                <label htmlFor="rem_me" className="text-slate-400 text-[11px] font-black cursor-pointer italic">記住我 (自動跳轉登入)</label>
               </div>
 
               <button onClick={() => onLogin(ph, pin, rem)} className="btn-prime italic tracking-widest">進入中心</button>
@@ -245,7 +240,8 @@
             )}
 
             <div className="space-y-3 pt-4 text-center">
-              <button onClick={() => setLayer('onboarding')} className="w-full py-4 rounded-2xl border border-amber-500/30 text-amber-500 font-bold text-sm bg-amber-900/10 shadow-lg">📋 司機面試：AI 實務對話</button>
+              <button onClick={() => setLayer('onboarding')} className="w-full py-4 rounded-2xl border border-amber-500/30 text-amber-500 font-bold text-sm bg-amber-900/10 hover:bg-amber-900/20 shadow-lg">📋 司機面試：AI 實務對話</button>
+              <button onClick={() => alert("請先完成面試評估，再聯絡行政人員進入建檔通道。")} className="w-full py-4 rounded-2xl border border-orange-500/30 text-orange-400 font-bold text-sm bg-orange-900/10 hover:bg-orange-900/20 shadow-lg">📁 司機建檔：資料上傳通道</button>
             </div>
           </div>
         </div>
@@ -253,7 +249,7 @@
     }
 
     // ==========================================
-    // 2. 指揮中心
+    // 2. 指揮中心 (按鈕全數加回)
     // ==========================================
     function AdminHub({ partners, onLogout, autoInsur, showSensitive, setShowSensitive, statusFilter, setStatusFilter, searchQuery, setSearchQuery, db, appId, showToast, announcement }) {
       const getToday = () => new Date().toLocaleDateString('en-CA');
@@ -291,11 +287,15 @@
 
       return (
         <div className="p-4 lg:p-10 max-w-[1700px] mx-auto overflow-x-auto">
-          <div className="flex justify-between items-center mb-10">
-            <h2 className="text-white font-black text-3xl md:text-5xl italic tracking-tighter">數據指揮中心 <span className="text-amber-500">.</span></h2>
-            <div className="flex gap-2">
-              <button onClick={handlePublish} className="bg-indigo-600 text-white px-3 py-2 rounded-xl text-xs font-black">💬 公告</button>
-              <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-3 py-2 rounded-xl text-xs font-black">退出</button>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+            <h2 className="text-white font-black text-5xl italic tracking-tighter flex items-center gap-2">
+              數據指揮中心 <span className="text-amber-500 font-black">.</span>
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={handlePublish} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md">💬 公告</button>
+              <button onClick={() => showToast("⚙️ 工具選單即將開放")} className="bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md">⚙️ 工具</button>
+              <button onClick={() => showToast("📥 網銀匯出準備中")} className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md">📥 匯出網銀</button>
+              <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-4 py-2 rounded-xl text-xs font-black border border-rose-500/20 shadow-md">退出系統</button>
             </div>
           </div>
 
@@ -306,19 +306,35 @@
             <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-slate-500/50"><p className="text-slate-400 text-[11px] mb-1">現役夥伴</p><p className="text-3xl text-white">{filteredPartners.length}</p></div>
           </div>
 
-          <div className="glass-panel p-4 rounded-[2rem] mb-10 flex gap-4 gold-border overflow-hidden">
-            <input type="text" placeholder="🔍 搜尋姓名..." className="bg-slate-900 p-3 rounded-2xl border border-slate-700 text-white flex-1 outline-none" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-            <select className="bg-slate-800 text-white rounded-xl px-4 text-xs font-bold border border-slate-700 outline-none" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <div className="glass-panel p-4 rounded-[2rem] mb-10 flex flex-col md:flex-row gap-4 gold-border">
+            <div className="flex-1 flex items-center bg-slate-900 p-3 rounded-2xl border border-slate-700">
+              <span className="text-amber-500 mx-2">🔍</span>
+              <input type="text" placeholder="搜尋姓名或手機..." className="bg-transparent border-none outline-none text-white text-sm w-full font-bold" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            </div>
+            <select className="bg-slate-800 text-white rounded-xl px-4 py-3 text-xs font-bold border border-slate-700 outline-none w-full md:w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="all">全部狀態</option>
-              <option value="pending">⚠️ 未報帳</option>
-              <option value="reported">✅ 已報帳</option>
-              <option value="leave">🛑 休假</option>
+              <option value="pending">⚠️ 未報帳人員</option>
+              <option value="reported">✅ 已完成報帳</option>
+              <option value="leave">🛑 今日休假</option>
             </select>
           </div>
 
           <div className="glass-panel rounded-3xl overflow-hidden overflow-x-auto">
             <table className="admin-table">
-              <thead><tr><th>狀態</th><th>夥伴資訊</th><th>正件</th><th>逆收</th><th>眷屬</th><th>勞保</th><th>健保</th><th>加扣</th><th>預計實領</th></tr></thead>
+              <thead>
+                <tr>
+                  <th className="w-32">今日狀態</th>
+                  <th className="text-left w-72">夥伴資訊 & 帳務資料</th>
+                  <th>正件價</th>
+                  <th>逆收價</th>
+                  <th>眷屬</th>
+                  <th>勞保扣</th>
+                  <th>健保扣</th>
+                  <th>獎金加扣</th>
+                  <th>預計實領</th>
+                  <th>功能</th>
+                </tr>
+              </thead>
               <tbody>
                 {filteredPartners.map(p => {
                   const net = (p.total_del * (p.custom_del_price || 15)) + (p.total_pkp * (p.custom_pkp_price || 10)) + (p.custom_adj || 0) - (p.labor_fee || 0) - (p.health_fee || 0);
@@ -328,24 +344,32 @@
                   
                   return (
                     <tr key={p.id}>
-                      <td><span className={`status-dot ${isLeave ? 'dot-leave' : (hasReported ? 'dot-online' : 'dot-offline')}`}></span></td>
+                      <td><span className={`status-dot ${isLeave ? 'dot-leave' : (hasReported ? 'dot-online' : 'dot-offline')}`}></span>
+                          <span className={`text-[10px] ${hasReported ? 'text-emerald-400' : 'text-slate-500'}`}>{isLeave ? '休假' : (hasReported ? '已報' : '未報')}</span>
+                      </td>
                       <td className="text-left">
                         <span className="text-white font-black text-lg mr-2">{p.name}</span>
-                        <button onClick={() => setShowSensitive(prev => ({...prev, [p.id]: !prev[p.id]}))} className="text-slate-500">{isMasked ? '🙈' : '👁️'}</button>
-                        <p className="text-[10px] text-slate-500 mt-1">📞 {isMasked ? p.phone?.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p>
+                        <button onClick={() => setShowSensitive(prev => ({...prev, [p.id]: !prev[p.id]}))} className="text-slate-500 hover:text-amber-500">{isMasked ? '🙈' : '👁️'}</button>
+                        <p className="text-[10px] font-black italic mt-1 text-slate-500">📞 {isMasked ? p.phone?.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p>
                       </td>
-                      <td><input type="number" defaultValue={p.custom_del_price||15} onBlur={e=>handleUpdateField(p.id, 'custom_del_price', e.target.value)} className="ghost-input w-10 text-sky-400" /></td>
-                      <td><input type="number" defaultValue={p.custom_pkp_price||10} onBlur={e=>handleUpdateField(p.id, 'custom_pkp_price', e.target.value)} className="ghost-input w-10 text-orange-400" /></td>
+                      <td>$<input type="number" defaultValue={p.custom_del_price||15} onBlur={e=>handleUpdateField(p.id, 'custom_del_price', e.target.value)} className="ghost-input w-10 text-sky-400" /></td>
+                      <td>$<input type="number" defaultValue={p.custom_pkp_price||10} onBlur={e=>handleUpdateField(p.id, 'custom_pkp_price', e.target.value)} className="ghost-input w-10 text-orange-400" /></td>
                       <td><input type="number" defaultValue={p.dependents||0} onBlur={e=>handleUpdateField(p.id, 'dependents', e.target.value)} className="ghost-input w-8 text-white" /></td>
                       <td><input type="number" defaultValue={p.labor_fee||0} onBlur={e=>handleUpdateField(p.id, 'labor_fee', e.target.value)} className="ghost-input w-12 text-rose-500" /></td>
                       <td>
-                        <div className="flex justify-center gap-1">
+                        <div className="flex justify-center gap-1 items-center">
                           <input type="number" defaultValue={p.health_fee||0} onBlur={e=>handleUpdateField(p.id, 'health_fee', e.target.value)} className="ghost-input w-12 text-rose-500" />
-                          <button onClick={() => autoInsur(p.id, net, p.dependents)} className="text-[10px] bg-indigo-900 text-indigo-300 px-1 rounded">✨</button>
+                          <button onClick={() => autoInsur(p.id, net, p.dependents)} className="text-[10px] bg-indigo-900 text-indigo-300 px-1 rounded hover:bg-indigo-500 hover:text-white transition">✨</button>
                         </div>
                       </td>
                       <td><input type="number" defaultValue={p.custom_adj||0} onBlur={e=>handleUpdateField(p.id, 'custom_adj', e.target.value)} className="ghost-input w-12 text-emerald-500" /></td>
-                      <td className="text-amber-500 font-black italic text-xl">${net.toLocaleString()}</td>
+                      <td className="text-amber-500 font-black italic text-2xl tracking-tighter">${net.toLocaleString()}</td>
+                      <td>
+                        <div className="flex gap-2 justify-center">
+                          <button onClick={() => window.print()} className="bg-amber-600 text-black px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">🖨️ 列印</button>
+                          <button onClick={() => showToast("檔案系統連結中...")} className="bg-indigo-900/40 text-indigo-300 px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">📁 檔案</button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -357,7 +381,7 @@
     }
 
     // ==========================================
-    // 3. 司機工作台
+    // 3. 司機工作台 (按鈕全數加回)
     // ==========================================
     function DriverHub({ partners, onLogout, user, appId, db, showToast }) {
       const [delCount, setDelCount] = useState("");
@@ -373,7 +397,7 @@
           await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id).update({
             total_del: parseInt(delCount), total_pkp: parseInt(pkpCount), last_report: { date: today, timestamp: firebase.firestore.FieldValue.serverTimestamp() }, work_status: 'online'
           });
-          showToast("🚀 報帳成功！"); setDelCount(""); setPkpCount("");
+          showToast("🚀 報帳成功！指揮中心已同步。"); setDelCount(""); setPkpCount("");
         } catch (err) { showToast("❌ 提交失敗"); } finally { setIsSubmitting(false); }
       };
 
@@ -383,89 +407,126 @@
           await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id).update({
             work_status: 'leave', leave_date: new Date().toLocaleDateString('en-CA')
           });
-          showToast("🛑 已完成請假");
+          showToast("🛑 已完成請假手續");
         } catch(err) { showToast("❌ 申請失敗"); }
       };
 
       return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950 font-black">
-          <div className="glass-panel p-10 rounded-[3rem] w-full max-w-[480px] text-center gold-border">
+          <div className="glass-panel p-10 rounded-[3rem] w-full max-w-[480px] text-center gold-border shadow-2xl">
             <h2 className="text-3xl font-black text-white italic mb-2">夥伴工作台</h2>
             <p className="text-amber-500 text-xs mb-10 tracking-widest">{currentPartner?.name || '夥伴'} 您好</p>
             <div className="grid grid-cols-2 gap-4 mb-10">
-              <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-700">
-                <p className="text-[10px] text-sky-500 mb-2">今日配送</p>
+              <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-700 focus-within:border-amber-500/50 transition">
+                <p className="text-[10px] text-sky-500 mb-2 uppercase tracking-widest">今日配送</p>
                 <input type="number" value={delCount} onChange={e=>setDelCount(e.target.value)} placeholder="0" className="ghost-input w-full text-4xl" />
               </div>
-              <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-700">
-                <p className="text-[10px] text-orange-500 mb-2">今日逆收</p>
+              <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-700 focus-within:border-orange-500/50 transition">
+                <p className="text-[10px] text-orange-500 mb-2 uppercase tracking-widest">今日逆收</p>
                 <input type="number" value={pkpCount} onChange={e=>setPkpCount(e.target.value)} placeholder="0" className="ghost-input w-full text-4xl" />
               </div>
             </div>
-            <button onClick={handleSubmit} disabled={isSubmitting} className="btn-prime mb-8">🚀 提交今日數據</button>
+            <button onClick={handleSubmit} disabled={isSubmitting} className="btn-prime mb-8 shadow-xl tracking-widest italic">
+              {isSubmitting ? '傳輸中...' : '🚀 提交今日數據'}
+            </button>
             <div className="flex gap-4 mb-8">
-              <button onClick={handleLeave} className="flex-1 py-4 rounded-2xl bg-rose-900/30 text-rose-400 text-xs shadow-lg border border-rose-900">🔴 緊急請假</button>
+              <button onClick={handleLeave} className="flex-1 py-4 rounded-2xl bg-rose-900/30 text-rose-400 text-xs shadow-lg border border-rose-900 hover:bg-rose-500 hover:text-white transition italic">🔴 緊急請假</button>
+              <button onClick={() => showToast("🛠️ 功能開發中...")} className="flex-1 py-4 rounded-2xl bg-slate-800 border border-slate-700 text-amber-500 hover:bg-amber-900 hover:text-amber-300 transition text-xs italic shadow-lg">🛠️ 更新個資</button>
             </div>
-            <button onClick={onLogout} className="text-rose-500 text-sm font-black underline underline-offset-8">🔒 安全登出</button>
+            <button onClick={onLogout} className="text-rose-500 text-sm font-black underline underline-offset-8 decoration-rose-500/30">🔒 安全登出系統</button>
           </div>
         </div>
       );
     }
 
     // ==========================================
-    // 4. AI 面試流程
+    // 4. AI 面試流程 (5題全部加回！)
     // ==========================================
     function OnboardingFlow({ setLayer, db, appId, showToast }) {
-      const [messages, setMessages] = useState([{ type: 'bot', text: "您好！我是營運 AI 助手。請先告訴我您的姓名與手機號碼。" }]);
+      const [messages, setMessages] = useState([{ type: 'bot', text: "您好！我是營運 AI 助手。在正式開始前，請先告訴我您的姓名與手機號碼。" }]);
       const [step, setStep] = useState('info'); 
       const [name, setName] = useState("");
       const [phone, setPhone] = useState("");
+      const [currentQ, setCurrentQ] = useState(0);
+      const [attitude, setAttitude] = useState("良好");
       const chatEndRef = useRef(null);
+
+      // 🌟 5題完整題庫回歸！
+      const quizDB = [
+        { q: "若配送中不幸發生車禍，您的處理順序是？", o: ["1.報警 2.拍照 3.回報管理處", "1.自行私下和解 2.繼續送完貨"] },
+        { q: "若發現包裹破損內容物滲漏，會怎麼做？", o: ["拍照回報客服暫緩配送", "裝沒看到直接送達離開"] },
+        { q: "收到代收貨款時的操作規範？", o: ["當面點清並存入公款包", "直接塞口袋回家再算"] },
+        { q: "懷疑包裹內含違禁品時？", o: ["保持現狀報警並通報指揮部", "自己打開確認"] },
+        { q: "收件地址電話未接且無保全代收？", o: ["聯繫三次無果帶回報異常", "丟在門口自行離開"] }
+      ];
 
       useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
       const addMsg = (type, text) => setMessages(prev => [...prev, { type, text }]);
 
       const startQuiz = () => {
-        if (!name || !phone) return;
+        if (!name || !phone) return showToast("⚠️ 請輸入姓名與手機");
         setStep('quiz');
-        addMsg('bot', `太棒了，${name}。第一題：若配送中不幸發生車禍，您的處理順序是？`);
+        addMsg('bot', `太棒了，${name}。讓我們開始實務評估。第一題：${quizDB[0].q}`);
       };
 
-      const handlePick = async (text) => {
+      const handlePick = async (idx, text) => {
         addMsg('user', text);
-        setStep('done');
-        setTimeout(async () => {
-          addMsg('bot', "實務評估已完成！已將您的資料傳送至指揮中心。");
-          try {
-            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${phone}`).set({
-              id: `p_${phone}`, name, phone, pin: "0000", status: 'pending', total_del: 0, total_pkp: 0, custom_del_price: 15, custom_pkp_price: 10, custom_adj: 0, labor_fee: 0, health_fee: 0, dependents: 0, created_at: firebase.firestore.FieldValue.serverTimestamp()
-            });
-          } catch (e) { console.error(e); }
-        }, 600);
+        if (idx === 1) setAttitude("需注意");
+
+        if (currentQ < quizDB.length - 1) {
+          const next = currentQ + 1;
+          setCurrentQ(next);
+          setTimeout(() => {
+            addMsg('bot', `第 ${next + 1} 題：${quizDB[next].q}`);
+          }, 600);
+        } else {
+          setStep('done');
+          setTimeout(async () => {
+            addMsg('bot', "實務評估已完成！系統已記錄您的面試紀錄。請返回首頁進行第二步：人事建檔影像上傳。");
+            try {
+              await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${phone}`).set({
+                id: `p_${phone}`, name, phone, pin: "0000", status: 'pending', attitude, 
+                total_del: 0, total_pkp: 0, custom_del_price: 15, custom_pkp_price: 10, custom_adj: 0, 
+                labor_fee: 0, health_fee: 0, dependents: 0, created_at: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            } catch (e) { console.error(e); }
+          }, 600);
+        }
       };
 
       return (
-        <div className="h-screen flex flex-col p-6">
-          <div className="flex justify-between mb-4"><h3 className="text-white font-black">🤖 AI 招募評估</h3><button onClick={() => setLayer('gate')} className="text-slate-400 font-bold">退出</button></div>
-          <div className="flex-1 flex flex-col space-y-4 overflow-y-auto mb-4">
+        <div className="h-screen flex flex-col p-6 bg-[#020617] font-black">
+          <header className="p-6 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex justify-between items-center rounded-t-3xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-black font-black">AI</div>
+              <div><h3 className="text-white text-sm">招募評估助手</h3><p className="text-[9px] text-emerald-400">● 連線紀錄中</p></div>
+            </div>
+            <button onClick={() => setLayer('gate')} className="text-slate-400 text-xs px-4 py-2 border border-white/10 rounded-xl">結束退出</button>
+          </header>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 mb-4 bg-slate-950">
             {messages.map((m, i) => <div key={i} className={`chat-bubble ${m.type === 'bot' ? 'bubble-bot' : 'bubble-user'}`}>{m.text}</div>)}
             <div ref={chatEndRef} />
           </div>
-          <div className="bg-slate-900/80 rounded-3xl p-6 gold-border">
+
+          <div className="bg-slate-900/80 rounded-b-3xl p-6 gold-border shadow-2xl border-t border-white/5">
             {step === 'info' && (
               <div className="space-y-3 font-bold">
-                <input type="text" placeholder="您的姓名" className="input-box" value={name} onChange={e => setName(e.target.value)} />
+                <input type="text" placeholder="您的姓名" className="input-box !mb-0" value={name} onChange={e => setName(e.target.value)} />
                 <input type="tel" placeholder="您的手機" className="input-box" value={phone} onChange={e => setPhone(e.target.value)} maxLength="10"/>
                 <button onClick={startQuiz} className="btn-prime">確認並開始對話</button>
               </div>
             )}
             {step === 'quiz' && (
               <div className="grid gap-3 font-bold">
-                <button onClick={() => handlePick("1.報警 2.拍照 3.回報管理處")} className="p-4 bg-slate-800 rounded-2xl text-amber-500">1.報警 2.拍照 3.回報管理處</button>
-                <button onClick={() => handlePick("1.自行私下和解")} className="p-4 bg-slate-800 rounded-2xl text-amber-500">1.自行私下和解</button>
+                {quizDB[currentQ].o.map((o, i) => (
+                  <button key={i} onClick={() => handlePick(i, o)} className="w-full py-4 bg-slate-800 border border-white/10 rounded-2xl text-amber-500 text-sm font-bold shadow-lg text-left px-6">
+                    {o}
+                  </button>
+                ))}
               </div>
             )}
-            {step === 'done' && <button onClick={() => setLayer('gate')} className="btn-prime font-bold">返回首頁</button>}
+            {step === 'done' && <button onClick={() => setLayer('gate')} className="btn-prime font-bold">返回首頁進行下一步</button>}
           </div>
         </div>
       );
