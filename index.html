@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>金耀智慧營運總部 v36.0 終極整合版</title>
+  <title>金耀智慧營運總部 v36.0 完整整合版</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -14,20 +14,24 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
   <style>
-    body { background-color: #020617; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
-    .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
-    .gold-border { border: 1px solid rgba(245, 158, 11, 0.3); box-shadow: 0 0 30px rgba(245, 158, 11, 0.05); }
-    .input-box { width: 100%; padding: 1rem; border-radius: 1rem; background: #0f172a; border: 1px solid #334155; color: white; outline: none; }
+    body { background-color: #020617; color: #e2e8f0; font-family: sans-serif; }
+    .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(245, 158, 11, 0.2); }
+    .gold-border { border: 1px solid #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.1); }
+    .input-box { width: 100%; padding: 1rem; border-radius: 1rem; background: #0f172a; border: 1px solid #334155; color: white; margin-bottom: 1rem; font-weight: bold; outline: none; }
     .input-box:focus { border-color: #f59e0b; }
-    .btn-prime { background: #f59e0b; color: #000; font-weight: 900; padding: 1rem; border-radius: 1rem; width: 100%; transition: all 0.2s; }
-    .btn-prime:hover { background: #fbbf24; transform: translateY(-1px); }
-    .ghost-input { background: transparent; border: none; outline: none; text-align: center; color: white; font-weight: bold; width: 100%; }
-    .admin-table { width: 100%; border-collapse: collapse; }
-    .admin-table th { padding: 12px; background: rgba(0,0,0,0.3); color: #94a3b8; font-size: 11px; text-transform: uppercase; }
-    .admin-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); text-align: center; }
-    .chat-bubble { padding: 14px 18px; border-radius: 20px; max-width: 85%; margin-bottom: 12px; font-size: 14px; }
-    .bubble-bot { background: #1e293b; color: #f1f5f9; align-self: flex-start; }
-    .bubble-user { background: #f59e0b; color: #000; align-self: flex-end; margin-left: auto; font-weight: 600; }
+    .btn-prime { background: #f59e0b; color: black; font-weight: 900; padding: 1rem; border-radius: 1rem; width: 100%; transition: all 0.3s; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+    .btn-prime:active { transform: translateY(2px); }
+    .ghost-input { background: transparent; border: none; outline: none; text-align: center; color: white; font-weight: bold;}
+    .admin-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+    .admin-table th { padding: 12px; background: rgba(0,0,0,0.4); color: #94a3b8; font-size: 12px; }
+    .admin-table td { padding: 16px 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+    .dot-online { background-color: #34d399; box-shadow: 0 0 8px #34d399; }
+    .dot-offline { background-color: #64748b; }
+    .dot-leave { background-color: #f43f5e; box-shadow: 0 0 8px #f43f5e; }
+    .chat-bubble { padding: 12px 16px; border-radius: 16px; max-width: 80%; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
+    .bubble-bot { background: rgba(255,255,255,0.1); color: white; align-self: flex-start; }
+    .bubble-user { background: #f59e0b; color: black; align-self: flex-end; margin-left: auto; }
   </style>
 </head>
 <body>
@@ -50,6 +54,7 @@
     const auth = firebase.auth();
     const appId = 'supreme-v92';
 
+    // 2026 精算參數
     const CONFIG_2026 = {
       BRACKETS: [29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800],
       LABOR_RATE: 0.025, HEALTH_RATE: 0.0155
@@ -62,6 +67,9 @@
       const [layer, setLayer] = useState('gate'); 
       const [loading, setLoading] = useState(true);
       const [announcement, setAnnouncement] = useState("");
+      const [searchQuery, setSearchQuery] = useState("");
+      const [statusFilter, setStatusFilter] = useState('all');
+      const [showSensitive, setShowSensitive] = useState({}); 
       const [toastMsg, setToastMsg] = useState("");
 
       const showToast = (msg) => {
@@ -78,126 +86,278 @@
           });
         const unsubAnn = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc('announcement')
           .onSnapshot(snap => { if (snap.exists) setAnnouncement(snap.data().content); });
+        
+        // 檢查自動登入
+        const sid = localStorage.getItem('ggsoc_session');
+        if (sid) {
+          try {
+            const session = JSON.parse(sid);
+            if (session.role === 'admin') { setRole('admin'); setLayer('admin'); }
+            // 由於 partners 剛載入，driver 自動登入我們暫時依賴使用者重新輸入，確保資料庫同步
+          } catch(e){}
+        }
         return () => { unsubPartners(); unsubAnn(); };
       }, []);
 
-      const handleLogin = (phone, pin) => {
+      const handleLogin = (phone, pin, remember) => {
         if ((phone === "0976017938" && pin === "0531") || (phone === "0988128172" && pin === "0172")) {
-          setRole('admin'); setLayer('admin'); return;
+          setRole('admin'); setLayer('admin');
+          if (remember) localStorage.setItem('ggsoc_session', JSON.stringify({ role: 'admin' }));
+          showToast("🔑 管理員登入成功"); return;
         }
+
         const p = partners.find(x => x.phone === phone && x.pin === pin);
-        if (p) { setUser(p); setRole('driver'); setLayer('driver'); }
-        else alert("資訊錯誤");
+        if (p) {
+          setUser(p); setRole('driver'); setLayer('driver');
+          showToast("🔑 夥伴登入成功");
+        } else {
+          alert("帳號驗證失敗，請檢查手機號碼與 PIN 碼");
+        }
       };
 
-      if (loading) return <div className="h-screen flex items-center justify-center text-amber-500 font-black">INITIALIZING...</div>;
+      const handleLogout = () => {
+        localStorage.removeItem('ggsoc_session');
+        setUser(null); setRole('guest'); setLayer('gate');
+      };
+
+      if (loading) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center">
+            <div className="w-12 h-12 border-4 border-amber-500/10 border-t-amber-500 rounded-full animate-spin"></div>
+            <p className="mt-6 text-amber-500 font-black tracking-widest animate-pulse">連線資料庫中...</p>
+          </div>
+        );
+      }
 
       return (
-        <div className="min-h-screen">
-          <div className={`fixed top-10 left-1/2 -translate-x-1/2 bg-amber-500 text-black px-6 py-3 rounded-full font-bold z-[200] transition-all ${toastMsg ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="min-h-screen text-slate-200">
+          <div className={`fixed left-1/2 -translate-x-1/2 bg-amber-500 text-black px-8 py-4 rounded-full font-black z-[10000] shadow-2xl transition-all duration-500 ${toastMsg ? 'top-[40px] opacity-100' : 'top-[-100px] opacity-0 pointer-events-none'}`}>
             {toastMsg}
           </div>
 
           {layer === 'gate' && <Gate onLogin={handleLogin} announcement={announcement} setLayer={setLayer} />}
-          {layer === 'admin' && <AdminHub partners={partners} onLogout={() => setLayer('gate')} db={db} appId={appId} showToast={showToast} config={CONFIG_2026} />}
-          {layer === 'driver' && <DriverHub user={user} onLogout={() => setLayer('gate')} db={db} appId={appId} showToast={showToast} />}
-          {layer === 'onboarding' && <Onboarding setLayer={setLayer} db={db} appId={appId} />}
-          {layer === 'docs' && <DocUpload setLayer={setLayer} db={db} appId={appId} showToast={showToast} />}
+          {layer === 'admin' && (
+            <AdminHub partners={partners} onLogout={handleLogout} showSensitive={showSensitive} setShowSensitive={setShowSensitive} statusFilter={statusFilter} setStatusFilter={setStatusFilter} searchQuery={searchQuery} setSearchQuery={setSearchQuery} db={db} appId={appId} showToast={showToast} announcement={announcement} />
+          )}
+          {layer === 'driver' && <DriverHub partners={partners} onLogout={handleLogout} user={user} db={db} appId={appId} showToast={showToast} />}
+          {layer === 'onboarding' && <OnboardingFlow setLayer={setLayer} db={db} appId={appId} showToast={showToast} />}
+          {layer === 'docs' && <DocumentUpload setLayer={setLayer} db={db} appId={appId} showToast={showToast} />}
         </div>
       );
     }
 
-    // --- 1. Gate (入口) ---
+    // ==========================================
+    // 1. 入口層 (完整保留 Remember Me 與所有按鈕)
+    // ==========================================
     function Gate({ onLogin, announcement, setLayer }) {
       const [ph, setPh] = useState("");
       const [pin, setPin] = useState("");
+      const [rem, setRem] = useState(false);
+
       return (
-        <div className="h-screen flex flex-col items-center justify-center p-6">
-          <div className="text-center mb-10">
-            <h1 className="text-5xl font-black italic tracking-tighter mb-2">在地物流</h1>
-            <span className="text-[10px] text-amber-500 border border-amber-500/30 px-3 py-1 rounded-full uppercase">Ops v36.0</span>
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+          <div className="mb-12 text-center relative z-10">
+            <h1 className="text-7xl font-black text-white italic tracking-tighter mb-2 drop-shadow-2xl">在地物流</h1>
+            <p className="text-amber-500 text-[10px] tracking-[0.5em] font-black border border-amber-500/30 px-4 py-1.5 rounded-full inline-block uppercase shadow-lg">Operation Hub v36.0</p>
           </div>
-          <div className="w-full max-w-[340px] space-y-4">
-            <div className="glass-panel p-8 rounded-[2rem] gold-border">
-              <input type="tel" placeholder="手機" className="input-box mb-3" onChange={e => setPh(e.target.value)} />
-              <input type="password" placeholder="PIN" className="input-box mb-6" onChange={e => setPin(e.target.value)} />
-              <button onClick={() => onLogin(ph, pin)} className="btn-prime">進入系統</button>
+
+          <div className="w-full max-w-[340px] space-y-5 relative z-10 font-bold">
+            <div className="glass-panel p-8 rounded-[2.5rem] shadow-2xl gold-border">
+              <input type="tel" placeholder="手機號碼" className="input-box" value={ph} onChange={e => setPh(e.target.value)} maxLength={10} />
+              <input type="password" placeholder="PIN 安全碼" className="input-box" value={pin} onChange={e => setPin(e.target.value)} maxLength={4} />
+              
+              <div className="flex items-center justify-center gap-2 pb-6">
+                <input type="checkbox" id="rem_me" checked={rem} onChange={e => setRem(e.target.checked)} className="w-4 h-4 accent-amber-500 rounded bg-slate-800" />
+                <label htmlFor="rem_me" className="text-slate-400 text-[11px] font-black cursor-pointer italic">記住我 (自動跳轉登入)</label>
+              </div>
+
+              <button onClick={() => onLogin(ph, pin, rem)} className="btn-prime italic tracking-widest">進入中心</button>
             </div>
-            <div className="flex flex-col gap-2">
-              <button onClick={() => setLayer('onboarding')} className="text-xs text-slate-500 py-2">🚚 報到程序確認</button>
-              <button onClick={() => setLayer('docs')} className="text-xs text-slate-500 py-2">📁 證件資料建檔</button>
+
+            {announcement && (
+              <div className="glass-panel p-5 rounded-2xl bg-amber-900/10 border border-amber-500/20 text-center">
+                <p className="text-amber-500 font-bold text-xs uppercase mb-1 tracking-widest animate-pulse">📢 最新通報</p>
+                <p className="text-white text-sm font-black leading-relaxed">{announcement}</p>
+              </div>
+            )}
+
+            <div className="space-y-3 pt-4 text-center">
+              <button onClick={() => setLayer('onboarding')} className="w-full py-4 rounded-2xl border border-amber-500/30 text-amber-500 font-bold text-sm bg-amber-900/10 hover:bg-amber-900/20 shadow-lg">📋 作業程序：規範確認</button>
+              <button onClick={() => setLayer('docs')} className="w-full py-4 rounded-2xl border border-orange-500/30 text-orange-400 font-bold text-sm bg-orange-900/10 hover:bg-orange-900/20 shadow-lg">📁 司機建檔：資料上傳通道</button>
             </div>
           </div>
         </div>
       );
     }
 
-    // --- 2. AdminHub (指揮中心 + 歷史功能) ---
-    function AdminHub({ partners, onLogout, db, appId, showToast, config }) {
-      const [search, setSearch] = useState("");
-      const [history, setHistory] = useState(null);
+    // ==========================================
+    // 2. 指揮中心 (總計看板 + 篩選器 + 隱私遮罩 + 歷史 + 工具按鈕全保留)
+    // ==========================================
+    function AdminHub({ partners, onLogout, showSensitive, setShowSensitive, statusFilter, setStatusFilter, searchQuery, setSearchQuery, db, appId, showToast, announcement }) {
+      const [historyData, setHistoryData] = useState(null);
+      const getToday = () => new Date().toLocaleDateString('en-CA');
 
-      const calc = (p) => (p.total_del * (p.custom_del_price || 15)) + (p.total_pkp * (p.custom_pkp_price || 10)) + (p.custom_adj || 0) - (p.labor_fee || 0) - (p.health_fee || 0);
+      const filteredPartners = useMemo(() => {
+        let result = partners.filter(p => (p.name && p.name.includes(searchQuery)) || (p.phone && p.phone.includes(searchQuery)));
+        const today = getToday();
+        if (statusFilter === 'pending') result = result.filter(p => p.last_report !== today && p.work_status !== 'leave');
+        else if (statusFilter === 'reported') result = result.filter(p => p.last_report === today);
+        else if (statusFilter === 'leave') result = result.filter(p => p.work_status === 'leave' && p.leave_date === today);
+        return result;
+      }, [partners, searchQuery, statusFilter]);
 
-      const viewHistory = async (p) => {
-        const snap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).collection('history').orderBy('date', 'desc').limit(31).get();
-        setHistory({ name: p.name, data: snap.docs.map(d => d.data()) });
+      const calculateNet = (p) => {
+        return (p.total_del * (p.custom_del_price || 15)) + (p.total_pkp * (p.custom_pkp_price || 10)) + (p.custom_adj || 0) - (p.labor_fee || 0) - (p.health_fee || 0);
       };
 
-      const handleUpdate = async (id, field, val) => {
+      const totals = useMemo(() => {
+        return filteredPartners.reduce((acc, p) => {
+          return { del: acc.del + (p.total_del || 0), pkp: acc.pkp + (p.total_pkp || 0), net: acc.net + calculateNet(p) };
+        }, { del: 0, pkp: 0, net: 0 });
+      }, [filteredPartners]);
+
+      const handleUpdateField = async (id, field, val) => {
         await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(id).update({ [field]: Number(val) });
       };
 
+      const handlePublish = async () => {
+        const text = window.prompt("發布最新通報：", announcement);
+        if (text !== null) {
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc('announcement').set({ content: text }, { merge: true });
+          showToast("📢 公告已發布");
+        }
+      };
+
+      const autoInsur = async (p) => {
+        const net = calculateNet(p);
+        const tier = CONFIG_2026.BRACKETS.find(b => net <= b) || CONFIG_2026.BRACKETS[CONFIG_2026.BRACKETS.length - 1];
+        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).update({
+          labor_fee: Math.round(tier * CONFIG_2026.LABOR_RATE),
+          health_fee: Math.round(tier * CONFIG_2026.HEALTH_RATE * (1 + Math.min(p.dependents || 0, 3)))
+        });
+        showToast("✨ 2026 級距精算完成");
+      };
+
+      const viewHistory = async (p) => {
+        const snap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(p.id).collection('history').orderBy('date', 'desc').limit(31).get();
+        setHistoryData({ name: p.name, data: snap.docs.map(d => d.data()) });
+      };
+
       return (
-        <div className="p-4 lg:p-12 max-w-[1400px] mx-auto">
-          <div className="flex justify-between items-center mb-10">
-            <h2 className="text-3xl font-black italic">數據總部</h2>
-            <button onClick={onLogout} className="text-rose-500 font-bold">登出</button>
+        <div className="p-4 lg:p-10 max-w-[1700px] mx-auto overflow-x-auto">
+          {/* 頂部按鈕列完整還原 */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+            <h2 className="text-white font-black text-5xl italic tracking-tighter flex items-center gap-2">
+              數據指揮中心 <span className="text-amber-500 font-black">.</span>
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={handlePublish} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md">💬 公告</button>
+              <button onClick={() => showToast("⚙️ 工具選單即將開放")} className="bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md">⚙️ 工具</button>
+              <button onClick={() => showToast("📥 網銀匯出準備中")} className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md">📥 匯出網銀</button>
+              <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-4 py-2 rounded-xl text-xs font-black border border-rose-500/20 shadow-md">退出系統</button>
+            </div>
           </div>
-          
+
+          {/* 4 個總計看板還原 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 text-center font-black">
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-amber-500/50"><p className="text-slate-400 text-[11px] mb-1">總配送數</p><p className="text-3xl text-amber-500">{totals.del}</p></div>
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-orange-500/50"><p className="text-slate-400 text-[11px] mb-1">總逆收數</p><p className="text-3xl text-orange-400">{totals.pkp}</p></div>
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-emerald-500/50"><p className="text-slate-400 text-[11px] mb-1">結算預估</p><p className="text-3xl text-emerald-400">${totals.net.toLocaleString()}</p></div>
+            <div className="glass-panel p-6 rounded-3xl border-t-2 border-t-slate-500/50"><p className="text-slate-400 text-[11px] mb-1">現役/篩選夥伴</p><p className="text-3xl text-white">{filteredPartners.length}</p></div>
+          </div>
+
+          {/* 搜尋與篩選列還原 */}
+          <div className="glass-panel p-4 rounded-[2rem] mb-10 flex flex-col md:flex-row gap-4 gold-border">
+            <div className="flex-1 flex items-center bg-slate-900 p-3 rounded-2xl border border-slate-700">
+              <span className="text-amber-500 mx-2">🔍</span>
+              <input type="text" placeholder="搜尋姓名或手機..." className="bg-transparent border-none outline-none text-white text-sm w-full font-bold" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            </div>
+            <select className="bg-slate-800 text-white rounded-xl px-4 py-3 text-xs font-bold border border-slate-700 outline-none w-full md:w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="all">全部狀態</option>
+              <option value="pending">⚠️ 未報帳人員</option>
+              <option value="reported">✅ 已完成報帳</option>
+              <option value="leave">🛑 今日休假</option>
+            </select>
+          </div>
+
+          {/* 主表格 (隱私遮罩、列印、檔案等所有按鈕都在) */}
           <div className="glass-panel rounded-3xl overflow-hidden overflow-x-auto">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th className="text-left">夥伴</th>
-                  <th>配送/逆收</th>
+                  <th className="w-32">今日狀態</th>
+                  <th className="text-left w-72">夥伴資訊 & 帳務資料</th>
                   <th>正件價</th>
                   <th>逆收價</th>
-                  <th>扣除額</th>
-                  <th>實領預估</th>
+                  <th>眷屬</th>
+                  <th>勞保扣</th>
+                  <th>健保扣</th>
+                  <th>獎金加扣</th>
+                  <th>預計實領</th>
                   <th>功能</th>
                 </tr>
               </thead>
               <tbody>
-                {partners.map(p => (
-                  <tr key={p.id}>
-                    <td className="text-left font-bold">{p.name}<br/><span className="text-[10px] text-slate-500">{p.phone}</span></td>
-                    <td className="text-sky-400 font-mono">{p.total_del || 0} / {p.total_pkp || 0}</td>
-                    <td><input type="number" defaultValue={p.custom_del_price || 15} onBlur={e => handleUpdate(p.id, 'custom_del_price', e.target.value)} className="ghost-input" /></td>
-                    <td><input type="number" defaultValue={p.custom_pkp_price || 10} onBlur={e => handleUpdate(p.id, 'custom_pkp_price', e.target.value)} className="ghost-input" /></td>
-                    <td className="text-rose-400 font-bold">-${(p.labor_fee || 0) + (p.health_fee || 0)}</td>
-                    <td className="text-amber-500 font-black text-xl">${calc(p).toLocaleString()}</td>
-                    <td><button onClick={() => viewHistory(p)} className="bg-slate-800 px-3 py-1 rounded text-xs">📜 歷史</button></td>
-                  </tr>
-                ))}
+                {filteredPartners.map(p => {
+                  const net = calculateNet(p);
+                  const isLeave = p.work_status === 'leave' && p.leave_date === getToday();
+                  const hasReported = p.last_report === getToday();
+                  const isMasked = !showSensitive[p.id];
+                  
+                  return (
+                    <tr key={p.id}>
+                      <td><span className={`status-dot ${isLeave ? 'dot-leave' : (hasReported ? 'dot-online' : 'dot-offline')}`}></span>
+                          <span className={`text-[10px] ${hasReported ? 'text-emerald-400' : 'text-slate-500'}`}>{isLeave ? '休假' : (hasReported ? '已報' : '未報')}</span>
+                      </td>
+                      <td className="text-left">
+                        <span className="text-white font-black text-lg mr-2">{p.name}</span>
+                        <button onClick={() => setShowSensitive(prev => ({...prev, [p.id]: !prev[p.id]}))} className="text-slate-500 hover:text-amber-500">{isMasked ? '🙈' : '👁️'}</button>
+                        <p className="text-[10px] font-black italic mt-1 text-slate-500">📞 {isMasked ? p.phone?.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p>
+                      </td>
+                      <td>$<input type="number" defaultValue={p.custom_del_price||15} onBlur={e=>handleUpdateField(p.id, 'custom_del_price', e.target.value)} className="ghost-input w-10 text-sky-400" /></td>
+                      <td>$<input type="number" defaultValue={p.custom_pkp_price||10} onBlur={e=>handleUpdateField(p.id, 'custom_pkp_price', e.target.value)} className="ghost-input w-10 text-orange-400" /></td>
+                      <td><input type="number" defaultValue={p.dependents||0} onBlur={e=>handleUpdateField(p.id, 'dependents', e.target.value)} className="ghost-input w-8 text-white" /></td>
+                      <td><input type="number" defaultValue={p.labor_fee||0} onBlur={e=>handleUpdateField(p.id, 'labor_fee', e.target.value)} className="ghost-input w-12 text-rose-500" /></td>
+                      <td>
+                        <div className="flex justify-center gap-1 items-center">
+                          <input type="number" defaultValue={p.health_fee||0} onBlur={e=>handleUpdateField(p.id, 'health_fee', e.target.value)} className="ghost-input w-12 text-rose-500" />
+                          <button onClick={() => autoInsur(p)} className="text-[10px] bg-indigo-900 text-indigo-300 px-1 rounded hover:bg-indigo-500 hover:text-white transition">✨</button>
+                        </div>
+                      </td>
+                      <td><input type="number" defaultValue={p.custom_adj||0} onBlur={e=>handleUpdateField(p.id, 'custom_adj', e.target.value)} className="ghost-input w-12 text-emerald-500" /></td>
+                      <td className="text-amber-500 font-black italic text-2xl tracking-tighter">${net.toLocaleString()}</td>
+                      <td>
+                        <div className="flex gap-2 justify-center flex-wrap w-32">
+                          <button onClick={() => viewHistory(p)} className="bg-slate-800 text-white px-2 py-1.5 rounded-lg text-[10px] font-black shadow-lg">📜 歷史</button>
+                          <button onClick={() => window.print()} className="bg-amber-600 text-black px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">🖨️ 列印</button>
+                          <button onClick={() => showToast("檔案連結中")} className="bg-indigo-900/40 text-indigo-300 px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">📁 檔案</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          {history && (
+          {/* 歷史記錄彈窗 */}
+          {historyData && (
             <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] flex items-center justify-center p-4">
-              <div className="glass-panel w-full max-w-xl rounded-[2rem] p-6 max-h-[80vh] overflow-y-auto gold-border">
-                <div className="flex justify-between mb-6">
-                  <h3 className="font-black text-xl">{history.name} 歷史誌</h3>
-                  <button onClick={() => setHistory(null)}>關閉</button>
+              <div className="glass-panel w-full max-w-xl rounded-[2rem] p-6 max-h-[80vh] flex flex-col gold-border">
+                <div className="flex justify-between mb-4 border-b border-white/10 pb-4">
+                  <h3 className="font-black text-xl text-amber-500">{historyData.name} - 近 30 日歷史日誌</h3>
+                  <button onClick={() => setHistoryData(null)} className="text-slate-500 hover:text-white">✕ 關閉</button>
                 </div>
-                {history.data.map((r, i) => (
-                  <div key={i} className="flex justify-between border-b border-white/5 py-3 text-sm">
-                    <span className="font-mono text-slate-400">{r.date}</span>
-                    <span className="font-bold">配{r.del} / 逆{r.pkp}</span>
-                    <span className="text-amber-500 font-black">${(r.del * r.del_price + r.pkp * r.pkp_price).toLocaleString()}</span>
-                  </div>
-                ))}
+                <div className="flex-1 overflow-y-auto pr-2">
+                  {historyData.data.length === 0 ? <p className="text-center text-slate-500 py-10">尚無歷史數據</p> : 
+                    historyData.data.map((r, i) => (
+                    <div key={i} className="flex justify-between border-b border-white/5 py-4 text-sm items-center">
+                      <span className="font-mono text-slate-400 bg-slate-900 px-2 py-1 rounded">{r.date}</span>
+                      <span className="font-bold text-sky-400">配 {r.del} / 逆 {r.pkp}</span>
+                      <span className="text-amber-500 font-black text-lg">${(r.del * r.del_price + r.pkp * r.pkp_price).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -205,76 +365,215 @@
       );
     }
 
-    // --- 3. DriverHub (夥伴工作台 + 歷史寫入) ---
-    function DriverHub({ user, onLogout, db, appId, showToast }) {
-      const [del, setDel] = useState("");
-      const [pkp, setPkp] = useState("");
-      const [loading, setLoading] = useState(false);
+    // ==========================================
+    // 3. 司機工作台 (緊急請假、更新個資按鈕全數加回 + 歷史存檔)
+    // ==========================================
+    function DriverHub({ user, partners, onLogout, appId, db, showToast }) {
+      const [delCount, setDelCount] = useState("");
+      const [pkpCount, setPkpCount] = useState("");
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      
+      // 確保獲取最新狀態
+      const currentPartner = partners.find(p => p.id === user.id) || user;
 
-      const submit = async () => {
-        if(!del || !pkp) return showToast("⚠️ 請填寫數量");
-        setLoading(true);
+      const handleSubmit = async () => {
+        if (!delCount || !pkpCount) return showToast("⚠️ 請輸入完整數量");
+        setIsSubmitting(true);
         const today = new Date().toLocaleDateString('en-CA');
         const batch = db.batch();
-        const pRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(user.id);
+        const pRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id);
         const hRef = pRef.collection('history').doc(today);
 
-        batch.update(pRef, { total_del: Number(del), total_pkp: Number(pkp), last_report: today });
+        batch.update(pRef, { total_del: Number(delCount), total_pkp: Number(pkpCount), last_report: today, work_status: 'online' });
         batch.set(hRef, { 
-          date: today, del: Number(del), pkp: Number(pkp), 
-          del_price: user.custom_del_price || 15, pkp_price: user.custom_pkp_price || 10,
+          date: today, del: Number(delCount), pkp: Number(pkpCount), 
+          del_price: currentPartner.custom_del_price || 15, pkp_price: currentPartner.custom_pkp_price || 10,
           ts: firebase.firestore.FieldValue.serverTimestamp() 
         });
 
-        await batch.commit();
-        setLoading(false);
-        showToast("🚀 數據已永久存檔");
+        try {
+          await batch.commit();
+          showToast("🚀 報帳成功！指揮中心已同步，並寫入歷史。"); setDelCount(""); setPkpCount("");
+        } catch(e) { showToast("❌ 提交失敗"); }
+        setIsSubmitting(false);
+      };
+
+      const handleLeave = async () => {
+        if(!window.confirm("確定申請今日請假嗎？")) return;
+        const today = new Date().toLocaleDateString('en-CA');
+        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(currentPartner.id).update({
+          work_status: 'leave', leave_date: today
+        });
+        showToast("🛑 已完成請假手續");
       };
 
       return (
-        <div className="h-screen flex items-center justify-center p-6">
-          <div className="glass-panel p-10 rounded-[3rem] w-full max-w-[380px] text-center gold-border">
-            <h2 className="text-2xl font-black mb-8">{user?.name} 作業回報</h2>
-            <div className="space-y-4 mb-8">
-              <input type="number" placeholder="今日配送總數" className="input-box text-center text-2xl" onChange={e=>setDel(e.target.value)} />
-              <input type="number" placeholder="今日逆收總數" className="input-box text-center text-2xl" onChange={e=>setPkp(e.target.value)} />
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950 font-black">
+          <div className="glass-panel p-10 rounded-[3rem] w-full max-w-[480px] text-center gold-border shadow-2xl">
+            <h2 className="text-3xl font-black text-white italic mb-2">夥伴工作台</h2>
+            <p className="text-amber-500 text-xs mb-10 tracking-widest">{currentPartner?.name || '夥伴'} 您好</p>
+            <div className="grid grid-cols-2 gap-4 mb-10">
+              <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-700 focus-within:border-amber-500/50 transition">
+                <p className="text-[10px] text-sky-500 mb-2 uppercase tracking-widest">今日配送</p>
+                <input type="number" value={delCount} onChange={e=>setDelCount(e.target.value)} placeholder="0" className="ghost-input w-full text-4xl" />
+              </div>
+              <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-700 focus-within:border-orange-500/50 transition">
+                <p className="text-[10px] text-orange-500 mb-2 uppercase tracking-widest">今日逆收</p>
+                <input type="number" value={pkpCount} onChange={e=>setPkpCount(e.target.value)} placeholder="0" className="ghost-input w-full text-4xl" />
+              </div>
             </div>
-            <button onClick={submit} className="btn-prime mb-4" disabled={loading}>{loading ? '提交中...' : '提交當日數據'}</button>
-            <button onClick={onLogout} className="text-xs text-slate-500">登出</button>
+            <button onClick={handleSubmit} disabled={isSubmitting} className="btn-prime mb-8 shadow-xl tracking-widest italic">
+              {isSubmitting ? '傳輸中...' : '🚀 提交今日數據'}
+            </button>
+            <div className="flex gap-4 mb-8">
+              <button onClick={handleLeave} className="flex-1 py-4 rounded-2xl bg-rose-900/30 text-rose-400 text-xs shadow-lg border border-rose-900 hover:bg-rose-500 hover:text-white transition italic">🔴 緊急請假</button>
+              <button onClick={() => showToast("🛠️ 功能開發中...")} className="flex-1 py-4 rounded-2xl bg-slate-800 border border-slate-700 text-amber-500 hover:bg-amber-900 hover:text-amber-300 transition text-xs italic shadow-lg">🛠️ 更新個資</button>
+            </div>
+            <button onClick={onLogout} className="text-rose-500 text-sm font-black underline underline-offset-8 decoration-rose-500/30">🔒 安全登出系統</button>
           </div>
         </div>
       );
     }
 
-    // --- Onboarding & DocUpload (保持簡化版) ---
-    function Onboarding({ setLayer, db, appId }) {
+    // ==========================================
+    // 4. 數位報到 (完整還原 5 題題庫)
+    // ==========================================
+    function OnboardingFlow({ setLayer, db, appId, showToast }) {
+      const [messages, setMessages] = useState([{ type: 'bot', text: "您好，歡迎加入營運團隊。請先輸入您的基本資料，隨後將進行作業規範確認。" }]);
+      const [step, setStep] = useState('info'); 
       const [name, setName] = useState("");
       const [phone, setPhone] = useState("");
-      const handleNext = async () => {
-        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${phone}`).set({
-          id: `p_${phone}`, name, phone, pin: "0000", total_del: 0, total_pkp: 0, custom_del_price: 15, custom_pkp_price: 10
-        }, { merge: true });
-        setLayer('gate');
+      const [currentQ, setCurrentQ] = useState(0);
+      const [attitude, setAttitude] = useState("正常");
+      const chatEndRef = useRef(null);
+
+      // 5題完整回歸
+      const quizDB = [
+        { q: "若配送中不幸發生車禍，您的處理順序是？", o: ["1.報警 2.拍照 3.回報管理處", "1.自行私下和解 2.繼續送完貨"] },
+        { q: "若發現包裹破損內容物滲漏，會怎麼做？", o: ["拍照回報客服暫緩配送", "裝沒看到直接送達離開"] },
+        { q: "收到代收貨款時的操作規範？", o: ["當面點清並存入公款包", "直接塞口袋回家再算"] },
+        { q: "懷疑包裹內含違禁品時？", o: ["保持現狀報警並通報指揮部", "自己打開確認"] },
+        { q: "收件地址電話未接且無保全代收？", o: ["聯繫三次無果帶回報異常", "丟在門口自行離開"] }
+      ];
+
+      useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+      const addMsg = (type, text) => setMessages(prev => [...prev, { type, text }]);
+
+      const startQuiz = () => {
+        if (!name || !phone) return showToast("⚠️ 請輸入姓名與手機");
+        setStep('quiz');
+        addMsg('bot', `確認完畢，${name}。讓我們開始實務評估。第一題：${quizDB[0].q}`);
       };
+
+      const handlePick = async (idx, text) => {
+        addMsg('user', text);
+        if (idx === 1) setAttitude("需教育");
+
+        if (currentQ < quizDB.length - 1) {
+          const next = currentQ + 1;
+          setCurrentQ(next);
+          setTimeout(() => addMsg('bot', `第 ${next + 1} 題：${quizDB[next].q}`), 600);
+        } else {
+          setStep('done');
+          setTimeout(async () => {
+            addMsg('bot', "實務評估已完成！請返回首頁進行「資料上傳建檔」。");
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${phone}`).set({
+              id: `p_${phone}`, name, phone, pin: "0000", attitude: attitude,
+              total_del: 0, total_pkp: 0, custom_del_price: 15, custom_pkp_price: 10, custom_adj: 0, 
+              labor_fee: 0, health_fee: 0, dependents: 0, created_at: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+          }, 600);
+        }
+      };
+
       return (
-        <div className="h-screen flex items-center justify-center p-6">
-          <div className="glass-panel p-8 rounded-[2rem] w-full max-w-[340px]">
-            <h2 className="mb-6 font-bold">作業規範確認</h2>
-            <input className="input-box mb-3" placeholder="姓名" onChange={e=>setName(e.target.value)} />
-            <input className="input-box mb-6" placeholder="手機" onChange={e=>setPhone(e.target.value)} />
-            <button onClick={handleNext} className="btn-prime">確認並存檔</button>
+        <div className="h-screen flex flex-col p-6 bg-[#020617] font-black">
+          <header className="p-6 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex justify-between items-center rounded-t-3xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-black font-black">系統</div>
+              <div><h3 className="text-white text-sm">作業規範確認</h3><p className="text-[9px] text-emerald-400">● 連線紀錄中</p></div>
+            </div>
+            <button onClick={() => setLayer('gate')} className="text-slate-400 text-xs px-4 py-2 border border-white/10 rounded-xl">結束退出</button>
+          </header>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 mb-4 bg-slate-950">
+            {messages.map((m, i) => <div key={i} className={`chat-bubble ${m.type === 'bot' ? 'bubble-bot' : 'bubble-user'}`}>{m.text}</div>)}
+            <div ref={chatEndRef} />
+          </div>
+
+          <div className="bg-slate-900/80 rounded-b-3xl p-6 gold-border shadow-2xl border-t border-white/5">
+            {step === 'info' && (
+              <div className="space-y-3 font-bold">
+                <input type="text" placeholder="您的姓名" className="input-box !mb-0" value={name} onChange={e => setName(e.target.value)} />
+                <input type="tel" placeholder="您的手機" className="input-box" value={phone} onChange={e => setPhone(e.target.value)} maxLength="10"/>
+                <button onClick={startQuiz} className="btn-prime">確認並開始對話</button>
+              </div>
+            )}
+            {step === 'quiz' && (
+              <div className="grid gap-3 font-bold">
+                {quizDB[currentQ].o.map((o, i) => (
+                  <button key={i} onClick={() => handlePick(i, o)} className="w-full py-4 bg-slate-800 border border-white/10 rounded-2xl text-amber-500 text-sm font-bold shadow-lg text-left px-6">
+                    {o}
+                  </button>
+                ))}
+              </div>
+            )}
+            {step === 'done' && <button onClick={() => setLayer('gate')} className="btn-prime font-bold">返回首頁進行下一步</button>}
           </div>
         </div>
       );
     }
 
-    function DocUpload({ setLayer, showToast }) {
+    // ==========================================
+    // 5. 證件建檔 (完整預覽功能還原)
+    // ==========================================
+    function DocumentUpload({ setLayer, db, appId, showToast }) {
+      const [phone, setPhone] = useState("");
+      const [idNumber, setIdNumber] = useState("");
+      const [previews, setPreviews] = useState({ id_front: null, license: null });
+
+      const handleFile = (e, type) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => setPreviews(prev => ({ ...prev, [type]: reader.result }));
+          reader.readAsDataURL(file);
+        }
+      };
+
+      const handleUpload = async () => {
+        if (!phone || !idNumber || !previews.id_front) return showToast("⚠️ 請填寫資料並上傳證件");
+        try {
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${phone}`).set({
+            id_number: idNumber, img_id_front: previews.id_front, img_license: previews.license, status: 'pending_review'
+          }, { merge: true });
+          showToast("✅ 資料已成功提交審核！");
+          setLayer('gate');
+        } catch (e) { showToast("❌ 提交失敗，請檢查網路"); }
+      };
+
       return (
-        <div className="h-screen flex items-center justify-center p-6">
-          <div className="glass-panel p-8 rounded-[2rem] text-center">
-            <h2 className="mb-4">證件上傳通道</h2>
-            <div className="w-48 h-48 border-2 border-dashed border-slate-700 rounded-2xl mx-auto flex items-center justify-center text-xs text-slate-500 mb-6">點擊選取相片</div>
-            <button onClick={()=>{showToast("✅ 已提交"); setLayer('gate');}} className="btn-prime">送出審核</button>
+        <div className="min-h-screen flex items-center justify-center p-6 bg-[#020617]">
+          <div className="glass-panel p-8 rounded-[2.5rem] w-full max-w-[450px] gold-border">
+            <h2 className="text-2xl font-black text-white italic mb-6 text-center">📁 司機建檔通道</h2>
+            <div className="space-y-4">
+              <input type="tel" placeholder="驗證手機號碼" className="input-box" value={phone} onChange={e => setPhone(e.target.value)} maxLength={10} />
+              <input type="text" placeholder="身分證字號" className="input-box" value={idNumber} onChange={e => setIdNumber(e.target.value)} />
+              <div className="grid grid-cols-2 gap-4">
+                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-700 rounded-2xl cursor-pointer hover:border-amber-500 transition">
+                  <span className="text-[10px] text-slate-400 mb-2">身分證正面</span>
+                  {previews.id_front ? <img src={previews.id_front} className="h-20 object-cover rounded" /> : <span className="text-2xl">📸</span>}
+                  <input type="file" className="hidden" onChange={e => handleFile(e, 'id_front')} accept="image/*" />
+                </label>
+                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-700 rounded-2xl cursor-pointer hover:border-amber-500 transition">
+                  <span className="text-[10px] text-slate-400 mb-2">駕照正面</span>
+                  {previews.license ? <img src={previews.license} className="h-20 object-cover rounded" /> : <span className="text-2xl">🪪</span>}
+                  <input type="file" className="hidden" onChange={e => handleFile(e, 'license')} accept="image/*" />
+                </label>
+              </div>
+              <button onClick={handleUpload} className="btn-prime mt-4 italic">確認上傳並送出</button>
+              <button onClick={() => setLayer('gate')} className="w-full text-slate-500 text-xs py-2">返回首頁</button>
+            </div>
           </div>
         </div>
       );
