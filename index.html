@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIuWcqOWcsOeJqeW8gemBiue4vemDqCIsCiAgInNob3J0X25hbWUiOiAi5Zyo5Zyw54mp5rWBICIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDIwNjE3IiwKICAidGhlbWVfY29sb3IiOiAiIzAyMDYxNyIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzI5OTEvMjk5MTEyNy5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
-    <title>在地物流 營運總部 v2026.Final</title>
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIlN1cHJlbmUtVjkyIiwKICAic2hvcnRfbmFtZSI6ICJTdXByZW1lIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwMjA2MTciLAogICJ0aGVtZV9jb2xvciI6ICIjMDIwNjE3IiwKICAiaWNvbnMiOiBbIHsgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8yOTkxLzI5OTExMjcucmVuZyIsICJzaXplcyI6ICI1MTJ4NTEyIiwgInR5cGUiOiAiaW1hZ2UvcG5nIiB9IF0KfQ==">
+    <title>Supreme-V92 營運總部</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -14,19 +14,16 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root { --gold: #f59e0b; --bg: #020617; }
         body { background-color: var(--bg); color: #f1f5f9; font-family: 'PingFang TC', sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
-        .gold-glow { box-shadow: 0 20px 50px rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); }
-        .page-enter { animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .btn-main { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #000; font-weight: 950; border-radius: 24px; transition: 0.3s; cursor: pointer; border: none; }
-        .btn-main:active { transform: scale(0.95); }
-        canvas { border-radius: 12px; touch-action: none; }
+        .btn-supreme { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #000; font-weight: 950; border-radius: 12px; transition: 0.2s; }
+        .btn-danger { background: #450a0a; color: #f87171; border: 1px solid #991b1b; border-radius: 12px; }
+        .page-enter { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
+        canvas { background: white; border-radius: 16px; touch-action: none; }
     </style>
 </head>
 <body>
@@ -35,6 +32,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
+        // --- 根據您的提供資訊進行配置 ---
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
             authDomain: "supreme-v92.firebaseapp.com",
@@ -44,56 +42,41 @@
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const storage = firebase.storage();
         const appId = 'supreme-v92';
 
         function App() {
             const [u, setU] = useState(null); 
             const [ps, setPs] = useState([]);
             const [layer, setLayer] = useState('gate'); 
-            const [role, setRole] = useState(null); // 'OWNER', 'EXECUTIVE', 'DRIVER'
+            const [role, setRole] = useState(null); 
             const [toast, setToast] = useState("");
+            const [broadcast, setBroadcast] = useState("營運系統穩定連線中");
+
             const showToast = (m) => { setToast(m); setTimeout(()=>setToast(""), 3000); };
 
             useEffect(() => {
                 const unsub = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners')
                     .onSnapshot(snap => { 
-                        const data = snap.docs.map(d => ({ id: d.id, ...d.data() })); 
-                        setPs(data); 
-                        if(u) setU(data.find(x => x.id === u.id) || u);
+                        setPs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); 
                     });
                 return () => unsub();
-            }, [u?.id]);
+            }, []);
 
             return (
-                <div className="min-h-screen relative overflow-x-hidden">
-                    <div className={`fixed left-1/2 -translate-x-1/2 z-[9999] transition-all duration-500 bg-emerald-500 text-black px-8 py-3 rounded-full font-black shadow-2xl ${toast ? 'top-8 opacity-100' : '-top-20 opacity-0'}`}>{toast}</div>
+                <div className="min-h-screen relative">
+                    <div className={`fixed left-1/2 -translate-x-1/2 z-[9999] transition-all duration-500 bg-amber-500 text-black px-8 py-3 rounded-full font-black shadow-2xl ${toast ? 'top-8 opacity-100' : '-top-20 opacity-0'}`}>{toast}</div>
                     
                     <div className="page-enter">
-                        {layer === 'gate' && <Gate onLogin={(ph, pin, isRemember) => {
+                        {layer === 'gate' && <Gate onLogin={(ph, pin) => {
                             const cp = ph.replace(/-/g, '');
-                            // 1. 超級管理員 (你)
-                            if (cp === "0976017938" && pin === "8305319") {
-                                setRole('OWNER'); setLayer('admin');
-                                if(isRemember) localStorage.setItem('saved_ph', ph); localStorage.setItem('saved_pin', pin);
-                                return;
-                            }
-                            // 2. 人事會計 (營運總監)
-                            if (cp === "0988128172" && pin === "0172") {
-                                setRole('EXECUTIVE'); setLayer('admin');
-                                if(isRemember) localStorage.setItem('saved_ph', ph); localStorage.setItem('saved_pin', pin);
-                                return;
-                            }
-                            // 3. 夥伴登入
+                            if (cp === "0976017938" && pin === "8305319") { setRole('OWNER'); setLayer('admin'); return; }
+                            if (cp === "0988128172" && pin === "0172") { setRole('EXECUTIVE'); setLayer('admin'); return; }
                             const t = ps.find(p => p.phone === cp && p.pin === pin);
-                            if(t) { 
-                                setU(t); setRole('DRIVER'); setLayer('driver'); 
-                                if(isRemember) localStorage.setItem('saved_ph', ph); localStorage.setItem('saved_pin', pin);
-                            } else alert("資訊錯誤");
+                            if(t) { setU(t); setRole('DRIVER'); setLayer('driver'); } else alert("資訊錯誤，無法核准進入");
                         }} />}
                         
-                        {layer === 'admin' && <AdminHub ps={ps} role={role} setLayer={setLayer} db={db} appId={appId} showToast={showToast} />}
-                        {layer === 'driver' && <DriverHub u={u} setLayer={setLayer} db={db} appId={appId} showToast={showToast} storage={storage} />}
+                        {layer === 'admin' && <AdminHub ps={ps} role={role} setLayer={setLayer} db={db} appId={appId} showToast={showToast} broadcast={broadcast} setBroadcast={setBroadcast} />}
+                        {layer === 'driver' && <DriverHub u={u} setLayer={setLayer} db={db} appId={appId} showToast={showToast} />}
                     </div>
                 </div>
             );
@@ -101,93 +84,103 @@
 
         function Gate({ onLogin }) {
             const [ph, setPh] = useState(""); const [pin, setPin] = useState("");
-            const [remember, setRemember] = useState(false);
-
-            useEffect(() => {
-                const sPh = localStorage.getItem('saved_ph');
-                const sPin = localStorage.getItem('saved_pin');
-                if(sPh) { setPh(sPh); setPin(sPin); setRemember(true); }
-            }, []);
-
             return (
-                <div className="h-screen flex flex-col items-center justify-center p-6 bg-slate-950">
-                    <h1 className="text-5xl font-black text-white mb-2 italic tracking-tighter">在地物流</h1>
-                    <p className="text-amber-500 font-black text-[10px] tracking-[0.5em] uppercase mb-12">營運總部 v2026.Final</p>
-                    
-                    <div className="w-full max-w-sm glass p-10 rounded-[3rem] gold-glow mb-8">
-                        <input type="tel" className="w-full bg-slate-900 p-5 rounded-2xl mb-4 text-white font-bold outline-none border border-slate-800 focus:border-amber-500 transition" placeholder="手機號碼" value={ph} onChange={e=>setPh(e.target.value)} />
-                        <input type="password" title="PIN" className="w-full bg-slate-900 p-5 rounded-2xl mb-6 text-white font-bold outline-none border border-slate-800 focus:border-amber-500 transition tracking-widest text-center" placeholder="PIN 碼" value={pin} onChange={e=>setPin(e.target.value)} />
-                        
-                        <div className="flex items-center justify-center mb-8 cursor-pointer" onClick={()=>setRemember(!remember)}>
-                            <div className={`w-4 h-4 rounded border ${remember ? 'bg-amber-500 border-amber-500' : 'border-slate-600'}`}></div>
-                            <span className="ml-2 text-slate-500 text-[10px] font-bold uppercase">記住登入資訊</span>
-                        </div>
-
-                        <button onClick={()=>onLogin(ph, pin, remember)} className="btn-main w-full py-5 text-xl shadow-2xl uppercase">啟動系統</button>
+                <div className="h-screen flex flex-col items-center justify-center p-6 bg-slate-950 text-center">
+                    <h1 className="text-5xl font-black text-white italic mb-1">在地物流</h1>
+                    <p className="text-amber-500 font-bold text-[10px] tracking-[0.5em] mb-12 uppercase">Supreme-V92 Command Hub</p>
+                    <div className="w-full max-w-sm glass p-10 rounded-[3rem] border border-amber-500/20 shadow-2xl">
+                        <input type="tel" className="w-full bg-slate-900 p-5 rounded-2xl mb-4 text-white font-bold outline-none focus:border-amber-500 border border-white/5 transition" placeholder="手機號碼" value={ph} onChange={e=>setPh(e.target.value)} />
+                        <input type="password" title="pin" className="w-full bg-slate-900 p-5 rounded-2xl mb-8 text-amber-500 text-center text-3xl font-black tracking-widest outline-none focus:border-amber-500 border border-white/5" placeholder="••••" value={pin} onChange={e=>setPin(e.target.value)} />
+                        <button onClick={()=>onLogin(ph, pin)} className="btn-supreme w-full py-5 text-xl">授權並登入</button>
                     </div>
                 </div>
             );
         }
 
-        function AdminHub({ ps, role, setLayer, db, appId, showToast }) {
-            const [editTarget, setEditTarget] = useState(null);
+        function AdminHub({ ps, role, setLayer, db, appId, showToast, broadcast, setBroadcast }) {
+            const [isAddMode, setIsAddMode] = useState(false);
+            const [newP, setNewP] = useState({ name: "", phone: "", pin: "" });
             const isOwner = role === 'OWNER';
-            
-            // 💡 影子過濾：會計登入時隱藏你的門號
-            const filteredList = useMemo(() => {
+
+            // 💡 影子權限：會計登入時隱藏管理員，管理員登入則看見全部
+            const displayList = useMemo(() => {
                 return role === 'EXECUTIVE' ? ps.filter(p => p.phone !== "0976017938") : ps;
             }, [ps, role]);
 
-            const exportMonthlyReport = () => {
-                const header = "姓名,正件總數,逆件總數,實領金額\n";
-                const rows = filteredList.map(p => `${p.name},${p.total_del},${p.total_pkp},${p.total_del*15 + p.total_pkp*10}`).join("\n");
-                const blob = new Blob(["\uFEFF" + header + rows], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = `營運結算_${new Date().toLocaleDateString()}.csv`;
-                link.click();
-                showToast("📊 數據報表產出完成");
+            const handleDelete = async (id) => {
+                if(confirm("⚠ 注意：即將永久刪除此營運帳號及所有數據。確定要執行？")) {
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(id).delete();
+                    showToast("🗑 帳號已永久銷毀");
+                }
+            };
+
+            const handleAdd = async () => {
+                if(!newP.name || !newP.phone) return alert("請填寫姓名與手機");
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').add({
+                    ...newP, total_del: 0, total_pkp: 0, salary_status: 'draft', bankAcc: ""
+                });
+                setIsAddMode(false);
+                showToast("👤 成功錄入新夥伴");
             };
 
             return (
-                <div className="p-4 lg:p-10 pb-32 max-w-7xl mx-auto">
-                    <header className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
+                <div className="p-6 lg:p-12 pb-32 max-w-7xl mx-auto page-enter">
+                    <header className="flex justify-between items-end mb-12 border-b border-amber-500/10 pb-8">
                         <div>
-                            <h2 className="text-3xl font-black italic">{isOwner ? "營運總部核心" : "最高決策指揮部"}</h2>
-                            <p className="text-amber-500 text-[10px] font-black tracking-widest uppercase">{role === 'EXECUTIVE' ? '營運總監模式' : '管理員模式'}</p>
+                            <h2 className="text-3xl font-black italic text-white tracking-tighter">營運管理總部</h2>
+                            <p className="text-amber-500 text-[10px] font-black tracking-[0.3em] mt-1 uppercase">
+                                {isOwner ? "Owner: Core System" : "Executive: Global Operations"}
+                            </p>
                         </div>
-                        <button onClick={()=>setLayer('gate')} className="text-slate-600 font-black text-[10px] uppercase underline">安全斷開</button>
+                        <button onClick={()=>setLayer('gate')} className="text-slate-600 font-bold text-xs underline uppercase">離線登出</button>
                     </header>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                        <div className="glass p-8 rounded-[3rem] border-l-4 border-amber-500">
-                            <p className="text-slate-500 text-[10px] font-black uppercase mb-2">財務核算</p>
-                            <button onClick={exportMonthlyReport} className="btn-main w-full py-4 text-xs mb-3 shadow-xl">📊 產出全球營運報表</button>
-                            {isOwner && <button onClick={()=>alert("清理今日數據")} className="w-full py-3 bg-rose-950/30 text-rose-500 rounded-2xl font-black text-[10px]">🗑️ 系統數據重置</button>}
+                    {/* 控制區：實體按鈕功能化 */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                        <div className="glass p-6 rounded-[2rem] border-l-4 border-amber-500">
+                            <p className="text-slate-500 text-[9px] font-black uppercase mb-4">人員管理控制</p>
+                            <button onClick={()=>setIsAddMode(true)} className="btn-supreme w-full py-4 text-xs font-black shadow-lg">➕ 新增夥伴帳號</button>
                         </div>
-                        <div className="glass p-8 rounded-[3rem] border-l-4 border-sky-500">
-                            <p className="text-slate-500 text-[10px] font-black uppercase mb-2">系統監控</p>
-                            <button className="w-full py-4 bg-sky-600/20 text-sky-400 border border-sky-600/40 rounded-2xl font-black text-xs">🔍 全功能診斷正常</button>
+                        <div className="glass p-6 rounded-[2rem] border-l-4 border-sky-500">
+                            <p className="text-slate-500 text-[9px] font-black uppercase mb-4">財務結算報表</p>
+                            <button className="w-full py-4 bg-sky-600/10 text-sky-400 border border-sky-600/30 rounded-2xl font-black text-xs">📊 產出全球報表</button>
                         </div>
-                        <div className="glass p-8 rounded-[3rem] border-l-4 border-emerald-500 text-center">
-                            <p className="text-slate-500 text-[10px] font-black uppercase mb-2">即時預算</p>
-                            <p className="text-4xl font-black text-white">${filteredList.reduce((acc,p)=>acc+(p.total_del*15+p.total_pkp*10),0).toLocaleString()}</p>
+                        <div className="glass p-6 rounded-[2rem] border-l-4 border-emerald-500 text-center">
+                            <p className="text-slate-500 text-[9px] font-black uppercase mb-2">本期預計支出</p>
+                            <p className="text-3xl font-black text-white">${displayList.reduce((acc,p)=>acc+(p.total_del*15+p.total_pkp*10),0).toLocaleString()}</p>
+                        </div>
+                        <div className="glass p-6 rounded-[2rem] border-l-4 border-purple-500">
+                            <p className="text-slate-500 text-[9px] font-black uppercase mb-4">系統公告管理</p>
+                            <button onClick={()=>{const m=prompt("請輸入廣播內容："); if(m) setBroadcast(m)}} className="w-full py-4 bg-purple-600/10 text-purple-400 border border-purple-600/30 rounded-2xl font-black text-xs">📢 更新全站廣播</button>
                         </div>
                     </div>
 
-                    <div className="glass rounded-[3.5rem] overflow-hidden">
+                    {/* 公告條 */}
+                    <div className="bg-slate-900/50 p-4 rounded-xl mb-12 flex items-center gap-3">
+                        <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span></span>
+                        <p className="text-xs text-slate-400 font-bold italic tracking-wide">{broadcast}</p>
+                    </div>
+
+                    {/* 管理名單 (CRUD 操作) */}
+                    <div className="glass rounded-[3rem] overflow-hidden shadow-2xl">
                         <table className="w-full text-center">
-                            <thead className="bg-slate-900/50 text-amber-500 text-[10px] uppercase font-black">
-                                <tr><th className="p-6">權限對象</th><th>數據 (正/逆)</th><th>狀態</th><th>管理</th></tr>
+                            <thead className="bg-slate-900/80 text-amber-500 text-[10px] font-black uppercase">
+                                <tr><th className="p-6">管理對象</th><th>回報數據</th><th>估算薪資</th><th>控制行為</th></tr>
                             </thead>
                             <tbody>
-                                {filteredList.map(p => (
+                                {displayList.map(p => (
                                     <tr key={p.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                                        <td className="p-6 text-left pl-10 font-black">{p.name}</td>
-                                        <td className="p-6 font-black"><span className="text-sky-400">{p.total_del}</span> / <span className="text-orange-400">{p.total_pkp}</span></td>
-                                        <td className="p-6"><span className="text-[10px] text-emerald-500 font-bold">● 已同步</span></td>
-                                        <td className="p-6">
-                                            <button onClick={()=>setEditTarget(p)} className="p-3 bg-indigo-950 text-indigo-400 rounded-xl mr-2">⚙️</button>
+                                        <td className="p-6 text-left pl-10">
+                                            <p className="font-black text-white">{p.name}</p>
+                                            <p className="text-[10px] text-slate-500 font-mono">{p.phone}</p>
+                                        </td>
+                                        <td className="p-6 font-black text-xs">
+                                            <span className="text-sky-400">{p.total_del}</span> / <span className="text-orange-400">{p.total_pkp}</span>
+                                        </td>
+                                        <td className="p-6 font-black text-emerald-400">$ {(p.total_del*15+p.total_pkp*10).toLocaleString()}</td>
+                                        <td className="p-6 space-x-2">
+                                            <button className="px-4 py-2 bg-slate-800 text-white rounded-lg text-[10px] font-black">修改</button>
+                                            <button onClick={()=>handleDelete(p.id)} className="px-4 py-2 btn-danger text-[10px] font-black uppercase tracking-tighter">永久刪除</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -195,15 +188,20 @@
                         </table>
                     </div>
 
-                    {editTarget && (
+                    {/* 新增 Modal */}
+                    {isAddMode && (
                         <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-6 z-[10001] backdrop-blur-3xl animate-in zoom-in">
-                            <div className="glass p-10 rounded-[4rem] w-full max-w-sm border border-amber-500/30">
-                                <h3 className="text-white font-black mb-6 italic">修改對象：{editTarget.name}</h3>
-                                <div className="space-y-4">
-                                    <input className="w-full bg-slate-900 p-4 rounded-xl text-white outline-none" defaultValue={editTarget.name} onChange={e=>db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(editTarget.id).update({name: e.target.value})} placeholder="姓名" />
-                                    <input className="w-full bg-slate-900 p-4 rounded-xl text-amber-500 font-black outline-none" defaultValue={editTarget.pin} onChange={e=>db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(editTarget.id).update({pin: e.target.value})} placeholder="PIN" />
+                            <div className="glass p-10 rounded-[4rem] w-full max-w-sm border border-amber-500/20 shadow-2xl">
+                                <h3 className="text-2xl font-black text-white mb-8 italic">新增成員授權</h3>
+                                <div className="space-y-4 mb-8">
+                                    <input className="w-full bg-slate-900 p-4 rounded-xl text-white outline-none border border-white/5" placeholder="成員姓名" onChange={e=>setNewP({...newP, name:e.target.value})} />
+                                    <input className="w-full bg-slate-900 p-4 rounded-xl text-white outline-none border border-white/5" placeholder="手機門號" onChange={e=>setNewP({...newP, phone:e.target.value})} />
+                                    <input className="w-full bg-slate-900 p-4 rounded-xl text-amber-500 font-black outline-none border border-white/5" placeholder="設定 PIN (4-7位)" onChange={e=>setNewP({...newP, pin:e.target.value})} />
                                 </div>
-                                <button onClick={()=>{setEditTarget(null); showToast("✅ 更新完成");}} className="btn-main w-full py-4 mt-8">儲存退出</button>
+                                <div className="flex gap-4">
+                                    <button onClick={()=>setIsAddMode(false)} className="flex-1 text-slate-500 font-bold">取消</button>
+                                    <button onClick={handleAdd} className="btn-supreme flex-[2] py-4">確認授權加入</button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -212,84 +210,21 @@
         }
 
         function DriverHub({ u, setLayer, db, appId, showToast }) {
-            const [d, setD] = useState(""); const [p, setP] = useState("");
-            const [signModal, setSignModal] = useState(false);
-            const canvasRef = useRef(null);
-            const [isDrawing, setIsDrawing] = useState(false);
-
-            const startDrawing = (e) => {
-                const ctx = canvasRef.current.getContext('2d');
-                const rect = canvasRef.current.getBoundingClientRect();
-                const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-                const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-                ctx.beginPath(); ctx.moveTo(x, y); setIsDrawing(true);
-            };
-            const draw = (e) => {
-                if (!isDrawing) return;
-                const ctx = canvasRef.current.getContext('2d');
-                const rect = canvasRef.current.getBoundingClientRect();
-                const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-                const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-                ctx.lineTo(x, y); ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.stroke();
-            };
-
-            const submitReport = async () => {
-                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({ total_del: Number(d), total_pkp: Number(p), salary_status: 'draft' });
-                showToast("🚀 數據已同步至總部"); setD(""); setP("");
-            };
-
-            const saveSignature = async () => {
-                const sig = canvasRef.current.toDataURL();
-                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({ salary_signature: sig, salary_status: 'signed' });
-                showToast("🖊️ 簽章完成"); setSignModal(false);
-            };
-
+            const [del, setDel] = useState(""); const [pkp, setPkp] = useState("");
             return (
-                <div className="h-screen flex flex-col p-6 bg-slate-950">
+                <div className="p-6 max-w-lg mx-auto page-enter pt-16">
                     <header className="flex justify-between items-center mb-10">
-                        <div>
-                            <h2 className="text-3xl font-black italic">夥伴工作台</h2>
-                            <p className="text-[10px] text-amber-500 font-bold uppercase tracking-widest">{u.name}</p>
-                        </div>
-                        <button onClick={()=>setLayer('gate')} className="text-slate-600 font-black text-[10px]">登出</button>
+                        <h2 className="text-2xl font-black italic">工作台</h2>
+                        <button onClick={()=>setLayer('gate')} className="text-slate-600 font-bold text-xs uppercase">登出</button>
                     </header>
-
-                    <div className="flex-1 space-y-6">
-                        <div className="glass p-8 rounded-[3rem] gold-glow text-center">
-                            <p className="text-slate-500 text-[10px] font-black uppercase mb-6">今日數據回報</p>
-                            <div className="grid grid-cols-2 gap-4 mb-8">
-                                <div className="bg-slate-900/50 p-6 rounded-3xl">
-                                    <p className="text-sky-400 text-[10px] mb-2 font-black">正件</p>
-                                    <input type="number" value={d} onChange={e=>setD(e.target.value)} className="bg-transparent text-4xl text-center w-full font-black outline-none text-white" placeholder="0" />
-                                </div>
-                                <div className="bg-slate-900/50 p-6 rounded-3xl">
-                                    <p className="text-orange-400 text-[10px] mb-2 font-black">逆件</p>
-                                    <input type="number" value={p} onChange={e=>setP(e.target.value)} className="bg-transparent text-4xl text-center w-full font-black outline-none text-white" placeholder="0" />
-                                </div>
-                            </div>
-                            <button onClick={submitReport} className="btn-main w-full py-6 text-xl">提交今日報單</button>
+                    <div className="glass p-10 rounded-[3rem] border border-amber-500/20 text-center mb-8">
+                        <p className="text-slate-500 text-[10px] font-black uppercase mb-8 tracking-widest">今日回報數據</p>
+                        <div className="grid grid-cols-2 gap-4 mb-8 text-center">
+                            <div className="bg-slate-900 p-6 rounded-3xl"><p className="text-sky-400 text-[9px] font-bold mb-2 uppercase">正件</p><input type="number" className="bg-transparent text-white text-3xl font-black w-full text-center outline-none" placeholder="0" value={del} onChange={e=>setDel(e.target.value)} /></div>
+                            <div className="bg-slate-900 p-6 rounded-3xl"><p className="text-orange-400 text-[9px] font-bold mb-2 uppercase">逆件</p><input type="number" className="bg-transparent text-white text-3xl font-black w-full text-center outline-none" placeholder="0" value={pkp} onChange={e=>setP(e.target.value)} /></div>
                         </div>
-                        <div className="glass p-6 rounded-3xl flex items-center justify-between">
-                            <p className="text-white font-black text-sm">預估酬勞: <span className="text-emerald-400">${(u.total_del*15+u.total_pkp*10).toLocaleString()}</span></p>
-                            <button onClick={()=>setSignModal(true)} className="bg-amber-500 text-black px-6 py-2 rounded-full font-black text-[10px]">簽名核對</button>
-                        </div>
+                        <button onClick={()=>{db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(u.id).update({total_del:Number(del), total_pkp:Number(pkp)}); showToast("🚀 數據已同步更新")}} className="btn-supreme w-full py-5 text-xl font-black">同步提交報單</button>
                     </div>
-
-                    {signModal && (
-                        <div className="fixed inset-0 bg-black/98 flex items-center justify-center p-6 z-[10001] backdrop-blur-3xl">
-                            <div className="glass p-10 rounded-[4rem] w-full max-w-sm text-center">
-                                <h3 className="text-white font-black mb-6 italic">數位簽名</h3>
-                                <div className="bg-white rounded-2xl overflow-hidden mb-6">
-                                    <canvas ref={canvasRef} width={300} height={150} className="w-full" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={()=>setIsDrawing(false)} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={()=>setIsDrawing(false)} />
-                                </div>
-                                <div className="flex gap-4">
-                                    <button onClick={()=>{const ctx=canvasRef.current.getContext('2d'); ctx.clearRect(0,0,300,150);}} className="flex-1 py-4 bg-slate-800 text-slate-400 rounded-2xl font-black text-xs">重寫</button>
-                                    <button onClick={saveSignature} className="btn-main flex-1 py-4 text-xs">確認</button>
-                                </div>
-                                <button onClick={()=>setSignModal(false)} className="mt-8 text-slate-600 text-[10px] font-black uppercase">返回</button>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         }
