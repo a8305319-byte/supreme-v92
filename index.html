@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>金耀智慧營運總部 v34.2 (包含歷史紀錄升級版)</title>
+  <title>金耀智慧營運總部 v34.2 (功能全開版)</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -88,7 +88,7 @@
         const sid = localStorage.getItem('ggsoc_sid');
         if (sid) {
           try {
-            const snap = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('sessions').doc(sid).get().then(s => {
+            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('sessions').doc(sid).get().then(s => {
               if (s.exists) handleAutoNavigation(s.data().phone, s.data().pin);
             });
           } catch (e) {}
@@ -157,7 +157,7 @@
     }
 
     // ==========================================
-    // 1. 入口層 (完全還原截圖 2 & 3 介面與行為)
+    // 1. 入口層 (維持原樣)
     // ==========================================
     function Gate({ onLogin, announcement, setLayer }) {
       const [ph, setPh] = useState("");
@@ -201,10 +201,13 @@
     }
 
     // ==========================================
-    // 2. 指揮中心 (包含最新新增的歷史紀錄與 2026 精算功能)
+    // 2. 指揮中心 (加入 修改、刪除、CSV匯出 功能)
     // ==========================================
     function AdminHub({ partners, onLogout, showSensitive, setShowSensitive, statusFilter, setStatusFilter, searchQuery, setSearchQuery, db, appId, showToast, announcement }) {
       const [historyData, setHistoryData] = useState(null);
+      const [editProfile, setEditProfile] = useState(null); // 🎯 控制修改人員視窗
+      const [showTools, setShowTools] = useState(false); // 控制工具選單
+
       const getToday = () => new Date().toLocaleDateString('en-CA');
 
       const filteredPartners = useMemo(() => {
@@ -216,10 +219,13 @@
         return result;
       }, [partners, searchQuery, statusFilter]);
 
+      const calculateNet = (p) => {
+        return (p.total_del * (p.custom_del_price || 15)) + (p.total_pkp * (p.custom_pkp_price || 10)) + (p.custom_adj || 0) - (p.labor_fee || 0) - (p.health_fee || 0);
+      };
+
       const totals = useMemo(() => {
         return filteredPartners.reduce((acc, p) => {
-          const net = (p.total_del * (p.custom_del_price || 15)) + (p.total_pkp * (p.custom_pkp_price || 10)) + (p.custom_adj || 0) - (p.labor_fee || 0) - (p.health_fee || 0);
-          return { del: acc.del + (p.total_del || 0), pkp: acc.pkp + (p.total_pkp || 0), net: acc.net + net };
+          return { del: acc.del + (p.total_del || 0), pkp: acc.pkp + (p.total_pkp || 0), net: acc.net + calculateNet(p) };
         }, { del: 0, pkp: 0, net: 0 });
       }, [filteredPartners]);
 
@@ -248,14 +254,62 @@
         setHistoryData({ name: p.name, data: snap.docs.map(d => d.data()) });
       };
 
+      // 🎯 網銀匯出功能 (產生 CSV)
+      const exportCSV = () => {
+        const headers = "夥伴姓名,手機號碼,實領金額\n";
+        const rows = filteredPartners.map(p => `${p.name},${p.phone},${calculateNet(p)}`).join("\n");
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), headers + rows], { type: 'text/csv;charset=utf-8;' }); // 加上 BOM 讓 Excel 正常讀取中文
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `營運總部_網銀匯出_${getToday()}.csv`;
+        link.click();
+        showToast("📥 網銀結算表已下載！");
+      };
+
+      // 🎯 儲存修改的人事資料
+      const saveProfileEdit = async () => {
+        const newName = document.getElementById('edit_name').value;
+        const newPhone = document.getElementById('edit_phone').value;
+        const newPin = document.getElementById('edit_pin').value;
+        
+        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(editProfile.id).update({
+          name: newName, phone: newPhone, pin: newPin
+        });
+        setEditProfile(null);
+        showToast("✅ 人事檔案修改成功");
+      };
+
+      // 🎯 刪除人員功能
+      const deletePartner = async () => {
+        if(window.confirm(`⚠️ 嚴重警告：確定要永久刪除夥伴【${editProfile.name}】的資料嗎？刪除後無法復原！`)) {
+          await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(editProfile.id).delete();
+          setEditProfile(null);
+          showToast("🗑️ 人員已成功刪除");
+        }
+      };
+
       return (
-        <div className="p-4 lg:p-10 max-w-[1700px] mx-auto overflow-x-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+        <div className="p-4 lg:p-10 max-w-[1700px] mx-auto overflow-x-auto relative">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 relative">
             <h2 className="text-white font-black text-5xl italic tracking-tighter flex items-center gap-2">數據指揮中心 <span className="text-amber-500 font-black">.</span></h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 relative">
               <button onClick={handlePublish} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md">💬 公告</button>
-              <button onClick={() => showToast("⚙️ 工具選單即將開放")} className="bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md">⚙️ 工具</button>
-              <button onClick={() => showToast("📥 網銀匯出準備中")} className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md">📥 匯出網銀</button>
+              
+              {/* ⚙️ 工具選單 */}
+              <div className="relative">
+                <button onClick={() => setShowTools(!showTools)} className="bg-amber-600 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md">⚙️ 工具</button>
+                {showTools && (
+                  <div className="absolute top-10 right-0 w-48 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-50 p-2">
+                    <button onClick={() => { showToast("功能開發中"); setShowTools(false); }} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-slate-700 rounded-lg">批次歸零今日數據</button>
+                    <button onClick={() => setShowTools(false)} className="w-full text-left px-3 py-2 text-sm text-rose-400 hover:bg-slate-700 rounded-lg">關閉選單</button>
+                  </div>
+                )}
+              </div>
+
+              {/* 📥 網銀匯出 (已寫入功能) */}
+              <button onClick={exportCSV} className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md">📥 匯出網銀</button>
+              
               <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-4 py-2 rounded-xl text-xs font-black border border-rose-500/20 shadow-md">退出系統</button>
             </div>
           </div>
@@ -298,7 +352,7 @@
               </thead>
               <tbody>
                 {filteredPartners.map(p => {
-                  const net = (p.total_del * (p.custom_del_price || 15)) + (p.total_pkp * (p.custom_pkp_price || 10)) + (p.custom_adj || 0) - (p.labor_fee || 0) - (p.health_fee || 0);
+                  const net = calculateNet(p);
                   const isLeave = p.work_status === 'leave' && p.leave_date === getToday();
                   const hasReported = p.last_report?.date === getToday();
                   const isMasked = !showSensitive[p.id];
@@ -328,7 +382,8 @@
                         <div className="flex gap-2 justify-center flex-wrap w-32">
                           <button onClick={() => viewHistory(p)} className="bg-slate-800 text-white px-2 py-1.5 rounded-lg text-[10px] font-black shadow-lg">📜 歷史</button>
                           <button onClick={() => window.print()} className="bg-amber-600 text-black px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">🖨️ 列印</button>
-                          <button onClick={() => showToast("檔案系統連結中...")} className="bg-indigo-900/40 text-indigo-300 px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">📁 檔案</button>
+                          {/* 🎯 這裡原本只跳提示的檔案按鈕，現在會打開 修改/刪除 介面 */}
+                          <button onClick={() => setEditProfile(p)} className="bg-indigo-900/80 text-indigo-200 px-2 py-1.5 rounded-lg text-[10px] font-black italic shadow-lg">📁 檔案</button>
                         </div>
                       </td>
                     </tr>
@@ -337,6 +392,35 @@
               </tbody>
             </table>
           </div>
+
+          {/* 🎯 修改與刪除的專屬面板 (點擊📁 檔案彈出) */}
+          {editProfile && (
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[400] flex items-center justify-center p-4">
+              <div className="glass-panel w-full max-w-sm rounded-[2rem] p-6 gold-border relative">
+                <h3 className="font-black text-xl text-white mb-6">⚙️ 人事檔案管理</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-slate-400 ml-2">夥伴姓名</label>
+                    <input id="edit_name" defaultValue={editProfile.name} className="input-box !mb-0" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 ml-2">手機號碼 (登入帳號)</label>
+                    <input id="edit_phone" defaultValue={editProfile.phone} className="input-box !mb-0" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 ml-2">PIN 安全碼 (登入密碼)</label>
+                    <input id="edit_pin" defaultValue={editProfile.pin} className="input-box !mb-0" />
+                  </div>
+                </div>
+                
+                <div className="mt-8 flex gap-3">
+                  <button onClick={saveProfileEdit} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition shadow-lg">💾 儲存修改</button>
+                  <button onClick={deletePartner} className="flex-1 bg-rose-700 hover:bg-rose-600 text-white font-black py-3 rounded-xl transition shadow-lg border border-rose-500">🗑️ 刪除人員</button>
+                </div>
+                <button onClick={() => setEditProfile(null)} className="absolute top-6 right-6 text-slate-400 hover:text-white text-xl">✕</button>
+              </div>
+            </div>
+          )}
 
           {historyData && (
             <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] flex items-center justify-center p-4">
@@ -363,7 +447,7 @@
     }
 
     // ==========================================
-    // 3. 司機工作台 (包含寫入歷史存檔機制)
+    // 3. 司機工作台 (維持原樣，包含歷史寫入)
     // ==========================================
     function DriverHub({ partners, onLogout, user, appId, db, showToast }) {
       const [delCount, setDelCount] = useState("");
@@ -421,7 +505,7 @@
             </button>
             <div className="flex gap-4 mb-8">
               <button onClick={handleLeave} className="flex-1 py-4 rounded-2xl bg-rose-900/30 text-rose-400 text-xs shadow-lg border border-rose-900 hover:bg-rose-500 hover:text-white transition italic">🔴 緊急請假</button>
-              <button onClick={() => showToast("🛠️ 功能開發中...")} className="flex-1 py-4 rounded-2xl bg-slate-800 border border-slate-700 text-amber-500 hover:bg-amber-900 hover:text-amber-300 transition text-xs italic shadow-lg">🛠️ 更新個資</button>
+              <button onClick={() => showToast("🛠️ 個資更新即將開放")} className="flex-1 py-4 rounded-2xl bg-slate-800 border border-slate-700 text-amber-500 hover:bg-amber-900 hover:text-amber-300 transition text-xs italic shadow-lg">🛠️ 更新個資</button>
             </div>
             <button onClick={onLogout} className="text-rose-500 text-sm font-black underline underline-offset-8 decoration-rose-500/30">🔒 安全登出系統</button>
           </div>
@@ -430,7 +514,7 @@
     }
 
     // ==========================================
-    // 4. AI 面試流程 (完全依照截圖 1 的文字與行為還原)
+    // 4. AI 面試流程 (維持截圖 1 狀態)
     // ==========================================
     function OnboardingFlow({ setLayer, db, appId, showToast }) {
       const [messages, setMessages] = useState([{ type: 'bot', text: "您好！我是營運 AI 助手。在正式開始前，請先告訴我您的姓名與手機號碼。" }]);
@@ -471,7 +555,6 @@
         } else {
           setStep('done');
           setTimeout(async () => {
-            // 完全依照截圖 1 的對話文字
             addMsg('bot', "實務評估已完成！系統已記錄您的面試紀錄。請返回首頁進行第二步：人事建檔影像上傳。");
             try {
               await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('partners').doc(`p_${phone}`).set({
@@ -516,7 +599,6 @@
                 ))}
               </div>
             )}
-            {/* 完全依照截圖 1 的按鈕文字 */}
             {step === 'done' && <button onClick={() => setLayer('gate')} className="btn-prime font-bold">返回首頁進行下一步</button>}
           </div>
         </div>
