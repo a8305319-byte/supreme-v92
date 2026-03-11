@@ -92,7 +92,6 @@
             transition: opacity 0.3s; box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
         }
         
-        /* 薪資條動畫 */
         @keyframes slideUpFade {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -118,8 +117,8 @@
 
     <div id="loading-screen" class="loading-overlay">
         <div class="spinner"></div>
-        <p class="mt-4 text-sky-500 font-bold tracking-widest text-xs uppercase">Connecting Database...</p>
-        <button onclick="window.hideLoading()" class="mt-8 text-slate-700 text-[10px] underline">強制進入</button>
+        <p class="mt-4 text-sky-500 font-bold tracking-widest text-xs uppercase">CONNECTING DATABASE...</p>
+        <button onclick="window.forceEnter()" class="mt-8 text-slate-500 hover:text-white px-6 py-2 border border-slate-700 rounded-full text-xs transition-colors">強制進入系統</button>
     </div>
 
     <div id="quick-add-modal" class="custom-modal">
@@ -141,13 +140,13 @@
     </div>
 
     <!-- 登入閘口 -->
-    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-8">
+    <div id="gate" class="min-h-screen flex flex-col items-center justify-center p-8 relative">
         <div class="mb-12 text-center">
             <h1 class="text-6xl font-black text-white italic tracking-tighter mb-1">在地物流</h1>
             <p class="text-slate-500 text-[10px] tracking-[0.4em] uppercase font-bold">Cloud Operation System</p>
         </div>
         
-        <div class="w-full max-w-[340px] space-y-4">
+        <div class="w-full max-w-[340px] space-y-4 relative z-10">
             <div class="bg-slate-900/60 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl backdrop-blur-md">
                 <input type="tel" id="login_phone" placeholder="手機號碼" class="input-box" maxlength="10">
                 <input type="password" id="login_pin" placeholder="PIN 碼" class="input-box" maxlength="4">
@@ -155,8 +154,8 @@
             </div>
             
             <div class="space-y-3 pt-4">
-                <button onclick="window.showLayer('onboarding')" class="w-full py-4 rounded-xl border border-sky-500/20 text-sky-400 font-bold text-sm bg-sky-500/5">一、職能實務評估 (5題)</button>
-                <button onclick="window.showLayer('profile-gate')" class="w-full py-4 rounded-xl border border-orange-500/20 text-orange-400 font-bold text-sm bg-orange-500/5">二、人事資料建檔</button>
+                <button onclick="window.showLayer('onboarding')" class="w-full py-4 rounded-xl border border-sky-500/20 text-sky-400 font-bold text-sm bg-sky-500/5 hover:bg-sky-500/10 transition">一、職能實務評估 (5題)</button>
+                <button onclick="window.showLayer('profile-gate')" class="w-full py-4 rounded-xl border border-orange-500/20 text-orange-400 font-bold text-sm bg-orange-500/5 hover:bg-orange-500/10 transition">二、人事資料建檔</button>
             </div>
         </div>
     </div>
@@ -170,12 +169,12 @@
                     <p class="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mt-2 ml-1">Fleet Management Dashboard</p>
                 </div>
                 <div class="flex gap-3">
-                    <button onclick="window.toggleQuickAdd(true)" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-xl text-xs font-black shadow-lg">+ 快速新增人員</button>
-                    <button onclick="window.handleLogout()" class="bg-slate-800 text-slate-400 px-6 py-3 rounded-xl text-xs font-bold hover:bg-rose-900/50 hover:text-rose-400">安全登出</button>
+                    <button onclick="window.toggleQuickAdd(true)" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-xl text-xs font-black shadow-lg">+ 快速新增</button>
+                    <button onclick="window.handleLogout()" class="bg-slate-800 text-slate-400 px-6 py-3 rounded-xl text-xs font-bold hover:bg-rose-900/50 hover:text-rose-400 transition">安全登出</button>
                 </div>
             </header>
 
-            <div class="admin-table-container shadow-2xl">
+            <div class="admin-table-container shadow-2xl relative">
                 <table class="admin-table">
                     <thead>
                         <tr>
@@ -183,7 +182,7 @@
                         </tr>
                     </thead>
                     <tbody id="admin-list">
-                        <tr><td colspan="9" class="py-24 text-slate-700 font-bold italic">Synchronizing Fleet Data...</td></tr>
+                        <tr><td colspan="9" class="py-24 text-slate-700 font-bold italic">資料庫同步中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -193,7 +192,7 @@
     <!-- 面試評估頁 -->
     <div id="onboarding" class="layer">
         <div class="w-full max-w-[480px]">
-            <button onclick="window.showLayer('gate')" class="text-slate-500 mb-6 text-xs uppercase font-bold">← 返回首頁</button>
+            <button onclick="window.showLayer('gate')" class="text-slate-500 mb-6 text-xs uppercase font-bold hover:text-white transition">← 返回首頁</button>
             <div class="id-card">
                 <h2 class="text-2xl font-black text-white mb-6 italic">夥伴職能實務評估</h2>
                 <div class="space-y-4 mb-6">
@@ -228,7 +227,7 @@
                         <label class="block text-[11px] text-slate-300"><input type="radio" name="q5" value="0" class="mr-2"> 不管，慢慢送到半夜為止</label>
                     </div>
                 </div>
-                <button onclick="window.handleSubmitInterview()" class="btn-prime mt-8 bg-sky-600">提交評估</button>
+                <button onclick="window.handleSubmitInterview()" class="btn-prime mt-8 bg-sky-600 hover:bg-sky-500">提交評估</button>
             </div>
         </div>
     </div>
@@ -236,12 +235,12 @@
     <!-- 人事建檔驗證 -->
     <div id="profile-gate" class="layer">
         <div class="w-full max-w-[340px]">
-            <button onclick="window.showLayer('gate')" class="text-slate-500 mb-6 text-xs uppercase font-bold">← 返回首頁</button>
+            <button onclick="window.showLayer('gate')" class="text-slate-500 mb-6 text-xs uppercase font-bold hover:text-white transition">← 返回首頁</button>
             <div class="id-card">
-                <h3 class="text-white font-bold mb-6 italic">身分驗證</h3>
+                <h3 class="text-white font-bold mb-6 italic text-xl">身分驗證</h3>
                 <input type="tel" id="pg_phone" placeholder="手機號碼" class="input-box" maxlength="10">
                 <input type="password" id="pg_pin" placeholder="PIN碼 (預設0000)" class="input-box" maxlength="4">
-                <button onclick="window.handleProfileVerify()" class="btn-prime bg-orange-600">驗證進入</button>
+                <button onclick="window.handleProfileVerify()" class="btn-prime bg-orange-600 hover:bg-orange-500">驗證進入</button>
             </div>
         </div>
     </div>
@@ -267,7 +266,7 @@
                         <label class="text-[10px] text-slate-500 font-bold mb-1 block ml-1">聯絡與車輛</label>
                         <input type="text" id="setup_addr" placeholder="通訊地址" class="input-box">
                         <div class="flex gap-2">
-                            <select id="setup_vehicle_type" class="input-box !w-1/3 !text-[13px]">
+                            <select id="setup_vehicle_type" class="input-box !w-1/3 !text-[13px] bg-slate-800">
                                 <option value="機車">機車</option>
                                 <option value="貨車">貨車</option>
                             </select>
@@ -280,7 +279,7 @@
                         <input type="tel" id="setup_em_phone" placeholder="聯絡人電話" class="input-box !py-2 !mb-0" maxlength="10">
                     </div>
                     
-                    <button onclick="window.handleSaveProfile()" class="btn-prime bg-orange-600 mt-4">儲存建檔資料</button>
+                    <button onclick="window.handleSaveProfile()" class="btn-prime bg-orange-600 mt-4 hover:bg-orange-500">儲存建檔資料</button>
                 </div>
             </div>
         </div>
@@ -295,41 +294,22 @@
                     <div><span class="text-[10px] text-sky-500 font-bold block mb-1">今日正件</span><input type="number" id="rep_del" placeholder="0" class="input-box !text-2xl !font-black"></div>
                     <div><span class="text-[10px] text-orange-500 font-bold block mb-1">今日逆件</span><input type="number" id="rep_rev" placeholder="0" class="input-box !text-2xl !font-black"></div>
                 </div>
-                <button onclick="window.handleSubmitReport()" class="btn-prime bg-sky-600 shadow-xl mb-6">提交配送數據</button>
+                <button onclick="window.handleSubmitReport()" class="btn-prime bg-sky-600 shadow-xl mb-6 hover:bg-sky-500">提交配送數據</button>
                 
                 <!-- 今日薪資條收件區 -->
                 <div id="hub-payslip-area" class="border-t border-slate-800 pt-6 mt-2">
                     <!-- 內容由 JS 動態產生 -->
                 </div>
 
-                <button onclick="window.handleLogout()" class="mt-8 text-slate-500 text-xs underline block w-full">安全登出帳號</button>
+                <button onclick="window.handleLogout()" class="mt-8 text-slate-500 text-xs underline block w-full hover:text-white transition">安全登出帳號</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'logistics-master-v92';
-        const partnersCol = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
-
-        const SALARY_GRADES = [0, 29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
-        let partners = [];
-        let sessionUser = null;
-        let deleteTargetId = null;
-
-        // 取得今日字串 (YYYY-MM-DD)
-        const getTodayString = () => {
-            const today = new Date();
-            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        };
-
+    <!-- ============================================== -->
+    <!-- 第一部分：基礎防呆腳本 -->
+    <!-- ============================================== -->
+    <script>
         window.showToast = (msg, isError = false) => {
             const t = document.getElementById('toast');
             t.innerText = msg;
@@ -338,12 +318,65 @@
             setTimeout(() => t.style.opacity = '0', 3000);
         };
 
-        window.hideLoading = () => document.getElementById('loading-screen').style.display = 'none';
-        
+        window.hideLoading = () => {
+            document.getElementById('loading-screen').style.display = 'none';
+        };
+
+        window.forceEnter = () => {
+            window.hideLoading();
+            window.showToast("已強制進入，若無法登入請確認網路狀態", true);
+        };
+
         window.showLayer = (id) => {
             document.querySelectorAll('.layer, #gate').forEach(el => el.style.display = 'none');
             const target = document.getElementById(id);
             if(target) target.style.display = 'flex';
+        };
+
+        setTimeout(() => {
+            const loader = document.getElementById('loading-screen');
+            if (loader && loader.style.display !== 'none') {
+                window.hideLoading();
+                window.showToast("資料庫連線逾時，系統切換為離線狀態", true);
+            }
+        }, 5000);
+    </script>
+
+    <!-- ============================================== -->
+    <!-- 第二部分：核心邏輯與 Firebase 模組 -->
+    <!-- ============================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        let app, db, auth, partnersCol;
+        let isOnline = false;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'logistics-master-v92';
+        
+        try {
+            const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : "{}";
+            const firebaseConfig = JSON.parse(configStr);
+            
+            if (Object.keys(firebaseConfig).length > 0) {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                partnersCol = collection(db, 'artifacts', appId, 'public', 'data', 'partners');
+                isOnline = true;
+            }
+        } catch (e) {
+            console.warn("無法初始化 Firebase:", e);
+        }
+
+        const SALARY_GRADES = [0, 29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
+        let partners = []; 
+        let sessionUser = null;
+        let deleteTargetId = null;
+
+        const getTodayString = () => {
+            const today = new Date();
+            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         };
 
         window.handleLogout = () => {
@@ -366,23 +399,31 @@
         window.handleLogin = () => {
             const ph = document.getElementById('login_phone').value.trim();
             const pi = document.getElementById('login_pin').value.trim();
-            if(ph === "0976017938" && pi === "0531") {
+            
+            // 總控台帳密 (包含 管理員 與 會計人事 更新 PIN 為 0172)
+            if((ph === "0976017938" && pi === "0531") || (ph === "0988128172" && pi === "0172")) {
                 window.showLayer('admin-panel');
                 renderAdmin();
+                window.showToast("歡迎進入總控台");
                 return;
             }
             
+            if(!isOnline && partners.length === 0) {
+                return window.showToast("離線狀態，無法取得人員資料", true);
+            }
+
             const p = partners.find(x => x.phone === ph);
             if(!p || p.pin !== pi) return window.showToast("手機或 PIN 碼錯誤", true);
             if(p.status !== 'approved') return window.showToast("帳號審核中", true);
             
             sessionUser = p;
             document.getElementById('hub_title').innerText = `夥伴 ${p.name}`;
-            renderPartnerHub(); // 渲染 Hub 包含薪資條
+            renderPartnerHub();
             window.showLayer('partner-hub');
         };
 
         window.processQuickAdd = async () => {
+            if(!isOnline) return window.showToast("離線狀態無法新增", true);
             const name = document.getElementById('qa_name').value.trim();
             const phone = document.getElementById('qa_phone').value.trim();
             const pin = document.getElementById('qa_pin').value.trim() || "0000";
@@ -393,7 +434,6 @@
             try {
                 btn.disabled = true;
                 btn.innerText = "傳輸中...";
-
                 const partnerId = `p_${phone}`;
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId), {
                     id: partnerId, name: name, phone: phone, pin: pin,
@@ -402,7 +442,6 @@
                     ins_base: 29500, ins_fm: 1, ins_toggle: true,
                     profile_completed: false, createdAt: serverTimestamp()
                 });
-
                 window.toggleQuickAdd(false);
                 window.showToast("人員新增成功！");
             } catch (err) {
@@ -413,16 +452,15 @@
         };
 
         window.handleSubmitInterview = async () => {
+            if(!isOnline) return window.showToast("系統未連線", true);
             const n = document.getElementById('int_name').value.trim();
             const ph = document.getElementById('int_phone').value.trim();
-            
             let score = 0;
             for(let i=1; i<=5; i++){
                 const val = document.querySelector(`input[name="q${i}"]:checked`)?.value;
                 if(!val) return window.showToast(`請回答第 ${i} 題`, true);
                 score += parseInt(val);
             }
-
             if(!n || ph.length < 10) return window.showToast("請填寫完整資料", true);
             
             try {
@@ -451,6 +489,7 @@
         };
 
         window.handleSaveProfile = async () => {
+            if(!isOnline) return window.showToast("系統未連線", true);
             const idNo = document.getElementById('setup_id_no').value.trim();
             const bC = document.getElementById('setup_bank_code').value.trim();
             const bA = document.getElementById('setup_bank_acc').value.trim();
@@ -465,8 +504,7 @@
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', sessionUser.id), {
                     id_number: idNo, bank_code: bC, bank_account: bA, address: addr,
-                    vehicle_type: vType, vehicle_plate: plate,
-                    emergency_name: emName, emergency_phone: emPhone,
+                    vehicle_type: vType, vehicle_plate: plate, emergency_name: emName, emergency_phone: emPhone,
                     profile_completed: true
                 });
                 window.showToast("人事建檔成功！");
@@ -475,7 +513,7 @@
         };
 
         window.handleSubmitReport = async () => {
-            if(!sessionUser) return window.showToast("連線遺失", true);
+            if(!sessionUser || !isOnline) return window.showToast("連線遺失", true);
             const d = parseInt(document.getElementById('rep_del').value) || 0;
             const r = parseInt(document.getElementById('rep_rev').value) || 0;
             if(d === 0 && r === 0) return window.showToast("請輸入今日數量", true);
@@ -490,8 +528,8 @@
             } catch (e) { window.showToast("同步失敗", true); }
         };
 
-        // ====== 薪資條功能：今日送件 ======
         window.sendTodayPayslip = async (partnerId, amount) => {
+            if(!isOnline) return window.showToast("系統未連線", true);
             try {
                 const today = getTodayString();
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', partnerId), {
@@ -502,12 +540,11 @@
                     }
                 });
                 window.showToast("薪資條已送出至夥伴收件匣！");
-            } catch (e) {
-                window.showToast("薪資條發送失敗", true);
-            }
+            } catch (e) { window.showToast("薪資條發送失敗", true); }
         };
 
         window.updatePartnerField = async (id, field, value) => {
+            if(!isOnline) return window.showToast("系統未連線", true);
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [field]: value });
                 window.showToast("設定已更新");
@@ -523,7 +560,7 @@
             document.getElementById('delete-modal').style.display = 'none';
         };
         window.executeDelete = async () => {
-            if(!deleteTargetId) return;
+            if(!deleteTargetId || !isOnline) return window.showToast("連線異常，無法刪除", true);
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', deleteTargetId));
                 window.showToast("已永久刪除人員");
@@ -537,7 +574,7 @@
         const renderAdmin = () => {
             const tbody = document.getElementById('admin-list');
             if(!partners.length) {
-                tbody.innerHTML = '<tr><td colspan="9" class="py-20 text-slate-700 italic">目前無人員資料。</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="py-20 text-slate-700 italic text-center">目前無人員資料。</td></tr>';
                 return;
             }
             let html = '';
@@ -578,9 +615,7 @@
                         <td class="text-sky-400 font-black text-sm">$${net.toLocaleString()}</td>
                         <td>
                             <div class="flex gap-2 justify-center">
-                                <!-- 送出薪資條按鈕 -->
                                 <button onclick="window.sendTodayPayslip('${p.id}', ${net})" class="text-sky-400 hover:text-white transition text-lg bg-sky-900/30 p-2 rounded-lg border border-sky-900/50 shadow-lg" title="發送今日薪資條">📤</button>
-                                <!-- 刪除按鈕 -->
                                 <button onclick="window.confirmDelete('${p.id}')" class="text-slate-500 hover:text-rose-500 transition text-lg bg-slate-900/50 p-2 rounded-lg border border-slate-800 hover:border-rose-900/50 shadow-lg" title="刪除人員">🗑️</button>
                             </div>
                         </td>
@@ -590,18 +625,15 @@
             tbody.innerHTML = html;
         };
 
-        // ====== 薪資條功能：今日收件 ======
         const renderPartnerHub = () => {
             if (!sessionUser) return;
             const area = document.getElementById('hub-payslip-area');
             const today = getTodayString();
-            
-            // 檢查夥伴資料中是否有今日的薪資紀錄
             const slip = sessionUser.payslip_today;
 
             if (slip && slip.date === today) {
                 area.innerHTML = `
-                    <div class="p-5 bg-gradient-to-br from-sky-900/40 to-slate-800 rounded-2xl border border-sky-500/30 payslip-anim shadow-[0_0_20px_rgba(14,165,233,0.15)]">
+                    <div class="p-5 bg-gradient-to-br from-sky-900/40 to-slate-800 rounded-2xl border border-sky-500/30 payslip-anim shadow-[0_0_20px_rgba(14,165,233,0.15)] mt-4">
                         <div class="flex justify-between items-center mb-3">
                             <span class="text-sky-400 font-bold text-sm flex items-center gap-2">
                                 📥 今日薪資匣
@@ -616,7 +648,7 @@
                 `;
             } else {
                 area.innerHTML = `
-                    <div class="p-6 border border-slate-700/50 border-dashed rounded-2xl text-center bg-slate-800/20">
+                    <div class="p-6 border border-slate-700/50 border-dashed rounded-2xl text-center bg-slate-800/20 mt-4">
                         <div class="text-2xl mb-2 opacity-30">📭</div>
                         <span class="text-slate-500 font-bold text-xs">今日尚未收到薪資條</span>
                     </div>
@@ -625,6 +657,10 @@
         };
 
         const init = async () => {
+            if(!isOnline) {
+                window.hideLoading();
+                return;
+            }
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -637,27 +673,29 @@
                         onSnapshot(partnersCol, (snap) => {
                             partners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                             
-                            // 更新 Admin 畫面
                             if (document.getElementById('admin-panel').style.display === 'flex') {
                                 renderAdmin();
                             }
-
-                            // 如果夥伴正在登入狀態，即時更新 sessionUser 並重繪 Hub (實現秒收件)
                             if (sessionUser && document.getElementById('partner-hub').style.display === 'flex') {
                                 const updatedUser = partners.find(p => p.id === sessionUser.id);
                                 if(updatedUser) {
                                     sessionUser = updatedUser;
                                     renderPartnerHub();
                                 } else {
-                                    window.handleLogout(); // 帳號被刪除強制登出
+                                    window.handleLogout();
                                 }
                             }
                             window.hideLoading();
+                        }, (error) => {
+                            console.error("Firestore Error:", error);
+                            window.hideLoading();
+                            window.showToast("即時同步出現問題", true);
                         });
                     }
                 });
             } catch (e) {
                 console.error(e);
+                window.hideLoading();
             }
         };
 
@@ -665,4 +703,5 @@
     </script>
 </body>
 </html>
+
 
