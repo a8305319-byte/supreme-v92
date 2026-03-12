@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
     <title>GGSOC | Supreme-V92 營運指揮中心</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -26,7 +30,7 @@
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect } = React;
-        const { LogOut, Settings, PlusSquare, Trash2, Shield, User, DollarSign, Activity, X } = lucide;
+        const { LogOut, Settings, PlusSquare, Trash2, Shield, User, DollarSign, Activity, X, RefreshCw } = lucide;
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -42,13 +46,6 @@
         const db = window.FB.getFirestore(app);
         const auth = window.FB.getAuth(app);
 
-        // --- 勞健保級距表 ---
-        const INSURANCE_TABLE = [
-            { bracket: 29500, labor: 679, health: 457 },
-            { bracket: 45800, labor: 1053, health: 710 },
-            { bracket: 156400, labor: 1145, health: 2426 }
-        ];
-
         function AppWrapper() {
             const [u, setU] = useState(null);
             const [aR, setAR] = useState('guest');
@@ -57,9 +54,10 @@
             const [ld, setLd] = useState(true);
             const [spI, setSpI] = useState(null);
             const [showTools, setShowTools] = useState(false);
+            const [connError, setConnError] = useState("");
 
             useEffect(() => {
-                window.FB.signInAnonymously(auth);
+                window.FB.signInAnonymously(auth).catch(err => setConnError("驗證失敗: " + err.message));
                 window.FB.onAuthStateChanged(auth, (user) => {
                     if (user) {
                         setU(user);
@@ -75,11 +73,26 @@
 
             useEffect(() => {
                 if (!u) return;
-                const unsub = window.FB.onSnapshot(window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'partners'), (snap) => {
-                    setPs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                    setLd(false);
-                });
-                return () => unsub();
+                
+                // 加上超時機制，如果 5 秒還沒載入完，顯示重新整理按鈕
+                const timeoutId = setTimeout(() => {
+                    if (ld) setConnError("網路連線似乎較慢，建議重新連線");
+                }, 5000);
+
+                const unsub = window.FB.onSnapshot(
+                    window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'partners'), 
+                    (snap) => {
+                        setPs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                        setLd(false);
+                        setConnError(""); // 成功就清除錯誤
+                        clearTimeout(timeoutId);
+                    },
+                    (error) => {
+                        setConnError("資料庫讀取失敗: " + error.message);
+                        setLd(false);
+                    }
+                );
+                return () => { unsub(); clearTimeout(timeoutId); };
             }, [u]);
 
             const handleLogin = (phone, pin) => {
@@ -91,7 +104,7 @@
                     if (p) {
                         localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'driver' }));
                         setAR('driver'); setSpI(p.id); setL('driver');
-                    } else { alert("驗證失敗"); }
+                    } else { alert("驗證失敗：帳號或安全碼錯誤"); }
                 }
             };
 
@@ -99,19 +112,40 @@
                 await window.FB.updateDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [field]: val });
             };
 
-            if (ld) return <div className="h-screen flex items-center justify-center font-black text-blue-500 italic">SUPREME-V92 LOADING...</div>;
+            // 優化後的載入畫面
+            if (ld || connError) return (
+                <div className="h-screen flex flex-col items-center justify-center font-black text-center p-6 space-y-6">
+                    {ld && !connError ? (
+                        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    ) : (
+                        <Activity className="text-rose-500 w-12 h-12 mx-auto" />
+                    )}
+                    
+                    <p className={`italic tracking-widest ${connError ? 'text-rose-400' : 'text-blue-500 animate-pulse'}`}>
+                        {connError || "SUPREME-V92 SECURING..."}
+                    </p>
+                    
+                    {/* 一鍵重新連線按鈕 */}
+                    <button 
+                        onClick={() => window.location.reload(true)} 
+                        className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-full border border-white/10 shadow-lg active:scale-95 transition-all"
+                    >
+                        <RefreshCw size={18} /> 強制重新連線
+                    </button>
+                </div>
+            );
 
             return (
                 <div className="min-h-screen">
                     {l === 'gate' && <Gate onLogin={handleLogin} />}
-                    {l === 'driver' && <DriverHub partner={ps.find(x=>x.id===spI)} updateField={updateField} onLogout={()=>{localStorage.clear(); location.reload();}} />}
-                    {l === 'admin' && <AdminHub partners={ps} updateField={updateField} onLogout={()=>{localStorage.clear(); location.reload();}} setShowTools={setShowTools} />}
+                    {l === 'driver' && <DriverHub partner={ps.find(x=>x.id===spI)} updateField={updateField} onLogout={()=>{localStorage.clear(); window.location.reload(true);}} />}
+                    {l === 'admin' && <AdminHub partners={ps} updateField={updateField} onLogout={()=>{localStorage.clear(); window.location.reload(true);}} setShowTools={setShowTools} />}
                     {showTools && <ToolsModal onClose={()=>setShowTools(false)} db={db} appId={appId} />}
                 </div>
             );
         }
 
-        // --- 子組件：手動建檔工具 ---
+        // --- 子組件保持原樣 ---
         const ToolsModal = ({ onClose, db, appId }) => {
             const [n, setN] = useState(""); const [p, setP] = useState("");
             const add = async () => {
@@ -122,13 +156,13 @@
                 alert("建立成功！預設 PIN 為 0000"); onClose();
             };
             return (
-                <div className="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-6">
-                    <div className="bg-slate-900 border border-white/10 p-8 rounded-[2rem] w-full max-w-sm relative">
-                        <button onClick={onClose} className="absolute top-4 right-4"><X/></button>
-                        <h3 className="text-xl font-black mb-6">快速新增夥伴</h3>
-                        <input placeholder="姓名" className="w-full bg-black p-4 rounded-xl mb-4" value={n} onChange={e=>setN(e.target.value)} />
-                        <input placeholder="手機" className="w-full bg-black p-4 rounded-xl mb-6" value={p} onChange={e=>setP(e.target.value)} />
-                        <button onClick={add} className="w-full py-4 bg-blue-600 rounded-xl font-black">建立帳號</button>
+                <div className="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-6 animate-fadeInUp">
+                    <div className="bg-slate-900 border border-white/10 p-8 rounded-[2rem] w-full max-w-sm relative shadow-2xl">
+                        <button onClick={onClose} className="absolute top-6 right-6 text-slate-400"><X/></button>
+                        <h3 className="text-2xl font-black mb-8 italic text-white">新增夥伴</h3>
+                        <input placeholder="輸入真實姓名" className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-4 text-white font-black outline-none focus:border-blue-500" value={n} onChange={e=>setN(e.target.value)} />
+                        <input type="tel" placeholder="輸入手機號碼" className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-8 text-white font-black outline-none focus:border-blue-500" value={p} onChange={e=>setP(e.target.value)} />
+                        <button onClick={add} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl shadow-lg active:scale-95">建立帳號</button>
                     </div>
                 </div>
             );
@@ -138,11 +172,11 @@
             const [p, setP] = useState(""); const [pin, setPin] = useState("");
             return (
                 <div className="h-screen flex flex-col items-center justify-center p-6">
-                    <h1 className="text-6xl font-black italic mb-10 tracking-tighter">在地物流</h1>
+                    <h1 className="text-6xl font-black italic mb-10 tracking-tighter text-white">在地物流</h1>
                     <div className="bg-slate-900 border border-white/10 p-10 rounded-[3rem] w-full max-w-sm shadow-2xl">
-                        <input type="tel" placeholder="手機號碼" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-4 text-center text-xl font-black" />
-                        <input type="password" placeholder="PIN" value={pin} onChange={e=>setPin(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-8 text-center text-xl font-black" />
-                        <button onClick={()=>onLogin(p, pin)} className="w-full py-5 bg-blue-600 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all">進入系統</button>
+                        <input type="tel" placeholder="手機號碼" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-4 text-center text-xl font-black text-white outline-none focus:border-blue-500" />
+                        <input type="password" placeholder="PIN 安全碼" value={pin} onChange={e=>setPin(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-8 text-center text-xl font-black text-white outline-none focus:border-blue-500" />
+                        <button onClick={()=>onLogin(p, pin)} className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all text-white tracking-widest">進入系統</button>
                     </div>
                 </div>
             );
@@ -151,63 +185,64 @@
         const DriverHub = ({ partner, updateField, onLogout }) => {
             const [del, setDel] = useState(""); const [cod, setCod] = useState("");
             const submit = async () => {
+                if(!del) return alert("請輸入件數！");
                 await updateField(partner.id, 'total_del', (partner.total_del || 0) + Number(del));
                 await updateField(partner.id, 'last_report', { date: new Date().toLocaleDateString(), cod_amount: Number(cod || 0) });
-                alert("報帳完成"); setDel(""); setCod("");
+                alert("✅ 報帳完成"); setDel(""); setCod("");
             };
             return (
-                <div className="p-6 max-w-md mx-auto">
+                <div className="p-6 max-w-md mx-auto animate-fadeInUp text-white">
                     <div className="flex justify-between items-center mb-10">
-                        <h2 className="text-2xl font-black">你好, {partner?.name}</h2>
-                        <button onClick={onLogout} className="text-rose-500"><LogOut/></button>
+                        <h2 className="text-3xl font-black italic">你好, {partner?.name}</h2>
+                        <button onClick={onLogout} className="text-rose-500 bg-rose-500/10 p-3 rounded-xl active:scale-90"><LogOut/></button>
                     </div>
                     <div className="space-y-6">
-                        <div className="bg-slate-900 p-8 rounded-[2rem] border border-white/5">
-                            <p className="text-xs text-blue-400 mb-2 font-black uppercase">今日件數</p>
-                            <input type="number" value={del} onChange={e=>setDel(e.target.value)} className="w-full bg-transparent text-6xl font-black outline-none" placeholder="0" />
+                        <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
+                            <p className="text-sm text-blue-400 mb-4 font-black uppercase tracking-widest">今日正件數</p>
+                            <input type="number" value={del} onChange={e=>setDel(e.target.value)} className="w-full bg-transparent text-7xl font-black outline-none" placeholder="0" />
                         </div>
-                        <div className="bg-amber-900/10 p-8 rounded-[2rem] border border-amber-500/20">
-                            <p className="text-xs text-amber-500 mb-2 font-black uppercase">今日 C.O.D</p>
-                            <div className="flex items-center text-5xl font-black text-amber-400">
-                                $ <input type="number" value={cod} onChange={e=>setCod(e.target.value)} className="bg-transparent outline-none ml-2 w-full" placeholder="0" />
+                        <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/20 shadow-inner">
+                            <p className="text-sm text-amber-500 mb-4 font-black uppercase tracking-widest">今日 C.O.D</p>
+                            <div className="flex items-center text-6xl font-black text-amber-400">
+                                $<input type="number" value={cod} onChange={e=>setCod(e.target.value)} className="bg-transparent outline-none ml-4 w-full" placeholder="0" />
                             </div>
                         </div>
-                        <button onClick={submit} className="w-full py-6 bg-blue-600 rounded-[2rem] font-black text-2xl shadow-xl">傳送數據</button>
+                        <button onClick={submit} className="w-full py-6 mt-4 bg-blue-600 text-white rounded-[2rem] font-black text-2xl shadow-xl active:scale-95 transition-all">傳送報帳數據</button>
                     </div>
                 </div>
             );
         };
 
         const AdminHub = ({ partners, updateField, onLogout, setShowTools }) => (
-            <div className="p-8">
-                <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-                    <h2 className="text-4xl font-black italic tracking-tighter">營運指揮中心</h2>
-                    <div className="flex gap-4">
-                        <button onClick={()=>setShowTools(true)} className="bg-blue-600 px-6 py-2 rounded-xl font-black flex items-center gap-2"><PlusSquare size={18}/> 新增夥伴</button>
-                        <button onClick={onLogout} className="bg-slate-800 px-6 py-2 rounded-xl text-rose-500 font-black border border-rose-500/20">退出</button>
+            <div className="p-8 animate-fadeInUp text-white">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+                    <h2 className="text-4xl font-black italic tracking-tighter">指揮中心</h2>
+                    <div className="flex gap-4 w-full md:w-auto">
+                        <button onClick={()=>setShowTools(true)} className="flex-1 md:flex-none bg-blue-600 px-6 py-4 rounded-2xl font-black flex justify-center items-center gap-2 active:scale-95 shadow-lg"><PlusSquare size={20}/> 新增夥伴</button>
+                        <button onClick={onLogout} className="bg-slate-800 px-6 py-4 rounded-2xl text-rose-500 font-black border border-rose-500/20 active:scale-95">退出</button>
                     </div>
                 </div>
-                <div className="overflow-x-auto bg-slate-900 rounded-[2.5rem] border border-white/5">
-                    <table className="w-full text-left">
-                        <thead className="bg-black/50 text-blue-400 text-xs">
+                <div className="overflow-x-auto bg-slate-900 rounded-[2.5rem] border border-white/5 shadow-2xl">
+                    <table className="w-full text-left min-w-[600px]">
+                        <thead className="bg-black/50 text-blue-400 text-xs tracking-widest uppercase">
                             <tr>
-                                <th className="p-6">夥伴姓名/手機</th>
-                                <th className="p-6">正件單價</th>
-                                <th className="p-6">今日 C.O.D</th>
-                                <th className="p-6 text-white text-xl">預計實領</th>
+                                <th className="p-6">夥伴資訊</th>
+                                <th className="p-6 text-center">正件單價</th>
+                                <th className="p-6 text-center">今日 C.O.D</th>
+                                <th className="p-6 text-center text-white text-lg">預計實領</th>
                             </tr>
                         </thead>
                         <tbody className="font-black text-sm">
                             {partners.map(p => {
                                 const net = (p.total_del * (p.custom_del_price || 15)) + (p.custom_adj || 0);
                                 return (
-                                    <tr key={p.id} className="border-b border-white/5">
-                                        <td className="p-6">{p.name}<br/><span className="text-[10px] text-slate-500">{p.phone}</span></td>
-                                        <td className="p-6">
-                                            $<input type="number" className="w-12 bg-transparent border-b border-white/20 ml-1 outline-none text-sky-400" value={p.custom_del_price || 15} onChange={e=>updateField(p.id, 'custom_del_price', Number(e.target.value))} />
+                                    <tr key={p.id} className="border-b border-white/5 hover:bg-slate-800/50 transition-colors">
+                                        <td className="p-6">{p.name}<br/><span className="text-[11px] text-slate-500">{p.phone}</span></td>
+                                        <td className="p-6 text-center">
+                                            $<input type="number" className="w-16 bg-transparent border-b-2 border-slate-700 text-center outline-none text-sky-400 text-xl focus:border-sky-400 transition-colors" value={p.custom_del_price || 15} onChange={e=>updateField(p.id, 'custom_del_price', Number(e.target.value))} />
                                         </td>
-                                        <td className="p-6 text-amber-400">${p.last_report?.cod_amount || 0}</td>
-                                        <td className="p-6 text-2xl text-white italic">${net.toLocaleString()}</td>
+                                        <td className="p-6 text-center text-amber-400 text-xl">${(p.last_report?.cod_amount || 0).toLocaleString()}</td>
+                                        <td className="p-6 text-center text-3xl text-white italic drop-shadow-md">${net.toLocaleString()}</td>
                                     </tr>
                                 );
                             })}
