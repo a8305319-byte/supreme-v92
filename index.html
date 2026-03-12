@@ -98,15 +98,15 @@ const INSURANCE_TABLE = [
   { bracket: 313000, labor: 1145, health: 4855 }
 ];
 
-// 🤖 Gemini AI 呼叫核心 (已升級為公開穩定版)
+// 🤖 Gemini AI 呼叫核心 (已升級為最新版)
 const callGemini = async (prompt, imageData = null) => {
   if (!apiKey || apiKey.trim() === "") {
-    return "⚠️ 系統提示：管理員尚未開通 API 金鑰，請先至原始碼中填入 Gemini API Key。";
+    return "⚠️ 系統提示：管理員尚未開通 API 金鑰。";
   }
 
   let retryCount = 0; const maxRetries = 3;
   const performRequest = async () => {
-    const model = "gemini-1.5-flash"; 
+    const model = "gemini-2.5-flash"; // 更換為最新的 2.5 Flash 版本解決 NotFound 錯誤
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     let contents = [{ parts: [{ text: prompt }] }];
     if (imageData) {
@@ -711,6 +711,5 @@ try {
   </script>
 </body>
 </html>
-
 
 
