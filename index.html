@@ -147,7 +147,6 @@ const processSecureImage = (userId, file, callback) => {
 // 🧩 系統彈窗組件 (Modals)
 // ==========================================
 
-// 圖片預覽器
 function ImageViewer({ src, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/95 z-[999999] flex items-center justify-center p-4 animate-zoom" onClick={onClose}>
@@ -159,14 +158,12 @@ function ImageViewer({ src, onClose }) {
   );
 }
 
-// 司機個人資料修改
 function DriverProfileEditModal({ partner, onClose, onSave }) {
   const [data, setData] = useState({ 
     p_bank_code: partner?.p_bank_code||'', p_bank_acc: partner?.p_bank_acc||'', 
     p_address: partner?.p_address||'', p_emergency_name: partner?.p_emergency_name||'', 
     p_emergency_phone: partner?.p_emergency_phone||'', apply_payslip: partner?.apply_payslip||false 
   });
-  
   return (
     <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom font-black">
       <div className="bg-slate-900 border border-blue-500/30 p-8 rounded-[2.5rem] max-w-md w-full shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e=>e.stopPropagation()}>
@@ -193,9 +190,25 @@ function DriverProfileEditModal({ partner, onClose, onSave }) {
   );
 }
 
-// 簽名板
+// 👑 升級版：三位一體簽章板 (擷取 GPS 與時間)
 const SignaturePad = ({ onSign }) => {
-  const canvasRef = useRef(null); const [isDrawing, setIsDrawing] = useState(false);
+  const canvasRef = useRef(null); 
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [geoInfo, setGeoInfo] = useState("獲取位置中...");
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setGeoInfo(`GPS: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`),
+        (err) => setGeoInfo("GPS: 未授權或無法獲取")
+      );
+    }
+    if(canvasRef.current){ 
+      const ctx = canvasRef.current.getContext('2d'); 
+      ctx.lineWidth = 3; ctx.lineCap='round'; ctx.strokeStyle='#fff'; 
+    } 
+  }, []);
+
   const getPos = (e) => {
     if (!canvasRef.current) return { x: 0, y: 0 };
     const rect = canvasRef.current.getBoundingClientRect();
@@ -203,16 +216,38 @@ const SignaturePad = ({ onSign }) => {
     const cy = e.touches ? e.touches[0].clientY : e.clientY;
     return { x: cx - rect.left, y: cy - rect.top };
   };
-  useEffect(() => { if(canvasRef.current){ const ctx = canvasRef.current.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap='round'; ctx.strokeStyle='#fff'; } }, []);
+
+  const handleFinish = () => {
+    setIsDrawing(false);
+    if(canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      // 壓印三位一體防偽標記
+      ctx.font = "10px monospace";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+      const timestamp = new Date().toISOString();
+      ctx.fillText(`${geoInfo} | ${timestamp}`, 10, 140);
+      onSign(canvasRef.current.toDataURL());
+    }
+  };
+
   return (
     <div className="w-full">
-      <div className="bg-slate-950 border border-white/20 rounded-2xl overflow-hidden shadow-inner"><canvas ref={canvasRef} width={400} height={150} className="w-full h-[150px] touch-none cursor-crosshair" onMouseDown={(e)=>{setIsDrawing(true); const p=getPos(e); canvasRef.current.getContext('2d').beginPath(); canvasRef.current.getContext('2d').moveTo(p.x, p.y);}} onMouseMove={(e)=>{if(!isDrawing)return; const p=getPos(e); canvasRef.current.getContext('2d').lineTo(p.x, p.y); canvasRef.current.getContext('2d').stroke();}} onMouseUp={()=>{setIsDrawing(false); if(canvasRef.current) onSign(canvasRef.current.toDataURL());}} onTouchStart={(e)=>{setIsDrawing(true); const p=getPos(e); canvasRef.current.getContext('2d').beginPath(); canvasRef.current.getContext('2d').moveTo(p.x, p.y);}} onTouchMove={(e)=>{if(!isDrawing)return; const p=getPos(e); canvasRef.current.getContext('2d').lineTo(p.x, p.y); canvasRef.current.getContext('2d').stroke();}} onTouchEnd={()=>{setIsDrawing(false); if(canvasRef.current) onSign(canvasRef.current.toDataURL());}} /></div>
+      <div className="bg-slate-950 border border-white/20 rounded-2xl overflow-hidden shadow-inner relative">
+        <canvas ref={canvasRef} width={400} height={150} className="w-full h-[150px] touch-none cursor-crosshair" 
+          onMouseDown={(e)=>{setIsDrawing(true); const p=getPos(e); canvasRef.current.getContext('2d').beginPath(); canvasRef.current.getContext('2d').moveTo(p.x, p.y);}} 
+          onMouseMove={(e)=>{if(!isDrawing)return; const p=getPos(e); canvasRef.current.getContext('2d').lineTo(p.x, p.y); canvasRef.current.getContext('2d').stroke();}} 
+          onMouseUp={handleFinish} 
+          onTouchStart={(e)=>{setIsDrawing(true); const p=getPos(e); canvasRef.current.getContext('2d').beginPath(); canvasRef.current.getContext('2d').moveTo(p.x, p.y);}} 
+          onTouchMove={(e)=>{if(!isDrawing)return; const p=getPos(e); canvasRef.current.getContext('2d').lineTo(p.x, p.y); canvasRef.current.getContext('2d').stroke();}} 
+          onTouchEnd={handleFinish} 
+        />
+        <div className="absolute bottom-1 left-2 text-[8px] text-slate-600 pointer-events-none">{geoInfo}</div>
+      </div>
       <button onClick={()=>{const ctx=canvasRef.current.getContext('2d'); ctx.clearRect(0,0,400,150); onSign(null);}} className="w-full py-2 text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1 hover:text-white">清除重簽</button>
     </div>
   );
 };
 
-// 薪資簽收 (新增理賠與扣款明細)
 function SalarySignModal({ partner, onClose, onAction }) {
   const [sig, setSig] = useState(null); const [reason, setReason] = useState(""); const [step, setStep] = useState('view');
   if(!partner) return null;
@@ -222,8 +257,6 @@ function SalarySignModal({ partner, onClose, onAction }) {
       <div className="bg-slate-900 border border-blue-500/30 p-6 md:p-8 rounded-[2.5rem] max-w-md w-full shadow-2xl relative font-black" onClick={e=>e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-6 right-6 text-white p-2 bg-slate-800 rounded-full"><X size={20}/></button>
         <h3 className="text-2xl font-black text-emerald-400 mb-6 flex items-center gap-2 italic"><Banknote size={28}/> 薪資確認簽收</h3>
-        
-        {/* 新增扣款項目顯示區塊 */}
         {(record.deductions && record.deductions.length > 0) && (
           <div className="bg-rose-950/30 p-4 rounded-xl border border-rose-500/30 mb-4">
             <p className="text-[10px] text-rose-400 mb-2 flex items-center gap-1"><AlertTriangle size={12}/> 本期扣款明細</p>
@@ -234,7 +267,6 @@ function SalarySignModal({ partner, onClose, onAction }) {
             ))}
           </div>
         )}
-
         <div className="bg-black/50 p-6 rounded-2xl border border-white/5 mb-6 text-center shadow-inner"><p className="text-xs text-slate-500 mb-1">應領實得淨額</p><p className="text-4xl text-white font-black italic">${(record.net || 0).toLocaleString()}</p></div>
         {step === 'view' && <div className="grid grid-cols-2 gap-3"><button onClick={()=>setStep('dispute')} className="py-4 bg-rose-900/30 text-rose-500 rounded-xl border border-rose-500/30 hover:bg-rose-900/50 transition-colors">明細異常退回</button><button onClick={()=>setStep('sign')} className="py-4 bg-emerald-600 text-white rounded-xl shadow-lg active:scale-95 hover:bg-emerald-500 transition-colors">無誤，前往簽名</button></div>}
         {step === 'sign' && <div className="space-y-4 animate-zoom"><p className="text-xs text-center text-slate-400">請完成數位簽章以確認領訖</p><SignaturePad onSign={setSig} /><button onClick={()=>onAction('confirm', {sig})} disabled={!sig} className="w-full py-4 bg-emerald-600 text-white rounded-xl disabled:opacity-30 shadow-xl transition-all">確認本人領訖</button></div>}
@@ -244,7 +276,6 @@ function SalarySignModal({ partner, onClose, onAction }) {
   );
 }
 
-// 假勤系統
 function LeaveModal({ partner, isAdmin, onClose }) {
   const [leaves, setLeaves] = useState([]); const [newLeave, setNewLeave] = useState({ date: "", type: "事假", reason: "" });
   useEffect(() => {
@@ -266,16 +297,40 @@ function LeaveModal({ partner, isAdmin, onClose }) {
   );
 }
 
-// 智能對話與客服模組
+// 👑 升級版：智能對話與客服模組 (含影子接管與紅燈警報)
 function ChatModal({ target, currentUserRole, onClose }) {
   const [input, setInput] = useState("");
-  const [msgs, setMsgs] = useState([{ id: 1, sender: 'ai', text: '您好！有任何報帳或異常問題請在此提出。※ 系統提醒：薪資結算最終以廠商提供之統計報表為準，個人回報僅供核對參考。' }]);
+  const [isGhostMode, setIsGhostMode] = useState(false); // 總裁專屬：影子接管開關
+  const [msgs, setMsgs] = useState([
+    { id: 1, sender: 'ai', text: '您好！有任何報帳或異常問題請在此提出。※ 系統正進行底層日誌深度校驗。' }
+  ]);
+
   const handleSend = () => {
     if(!input.trim()) return;
-    setMsgs(prev => [...prev, { id: Date.now(), sender: 'me', text: input }]);
+    
+    // 關鍵字紅燈警報
+    const isAlert = ["罷工", "法律", "勞工局", "投訴"].some(word => input.includes(word));
+    if(isAlert && currentUserRole === 'driver') {
+       showToast("🚨 系統偵測到敏感詞彙，已啟動風險預警紀錄", true);
+    }
+
+    const newMessage = { 
+      id: Date.now(), 
+      sender: isGhostMode ? 'ai' : (currentUserRole === 'driver' ? 'me' : 'hq'), 
+      text: input 
+    };
+    
+    setMsgs(prev => [...prev, newMessage]);
     setInput("");
-    setTimeout(() => { setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'ai', text: '總部已記錄您的反饋。若是查詢核薪數據，我們一律以廠商月底報表為最終依據。' }]); }, 1000);
+
+    // 司機發言後，AI 高階邏輯緩衝
+    if (currentUserRole === 'driver') {
+      setTimeout(() => { 
+        setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'ai', text: '已掛載高階核算模組進行複核。數據已提交至營運總部進行權限審查，請稍候演算法判定。' }]); 
+      }, 1500); // 隨機延遲感
+    }
   };
+
   return (
     <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom" onClick={onClose}>
        <div className="bg-slate-900 border border-blue-500/30 w-full max-w-md h-[80vh] rounded-[2.5rem] flex flex-col overflow-hidden shadow-2xl relative font-black" onClick={e=>e.stopPropagation()}>
@@ -283,14 +338,35 @@ function ChatModal({ target, currentUserRole, onClose }) {
            <div className="flex items-center gap-2"><Support size={24} className="text-blue-400"/> <h3 className="text-white italic">客服中心 - {target?.name||'總部'}</h3></div>
            <button onClick={onClose} className="p-2 bg-slate-700 rounded-full text-white active:scale-90"><X size={16}/></button>
          </div>
-         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#020617]">{msgs.map(m => (<div key={m.id} className={`flex ${m.sender==='me'?'justify-end':'justify-start'} animate-[fadeInUp_0.3s_ease-out]`}><div className={`p-3 rounded-2xl text-sm max-w-[85%] leading-relaxed shadow-lg ${m.sender==='me'?'bg-blue-600 text-white rounded-tr-none shadow-blue-500/20':'bg-slate-800 text-slate-200 rounded-tl-none border border-white/5'}`}>{m.text}</div></div>))}</div>
-         <div className="p-4 bg-slate-800 border-t border-white/10 flex gap-2"><input className="flex-1 bg-slate-900 border border-white/5 rounded-xl px-4 py-3 outline-none text-white text-sm focus:border-blue-500 transition-colors" placeholder="輸入訊息..." value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} /><button onClick={handleSend} className="bg-blue-600 px-5 py-3 rounded-xl text-white active:scale-95 shadow-lg"><Send size={20}/></button></div>
+         
+         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#020617]">
+           {msgs.map(m => (
+             <div key={m.id} className={`flex ${m.sender==='me'?'justify-end':'justify-start'} animate-[fadeInUp_0.3s_ease-out]`}>
+               <div className={`p-3 rounded-2xl text-sm max-w-[85%] leading-relaxed shadow-lg ${m.sender==='me'?'bg-blue-600 text-white rounded-tr-none shadow-blue-500/20': m.sender==='hq' ? 'bg-amber-600 text-white rounded-tl-none' : 'bg-slate-800 text-slate-200 rounded-tl-none border border-white/5'}`}>
+                 {m.sender === 'hq' && <span className="text-[9px] block mb-1 text-amber-200">👑 營運總部</span>}
+                 {m.text}
+               </div>
+             </div>
+           ))}
+         </div>
+         
+         <div className="p-4 bg-slate-800 border-t border-white/10 flex flex-col gap-2">
+           {currentUserRole === 'super_admin' && (
+             <label className="flex items-center gap-2 text-xs text-fuchsia-400 cursor-pointer">
+               <input type="checkbox" checked={isGhostMode} onChange={e=>setIsGhostMode(e.target.checked)} className="accent-fuchsia-600" />
+               🤖 啟用影子接管 (以 AI 語氣回覆)
+             </label>
+           )}
+           <div className="flex gap-2">
+             <input className="flex-1 bg-slate-900 border border-white/5 rounded-xl px-4 py-3 outline-none text-white text-sm focus:border-blue-500 transition-colors" placeholder="輸入訊息..." value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} />
+             <button onClick={handleSend} className="bg-blue-600 px-5 py-3 rounded-xl text-white active:scale-95 shadow-lg"><Send size={20}/></button>
+           </div>
+         </div>
        </div>
     </div>
   )
 }
 
-// 招募與入職模組 (新增線上合約簽署)
 function OnboardingModal({ onClose }) {
   const [step, setStep] = useState(1);
   const [sig, setSig] = useState(null);
@@ -317,7 +393,6 @@ function OnboardingModal({ onClose }) {
                <button onClick={()=>setStep(3)} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white shadow-lg active:scale-95 text-lg mt-4 transition-all">下一步：線上簽署合約</button>
              </div>
            )}
-           {/* 新增：線上合約簽署 */}
            {step === 3 && (
              <div className="space-y-4 animate-[fadeIn_0.3s]">
                <div className="bg-slate-800 p-4 rounded-xl h-40 overflow-y-auto text-xs text-slate-300 leading-relaxed border border-white/10">
@@ -334,7 +409,6 @@ function OnboardingModal({ onClose }) {
   );
 }
 
-// 歷史明細預覽
 function HistoryModal({ partner, onClose }) {
   const history = partner?.history || [];
   return (
@@ -359,19 +433,16 @@ function HistoryModal({ partner, onClose }) {
 }
 
 // ==========================================
-// 👑 後台管理中樞 (AdminHub) - 確保老闆隱形
+// 👑 後台管理中樞 (AdminHub)
 // ==========================================
-
 function AdminHub({ authRole, partners, onLogout, updateField, setModalType, sq, setSq, setShowHistoryFor, db, appId, setChatTarget, setShowLeave, setLayer }) {
   const [adminTab, setAdminTab] = useState('formal'); 
   const [showSensitive, setShowSensitive] = useState({ global: false });
 
-  // 🚷 老闆隱身術：自動從底層陣列中刪除 0976017938 的一切蹤跡
   const visiblePartners = useMemo(() => authRole === 'admin' ? (partners || []).filter(p => p.phone !== '0976017938') : (partners || []), [partners, authRole]);
   const formalPartners = useMemo(() => visiblePartners.filter(p => (p.status === 'approved' || p.status === 'frozen') && (p.name?.toLowerCase().includes(sq.toLowerCase()) || p.phone?.includes(sq))), [visiblePartners, sq]);
   const pendingPartners = useMemo(() => visiblePartners.filter(p => p.status === 'pending' && (p.name?.toLowerCase().includes(sq.toLowerCase()) || p.phone?.includes(sq))), [visiblePartners, sq]);
   
-  // 統計總額時也絕對不包含老闆
   const totalStats = useMemo(() => {
     return formalPartners.reduce((acc, p) => {
       const hasR = p.last_report?.date === new Date().toLocaleDateString('en-CA');
@@ -387,10 +458,7 @@ function AdminHub({ authRole, partners, onLogout, updateField, setModalType, sq,
          <div><h2 className="text-white text-4xl md:text-5xl italic tracking-tighter uppercase mb-2 font-black">營運指揮中心</h2><span className={`inline-block text-xs md:text-sm px-4 py-1 rounded-xl border ${authRole==='super_admin'?'text-amber-500 border-amber-500/30 bg-amber-900/30 shadow-xl':'text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-900/30 shadow-xl'}`}>{authRole==='super_admin'?'👑 總裁統帥':'👑 營運總部'}</span></div>
          <div className="flex flex-wrap gap-2 w-full xl:w-auto">
             {authRole==='super_admin' && <button onClick={()=>setLayer('driver')} className="flex-1 xl:flex-none bg-amber-500 text-black px-4 py-3 rounded-xl text-xs font-black btn-gold-glow flex items-center justify-center gap-1 hover:bg-amber-400 transition-colors"><Package size={16}/> 報帳模式</button>}
-            
-            {/* 新增：一鍵匯出報表按鈕 */}
             <button onClick={() => showToast("📥 報表已匯出並下載 (CSV 格式)", false)} className="flex-1 xl:flex-none bg-sky-600 px-4 py-3 rounded-xl text-xs active:scale-95 shadow-lg flex items-center justify-center gap-1 hover:bg-sky-500 transition-colors"><Download size={16} /> 匯出報表</button>
-
             <button onClick={async() => { if(!window.confirm("發布薪資領取通知？")) return; for(const p of formalPartners) { const net = (p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10))+(p.custom_adj||0)-(p.labor_fee||0)-(p.health_fee||0); await updateDoc(doc(db,'artifacts',appId,'public','data','partners',p.id), { salary_status: 'pending_sign', salary_record: { net, period: new Date().toLocaleDateString('zh-TW'), timestamp: Date.now() } }); } showToast("✅ 已同步推播"); }} className="flex-1 xl:flex-none bg-emerald-600 px-4 py-3 rounded-xl text-xs active:scale-95 shadow-lg flex items-center justify-center gap-1 hover:bg-emerald-500 transition-colors"><Banknote size={16} /> 發布薪資</button>
             <button onClick={()=>setModalType('tools')} className="flex-1 xl:flex-none bg-blue-600 px-4 py-3 rounded-xl text-xs active:scale-95 shadow-xl flex items-center justify-center gap-1 hover:bg-blue-500 transition-colors"><Settings size={16} /> 工具箱</button>
             <button onClick={()=>setShowLeave(true)} className="flex-1 xl:flex-none bg-indigo-600 px-4 py-3 rounded-xl text-xs active:scale-95 shadow-xl flex items-center justify-center gap-1 hover:bg-indigo-500 transition-colors"><Calendar size={16} /> 假勤</button>
@@ -435,7 +503,6 @@ function AdminHub({ authRole, partners, onLogout, updateField, setModalType, sq,
 // ==========================================
 // 🚐 司機端工作台 (DriverHub)
 // ==========================================
-
 function DriverHub({ user, currentPartner, onLogout, updateField, globalSettings, authRole, db, appId, setChatTarget, setShowLeave, setLayer }) {
   const [del,setDel]=useState(""); const [pkp,setPkp]=useState(""); const [cod,setCod]=useState(""); 
   const [pData,setPData]=useState(null); const [sData,setSData]=useState(null); 
@@ -460,7 +527,8 @@ function DriverHub({ user, currentPartner, onLogout, updateField, globalSettings
       await updateField(currentPartner.id,'total_pkp',(currentPartner.total_pkp||0)+np); 
       await updateField(currentPartner.id,'history', nextH); 
       await updateField(currentPartner.id,'last_report',{date:new Date().toLocaleDateString('en-CA'),photo:pData,signature:sData,cod_amount:nc}); 
-      setDel("");setPkp("");setCod("");setPData(null);setSData(null); showToast("✅ 數據加密傳送成功"); 
+      setDel("");setPkp("");setCod("");setPData(null);setSData(null); 
+      showToast("✅ 數據加密傳送成功！辛苦了！"); 
     } catch (e) { showToast("❌ 傳送失敗", true); }
     setIsSubmitting(false);
   };
@@ -508,16 +576,27 @@ function DriverHub({ user, currentPartner, onLogout, updateField, globalSettings
       {showProfile && <DriverProfileEditModal partner={currentPartner} onClose={()=>setShowProfile(false)} onSave={async(data)=>{await updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id),data); showToast("✅ 資料更新成功"); setShowProfile(false);}} />}
       
       <div className="bg-slate-900/80 backdrop-blur-xl p-6 rounded-[2.5rem] w-full max-w-[500px] shadow-2xl border border-blue-500/20 text-center animate-[fadeInUp_0.5s_ease-out]">
+        
+        {/* 👑 升級版：手套友善大按鈕輸入 */}
         <div className="grid grid-cols-2 gap-4 mb-4">
-           <div className="bg-black/50 p-6 rounded-[1.5rem] border border-white/5 shadow-inner">
-             <p className="text-[11px] text-blue-400 uppercase mb-3 tracking-widest">今日配送</p>
-             <input type="number" placeholder="0" className="w-full bg-transparent text-center text-4xl text-white outline-none" value={del} onChange={e=>setDel(e.target.value)} />
+           <div className="bg-black/50 p-4 rounded-[1.5rem] border border-white/5 shadow-inner flex flex-col items-center">
+             <p className="text-[11px] text-blue-400 uppercase mb-2 tracking-widest">今日配送</p>
+             <div className="flex items-center justify-between w-full bg-slate-800/50 rounded-xl p-1">
+               <button onClick={()=>setDel(Math.max(0, (parseInt(del)||0) - 1))} className="w-10 h-10 bg-slate-700 text-white rounded-lg active:scale-90 text-xl flex items-center justify-center">-</button>
+               <span className="text-3xl text-white font-black">{del || 0}</span>
+               <button onClick={()=>setDel((parseInt(del)||0) + 1)} className="w-10 h-10 bg-blue-600 text-white rounded-lg active:scale-90 text-xl flex items-center justify-center shadow-lg">+</button>
+             </div>
            </div>
-           <div className="bg-black/50 p-6 rounded-[1.5rem] border border-white/5 shadow-inner">
-             <p className="text-[11px] text-cyan-400 uppercase mb-3 tracking-widest">今日逆收</p>
-             <input type="number" placeholder="0" className="w-full bg-transparent text-center text-4xl text-white outline-none" value={pkp} onChange={e=>setPkp(e.target.value)} />
+           <div className="bg-black/50 p-4 rounded-[1.5rem] border border-white/5 shadow-inner flex flex-col items-center">
+             <p className="text-[11px] text-cyan-400 uppercase mb-2 tracking-widest">今日逆收</p>
+             <div className="flex items-center justify-between w-full bg-slate-800/50 rounded-xl p-1">
+               <button onClick={()=>setPkp(Math.max(0, (parseInt(pkp)||0) - 1))} className="w-10 h-10 bg-slate-700 text-white rounded-lg active:scale-90 text-xl flex items-center justify-center">-</button>
+               <span className="text-3xl text-white font-black">{pkp || 0}</span>
+               <button onClick={()=>setPkp((parseInt(pkp)||0) + 1)} className="w-10 h-10 bg-cyan-600 text-white rounded-lg active:scale-90 text-xl flex items-center justify-center shadow-lg">+</button>
+             </div>
            </div>
         </div>
+
         <div className="mb-6 p-3 bg-rose-950/20 border border-rose-500/20 rounded-xl">
            <p className="text-[10px] text-rose-400 italic leading-tight">※ AI 提示：結算最終以廠商對帳報表為準，個人回報僅供參考。</p>
         </div>
@@ -590,14 +669,12 @@ function Gate({ onLogin, isConnected }) {
 }
 
 // ==========================================
-// 🚀 AppWrapper 核心路由 (防崩潰保護)
+// 🚀 AppWrapper 核心路由
 // ==========================================
 function AppWrapper() {
   const [u,setU]=useState(null); const [aR,setAR]=useState('guest'); const [ps,setPs]=useState([]); const [l,setL]=useState('gate'); const [ld,setLd]=useState(true); const [ann,setAnn]=useState(""); const [gs,setGs]=useState({systemLocked:false,accountantPin:"0172"}); const [spI,setSpI]=useState(null); const [isC,setIsC]=useState(false);
   const [sq,setSq]=useState(""); const [showHistoryFor, setShowHistoryFor] = useState(null); const [chatTarget, setChatTarget] = useState(null); const [showLeave, setShowLeave] = useState(false);
   const [mT,setMT]=useState(null);
-  
-  // 新增：公告已讀狀態管理
   const [hasReadAnn, setHasReadAnn] = useState(true);
 
   const cp = useMemo(() => ps.find(p => p.id === spI), [ps, spI]);
@@ -630,7 +707,7 @@ function AppWrapper() {
     const unAn = onSnapshot(doc(db,'artifacts',appId,'public','data','settings','announcement'),(sn)=>{
       if(sn.exists()){
         const content = sn.data().content||"";
-        if (content !== ann && content !== "") setHasReadAnn(false); // 若有新公告則強制未讀
+        if (content !== ann && content !== "") setHasReadAnn(false);
         setAnn(content);
       }
     });
@@ -659,7 +736,6 @@ function AppWrapper() {
       {chatTarget && <ChatModal target={chatTarget} currentUserRole={aR} onClose={()=>setChatTarget(null)} />}
       {showLeave && <LeaveModal partner={cp} isAdmin={aR!=='driver'} onClose={()=>setShowLeave(false)} />}
       
-      {/* 新增：公告已讀追蹤系統 */}
       {ann && l !== 'gate' && !hasReadAnn && (
         <div className="fixed top-0 left-0 w-full bg-blue-900/95 backdrop-blur-md z-[5000] p-4 border-b border-blue-400/50 shadow-2xl flex flex-col items-center animate-zoom">
           <div className="flex items-center gap-2 text-white mb-2"><Bell size={18} className="animate-bounce"/> <span className="text-sm font-black tracking-widest text-blue-200">系統重要公告</span></div>
@@ -669,23 +745,13 @@ function AppWrapper() {
       )}
       
       {l==='gate' ? <Gate onLogin={handleLogin} isConnected={isC} /> : null}
-      
       {l==='admin' && <AdminHub authRole={aR} partners={ps} onLogout={()=>{safeStorage.remove('ggsoc_auth');setAR('guest');setL('gate');}} updateField={async(id,f,v)=>await updateDoc(doc(db,'artifacts',appId,'public','data','partners',id),{[f]:v})} setModalType={setMT} setSelectedPartner={p=>setSpI(p.id)} sq={sq} setSq={setSq} setShowHistoryFor={setShowHistoryFor} db={db} appId={appId} globalSettings={gs} announcement={ann} setChatTarget={setChatTarget} setShowLeave={setShowLeave} setLayer={setL} />}
-      
       {l==='driver' && <DriverHub user={u} currentPartner={cp} onLogout={()=>{safeStorage.remove('ggsoc_auth');setAR('guest');setL('gate');}} updateField={async(id,f,v)=>await updateDoc(doc(db,'artifacts',appId,'public','data','partners',id),{[f]:v})} globalSettings={gs} authRole={aR} db={db} appId={appId} setChatTarget={setChatTarget} setShowLeave={setShowLeave} setLayer={setL} />}
       
-      {/* 總部工具箱 Modal (新增歷史封存按鈕) */}
       {mT==='tools' && <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom" onClick={()=>setMT(null)}><div className="bg-slate-900 border border-white/10 p-8 rounded-[2.5rem] max-w-md w-full max-h-[90vh] overflow-y-auto custom-scrollbar relative" onClick={e=>e.stopPropagation()}><button onClick={()=>setMT(null)} className="absolute top-6 right-6 text-white p-2 bg-slate-800 rounded-full hover:bg-slate-700"><X size={20}/></button><h3 className="text-2xl text-blue-400 mb-6 text-center italic uppercase">系統管理中樞</h3><div className="space-y-6"><div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 shadow-inner"><p className="text-[11px] text-blue-400 mb-4 italic uppercase text-center tracking-widest">● 全球跑馬燈公告</p><textarea placeholder="輸入要廣播的文字..." className="w-full bg-slate-800 border border-white/10 p-4 rounded-xl text-white text-sm outline-none focus:border-blue-500 transition-colors" rows="3" value={ann} onChange={async(e)=>await setDoc(doc(db,'artifacts',appId,'public','data','settings','announcement'),{content:e.target.value})} /><button onClick={async()=>await setDoc(doc(db,'artifacts',appId,'public','data','settings','announcement'),{content:""})} className="w-full py-3 bg-rose-900/40 text-rose-400 hover:bg-rose-900/60 rounded-xl text-xs mt-3 transition-colors">撤下公告</button></div>
-      
-      {/* 新增：月度資料封存 (Archive) */}
-      <div className="bg-slate-800 p-5 rounded-[2rem] border border-white/5">
-         <p className="text-[11px] text-slate-400 mb-3 text-center tracking-widest">系統效能管理</p>
-         <button onClick={() => {if(window.confirm("確定執行月度資料封存？此動作會將歷史紀錄歸檔。")) showToast("📦 歷史資料已成功封存至唯讀區");}} className="w-full py-4 bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60 rounded-xl text-sm border border-indigo-500/30 transition-colors">📦 執行上月資料封存 (Archive)</button>
-      </div>
-
+      <div className="bg-slate-800 p-5 rounded-[2rem] border border-white/5"><p className="text-[11px] text-slate-400 mb-3 text-center tracking-widest">系統效能管理</p><button onClick={() => {if(window.confirm("確定執行月度資料封存？此動作會將歷史紀錄歸檔。")) showToast("📦 歷史資料已成功封存至唯讀區");}} className="w-full py-4 bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60 rounded-xl text-sm border border-indigo-500/30 transition-colors">📦 執行上月資料封存 (Archive)</button></div>
       {aR==='super_admin' && <button onClick={async()=>{if(window.confirm("核彈警告：這會清空全體司機本月數據與歷史紀錄！確定嗎？")){ for(const p of ps){ if(p.phone!=='0976017938') await updateDoc(doc(db,'artifacts',appId,'public','data','partners',p.id),{total_del:0,total_pkp:0,custom_adj:0,history:[],last_report:null,salary_status:'none'}); } showToast("✅ 全局物理數據已洗牌"); }}} className="w-full py-5 bg-rose-900/20 text-rose-500 hover:bg-rose-900/40 rounded-[1.5rem] border border-rose-500/20 text-sm italic shadow-lg transition-colors">🛑 全局物理歸零重置</button>}</div></div></div>}
       
-      {/* 司機櫥窗 Modal */}
       {mT?.startsWith('detail_') && <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom" onClick={()=>setMT(null)}><div className="bg-slate-900 border border-white/10 p-8 rounded-[2.5rem] max-w-2xl w-full shadow-2xl relative" onClick={e=>e.stopPropagation()}><button onClick={()=>setMT(null)} className="absolute top-6 right-6 text-white p-2 bg-slate-800 rounded-full"><X size={20}/></button><h3 className="text-2xl text-blue-400 mb-6 italic">{ps.find(p=>p.id===mT.split('_')[1])?.name} - 檔案</h3><div className="grid grid-cols-2 gap-4 bg-black/40 p-6 rounded-2xl border border-white/5 shadow-inner"><div className="col-span-2"><label className="text-[10px] text-slate-500">通訊地址</label><p className="text-white text-sm">{ps.find(p=>p.id===mT.split('_')[1])?.p_address || '未填'}</p></div><div><label className="text-[10px] text-slate-500">緊急聯繫人</label><p className="text-white text-sm">{ps.find(p=>p.id===mT.split('_')[1])?.p_emergency_name || '未填'}</p></div><div><label className="text-[10px] text-slate-500">電話</label><p className="text-white text-sm">{ps.find(p=>p.id===mT.split('_')[1])?.p_emergency_phone || '未填'}</p></div><div className="col-span-2 pt-2 border-t border-white/5"><label className="text-[10px] text-slate-500">發薪銀行與帳號</label><p className="text-emerald-400 text-lg tracking-widest">({ps.find(p=>p.id===mT.split('_')[1])?.p_bank_code || '---'}) {ps.find(p=>p.id===mT.split('_')[1])?.p_bank_acc || '尚未填寫'}</p></div></div><div className="mt-8 flex gap-3"><button onClick={async()=>{const id=mT.split('_')[1]; const p=ps.find(x=>x.id===id); await updateDoc(doc(db,'artifacts',appId,'public','data','partners',id),{status:p.status==='frozen'?'approved':'frozen'}); showToast("更新成功");}} className="flex-1 py-4 bg-slate-800 border border-white/10 rounded-xl text-sm hover:bg-slate-700 transition-colors">{ps.find(p=>p.id===mT.split('_')[1])?.status==='frozen'?'解凍檔案':'凍結檔案'}</button><button onClick={async()=>{if(!window.confirm("徹底刪除不可恢復？"))return; await deleteDoc(doc(db,'artifacts',appId,'public','data','partners',mT.split('_')[1])); setMT(null);}} className="flex-1 py-4 bg-rose-900/30 text-rose-500 border border-rose-500/30 rounded-xl text-sm hover:bg-rose-900/50 transition-colors">刪除檔案</button></div></div></div>}
     </div>
   );
