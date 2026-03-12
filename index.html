@@ -2,11 +2,9 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <!-- 完美手機版 Meta 設定：禁止雙擊放大、適應螢幕安全區 (瀏海屏) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>在地物流工作台</title>
   
-  <!-- 引入 Tailwind CSS 框架 -->
   <script src="https://cdn.tailwindcss.com"></script>
   
   <script>
@@ -15,7 +13,6 @@
     window.__initial_auth_token = window.__initial_auth_token || '';
   </script>
 
-  <!-- 穩定版 React 載入 (保證所有手機皆相容) -->
   <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -31,14 +28,12 @@
   </style>
 </head>
 <body>
-  <!-- React 渲染的目標節點 -->
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
 const { useState, useEffect, useRef } = React;
 const createRoot = ReactDOM.createRoot;
 
-// 引入 Firebase 雲端資料庫模組
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { 
   getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, 
@@ -48,9 +43,8 @@ import {
   getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken 
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-
 // ===================================================================
-// ☁️ 【雲端連線金鑰配置區】 (已為您填入專屬 supreme-v92 金鑰) ☁️
+// ☁️ 您的 Firebase 雲端連線金鑰
 // ===================================================================
 const customCloudConfig = {
   apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -96,13 +90,11 @@ const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'ggsoc-
 let envConfig = {};
 try { envConfig = window.__firebase_config ? JSON.parse(window.__firebase_config) : {}; } catch(e) {}
 
-// 優先使用您填寫的 customCloudConfig，如果沒有才用系統預設
 const finalConfig = Object.keys(customCloudConfig).length > 0 ? customCloudConfig : envConfig;
 const app = Object.keys(finalConfig).length > 0 ? initializeApp(finalConfig) : null;
 const db = app ? getFirestore(app) : null;
 const auth = app ? getAuth(app) : null;
 
-// 📈 2026 勞健保級距對照表
 const INSURANCE_TABLE = [
   { bracket: 29500, labor: 679, health: 457 }, { bracket: 30300, labor: 697, health: 470 },
   { bracket: 31800, labor: 731, health: 493 }, { bracket: 33300, labor: 766, health: 516 },
@@ -113,12 +105,12 @@ const INSURANCE_TABLE = [
   { bracket: 313000, labor: 1145, health: 4855 }
 ];
 
-// 🤖 Gemini AI 呼叫核心
 const callGemini = async (prompt, imageData = null) => {
   if (!apiKey || apiKey.trim() === "") { return "⚠️ 系統提示：管理員尚未開通 API 金鑰。"; }
-  let retryCount = 0; const maxRetries = 3;
+  let retryCount = 0; const maxRetries = 2;
   const performRequest = async () => {
-    const model = "gemini-2.5-flash"; 
+    // 升級為最新模型，解決 not found 錯誤
+    const model = "gemini-2.5-flash-preview-09-2025"; 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     let contents = [{ parts: [{ text: prompt }] }];
     if (imageData) {
@@ -133,6 +125,7 @@ const callGemini = async (prompt, imageData = null) => {
   while (retryCount < maxRetries) {
     try { return await performRequest(); } catch (e) { retryCount++; await new Promise(res => setTimeout(res, 1000 * Math.pow(2, retryCount))); }
   }
+  return "⚠️ 網路連線逾時，請稍後再試。";
 };
 
 let toastTimeout;
@@ -140,10 +133,10 @@ const showToast = (msg, isError = false) => {
   const t = document.getElementById('global-toast');
   if(t) {
     t.innerText = msg;
-    t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-6 py-4 md:px-10 md:py-6 rounded-full font-black z-[99999] shadow-2xl transition-all duration-500 flex items-center gap-2 text-sm md:text-lg w-11/12 md:w-auto text-center justify-center ${isError ? 'bg-rose-600 text-white' : 'bg-indigo-600 text-white'}`;
+    t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-6 py-4 md:px-10 md:py-6 rounded-2xl font-black z-[99999] shadow-2xl transition-all duration-500 flex items-center gap-2 text-sm md:text-lg w-11/12 md:w-auto text-center justify-center ${isError ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`;
     t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
     clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 3000);
+    toastTimeout = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 4000);
   }
 };
 
@@ -160,10 +153,6 @@ const processImage = (file, callback) => {
     }; img.src = e.target.result;
   }; reader.readAsDataURL(file);
 };
-
-// ==========================================
-// 🧩 組件定義
-// ==========================================
 
 const SignaturePad = ({ onSign }) => {
   const canvasRef = useRef(null);
@@ -295,8 +284,8 @@ function PartnerDetail({ partner, onClose, updateField, deletePartner }) {
 function ToolsModal({ onClose, db, appId, resetData }) {
   const [newN, setNewN] = useState(""); const [newP, setNewP] = useState(""); const [newPin, setNewPin] = useState("0000");
   const addManual = async () => {
-    if(!newN || !newP) return showToast("姓名手機為必填", true);
-    if(!db) return showToast("⚠️ 單機離線模式，無法建立資料", true);
+    if(!newN || !newP) return showToast("⚠️ 姓名手機為必填", true);
+    if(!db) return showToast("⚠️ 雲端資料庫未連線，請檢查網路", true);
     
     try {
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${newP}`), { 
@@ -304,10 +293,10 @@ function ToolsModal({ onClose, db, appId, resetData }) {
         total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10, 
         custom_adj:0, labor_fee:0, health_fee:0, dependents:0, insurance_bracket: 0 
       });
-      showToast("✅ 夥伴已手動建立"); 
+      showToast("✅ 夥伴已成功建立！"); 
       setNewN(""); setNewP("");
     } catch(err) {
-      showToast("建立失敗，請確認網路連線", true);
+      showToast("❌ 建立失敗，請至 Firebase 將「Firestore 規則」設為允許讀寫: " + err.message, true);
     }
   };
   return (
@@ -360,22 +349,15 @@ function Gate({ onLogin, announcement, setLayer, globalSettings, isConnected }) 
   const [lp, setLp] = useState(""); const [li, setLi] = useState(""); const [lr, setLr] = useState(false);
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative font-black animate-[fadeIn_0.5s_ease-out]">
-      <div className="absolute top-6 left-6 flex items-center gap-2 text-[10px] md:text-[11px] font-black bg-black/50 px-4 py-2 rounded-full border border-white/10 shadow-xl"><span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span><span className={isConnected ? 'text-emerald-400' : 'text-rose-400'}>{isConnected ? '雲端連線正常' : '連線異常 / 單機模式'}</span></div>
+      <div className="absolute top-6 left-6 flex items-center gap-2 text-[10px] md:text-[11px] font-black bg-black/50 px-4 py-2 rounded-full border border-white/10 shadow-xl"><span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span><span className={isConnected ? 'text-emerald-400' : 'text-rose-400'}>{isConnected ? '雲端連線正常' : '系統離線 (資料無法儲存)'}</span></div>
       
-      <div className="mb-8 text-center mt-12">
+      <div className="mb-10 md:mb-14 text-center mt-12">
         <h1 className="text-[3.5rem] md:text-8xl font-black text-white italic tracking-tighter mb-3 drop-shadow-2xl leading-none">在地物流</h1>
         <p className="text-blue-500 text-[10px] md:text-xs tracking-[0.3em] bg-indigo-950/40 border border-indigo-500/30 px-5 py-2 rounded-full inline-block uppercase shadow-lg italic">GGSOC v55.7 ✨</p>
       </div>
       
-      <div className="w-full max-w-[340px] md:max-w-[360px] z-10 font-black">
-        {!isConnected && (
-          <div className="mb-6 bg-rose-900/30 border border-rose-500/50 p-4 rounded-2xl text-rose-400 text-xs font-black text-center shadow-xl">
-            <p className="flex items-center justify-center gap-2 mb-1"><AlertCircle size={16}/> 目前為離線單機版</p>
-            <p className="opacity-80">資料無法上傳同步。若需正式使用，請確認上方 Firebase 金鑰是否正確。</p>
-          </div>
-        )}
-
-        <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,1)] mb-5">
+      <div className="w-full max-w-[340px] md:max-w-[360px] space-y-5 z-10 font-black">
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,1)]">
           <input type="tel" placeholder="手機號碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 md:p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg md:text-xl shadow-inner transition-all" value={lp} onChange={e => setLp(e.target.value)} maxLength={10} />
           <input type="password" placeholder="PIN 安全碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 md:p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg md:text-xl shadow-inner transition-all" value={li} onChange={e => setLi(e.target.value)} maxLength={lp === '0976017938' ? 7 : 4} />
           <div className="flex items-center justify-center gap-3 mb-6">
@@ -385,9 +367,9 @@ function Gate({ onLogin, announcement, setLayer, globalSettings, isConnected }) 
           <button onClick={() => { if(!lp || !li) return showToast("⚠️ 請輸入帳號與安全碼", true); onLogin(lp, li, lr); }} className="w-full py-4 md:py-5 rounded-[1.2rem] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg md:text-xl shadow-xl active:scale-95 transition-all flex justify-center items-center gap-3 italic tracking-[0.1em] shadow-indigo-500/30"><Radio size={20}/> 進入系統</button>
         </div>
         
-        {announcement && <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-[1.5rem] overflow-hidden flex items-center shadow-2xl mb-5"><div className="overflow-hidden w-full relative font-black text-center"><p className="text-white text-sm font-black whitespace-nowrap animate-marquee inline-block italic tracking-widest">{String(announcement)}</p></div></div>}
+        {announcement && <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-[1.5rem] overflow-hidden flex items-center shadow-2xl"><div className="overflow-hidden w-full relative font-black text-center"><p className="text-white text-sm font-black whitespace-nowrap animate-marquee inline-block italic tracking-widest">{String(announcement)}</p></div></div>}
         
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-2 gap-3">
           <button onClick={() => setLayer('onboarding')} className="w-full py-4 rounded-[1.2rem] border border-blue-500/30 text-blue-400 font-black text-xs md:text-sm bg-blue-900/10 shadow-xl italic flex flex-col justify-center items-center gap-1 active:scale-95 shadow-blue-500/10"><Clipboard size={18}/> 實務測驗</button>
           <button onClick={() => setLayer('onboarding_data')} className="w-full py-4 rounded-[1.2rem] border border-orange-500/30 text-orange-400 font-black text-xs md:text-sm bg-orange-900/10 shadow-xl italic flex flex-col justify-center items-center gap-1 active:scale-95 shadow-orange-500/10">補齊建檔</button>
         </div>
