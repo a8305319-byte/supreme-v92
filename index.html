@@ -2,24 +2,14 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <!-- 完美手機版 Meta 設定：禁止雙擊放大、適應螢幕安全區 (瀏海屏) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>在地物流工作台</title>
   
-  <!-- 引入 Tailwind CSS 框架 -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- 預先注入 Firebase 保護變數 -->
-  <script>
-    window.__app_id = window.__app_id || 'ggsoc-universal-v55-final';
-    window.__firebase_config = window.__firebase_config || JSON.stringify({});
-    window.__initial_auth_token = window.__initial_auth_token || '';
-  </script>
-
-  <!-- 終極解法：放棄 esm.sh，改用最傳統穩定的 unpkg 全域載入 React，保證所有手機瀏覽器皆支援 -->
+  <!-- 載入 React 核心與 Babel -->
   <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- 引入 Babel 來在瀏覽器即時編譯 JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
   <style>
@@ -33,15 +23,13 @@
   </style>
 </head>
 <body>
-  <!-- React 渲染的目標節點 -->
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-// 從全域變數中提取 React 功能 (取代原本會報錯的 import)
 const { useState, useEffect, useRef } = React;
 const createRoot = ReactDOM.createRoot;
 
-// 引入 Firebase 官方 CDN (最穩定版本)
+// 引入 Firebase
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { 
   getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, 
@@ -73,17 +61,25 @@ const Smartphone = createIcon('📱'); const Info = createIcon('ℹ️'); const 
 const Bot = createIcon('🤖'); const Terminal = createIcon('💻');
 
 // ==========================================
-// ⚙️ GGSOC 系統核心配置
+// ⚙️ 系統核心與資料庫自動連線設定
 // ==========================================
-const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'ggsoc-universal-v55-final';
+let appId = 'ggsoc-universal-v55-final';
+if (typeof window.__app_id !== 'undefined') appId = window.__app_id;
+
 let firebaseConfig = {};
-try { firebaseConfig = window.__firebase_config ? JSON.parse(window.__firebase_config) : {}; } catch(e) {}
+if (typeof window.__firebase_config !== 'undefined' && window.__firebase_config) {
+  try { firebaseConfig = typeof window.__firebase_config === 'string' ? JSON.parse(window.__firebase_config) : window.__firebase_config; } catch(e) {}
+}
+
 const app = Object.keys(firebaseConfig).length > 0 ? initializeApp(firebaseConfig) : null;
 const db = app ? getFirestore(app) : null;
 const auth = app ? getAuth(app) : null;
 
+let initToken = '';
+if (typeof window.__initial_auth_token !== 'undefined') initToken = window.__initial_auth_token;
+
 // ==========================================
-// 🔑 【您的 Gemini API Key 已自動填入】 🔑
+// 🔑 AI 金鑰設定
 // ==========================================
 const apiKey = "AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo"; 
 
@@ -98,15 +94,11 @@ const INSURANCE_TABLE = [
   { bracket: 313000, labor: 1145, health: 4855 }
 ];
 
-// 🤖 Gemini AI 呼叫核心 (已升級為最新版)
 const callGemini = async (prompt, imageData = null) => {
-  if (!apiKey || apiKey.trim() === "") {
-    return "⚠️ 系統提示：管理員尚未開通 API 金鑰。";
-  }
-
+  if (!apiKey || apiKey.trim() === "") return "⚠️ 系統提示：管理員尚未開通 API 金鑰。";
   let retryCount = 0; const maxRetries = 3;
   const performRequest = async () => {
-    const model = "gemini-2.5-flash"; // 更換為最新的 2.5 Flash 版本解決 NotFound 錯誤
+    const model = "gemini-2.5-flash"; 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     let contents = [{ parts: [{ text: prompt }] }];
     if (imageData) {
@@ -115,14 +107,9 @@ const callGemini = async (prompt, imageData = null) => {
     }
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents }) });
     const result = await response.json();
-    
-    if (result.error) {
-      return `⚠️ API 錯誤：${result.error.message || "金鑰可能無效"}`;
-    }
-    
+    if (result.error) return `⚠️ API 錯誤：${result.error.message || "金鑰可能無效"}`;
     return result.candidates?.[0]?.content?.parts?.[0]?.text || "暫無回應";
   };
-  
   while (retryCount < maxRetries) {
     try { return await performRequest(); } catch (e) { retryCount++; await new Promise(res => setTimeout(res, 1000 * Math.pow(2, retryCount))); }
   }
@@ -153,10 +140,6 @@ const processImage = (file, callback) => {
     }; img.src = e.target.result;
   }; reader.readAsDataURL(file);
 };
-
-// ==========================================
-// 🧩 組件定義
-// ==========================================
 
 const SignaturePad = ({ onSign }) => {
   const canvasRef = useRef(null);
@@ -283,8 +266,19 @@ function ToolsModal({ onClose, db, appId, resetData }) {
   const [newN, setNewN] = useState(""); const [newP, setNewP] = useState(""); const [newPin, setNewPin] = useState("0000");
   const addManual = async () => {
     if(!newN || !newP) return showToast("姓名手機為必填", true);
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${newP}`), { id:`p_${newP}`, name:newN, phone:newP, pin:newPin, status:'approved', total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10, custom_adj:0, labor_fee:0, health_fee:0, dependents:0, insurance_bracket: 0 });
-    showToast("✅ 夥伴已手動建立"); setNewN(""); setNewP("");
+    if(!db) return showToast("⚠️ 雲端資料庫未連線，無法建立", true);
+    
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${newP}`), { 
+        id:`p_${newP}`, name:newN, phone:newP, pin:newPin, status:'approved', 
+        total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10, 
+        custom_adj:0, labor_fee:0, health_fee:0, dependents:0, insurance_bracket: 0 
+      });
+      showToast("✅ 夥伴已手動建立"); 
+      setNewN(""); setNewP("");
+    } catch(err) {
+      showToast("建立失敗", true);
+    }
   };
   return (
     <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 font-black backdrop-blur-md">
@@ -654,13 +648,24 @@ function AppWrapper() {
 
   useEffect(()=>{
     if(!auth){ setLd(false); return; }
-    const initA=async()=>{ if(typeof window.__initial_auth_token!=='undefined'&&window.__initial_auth_token){await signInWithCustomToken(auth,window.__initial_auth_token);}else{await signInAnonymously(auth);}}; initA();
+    const initA=async()=>{ 
+      try {
+        if(initToken){
+          await signInWithCustomToken(auth, initToken);
+        }else{
+          await signInAnonymously(auth);
+        }
+      } catch(e) {
+        setLd(false);
+      }
+    }; 
+    initA();
     const unAuth = onAuthStateChanged(auth,(user)=>{ if(user){setU(user); const s=JSON.parse(localStorage.getItem('ggsoc_auth')||'{}'); if(s.phone){setAR(s.role); if(s.phone)setSpI(`p_${s.phone}`); if(s.role==='super_admin'||s.role==='admin')setL('admin');else setL('driver');}}});
     return () => unAuth();
   },[]);
 
   useEffect(()=>{
-    if(!u || !db) return;
+    if(!u || !db) { setLd(false); return; }
     const unP=onSnapshot(collection(db,'artifacts',appId,'public', 'data', 'partners'),(s)=>{setPs(s.docs.map(d=>({id:d.id,...d.data()})));setLd(false);setIsC(true);},()=>setIsC(false));
     const unA=onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'announcement'), (sn)=>{if(sn.exists())setAnn(String(sn.data().content || ""));});
     const unS=onSnapshot(doc(db,'artifacts',appId,'public','data','settings','global'),(s)=>{if(s.exists()){setGs(s.data()); if(s.data().systemLocked && localStorage.getItem('ggsoc_auth')){ const sa=JSON.parse(localStorage.getItem('ggsoc_auth')||'{}'); if(sa.phone!=="0976017938"){ localStorage.removeItem('ggsoc_auth'); setAR('guest'); setL('gate'); alert("Restricted."); } } }});
