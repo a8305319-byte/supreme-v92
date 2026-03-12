@@ -25,6 +25,10 @@
     .animate-marquee{animation:marquee 15s linear infinite;}
     .selectable{-webkit-user-select:text!important;user-select:text!important;}
     input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    
+    /* 圖片放大預覽器動畫 */
+    @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .animate-zoom { animation: zoomIn 0.2s ease-out forwards; }
   </style>
 </head>
 <body>
@@ -44,7 +48,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 // ===================================================================
-// ☁️ 您的 Firebase 雲端連線金鑰
+// ☁️ 您的 Firebase 雲端連線金鑰 (完美保留)
 // ===================================================================
 const customCloudConfig = {
   apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -57,7 +61,7 @@ const customCloudConfig = {
 };
 
 // ==========================================
-// 🔑 您的 Gemini AI 智慧金鑰
+// 🔑 您的 Gemini AI 智慧金鑰 (完美保留)
 // ==========================================
 const apiKey = "AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo"; 
 
@@ -109,7 +113,6 @@ const callGemini = async (prompt, imageData = null) => {
   if (!apiKey || apiKey.trim() === "") { return "⚠️ 系統提示：管理員尚未開通 API 金鑰。"; }
   let retryCount = 0; const maxRetries = 2;
   const performRequest = async () => {
-    // 升級為最新模型，解決 not found 錯誤
     const model = "gemini-2.5-flash-preview-09-2025"; 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     let contents = [{ parts: [{ text: prompt }] }];
@@ -140,8 +143,16 @@ const showToast = (msg, isError = false) => {
   }
 };
 
+// 安全處理 localStorage 避免隱私模式報錯
+const safeStorage = {
+  get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} },
+  remove: (k) => { try { localStorage.removeItem(k); } catch(e) {} }
+};
+
+// 圖片壓縮優化 (防空白壓縮)
 const processImage = (file, callback) => {
-  if (!file) return;
+  if (!file || !file.type.startsWith('image/')) return showToast("⚠️ 請上傳有效的圖片檔案", true);
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
@@ -153,6 +164,23 @@ const processImage = (file, callback) => {
     }; img.src = e.target.result;
   }; reader.readAsDataURL(file);
 };
+
+// 🎨 優化：全螢幕圖片預覽器元件
+const ImageViewer = ({ src, onClose }) => {
+  if(!src) return null;
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[100000] flex items-center justify-center p-4 animate-zoom" onClick={onClose}>
+      <button onClick={onClose} className="absolute top-6 right-6 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all backdrop-blur-md">
+        <X size={28}/>
+      </button>
+      <img src={src} className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/10" onClick={e=>e.stopPropagation()} />
+    </div>
+  );
+};
+
+// ==========================================
+// 🧩 組件定義
+// ==========================================
 
 const SignaturePad = ({ onSign }) => {
   const canvasRef = useRef(null);
@@ -192,19 +220,19 @@ function AIAssistant({ partners, onClose }) {
 
   return (
     <div className="fixed bottom-0 md:bottom-6 right-0 md:right-6 w-full md:w-[380px] h-[80vh] md:h-[550px] bg-slate-900 border-t md:border border-blue-500/30 rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl z-[10000] flex flex-col overflow-hidden animate-[fadeInUp_0.4s_ease-out] font-black">
-       <header className="p-5 bg-blue-600 text-white flex justify-between items-center shadow-lg"><div className="flex items-center gap-3"><Bot size={24}/><h3>✨ 在地 AI 指揮官</h3></div><button onClick={onClose} className="p-2"><X size={20}/></button></header>
+       <header className="p-5 bg-blue-600 text-white flex justify-between items-center shadow-lg"><div className="flex items-center gap-3"><Bot size={24}/><h3>✨ 在地 AI 指揮官</h3></div><button onClick={onClose} className="p-2 active:scale-90"><X size={20}/></button></header>
        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/20 custom-scrollbar pb-10">
           {chat.map((c, i) => (
             <div key={i} className={`flex ${c.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                <div className={`max-w-[85%] p-3 rounded-2xl text-sm font-black leading-relaxed shadow-lg ${c.role === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-100 border border-white/5'}`}>{c.msg}</div>
             </div>
           ))}
-          {loading && <div className="text-slate-500 text-xs italic">正在思考中...</div>}
+          {loading && <div className="text-blue-400 text-xs italic animate-pulse">✨ 指揮官正在分析數據中...</div>}
           <div ref={endRef} />
        </div>
        <div className="p-4 bg-slate-800 border-t border-white/5 flex gap-2 pb-8 md:pb-4">
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&askAI()} placeholder="詢問數據..." className="flex-1 bg-black/50 border border-white/10 rounded-full p-3 text-sm text-white outline-none focus:border-blue-500 font-black" />
-          <button onClick={askAI} className="bg-blue-600 p-3 rounded-full text-white active:scale-90 transition-all"><Send size={18}/></button>
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&askAI()} placeholder="詢問數據或人員狀況..." className="flex-1 bg-black/50 border border-white/10 rounded-full p-3 text-sm text-white outline-none focus:border-blue-500 font-black transition-all" />
+          <button onClick={askAI} className="bg-blue-600 p-3 rounded-full text-white active:scale-90 transition-all flex items-center justify-center w-12 h-12"><Send size={18}/></button>
        </div>
     </div>
   );
@@ -217,7 +245,7 @@ function MaintenanceModal({ partners, onClose }) {
     setLoading(true);
     try {
       if (partners.length === 0) {
-         setReport("報告老闆：目前系統尚未建立任何司機或夥伴資料，系統環境安全穩定，無風險。");
+         setReport("報告老闆：目前系統尚未建立任何司機或夥伴資料，系統環境安全穩定，無異常風險。");
          setLoading(false);
          showToast("✨ 智慧診斷完成");
          return;
@@ -231,24 +259,24 @@ function MaintenanceModal({ partners, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4">
       <div className="bg-slate-900 border border-blue-500/30 p-8 md:p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl relative overflow-hidden font-black">
-        <button onClick={onClose} className="absolute top-6 right-6 text-white p-2 active:scale-90"><X size={28}/></button>
+        <button onClick={onClose} className="absolute top-6 right-6 text-white p-2 active:scale-90 bg-slate-800 rounded-full"><X size={24}/></button>
         <h3 className="text-2xl md:text-3xl font-black text-blue-400 mb-6 italic flex items-center gap-3"><Terminal size={28}/> 系統維護診斷</h3>
-        <div className="bg-black/50 p-5 rounded-2xl min-h-[150px] mb-6 font-black text-slate-200 text-sm md:text-base leading-relaxed whitespace-pre-wrap shadow-inner overflow-y-auto max-h-[350px]">
-          {loading ? "系統正透過雲端分析各項數據完整性..." : (report || "點擊下方按鈕執行系統體檢報告。")}
+        <div className="bg-black/50 p-5 rounded-2xl min-h-[150px] mb-6 font-black text-slate-200 text-sm md:text-base leading-relaxed whitespace-pre-wrap shadow-inner overflow-y-auto max-h-[350px] custom-scrollbar">
+          {loading ? "✨ 系統正透過雲端分析各項數據完整性..." : (report || "點擊下方按鈕執行系統體檢報告。")}
         </div>
-        <button onClick={runMaintenance} disabled={loading} className="w-full py-4 md:py-5 rounded-2xl bg-blue-600 text-white font-black text-lg md:text-xl shadow-xl active:scale-95 transition-all flex justify-center items-center gap-3"><Activity size={24}/> 開始掃描</button>
+        <button onClick={runMaintenance} disabled={loading} className="w-full py-4 md:py-5 rounded-2xl bg-blue-600 text-white font-black text-lg md:text-xl shadow-xl active:scale-95 transition-all flex justify-center items-center gap-3 disabled:opacity-50"><Activity size={24}/> {loading ? '掃描中...' : '開始掃描'}</button>
       </div>
     </div>
   );
 }
 
-function PartnerDetail({ partner, onClose, updateField, deletePartner }) {
+function PartnerDetail({ partner, onClose, updateField, deletePartner, setPreviewImg }) {
   if (!partner) return null;
   const labels = {id_f:'身分證正面', id_b:'身分證反面', lic:'駕照正面', reg:'行照正面', book:'存摺封面', cr:'良民證'};
   return (
     <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 font-black backdrop-blur-sm">
       <div className="bg-slate-900 border border-white/10 p-6 md:p-8 rounded-[2.5rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar">
-        <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-rose-400 active:scale-90 p-2"><X size={28}/></button>
+        <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-rose-400 active:scale-90 p-2 bg-slate-800 rounded-full"><X size={24}/></button>
         <h3 className="text-2xl md:text-3xl font-black text-white mb-6 border-b border-white/5 pb-4 italic flex items-center gap-3"><User className="text-blue-400"/> 夥伴檔案全覽</h3>
         <div className="space-y-6 font-black">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-black/30 p-5 rounded-2xl border border-white/5 shadow-inner">
@@ -262,18 +290,18 @@ function PartnerDetail({ partner, onClose, updateField, deletePartner }) {
                 {Object.keys(labels).map(key => (
                    <div key={key} className="bg-black/30 p-3 rounded-2xl border border-white/5 text-center shadow-inner">
                      <p className="text-[9px] text-slate-500 mb-2 font-black uppercase tracking-tighter">{labels[key]}</p>
-                     {partner[`p_${key}`] ? <img src={partner[`p_${key}`]} className="w-full h-24 object-cover rounded-xl border border-white/10 active:scale-95 transition-all" onClick={() => window.open(partner[`p_${key}`], '_blank')} alt={labels[key]} /> : <div className="h-24 flex items-center justify-center text-[10px] text-slate-700 italic border-2 border-dashed border-slate-800/50 rounded-xl">未傳</div>}
+                     {partner[`p_${key}`] ? <img src={partner[`p_${key}`]} className="w-full h-24 object-cover rounded-xl border border-white/10 active:scale-95 transition-all cursor-pointer" onClick={() => setPreviewImg(partner[`p_${key}`])} alt={labels[key]} /> : <div className="h-24 flex items-center justify-center text-[10px] text-slate-700 italic border-2 border-dashed border-slate-800/50 rounded-xl">未傳</div>}
                    </div>
                 ))}
              </div>
           </div>
           <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row gap-4">
             {partner.status === 'pending' ? (
-              <button onClick={() => { updateField(partner.id, 'status', 'approved'); onClose(); }} className="flex-1 py-4 bg-orange-600 text-white rounded-xl text-sm font-black shadow-md active:scale-95 transition-all">✨ 核准入職開通</button>
+              <button onClick={() => { updateField(partner.id, 'status', 'approved'); onClose(); showToast("✅ 已核准開通！"); }} className="flex-1 py-4 bg-orange-600 text-white rounded-xl text-sm font-black shadow-md active:scale-95 transition-all">✨ 核准入職開通</button>
             ) : (
-              <button onClick={() => updateField(partner.id, 'status', partner.status==='frozen'?'approved':'frozen')} className={`flex-1 py-4 rounded-xl text-sm font-black shadow-lg active:scale-95 transition-all ${partner.status==='frozen'?'bg-emerald-600/20 text-emerald-500':'bg-cyan-600/20 text-cyan-500'}`}>{partner.status==='frozen'?'✔️ 解除凍結':'🧊 凍結帳號'}</button>
+              <button onClick={() => { updateField(partner.id, 'status', partner.status==='frozen'?'approved':'frozen'); showToast("✅ 狀態已更新"); }} className={`flex-1 py-4 rounded-xl text-sm font-black shadow-lg active:scale-95 transition-all ${partner.status==='frozen'?'bg-emerald-600/20 text-emerald-500 border border-emerald-500/30':'bg-cyan-600/20 text-cyan-500 border border-cyan-500/30'}`}>{partner.status==='frozen'?'✔️ 解除凍結':'🧊 凍結帳號'}</button>
             )}
-            <button onClick={() => { if(window.confirm("確認移除此檔案？")) deletePartner(partner.id); }} className="flex-1 py-4 bg-rose-900/30 text-rose-500 rounded-xl text-sm font-black shadow-md active:scale-95 transition-all">🗑️ 徹底移除</button>
+            <button onClick={() => { if(window.confirm("嚴重警告：確認徹底移除此檔案？資料將無法復原。")) deletePartner(partner.id); }} className="flex-1 py-4 bg-rose-900/30 text-rose-500 border border-rose-500/30 rounded-xl text-sm font-black shadow-md active:scale-95 transition-all">🗑️ 徹底移除</button>
           </div>
         </div>
       </div>
@@ -283,10 +311,11 @@ function PartnerDetail({ partner, onClose, updateField, deletePartner }) {
 
 function ToolsModal({ onClose, db, appId, resetData }) {
   const [newN, setNewN] = useState(""); const [newP, setNewP] = useState(""); const [newPin, setNewPin] = useState("0000");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const addManual = async () => {
     if(!newN || !newP) return showToast("⚠️ 姓名手機為必填", true);
     if(!db) return showToast("⚠️ 雲端資料庫未連線，請檢查網路", true);
-    
+    setIsSubmitting(true);
     try {
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${newP}`), { 
         id:`p_${newP}`, name:newN, phone:newP, pin:newPin, status:'approved', 
@@ -296,13 +325,14 @@ function ToolsModal({ onClose, db, appId, resetData }) {
       showToast("✅ 夥伴已成功建立！"); 
       setNewN(""); setNewP("");
     } catch(err) {
-      showToast("❌ 建立失敗，請至 Firebase 將「Firestore 規則」設為允許讀寫: " + err.message, true);
+      showToast("❌ 建立失敗，請確認 Firebase 規則權限: " + err.message, true);
     }
+    setIsSubmitting(false);
   };
   return (
     <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 font-black backdrop-blur-md">
       <div className="bg-slate-900 border border-white/10 p-8 md:p-10 rounded-[2.5rem] max-w-md w-full relative shadow-2xl">
-        <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-rose-400 active:scale-90 p-2"><X size={28}/></button>
+        <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-rose-400 active:scale-90 p-2 bg-slate-800 rounded-full"><X size={24}/></button>
         <h3 className="text-2xl md:text-3xl font-black text-blue-400 mb-8 text-center italic tracking-widest uppercase">系統工具箱</h3>
         <div className="space-y-6">
           <div className="bg-black/40 p-6 md:p-8 rounded-[2rem] border border-white/5 font-black shadow-inner">
@@ -312,7 +342,7 @@ function ToolsModal({ onClose, db, appId, resetData }) {
               <input type="tel" placeholder="手機" className="w-full bg-slate-800 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-blue-500 font-black text-base" value={newP} onChange={e => setNewP(e.target.value)} />
             </div>
             <input type="text" placeholder="PIN 安全碼 (預設0000)" className="w-full bg-slate-800 border border-white/10 p-4 rounded-xl text-amber-500 outline-none mb-5 tracking-widest font-black text-center shadow-inner text-base" value={newPin} onChange={e => setNewPin(e.target.value)} />
-            <button onClick={addManual} className="w-full py-4 bg-blue-600 text-white font-black rounded-xl shadow-xl active:scale-95 transition-all text-base italic tracking-widest">直接建立現役帳號</button>
+            <button onClick={addManual} disabled={isSubmitting} className="w-full py-4 bg-blue-600 text-white font-black rounded-xl shadow-xl active:scale-95 transition-all text-base italic tracking-widest disabled:opacity-50">{isSubmitting ? '建立中...' : '直接建立現役帳號'}</button>
           </div>
           <button onClick={() => { if(window.confirm("嚴重警告：全體配送件數將立即歸零，且無法復原！")) { resetData(); onClose(); } }} className="w-full py-5 bg-rose-900/20 text-rose-500 rounded-[1.5rem] border border-rose-500/20 text-sm md:text-md italic font-black shadow-lg active:scale-95 transition-all">🛑 月末數據結清歸零</button>
         </div>
@@ -323,11 +353,11 @@ function ToolsModal({ onClose, db, appId, resetData }) {
 
 function SystemSettingsModal({ onClose, db, appId, globalSettings }) {
   const [newAccPin, setNewAccPin] = useState(globalSettings?.accountantPin || "0172");
-  const toggleSetting = async (key) => { if(db){ await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), { ...globalSettings, [key]: !globalSettings[key] }, { merge: true }); showToast(`✅ 系統狀態更新`); } };
+  const toggleSetting = async (key) => { if(db){ await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), { ...globalSettings, [key]: !globalSettings[key] }, { merge: true }); showToast(`✅ 系統狀態已更新`); } };
   return (
     <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 font-black backdrop-blur-md">
       <div className="bg-slate-900 border border-amber-500/40 p-8 md:p-10 rounded-[2.5rem] max-w-md w-full shadow-2xl relative">
-        <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-amber-400 active:scale-90 p-2"><X size={28}/></button>
+        <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-amber-400 active:scale-90 p-2 bg-slate-800 rounded-full"><X size={24}/></button>
         <h3 className="text-2xl md:text-3xl font-black text-amber-500 mb-8 text-center flex items-center justify-center gap-3 italic"><Shield size={28} /> 總裁控制台</h3>
         <div className="space-y-4 mb-8 text-base md:text-lg font-black">
           <div className="flex justify-between items-center bg-black/40 p-5 rounded-[1.5rem] border border-white/5"><div><p className="text-white font-black italic">全站維護戒嚴</p></div><button onClick={() => toggleSetting('systemLocked')} className="active:scale-90 transition-all">{globalSettings?.systemLocked ? <ToggleRight className="text-rose-500" size={48} /> : <ToggleLeft className="text-slate-600" size={48} />}</button></div>
@@ -349,7 +379,7 @@ function Gate({ onLogin, announcement, setLayer, globalSettings, isConnected }) 
   const [lp, setLp] = useState(""); const [li, setLi] = useState(""); const [lr, setLr] = useState(false);
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative font-black animate-[fadeIn_0.5s_ease-out]">
-      <div className="absolute top-6 left-6 flex items-center gap-2 text-[10px] md:text-[11px] font-black bg-black/50 px-4 py-2 rounded-full border border-white/10 shadow-xl"><span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span><span className={isConnected ? 'text-emerald-400' : 'text-rose-400'}>{isConnected ? '雲端連線正常' : '系統離線 (資料無法儲存)'}</span></div>
+      <div className="absolute top-6 left-6 flex items-center gap-2 text-[10px] md:text-[11px] font-black bg-black/50 px-4 py-2 rounded-full border border-white/10 shadow-xl"><span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span><span className={isConnected ? 'text-emerald-400' : 'text-rose-400'}>{isConnected ? '雲端連線正常' : '系統離線 (請檢查網路或金鑰)'}</span></div>
       
       <div className="mb-10 md:mb-14 text-center mt-12">
         <h1 className="text-[3.5rem] md:text-8xl font-black text-white italic tracking-tighter mb-3 drop-shadow-2xl leading-none">在地物流</h1>
@@ -358,8 +388,8 @@ function Gate({ onLogin, announcement, setLayer, globalSettings, isConnected }) 
       
       <div className="w-full max-w-[340px] md:max-w-[360px] space-y-5 z-10 font-black">
         <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,1)]">
-          <input type="tel" placeholder="手機號碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 md:p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg md:text-xl shadow-inner transition-all" value={lp} onChange={e => setLp(e.target.value)} maxLength={10} />
-          <input type="password" placeholder="PIN 安全碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 md:p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg md:text-xl shadow-inner transition-all" value={li} onChange={e => setLi(e.target.value)} maxLength={lp === '0976017938' ? 7 : 4} />
+          <input type="tel" placeholder="手機號碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 md:p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg md:text-xl shadow-inner transition-all" value={lp} onChange={e => setLp(e.target.value.replace(/\D/g,''))} maxLength={10} />
+          <input type="password" placeholder="PIN 安全碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 md:p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg md:text-xl shadow-inner transition-all" value={li} onChange={e => setLi(e.target.value.replace(/\D/g,''))} maxLength={lp === '0976017938' ? 7 : 4} />
           <div className="flex items-center justify-center gap-3 mb-6">
              <input type="checkbox" id="gate_rem_final" checked={lr} onChange={e => setLr(e.target.checked)} className="w-5 h-5 accent-indigo-500 rounded bg-slate-800" />
              <label htmlFor="gate_rem_final" className="text-slate-400 text-[11px] md:text-xs font-black uppercase">記住登入資訊</label>
@@ -378,7 +408,7 @@ function Gate({ onLogin, announcement, setLayer, globalSettings, isConnected }) 
   );
 }
 
-function AdminHub({ authRole, partners, onLogout, autoInsur, updateField, setModalType, setSelectedPartner, showSensitive, setShowSensitive, sq, setSq }) {
+function AdminHub({ authRole, partners, onLogout, autoInsur, updateField, setModalType, setSelectedPartner, showSensitive, setShowSensitive, sq, setSq, setPreviewImg }) {
   const [adminTab, setAdminTab] = useState('formal'); 
   const [aiInsight, setAiInsight] = useState(""); const [isInsightLoading, setIsInsightLoading] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false); const [showMaintenance, setShowMaintenance] = useState(false);
@@ -454,6 +484,7 @@ function AdminHub({ authRole, partners, onLogout, autoInsur, updateField, setMod
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 xl:hidden pb-24">
+        {displayPartners.length === 0 && <p className="text-slate-500 text-center col-span-2 py-10 italic">查無名單資料</p>}
         {displayPartners.map(p => { 
            const p_net = (p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10))+(p.custom_adj||0)-(p.labor_fee||0)-(p.health_fee||0); 
            const hasR = p.last_report?.date===new Date().toLocaleDateString('en-CA'); 
@@ -481,15 +512,15 @@ function AdminHub({ authRole, partners, onLogout, autoInsur, updateField, setMod
                      </div>
                      <div className="bg-black/40 p-3 rounded-xl border border-white/5 text-center flex flex-col items-center">
                        <p className="text-[10px] text-slate-500 mb-1">眷屬</p>
-                       <input type="number" value={p.dependents||0} onChange={e=>updateField(p.id,'dependents',Number(e.target.value))} className="w-12 bg-transparent text-center text-white font-black outline-none border-b border-white/10" />
+                       <input type="number" value={p.dependents||0} onChange={e=>updateField(p.id,'dependents',Number(e.target.value)||0)} className="w-12 bg-transparent text-center text-white font-black outline-none border-b border-white/10" />
                      </div>
                      <div className="bg-black/40 p-3 rounded-xl border border-white/5 text-center flex flex-col items-center justify-center">
                        <p className="text-[10px] text-sky-400 mb-1">正件單價</p>
-                       <div className="flex text-sky-400 font-black">$<input type="number" value={p.custom_del_price||15} onChange={e=>updateField(p.id,'custom_del_price',Number(e.target.value))} className="w-10 bg-transparent text-center outline-none border-b border-white/10 focus:border-sky-500" /></div>
+                       <div className="flex text-sky-400 font-black">$<input type="number" value={p.custom_del_price||15} onChange={e=>updateField(p.id,'custom_del_price',Number(e.target.value)||0)} className="w-10 bg-transparent text-center outline-none border-b border-white/10 focus:border-sky-500" /></div>
                      </div>
                      <div className="bg-black/40 p-3 rounded-xl border border-white/5 text-center flex flex-col items-center justify-center">
                        <p className="text-[10px] text-orange-400 mb-1">逆收單價</p>
-                       <div className="flex text-orange-400 font-black">$<input type="number" value={p.custom_pkp_price||10} onChange={e=>updateField(p.id,'custom_pkp_price',Number(e.target.value))} className="w-10 bg-transparent text-center outline-none border-b border-white/10 focus:border-orange-500" /></div>
+                       <div className="flex text-orange-400 font-black">$<input type="number" value={p.custom_pkp_price||10} onChange={e=>updateField(p.id,'custom_pkp_price',Number(e.target.value)||0)} className="w-10 bg-transparent text-center outline-none border-b border-white/10 focus:border-orange-500" /></div>
                      </div>
                    </div>
 
@@ -515,8 +546,8 @@ function AdminHub({ authRole, partners, onLogout, autoInsur, updateField, setMod
                    )}
                  </div>
                  <div className="flex gap-2">
-                   {p.last_report?.cod_receipt && p.status !== 'pending' && <button onClick={()=>window.open(p.last_report.cod_receipt,'_blank')} className="bg-amber-900/30 text-amber-500 p-3 rounded-xl active:scale-90"><Receipt size={18}/></button>}
-                   {p.last_report?.photo && p.status !== 'pending' && <button onClick={()=>window.open(p.last_report.photo,'_blank')} className="bg-emerald-900/30 text-emerald-400 p-3 rounded-xl active:scale-90"><ImageIcon size={18}/></button>}
+                   {p.last_report?.cod_receipt && p.status !== 'pending' && <button onClick={()=>setPreviewImg(p.last_report.cod_receipt)} className="bg-amber-900/30 text-amber-500 p-3 rounded-xl active:scale-90 border border-amber-500/20"><Receipt size={18}/></button>}
+                   {p.last_report?.photo && p.status !== 'pending' && <button onClick={()=>setPreviewImg(p.last_report.photo)} className="bg-emerald-900/30 text-emerald-400 p-3 rounded-xl active:scale-90 border border-emerald-500/20"><ImageIcon size={18}/></button>}
                    <button onClick={()=>{setSelectedPartner(p); setModalType('detail');}} className="bg-blue-600/20 text-blue-400 px-4 py-2 rounded-xl text-xs font-black active:scale-90 border border-blue-500/30">櫥窗 / 審查</button>
                  </div>
                </div>
@@ -525,7 +556,7 @@ function AdminHub({ authRole, partners, onLogout, autoInsur, updateField, setMod
         })}
       </div>
 
-      <div className="hidden xl:block w-full overflow-x-auto rounded-[3.5rem] border border-white/10 bg-slate-900/60 shadow-[0_80px_160px_-40px_rgba(0,0,0,1)] mb-48"><table className="w-full min-w-[1900px] border-collapse text-left font-black"><thead><tr className="bg-slate-950 text-blue-400 text-sm uppercase border-b-2 border-blue-500/20 font-black"><th className="p-10 text-center w-36">報帳燈號</th><th className="p-10 w-72">夥伴數位檔案</th><th className="p-10 text-amber-500 text-center">💰 今日 C.O.D.</th><th className="p-10 text-center">正件單價</th><th className="p-10 text-center">逆收單價</th><th className="p-10 text-center">眷屬</th><th className="p-10 text-center text-blue-400 bg-blue-900/10 italic text-xl">2026 投保薪資</th><th className="p-10 text-center text-rose-400">勞健保扣除</th><th className="p-10 text-center text-white text-4xl font-black bg-blue-900/5 shadow-inner">預計實領淨額</th><th className="p-10 text-center">操作</th></tr></thead><tbody>{displayPartners.map(p => { const p_net = (p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10))+(p.custom_adj||0)-(p.labor_fee||0)-(p.health_fee||0); const hasR = p.last_report?.date===new Date().toLocaleDateString('en-CA'); return (<tr key={p.id} className={`border-b hover:bg-blue-900/10 transition-all font-black group font-black ${p.status==='pending' ? 'border-orange-500/30 bg-orange-900/5' : 'border-slate-800/50'}`}><td className="p-9 text-center font-black">{p.status==='pending' ? <span className="bg-orange-500/20 text-orange-400 text-[10px] px-2 py-1 rounded-md border border-orange-500/30">待審查</span> : <span className={`w-6 h-6 rounded-full inline-block shadow-2xl border-2 border-white/5 ${p.status==='frozen'?'bg-cyan-500 shadow-cyan-500/50':(hasR?'bg-emerald-500 animate-pulse shadow-emerald-500/50':'bg-slate-800 shadow-black')}`}></span>}</td><td className="p-9 font-black"><p className="text-white text-3xl font-black mb-1 italic">{p.name}</p><p className="text-sm text-slate-500 font-black opacity-70">📞 {!showSensitive[p.id] ? p.phone.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p></td><td className="p-9 text-amber-400 font-black text-center font-black"><div className="flex items-center justify-center gap-4 font-black"><span className="text-3xl font-black italic font-black font-black">${(hasR?p.last_report?.cod_amount||0:0).toLocaleString()}</span>{p.last_report?.cod_receipt && <button onClick={()=>window.open(p.last_report.cod_receipt,'_blank')} className="text-amber-500 bg-amber-900/30 p-3 rounded-2xl transition-all shadow-xl active:scale-90 hover:bg-amber-800"><Receipt size={28}/></button>}</div></td><td className="p-9 text-center text-sky-400 font-black text-2xl tracking-tighter font-black">$<input type="number" value={p.custom_del_price||15} onChange={e=>updateField(p.id,'custom_del_price',Number(e.target.value))} disabled={p.status==='pending'} className="w-16 bg-transparent text-center font-black outline-none border-b-2 border-white/5 focus:border-sky-500 shadow-sm" /></td><td className="p-9 text-center text-orange-400 font-black text-2xl tracking-tighter font-black font-black font-black">$<input type="number" value={p.custom_pkp_price||10} onChange={e=>updateField(p.id,'custom_pkp_price',Number(e.target.value))} disabled={p.status==='pending'} className="w-16 bg-transparent text-center font-black outline-none border-b-2 border-white/5 focus:border-orange-500 shadow-sm font-black font-black" /></td><td className="p-9 text-center font-black"><input type="number" value={p.dependents||0} onChange={e=>updateField(p.id,'dependents',Number(e.target.value))} disabled={p.status==='pending'} className="w-12 bg-transparent text-center font-black text-2xl outline-none" /></td><td className="p-9 text-center bg-blue-900/5 shadow-inner font-black"><select className="bg-slate-900 text-white text-lg font-black p-4 rounded-2xl border border-blue-500/30 outline-none cursor-pointer hover:border-blue-500 transition-all shadow-xl shadow-blue-500/5" value={p.insurance_bracket||0} disabled={p.status==='pending'} onChange={async(e)=>{if(db){const t=INSURANCE_TABLE.find(x=>x.bracket===Number(e.target.value));if(t)await updateDoc(doc(db,'artifacts',appId,'public','data','partners',p.id),{insurance_bracket:Number(e.target.value),labor_fee:t.labor,health_fee:Math.round(t.health*(1+Math.min(p.dependents||0,3)))});}}}><option value="0">--- 選取級距 ---</option>{INSURANCE_TABLE.map(t=>(<option key={t.bracket} value={t.bracket}>$ {t.bracket.toLocaleString()}</option>))}</select></td><td className="p-9 text-center text-rose-400 font-black font-black"><div className="flex flex-col gap-2 text-sm italic font-black font-black font-black"><span>勞: -${p.labor_fee||0}</span><span>健: -${p.health_fee||0}</span></div></td><td className="p-9 text-center text-white text-5xl tracking-tighter italic font-black bg-blue-900/5 shadow-inner font-black drop-shadow-[0_10px_20px_rgba(59,130,246,0.3)]" style={{ userSelect:'text' }}>${p.status==='pending' ? '---' : p_net.toLocaleString()}</td><td className="p-9 text-center font-black"><div className="flex gap-4 justify-center font-black">{p.last_report?.photo && <button onClick={()=>window.open(p.last_report.photo,'_blank')} className="text-emerald-400 bg-emerald-900/30 p-4 rounded-[1.5rem] hover:bg-emerald-800 shadow-xl active:scale-90 shadow-emerald-500/10"><ImageIcon size={32}/></button>}<button onClick={()=>{setSelectedPartner(p); setModalType('detail');}} className="bg-blue-900/50 text-blue-300 px-8 py-4 rounded-[1.5rem] text-sm font-black hover:bg-blue-800 transition-all italic border border-blue-500/20 shadow-lg">櫥窗</button></div></td></tr>); })}</tbody></table></div>
+      <div className="hidden xl:block w-full overflow-x-auto rounded-[3.5rem] border border-white/10 bg-slate-900/60 shadow-[0_80px_160px_-40px_rgba(0,0,0,1)] mb-48"><table className="w-full min-w-[1900px] border-collapse text-left font-black"><thead><tr className="bg-slate-950 text-blue-400 text-sm uppercase border-b-2 border-blue-500/20 font-black"><th className="p-10 text-center w-36">報帳燈號</th><th className="p-10 w-72">夥伴數位檔案</th><th className="p-10 text-amber-500 text-center">💰 今日 C.O.D.</th><th className="p-10 text-center">正件單價</th><th className="p-10 text-center">逆收單價</th><th className="p-10 text-center">眷屬</th><th className="p-10 text-center text-blue-400 bg-blue-900/10 italic text-xl">2026 投保薪資</th><th className="p-10 text-center text-rose-400">勞健保扣除</th><th className="p-10 text-center text-white text-4xl font-black bg-blue-900/5 shadow-inner">預計實領淨額</th><th className="p-10 text-center">操作</th></tr></thead><tbody>{displayPartners.map(p => { const p_net = (p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10))+(p.custom_adj||0)-(p.labor_fee||0)-(p.health_fee||0); const hasR = p.last_report?.date===new Date().toLocaleDateString('en-CA'); return (<tr key={p.id} className={`border-b hover:bg-blue-900/10 transition-all font-black group font-black ${p.status==='pending' ? 'border-orange-500/30 bg-orange-900/5' : 'border-slate-800/50'}`}><td className="p-9 text-center font-black">{p.status==='pending' ? <span className="bg-orange-500/20 text-orange-400 text-[10px] px-2 py-1 rounded-md border border-orange-500/30">待審查</span> : <span className={`w-6 h-6 rounded-full inline-block shadow-2xl border-2 border-white/5 ${p.status==='frozen'?'bg-cyan-500 shadow-cyan-500/50':(hasR?'bg-emerald-500 animate-pulse shadow-emerald-500/50':'bg-slate-800 shadow-black')}`}></span>}</td><td className="p-9 font-black"><p className="text-white text-3xl font-black mb-1 italic">{p.name}</p><p className="text-sm text-slate-500 font-black opacity-70">📞 {!showSensitive[p.id] ? p.phone.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p></td><td className="p-9 text-amber-400 font-black text-center font-black"><div className="flex items-center justify-center gap-4 font-black"><span className="text-3xl font-black italic font-black font-black">${(hasR?p.last_report?.cod_amount||0:0).toLocaleString()}</span>{p.last_report?.cod_receipt && <button onClick={()=>setPreviewImg(p.last_report.cod_receipt)} className="text-amber-500 bg-amber-900/30 p-3 rounded-2xl transition-all shadow-xl active:scale-90 hover:bg-amber-800"><Receipt size={28}/></button>}</div></td><td className="p-9 text-center text-sky-400 font-black text-2xl tracking-tighter font-black">$<input type="number" value={p.custom_del_price||15} onChange={e=>updateField(p.id,'custom_del_price',Number(e.target.value)||0)} disabled={p.status==='pending'} className="w-16 bg-transparent text-center font-black outline-none border-b-2 border-white/5 focus:border-sky-500 shadow-sm" /></td><td className="p-9 text-center text-orange-400 font-black text-2xl tracking-tighter font-black font-black font-black">$<input type="number" value={p.custom_pkp_price||10} onChange={e=>updateField(p.id,'custom_pkp_price',Number(e.target.value)||0)} disabled={p.status==='pending'} className="w-16 bg-transparent text-center font-black outline-none border-b-2 border-white/5 focus:border-orange-500 shadow-sm font-black font-black" /></td><td className="p-9 text-center font-black"><input type="number" value={p.dependents||0} onChange={e=>updateField(p.id,'dependents',Number(e.target.value)||0)} disabled={p.status==='pending'} className="w-12 bg-transparent text-center font-black text-2xl outline-none" /></td><td className="p-9 text-center bg-blue-900/5 shadow-inner font-black"><select className="bg-slate-900 text-white text-lg font-black p-4 rounded-2xl border border-blue-500/30 outline-none cursor-pointer hover:border-blue-500 transition-all shadow-xl shadow-blue-500/5" value={p.insurance_bracket||0} disabled={p.status==='pending'} onChange={async(e)=>{if(db){const t=INSURANCE_TABLE.find(x=>x.bracket===Number(e.target.value));if(t)await updateDoc(doc(db,'artifacts',appId,'public','data','partners',p.id),{insurance_bracket:Number(e.target.value),labor_fee:t.labor,health_fee:Math.round(t.health*(1+Math.min(p.dependents||0,3)))});}}}><option value="0">--- 選取級距 ---</option>{INSURANCE_TABLE.map(t=>(<option key={t.bracket} value={t.bracket}>$ {t.bracket.toLocaleString()}</option>))}</select></td><td className="p-9 text-center text-rose-400 font-black font-black"><div className="flex flex-col gap-2 text-sm italic font-black font-black font-black"><span>勞: -${p.labor_fee||0}</span><span>健: -${p.health_fee||0}</span></div></td><td className="p-9 text-center text-white text-5xl tracking-tighter italic font-black bg-blue-900/5 shadow-inner font-black drop-shadow-[0_10px_20px_rgba(59,130,246,0.3)]" style={{ userSelect:'text' }}>${p.status==='pending' ? '---' : p_net.toLocaleString()}</td><td className="p-9 text-center font-black"><div className="flex gap-4 justify-center font-black">{p.last_report?.photo && <button onClick={()=>setPreviewImg(p.last_report.photo)} className="text-emerald-400 bg-emerald-900/30 p-4 rounded-[1.5rem] hover:bg-emerald-800 shadow-xl active:scale-90 shadow-emerald-500/10"><ImageIcon size={32}/></button>}<button onClick={()=>{setSelectedPartner(p); setModalType('detail');}} className="bg-blue-900/50 text-blue-300 px-8 py-4 rounded-[1.5rem] text-sm font-black hover:bg-blue-800 transition-all italic border border-blue-500/20 shadow-lg">櫥窗</button></div></td></tr>); })}</tbody></table></div>
       
       {showAIAssistant && <AIAssistant partners={partners} onClose={()=>setShowAIAssistant(false)} />}
       {showMaintenance && <MaintenanceModal partners={partners} onClose={()=>setShowMaintenance(false)} />}
@@ -534,20 +565,28 @@ function AdminHub({ authRole, partners, onLogout, autoInsur, updateField, setMod
 }
 
 function DriverHub({ currentPartner, onLogout, updateField, globalSettings, authRole }) {
-  const [del,setDel]=useState(""); const [pkp,setPkp]=useState(""); const [cod,setCod]=useState(""); const [pData,setPData]=useState(null); const [sData,setSData]=useState(null); const [cRData,setCRData]=useState(null); const [isAiV,setIsAiV]=useState(false);
-  const submit=()=>{ 
+  const [del,setDel]=useState(""); const [pkp,setPkp]=useState(""); const [cod,setCod]=useState(""); const [pData,setPData]=useState(null); const [sData,setSData]=useState(null); const [cRData,setCRData]=useState(null); const [isAiV,setIsAiV]=useState(false); const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const submit=async ()=>{ 
     if(globalSettings?.systemLocked&&authRole!=='super_admin') return showToast("⚠️ 系統維護中，目前禁止報帳",true); 
     if(!pData) return showToast("⚠️ 請先拍攝今日回單照片",true);
     if(!sData) return showToast("⚠️ 請先在下方進行數位簽名",true);
     if(Number(cod)>0&&!cRData) return showToast("🚨 有填寫代收金額，請務必拍攝收據照片",true); 
     
-    updateField(currentPartner.id,'total_del',(currentPartner.total_del||0)+Number(del)); 
-    updateField(currentPartner.id,'total_pkp',(currentPartner.total_pkp||0)+Number(pkp)); 
-    updateField(currentPartner.id,'last_report',{date:new Date().toLocaleDateString('en-CA'),photo:pData,signature:sData,cod_amount:Number(cod),cod_receipt:cRData}); 
-    
-    setDel("");setPkp("");setCod("");setPData(null);setSData(null);setCRData(null); 
-    showToast("✅ 報帳同步成功！"); 
+    setIsSubmitting(true);
+    try {
+      await updateField(currentPartner.id,'total_del',(currentPartner.total_del||0)+(Number(del)||0)); 
+      await updateField(currentPartner.id,'total_pkp',(currentPartner.total_pkp||0)+(Number(pkp)||0)); 
+      await updateField(currentPartner.id,'last_report',{date:new Date().toLocaleDateString('en-CA'),photo:pData,signature:sData,cod_amount:Number(cod)||0,cod_receipt:cRData}); 
+      
+      setDel("");setPkp("");setCod("");setPData(null);setSData(null);setCRData(null); 
+      showToast("✅ 報帳同步成功！"); 
+    } catch (e) {
+      showToast("❌ 傳送失敗，請檢查網路連線", true);
+    }
+    setIsSubmitting(false);
   };
+
   return (
     <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4 md:p-6 pb-24 font-black">
       <div className="bg-slate-900/80 backdrop-blur-xl p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] w-full max-w-[500px] shadow-2xl border border-blue-500/20 text-center relative font-black font-black">
@@ -556,23 +595,23 @@ function DriverHub({ currentPartner, onLogout, updateField, globalSettings, auth
         <div className="grid grid-cols-2 gap-3 md:gap-6 mb-6 font-black font-black">
            <div className="bg-black/50 p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-inner font-black">
              <p className="text-[10px] md:text-xs text-blue-400 mb-2 uppercase font-black">今日配送</p>
-             <input type="number" placeholder="0" className="w-full bg-transparent text-center text-4xl md:text-6xl text-white outline-none font-black shadow-sm font-black" value={del} onChange={e=>setDel(e.target.value)} />
+             <input type="number" placeholder="0" min="0" className="w-full bg-transparent text-center text-4xl md:text-6xl text-white outline-none font-black shadow-sm font-black" value={del} onChange={e=>setDel(Math.max(0, parseInt(e.target.value)||0))} />
            </div>
            <div className="bg-black/50 p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-inner font-black font-black">
              <p className="text-[10px] md:text-xs text-cyan-400 mb-2 uppercase font-black">今日逆收</p>
-             <input type="number" placeholder="0" className="w-full bg-transparent text-center text-4xl md:text-6xl text-white outline-none font-black shadow-sm font-black" value={pkp} onChange={e=>setPkp(e.target.value)} />
+             <input type="number" placeholder="0" min="0" className="w-full bg-transparent text-center text-4xl md:text-6xl text-white outline-none font-black shadow-sm font-black" value={pkp} onChange={e=>setPkp(Math.max(0, parseInt(e.target.value)||0))} />
            </div>
         </div>
 
         <div className="bg-amber-900/10 p-6 md:p-8 rounded-[2.5rem] border border-amber-500/30 mb-8 shadow-inner font-black font-black">
            <p className="text-xs md:text-sm text-amber-500 mb-4 font-black flex items-center justify-center gap-2 italic font-black font-black font-black"><Banknote size={20}/> 今日代收 (C.O.D)</p>
            <div className="flex items-center justify-center text-3xl md:text-5xl text-amber-400 font-black mb-4 font-black font-black font-black">
-             $<input type="number" placeholder="0" className="w-28 md:w-44 bg-transparent text-center outline-none border-b-4 border-amber-500/50 pb-1 md:pb-2 ml-2 font-black shadow-sm font-black font-black" value={cod} onChange={e=>setCod(e.target.value)} />
+             $<input type="number" placeholder="0" min="0" className="w-28 md:w-44 bg-transparent text-center outline-none border-b-4 border-amber-500/50 pb-1 md:pb-2 ml-2 font-black shadow-sm font-black font-black" value={cod} onChange={e=>setCod(Math.max(0, parseInt(e.target.value)||0))} />
            </div>
            {Number(cod)>0 && (
              <div className="flex gap-4 mt-6 animate-[fadeInUp_0.3s_ease-out] font-black font-black font-black">
                <input type="file" accept="image/*" capture="environment" id="cod_last_cam" className="hidden" onChange={e=>processImage(e.target.files[0],setCRData)} />
-               <label htmlFor="cod_last_cam" className={`flex-1 flex flex-col items-center justify-center p-4 md:p-5 rounded-2xl border-2 border-dashed transition-all shadow-xl font-black font-black font-black ${cRData?'border-emerald-500 bg-emerald-500/10 text-emerald-400':'border-amber-500/50 text-amber-500'}`}>
+               <label htmlFor="cod_last_cam" className={`flex-1 flex flex-col items-center justify-center p-4 md:p-5 rounded-2xl border-2 border-dashed transition-all shadow-xl font-black font-black font-black cursor-pointer active:scale-95 ${cRData?'border-emerald-500 bg-emerald-500/10 text-emerald-400':'border-amber-500/50 text-amber-500'}`}>
                  {cRData ? <CheckCircle size={28}/> : <><Receipt size={28}/><span className="text-[10px] md:text-xs font-black mt-2 font-black font-black">拍照收據</span></>}
                </label>
              </div>
@@ -581,7 +620,7 @@ function DriverHub({ currentPartner, onLogout, updateField, globalSettings, auth
 
         <div className="mb-8 flex gap-3 md:gap-4 font-black font-black">
            <input type="file" accept="image/*" capture="environment" id="hub_cam" className="hidden" onChange={e=>processImage(e.target.files[0],setPData)} />
-           <label htmlFor="hub_cam" className={`flex-1 flex flex-col items-center justify-center p-6 md:p-8 rounded-[2rem] border-2 border-dashed shadow-inner transition-all font-black font-black ${pData?'border-emerald-500 bg-emerald-500/10 text-emerald-400':'border-slate-700 bg-slate-800/50 text-slate-500'}`}>
+           <label htmlFor="hub_cam" className={`flex-1 flex flex-col items-center justify-center p-6 md:p-8 rounded-[2rem] border-2 border-dashed shadow-inner transition-all font-black font-black cursor-pointer active:scale-95 ${pData?'border-emerald-500 bg-emerald-500/10 text-emerald-400':'border-slate-700 bg-slate-800/50 text-slate-500'}`}>
              {pData ? <CheckCircle size={36}/> : <><Camera size={36}/><span className="text-[11px] md:text-sm font-black uppercase mt-2 font-black">拍照今日回單</span></>}
            </label>
            {pData && 
@@ -605,7 +644,9 @@ function DriverHub({ currentPartner, onLogout, updateField, globalSettings, auth
            <SignaturePad onSign={setSData} />
         </div>
 
-        <button onClick={submit} className="w-full py-5 md:py-7 rounded-[2rem] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xl md:text-3xl shadow-2xl mb-10 active:scale-95 transition-all shadow-indigo-500/20 uppercase font-black font-black">加密傳送數據</button>
+        <button onClick={submit} disabled={isSubmitting} className="w-full py-5 md:py-7 rounded-[2rem] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xl md:text-3xl shadow-2xl mb-10 active:scale-95 transition-all shadow-indigo-500/20 uppercase font-black font-black disabled:opacity-50">
+          {isSubmitting ? '傳送中...' : '加密傳送數據'}
+        </button>
         <button onClick={onLogout} className="text-rose-500 text-sm md:text-lg font-black underline italic flex items-center justify-center gap-2 mx-auto active:scale-90 transition-all uppercase font-black font-black font-black font-black"><LogOut size={20}/> 安全退出系統</button>
       </div>
     </div>
@@ -614,7 +655,7 @@ function DriverHub({ currentPartner, onLogout, updateField, globalSettings, auth
 
 function OnboardingFlow({ setLayer, db, appId }) {
   const [messages,setMessages]=useState([{type:'bot',text: "您好，歡迎進入招募流程。入職前系統將進行 10 題實務評估。請先輸入您的真實姓名與手機號碼建立檔案。"}]);
-  const [step,setStep]=useState('info'); const [n,setN]=useState(""); const [p,setP]=useState(""); const [cQ,setCQ]=useState(0); const [ans,setAns]=useState([]); const [iT,setIT]=useState("");
+  const [step,setStep]=useState('info'); const [n,setN]=useState(""); const [p,setP]=useState(""); const [cQ,setCQ]=useState(0); const [ans,setAns]=useState([]); const [iT,setIT]=useState(""); const [isSubmitting, setIsSubmitting]=useState(false);
   const quizDB = ["1/10.若發生車禍？","2/10.包裹破損？","3/10.代收保管？","4/10.違禁品？","5/10.不在家？","6/10.拒收？","7/10.車拋錨？","8/10.下班帳務？","9/10.爆量？","10/10.改址？"];
   const sendAns=()=>{ 
     if(!iT.trim()) return showToast("⚠️ 請輸入回答內容", true); 
@@ -625,15 +666,22 @@ function OnboardingFlow({ setLayer, db, appId }) {
       setTimeout(()=>setMessages(px=>[...px,{type:'bot',text:quizDB[nx]}]),600); 
     }else{ 
       setStep('done'); 
+      setIsSubmitting(true);
       setTimeout(async()=>{ 
-        setMessages(px=>[...px,{type:'bot',text:"✅ 測驗完成！請返回首頁並繼續補齊證件資料。"}]); 
+        setMessages(px=>[...px,{type:'bot',text:"✅ 測驗完成！資料儲存中，請稍候並返回首頁。"}]); 
         if(db){ 
-          await setDoc(doc(db,'artifacts',appId,'public','data','partners',`p_${p}`), { 
-            id:`p_${p}`, name:n, phone:p, pin:"0000", status:'pending', quiz_results:nA, 
-            total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10, custom_adj:0, 
-            labor_fee:0, health_fee:0, dependents:0, created_at:serverTimestamp() 
-          }); 
+          try {
+            await setDoc(doc(db,'artifacts',appId,'public','data','partners',`p_${p}`), { 
+              id:`p_${p}`, name:n, phone:p, pin:"0000", status:'pending', quiz_results:nA, 
+              total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10, custom_adj:0, 
+              labor_fee:0, health_fee:0, dependents:0, created_at:serverTimestamp() 
+            }); 
+            showToast("✅ 資料建檔成功");
+          } catch(e) {
+            showToast("❌ 建檔失敗，請確認網路", true);
+          }
         } 
+        setIsSubmitting(false);
       },800); 
     } 
   };
@@ -652,7 +700,7 @@ function OnboardingFlow({ setLayer, db, appId }) {
         {step==='info'?(
           <div className="space-y-4 font-black">
             <input type="text" placeholder="真實姓名" className="w-full bg-black/50 border border-white/10 p-5 rounded-2xl text-center text-white outline-none font-black text-xl shadow-inner" value={n} onChange={e=>setN(e.target.value)} />
-            <input type="tel" placeholder="手機號碼" className="w-full bg-black/50 border border-white/10 p-5 rounded-2xl text-center text-white outline-none font-black text-xl shadow-inner" value={p} onChange={e=>setP(e.target.value)} maxLength={10} />
+            <input type="tel" placeholder="手機號碼" className="w-full bg-black/50 border border-white/10 p-5 rounded-2xl text-center text-white outline-none font-black text-xl shadow-inner" value={p} onChange={e=>setP(e.target.value.replace(/\D/g,''))} maxLength={10} />
             <button onClick={()=>{
               if(!n) return showToast("⚠️ 請輸入真實姓名", true);
               if(p.length<10) return showToast("⚠️ 請輸入完整的10碼手機號碼", true);
@@ -665,7 +713,7 @@ function OnboardingFlow({ setLayer, db, appId }) {
             <button onClick={sendAns} className="bg-blue-600 text-white p-5 rounded-full shadow-2xl active:scale-90 transition-all"><Send size={24}/></button>
           </div>
         ):(
-          <button onClick={()=>setLayer('gate')} className="w-full py-5 rounded-2xl bg-emerald-600 text-white font-black text-xl shadow-xl shadow-emerald-500/10 active:scale-95">測驗完成返回</button>
+          <button onClick={()=>setLayer('gate')} disabled={isSubmitting} className="w-full py-5 rounded-2xl bg-emerald-600 text-white font-black text-xl shadow-xl shadow-emerald-500/10 active:scale-95 disabled:opacity-50">返回首頁補齊建檔</button>
         )}
       </div>
     </div>
@@ -680,22 +728,28 @@ function OnboardingDataFlow({ setLayer, db, appId }) {
   const checkVerified = async () => { 
     if(!phVal) return showToast("⚠️ 請輸入手機號碼", true); 
     if(!db) return showToast("⚠️ 無法連線至資料庫",true); 
-    const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${phVal}`)); 
-    if(snap.exists()) { 
-      setVerified(true); 
-      setFormData({ id_num: snap.data().p_id_num || "", dob: snap.data().p_dob || "", address: snap.data().p_address || "", emergency_name: snap.data().p_emergency_name || "", emergency_phone: snap.data().p_emergency_phone || "", bank_code: snap.data().p_bank_code || "", bank_acc: snap.data().p_bank_acc || "" }); 
-      setDocs({id_f:snap.data().p_id_f,id_b:snap.data().p_id_b,lic:snap.data().p_lic,reg:snap.data().p_reg,book:snap.data().p_book,cr:snap.data().p_cr}); 
-      showToast("✅ 身分驗證通過"); 
-    } else { 
-      showToast("❌ 查無此手機號碼的測驗紀錄", true); 
-    } 
+    setLoading(true);
+    try {
+      const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${phVal}`)); 
+      if(snap.exists()) { 
+        setVerified(true); 
+        setFormData({ id_num: snap.data().p_id_num || "", dob: snap.data().p_dob || "", address: snap.data().p_address || "", emergency_name: snap.data().p_emergency_name || "", emergency_phone: snap.data().p_emergency_phone || "", bank_code: snap.data().p_bank_code || "", bank_acc: snap.data().p_bank_acc || "" }); 
+        setDocs({id_f:snap.data().p_id_f,id_b:snap.data().p_id_b,lic:snap.data().p_lic,reg:snap.data().p_reg,book:snap.data().p_book,cr:snap.data().p_cr}); 
+        showToast("✅ 身分驗證通過"); 
+      } else { 
+        showToast("❌ 查無此手機號碼的測驗紀錄", true); 
+      }
+    } catch(e) {
+      showToast("連線失敗", true);
+    }
+    setLoading(false);
   };
   const saveAll = async () => { 
     if(!formData.id_num || !formData.dob || !formData.address || !formData.bank_acc) return showToast("⚠️ 標註 * 為必填欄位", true); 
     setLoading(true); 
     try { 
       await updateDoc(doc(db,'artifacts',appId,'public','data','partners',`p_${phVal}`), { p_id_num:formData.id_num, p_dob:formData.dob, p_address:formData.address, p_emergency_name:formData.emergency_name, p_emergency_phone:formData.emergency_phone, p_bank_code:formData.bank_code, p_bank_acc:formData.bank_acc, p_id_f:docs.id_f||"", p_id_b:docs.id_b||"", p_lic:docs.lic||"", p_reg:docs.reg||"", p_book:docs.book||"", p_cr:docs.cr||"", onboarding_completed:true }); 
-      showToast("🚀 檔案同步成功！"); 
+      showToast("🚀 檔案同步成功！等待老闆審核"); 
       setTimeout(()=>setLayer('gate'), 1500); 
     } catch(e){ showToast("儲存失敗", true); } 
     setLoading(false); 
@@ -705,19 +759,23 @@ function OnboardingDataFlow({ setLayer, db, appId }) {
       <header className="p-6 md:p-8 flex items-center gap-4 bg-slate-900/50 border-b border-white/10 shadow-lg font-black"><button onClick={() => setLayer('gate')} className="p-2 bg-slate-800 rounded-full text-white active:scale-90 transition-all"><ChevronLeft size={28}/></button><h2 className="text-2xl md:text-3xl text-white font-black italic">夥伴入職資料建檔</h2></header>
       <div className="flex-1 p-6 md:p-8 overflow-y-auto pb-24">
         {!verified ? (
-          <div className="bg-slate-900/60 p-8 md:p-10 rounded-[2.5rem] mt-12 border border-white/5 shadow-2xl text-center font-black"><p className="text-slate-400 text-sm mb-8 italic">請輸入手機號碼驗證身份</p><input type="tel" placeholder="09XX..." value={phVal} onChange={e=>setPhVal(e.target.value)} className="w-full bg-black/50 border border-white/10 p-5 rounded-2xl text-center text-white text-xl font-black mb-8 shadow-inner" maxLength={10}/><button onClick={checkVerified} className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl italic tracking-widest uppercase">驗證身份</button></div>
+          <div className="bg-slate-900/60 p-8 md:p-10 rounded-[2.5rem] mt-12 border border-white/5 shadow-2xl text-center font-black">
+            <p className="text-slate-400 text-sm mb-8 italic">請輸入測驗時填寫的手機號碼</p>
+            <input type="tel" placeholder="09XX..." value={phVal} onChange={e=>setPhVal(e.target.value.replace(/\D/g,''))} className="w-full bg-black/50 border border-white/10 p-5 rounded-2xl text-center text-white text-xl font-black mb-8 shadow-inner" maxLength={10}/>
+            <button onClick={checkVerified} disabled={loading} className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl italic tracking-widest uppercase active:scale-95 disabled:opacity-50">{loading ? '驗證中...' : '驗證身份'}</button>
+          </div>
         ) : (
           <div className="space-y-8 animate-in fade-in duration-500 font-black">
             <div className="bg-black/40 p-6 md:p-8 rounded-[2.5rem] border border-white/5 space-y-6 shadow-inner">
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="text-[10px] text-slate-500 uppercase">身分證號 *</label><input placeholder="A12..." value={formData.id_num} onChange={e=>setFormData({...formData, id_num:e.target.value.toUpperCase()})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white font-black shadow-sm" /></div><div><label className="text-[10px] text-slate-500 uppercase">出生日期 *</label><input type="date" value={formData.dob} onChange={e=>setFormData({...formData, dob:e.target.value})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white font-black shadow-sm" /></div></div>
                <div><label className="text-[10px] text-slate-500 uppercase">戶籍地址 *</label><input value={formData.address} onChange={e=>setFormData({...formData, address:e.target.value})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white font-black shadow-sm" /></div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="text-[10px] text-slate-500 uppercase">緊急聯絡人 *</label><input value={formData.emergency_name} onChange={e=>setFormData({...formData, emergency_name:e.target.value})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white font-black shadow-sm" /></div><div><label className="text-[10px] text-slate-500 uppercase">電話 *</label><input value={formData.emergency_phone} onChange={e=>setFormData({...formData, emergency_phone:e.target.value})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white font-black shadow-sm" maxLength={10}/></div></div>
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label className="text-[10px] text-slate-500 uppercase">銀行代碼 *</label><input placeholder="822" value={formData.bank_code} onChange={e=>setFormData({...formData, bank_code:e.target.value})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-emerald-400 text-center font-black" maxLength={3}/></div><div className="md:col-span-2"><label className="text-[10px] text-slate-500 uppercase">帳號 *</label><input value={formData.bank_acc} onChange={e=>setFormData({...formData, bank_acc:e.target.value})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-emerald-400 font-black shadow-sm" /></div></div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="text-[10px] text-slate-500 uppercase">緊急聯絡人 *</label><input value={formData.emergency_name} onChange={e=>setFormData({...formData, emergency_name:e.target.value})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white font-black shadow-sm" /></div><div><label className="text-[10px] text-slate-500 uppercase">電話 *</label><input value={formData.emergency_phone} onChange={e=>setFormData({...formData, emergency_phone:e.target.value.replace(/\D/g,'')})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white font-black shadow-sm" maxLength={10}/></div></div>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label className="text-[10px] text-slate-500 uppercase">銀行代碼 *</label><input placeholder="822" value={formData.bank_code} onChange={e=>setFormData({...formData, bank_code:e.target.value.replace(/\D/g,'')})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-emerald-400 text-center font-black" maxLength={3}/></div><div className="md:col-span-2"><label className="text-[10px] text-slate-500 uppercase">帳號 *</label><input value={formData.bank_acc} onChange={e=>setFormData({...formData, bank_acc:e.target.value.replace(/\D/g,'')})} className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-emerald-400 font-black shadow-sm" /></div></div>
             </div>
             <div className="grid grid-cols-2 gap-4 md:gap-6">
               {Object.keys(labels).map(key => (<div key={key} className="bg-slate-900/50 p-4 md:p-6 rounded-[2rem] border border-white/5 text-center relative shadow-lg group"><p className="text-[10px] md:text-[11px] text-slate-500 mb-3 font-black uppercase tracking-widest italic">{labels[key]}</p><input type="file" accept="image/*" capture="environment" id={`file_${key}`} className="hidden" onChange={e=>processImage(e.target.files[0], (data)=>setDocs(prev=>({...prev, [key]:data})))} /><label htmlFor={`file_${key}`} className="cursor-pointer block">{docs[key] ? <img src={docs[key]} className="w-full h-32 md:h-40 object-cover rounded-xl border border-white/10" /> : <div className="h-32 md:h-40 bg-black/30 rounded-xl border-2 border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-700 italic group-hover:text-blue-400 transition-all shadow-inner"><Camera size={36} className="mb-2"/><span className="text-[10px] font-black uppercase">拍照上傳</span></div>}</label></div>))}
             </div>
-            <button onClick={saveAll} disabled={loading} className="w-full py-5 md:py-6 rounded-[2rem] bg-indigo-600 text-white font-black text-xl shadow-2xl mt-6 active:scale-95 transition-all italic tracking-widest">{loading ? '正在同步雲端庫...' : '🚀 確認補齊並建檔'}</button>
+            <button onClick={saveAll} disabled={loading} className="w-full py-5 md:py-6 rounded-[2rem] bg-indigo-600 text-white font-black text-xl shadow-2xl mt-6 active:scale-95 transition-all italic tracking-widest disabled:opacity-50">{loading ? '正在同步雲端庫...' : '🚀 確認補齊並送出'}</button>
           </div>
         )}
       </div>
@@ -728,7 +786,7 @@ function OnboardingDataFlow({ setLayer, db, appId }) {
 function AppWrapper() {
   const [lang, setLang] = useState('zh');
   const [u,setU]=useState(null); const [aR,setAR]=useState('guest'); const [ps,setPs]=useState([]); const [l,setL]=useState('gate'); const [ld,setLd]=useState(true); const [ann,setAnn]=useState(""); const [gs,setGs]=useState({systemLocked:false,accountantPin:"0172"}); const [ss,setSs]=useState({global:false}); const [mT,setMT]=useState(null); const [spI,setSpI]=useState(null); const [isC,setIsC]=useState(false);
-  const [sq,setSq]=useState(""); 
+  const [sq,setSq]=useState(""); const [previewImg, setPreviewImg] = useState(null);
   const cp=ps.find(p=>p.id===spI);
 
   useEffect(()=>{
@@ -745,7 +803,13 @@ function AppWrapper() {
       }
     }; 
     initA();
-    const unAuth = onAuthStateChanged(auth,(user)=>{ if(user){setU(user); const s=JSON.parse(localStorage.getItem('ggsoc_auth')||'{}'); if(s.phone){setAR(s.role); if(s.phone)setSpI(`p_${s.phone}`); if(s.role==='super_admin'||s.role==='admin')setL('admin');else setL('driver');}}});
+    const unAuth = onAuthStateChanged(auth,(user)=>{ 
+      if(user){
+        setU(user); 
+        const s = safeStorage.get('ggsoc_auth') || {}; 
+        if(s.phone){setAR(s.role); setSpI(`p_${s.phone}`); if(s.role==='super_admin'||s.role==='admin')setL('admin');else setL('driver');}
+      }
+    });
     return () => unAuth();
   },[]);
 
@@ -753,20 +817,20 @@ function AppWrapper() {
     if(!u || !db) { setLd(false); return; }
     const unP=onSnapshot(collection(db,'artifacts',appId,'public', 'data', 'partners'),(s)=>{setPs(s.docs.map(d=>({id:d.id,...d.data()})));setLd(false);setIsC(true);},()=>setIsC(false));
     const unA=onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'announcement'), (sn)=>{if(sn.exists())setAnn(String(sn.data().content || ""));});
-    const unS=onSnapshot(doc(db,'artifacts',appId,'public','data','settings','global'),(s)=>{if(s.exists()){setGs(s.data()); if(s.data().systemLocked && localStorage.getItem('ggsoc_auth')){ const sa=JSON.parse(localStorage.getItem('ggsoc_auth')||'{}'); if(sa.phone!=="0976017938"){ localStorage.removeItem('ggsoc_auth'); setAR('guest'); setL('gate'); alert("Restricted."); } } }});
+    const unS=onSnapshot(doc(db,'artifacts',appId,'public','data','settings','global'),(s)=>{if(s.exists()){setGs(s.data()); if(s.data().systemLocked){ const sa=safeStorage.get('ggsoc_auth')||{}; if(sa.phone!=="0976017938"){ safeStorage.remove('ggsoc_auth'); setAR('guest'); setL('gate'); showToast("🚫 系統維護戒嚴中"); } } }});
     const timeout = setTimeout(()=>setLd(false), 5000); return()=>{unP();unA();unS();clearTimeout(timeout);};
   },[u]);
 
   const handleLogin = (phone,pin,rem)=>{
     if(gs?.systemLocked && phone!=="0976017938") return showToast("🚫 系統維護中，目前限制登入",true);
-    if(phone==="0976017938"&&pin==="8305319"){if(rem)localStorage.setItem('ggsoc_auth',JSON.stringify({phone,role:'super_admin'})); setAR('super_admin');setL('admin');}
-    else if(phone==="0988128172"&&pin===(gs?.accountantPin||"0172")){if(rem)localStorage.setItem('ggsoc_auth',JSON.stringify({phone,role:'admin'})); setAR('admin');setL('admin');}
+    if(phone==="0976017938"&&pin==="8305319"){if(rem)safeStorage.set('ggsoc_auth',{phone,role:'super_admin'}); setAR('super_admin');setL('admin');}
+    else if(phone==="0988128172"&&pin===(gs?.accountantPin||"0172")){if(rem)safeStorage.set('ggsoc_auth',{phone,role:'admin'}); setAR('admin');setL('admin');}
     else{
       const p=ps.find(x=>x.phone===phone&&x.pin===pin); 
       if(p){
         if(p.status==='frozen') return showToast("🚫 帳號已被凍結",true); 
         if(p.status==='pending') return showToast("⚠️ 資料尚在人工審核中，開通後即可登入",true); 
-        if(rem)localStorage.setItem('ggsoc_auth',JSON.stringify({phone,role:'driver'})); 
+        if(rem)safeStorage.set('ggsoc_auth',{phone,role:'driver'}); 
         setAR('driver');setSpI(p.id);setL('driver');
       } else {
         showToast("⚠️ 登入失敗：帳號未註冊或密碼錯誤",true);
@@ -782,20 +846,22 @@ function AppWrapper() {
     <div className="min-h-screen text-slate-200 font-black">
       <div id="global-toast" className="fixed top-[-100px] left-1/2 -translate-x-1/2 px-10 py-6 rounded-full font-black z-[99999] opacity-0 pointer-events-none text-xl shadow-2xl transition-all duration-500"></div>
       
+      {/* 內建全螢幕圖片檢視器 */}
+      {previewImg && <ImageViewer src={previewImg} onClose={() => setPreviewImg(null)} />}
+
       {l==='gate' && <Gate onLogin={handleLogin} announcement={ann} setLayer={setL} globalSettings={gs} isConnected={isC} />}
 
       {l==='admin' && ( 
-        <AdminHub authRole={aR} partners={ps} onLogout={()=>{localStorage.removeItem('ggsoc_auth');setAR('guest');setL('gate');}} updateField={updateField} setModalType={setMT} setSelectedPartner={p=>setSpI(p.id)} showSensitive={ss} setShowSensitive={setSs} sq={sq} setSq={setSq} autoInsur={async(pId,bv,dp)=>{if(db){const t=INSURANCE_TABLE.find(x=>x.bracket===Number(bv));if(t)await updateDoc(doc(db,'artifacts',appId,'public','data','partners',pId),{insurance_bracket:Number(bv),labor_fee:t.labor,health_fee:Math.round(t.health*(1+Math.min(dp||0,3)))});} }} />
+        <AdminHub authRole={aR} partners={ps} onLogout={()=>{safeStorage.remove('ggsoc_auth');setAR('guest');setL('gate');}} updateField={updateField} setModalType={setMT} setSelectedPartner={p=>setSpI(p.id)} showSensitive={ss} setShowSensitive={setSs} sq={sq} setSq={setSq} setPreviewImg={setPreviewImg} autoInsur={async(pId,bv,dp)=>{if(db){const t=INSURANCE_TABLE.find(x=>x.bracket===Number(bv));if(t)await updateDoc(doc(db,'artifacts',appId,'public','data','partners',pId),{insurance_bracket:Number(bv),labor_fee:t.labor,health_fee:Math.round(t.health*(1+Math.min(dp||0,3)))});} }} />
       )}
 
-      {l==='driver' && <DriverHub currentPartner={cp} onLogout={()=>{localStorage.removeItem('ggsoc_auth');setAR('guest');setL('gate');}} updateField={updateField} globalSettings={gs} authRole={aR} />}
+      {l==='driver' && <DriverHub currentPartner={cp} onLogout={()=>{safeStorage.remove('ggsoc_auth');setAR('guest');setL('gate');}} updateField={updateField} globalSettings={gs} authRole={aR} />}
       {l==='onboarding' && <OnboardingFlow setLayer={setL} db={db} appId={appId} />}
       {l==='onboarding_data' && <OnboardingDataFlow setLayer={setL} db={db} appId={appId} />}
-      {l==='install_tutorial' && <InstallationGuide setLayer={setL} />}
       
       {mT==='system_settings' && aR==='super_admin' && <SystemSettingsModal onClose={()=>setMT(null)} db={db} appId={appId} globalSettings={gs} />}
       {mT==='tools' && <ToolsModal onClose={()=>setMT(null)} db={db} appId={appId} resetData={async()=>{if(db){for(const p of ps)await updateDoc(doc(db,'artifacts',appId,'public','data','partners',p.id),{total_del:0,total_pkp:0,custom_adj:0}); showToast("數據重置成功");} }} />}
-      {mT==='detail' && <PartnerDetail partner={cp} onClose={()=>setMT(null)} updateField={updateField} deletePartner={async id=>{if(db){await deleteDoc(doc(db,'artifacts',appId,'public','data','partners',id));setMT(null);showToast("檔案已刪除");} }} />}
+      {mT==='detail' && <PartnerDetail partner={cp} onClose={()=>setMT(null)} updateField={updateField} deletePartner={async id=>{if(db){await deleteDoc(doc(db,'artifacts',appId,'public','data','partners',id));setMT(null);showToast("檔案已刪除");} }} setPreviewImg={setPreviewImg} />}
     </div>
   );
 }
