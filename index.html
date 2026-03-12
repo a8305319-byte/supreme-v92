@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     
-    <title>GGSOC | Supreme-V92 營運指揮中心</title>
+    <title>GGSOC | Supreme-V92</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -17,6 +17,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        // 將 Firebase 掛載到全域，供後續使用
         window.FB = { initializeApp, getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, getAuth, signInAnonymously, onAuthStateChanged };
     </script>
     <style>
@@ -27,11 +28,17 @@
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div style="height: 100vh; display: flex; align-items: center; justify-content: center; color: #3b82f6; font-weight: 900; font-style: italic; font-family: sans-serif; letter-spacing: 2px;">
+            SYSTEM BOOTING...
+        </div>
+    </div>
+
     <script type="text/babel">
         const { useState, useEffect } = React;
-        const { LogOut, Settings, PlusSquare, Trash2, Shield, User, DollarSign, Activity, X, RefreshCw } = lucide;
+        const { LogOut, PlusSquare, Activity, X, RefreshCw } = lucide;
 
+        // --- 金鑰區 ---
         const firebaseConfig = {
             apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
             authDomain: "supreme-v92.firebaseapp.com",
@@ -42,9 +49,8 @@
         };
         const appId = 'supreme-v92'; 
 
-        const app = window.FB.initializeApp(firebaseConfig);
-        const db = window.FB.getFirestore(app);
-        const auth = window.FB.getAuth(app);
+        // 全域變數延遲初始化
+        let app, db, auth;
 
         function AppWrapper() {
             const [u, setU] = useState(null);
@@ -74,9 +80,8 @@
             useEffect(() => {
                 if (!u) return;
                 
-                // 加上超時機制，如果 5 秒還沒載入完，顯示重新整理按鈕
                 const timeoutId = setTimeout(() => {
-                    if (ld) setConnError("網路連線似乎較慢，建議重新連線");
+                    if (ld) setConnError("網路連線較慢，請重新整理");
                 }, 5000);
 
                 const unsub = window.FB.onSnapshot(
@@ -84,7 +89,7 @@
                     (snap) => {
                         setPs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                         setLd(false);
-                        setConnError(""); // 成功就清除錯誤
+                        setConnError(""); 
                         clearTimeout(timeoutId);
                     },
                     (error) => {
@@ -104,7 +109,7 @@
                     if (p) {
                         localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'driver' }));
                         setAR('driver'); setSpI(p.id); setL('driver');
-                    } else { alert("驗證失敗：帳號或安全碼錯誤"); }
+                    } else { alert("驗證失敗：請檢查手機號碼與安全碼"); }
                 }
             };
 
@@ -112,7 +117,6 @@
                 await window.FB.updateDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [field]: val });
             };
 
-            // 優化後的載入畫面
             if (ld || connError) return (
                 <div className="h-screen flex flex-col items-center justify-center font-black text-center p-6 space-y-6">
                     {ld && !connError ? (
@@ -120,16 +124,10 @@
                     ) : (
                         <Activity className="text-rose-500 w-12 h-12 mx-auto" />
                     )}
-                    
                     <p className={`italic tracking-widest ${connError ? 'text-rose-400' : 'text-blue-500 animate-pulse'}`}>
                         {connError || "SUPREME-V92 SECURING..."}
                     </p>
-                    
-                    {/* 一鍵重新連線按鈕 */}
-                    <button 
-                        onClick={() => window.location.reload(true)} 
-                        className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-full border border-white/10 shadow-lg active:scale-95 transition-all"
-                    >
+                    <button onClick={() => window.location.reload(true)} className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-full border border-white/10 shadow-lg active:scale-95">
                         <RefreshCw size={18} /> 強制重新連線
                     </button>
                 </div>
@@ -145,15 +143,14 @@
             );
         }
 
-        // --- 子組件保持原樣 ---
         const ToolsModal = ({ onClose, db, appId }) => {
             const [n, setN] = useState(""); const [p, setP] = useState("");
             const add = async () => {
-                if(!n || !p) return alert("必填");
+                if(!n || !p) return alert("姓名與手機為必填");
                 await window.FB.setDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${p}`), {
                     id: `p_${p}`, name: n, phone: p, pin: "0000", status: 'approved', total_del: 0, custom_del_price: 15
                 });
-                alert("建立成功！預設 PIN 為 0000"); onClose();
+                alert("✅ 建立成功！預設 PIN 為 0000"); onClose();
             };
             return (
                 <div className="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-6 animate-fadeInUp">
@@ -252,8 +249,24 @@
             </div>
         );
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<AppWrapper />);
+        // --- 核心啟動器：確保模組載入完畢才啟動 React ---
+        const bootSystem = () => {
+            if (!window.FB) {
+                // 如果 Firebase 還沒抓完，就等 50 毫秒再試一次
+                setTimeout(bootSystem, 50);
+                return;
+            }
+            // 抓到了！正式啟動
+            app = window.FB.initializeApp(firebaseConfig);
+            db = window.FB.getFirestore(app);
+            auth = window.FB.getAuth(app);
+
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<AppWrapper />);
+        };
+        
+        // 觸發啟動
+        bootSystem();
     </script>
 </body>
 </html>
