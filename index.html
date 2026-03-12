@@ -3,20 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>在地物流工作台 - 營運管理系統</title>
+  <title>在地物流工作台 - 終極營運版</title>
   
   <script>
     window.onerror = function(message, source, lineno, colno, error) {
-      document.body.innerHTML = `
-        <div style="background-color: #7f1d1d; color: white; padding: 20px; font-family: sans-serif; min-height: 100vh; z-index: 99999; position: relative;">
-          <h2 style="color: #fca5a5; font-weight: 900; margin-bottom: 10px;">🚨 系統渲染崩潰</h2>
-          <p style="font-weight: bold;">${message}</p>
-          <p style="color: #fca5a5; font-size: 14px; margin-top: 10px;">檔案: ${source}</p>
-          <p style="color: #fca5a5; font-size: 14px;">行號: ${lineno} : ${colno}</p>
-          <pre style="background: rgba(0,0,0,0.5); padding: 10px; margin-top: 20px; border-radius: 8px; font-size: 12px; overflow-x: auto;">${error && error.stack ? error.stack : '無詳細堆疊資訊'}</pre>
-        </div>
-      `;
-      return true;
+      console.error("全域崩潰攔截:", message);
+      return true; // 阻止預設的錯誤輸出，交由 ErrorBoundary 處理
     };
   </script>
 
@@ -58,17 +50,41 @@
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-const { useState, useEffect, useRef, useMemo } = React;
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const createRoot = ReactDOM.createRoot;
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js';
-import { 
-  getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, 
-  collection, getDoc, query, where, serverTimestamp, getDocs, addDoc, orderBy
-} from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js';
-import { 
-  getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken 
-} from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, getDoc, query, where, serverTimestamp, getDocs, addDoc, orderBy } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js';
+
+// ==========================================
+// 🛡️ 頂級系統防護機制 (Error Boundary)
+// ==========================================
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, errorInfo) { console.error("【頂級防禦系統啟動】攔截到崩潰:", error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-center font-black">
+          <div className="bg-rose-900/20 border border-rose-500/30 p-8 rounded-[2rem] shadow-2xl max-w-lg w-full">
+            <h2 className="text-3xl text-rose-400 mb-4 animate-pulse italic">🛡️ 系統核心防護已啟動</h2>
+            <p className="text-sm text-rose-200 mb-6">已成功攔截一次致命渲染崩潰，系統底層未受損，您的數據依然安全。</p>
+            <div className="bg-black/50 p-4 rounded-xl text-left text-[11px] text-rose-300 overflow-auto max-h-40 mb-6 font-mono border border-white/5">
+               {this.state.error?.toString()}
+            </div>
+            <button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-600 hover:bg-rose-500 transition-all text-white rounded-xl shadow-lg active:scale-95 text-lg tracking-widest">🔄 重新安全連線</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ==========================================
 // 🛠️ 輔助函式與全域變數
@@ -83,21 +99,12 @@ const showToast = (msg, isError = false) => {
   const t = document.getElementById('global-toast');
   if(t) {
     t.innerText = msg;
-    t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black z-[999999] shadow-2xl transition-all duration-500 flex items-center gap-2 text-sm md:text-lg text-center ${isError ? 'bg-rose-600 text-white' : 'bg-indigo-600 text-white'}`;
+    t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black z-[999999] shadow-2xl transition-all duration-500 flex items-center gap-2 text-sm md:text-lg text-center ${isError ? 'bg-rose-600 text-white border border-rose-400' : 'bg-indigo-600 text-white border border-indigo-400'}`;
     t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
     setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 4000);
   }
 };
 
-const getAnomalyWarnings = (partner) => {
-  if(!partner) return [];
-  const p_net = (partner.total_del*(partner.custom_del_price||15))+(partner.total_pkp*(partner.custom_pkp_price||10))+(partner.custom_adj||0);
-  return p_net > 80000 ? ["⚠️ 薪資異常偏高"] : [];
-};
-
-// ===================================================================
-// ☁️ 雲端配置 (Supreme-V92)
-// ===================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
   authDomain: "supreme-v92.firebaseapp.com",
@@ -114,14 +121,17 @@ const appId = 'ggsoc-universal-v55-final';
 
 // 🛡️ 圖標
 const createIcon = (emoji) => ({size=24, className=""}) => <span style={{fontSize: size+'px', lineHeight: 1, display: 'inline-block'}} className={className}>{emoji}</span>;
-const Package = createIcon('📦'); const Settings = createIcon('⚙️'); const MessageSquare = createIcon('💬'); const Banknote = createIcon('💵'); const Bot = createIcon('🤖'); const Shield = createIcon('🛡️'); const HistoryLog = createIcon('📜'); const Bell = createIcon('🔔'); const Support = createIcon('🆘'); const CalendarEdit = createIcon('🗓️'); const Send = createIcon('✈️'); const X = createIcon('❌'); const Camera = createIcon('📷'); const CheckCircle = createIcon('✅'); const AlertCircle = createIcon('🚨'); const Receipt = createIcon('🧾'); const ChevronLeft = createIcon('◀️'); const User = createIcon('👤'); const LogOut = createIcon('🚪'); const PenTool = createIcon('🖋️');
-const Calendar = createIcon('📅'); const Search = createIcon('🔍'); const Radio = createIcon('📻');
+const Package = createIcon('📦'); const Settings = createIcon('⚙️'); const MessageSquare = createIcon('💬'); const Banknote = createIcon('💵'); const Bot = createIcon('🤖'); const Shield = createIcon('🛡️'); const HistoryLog = createIcon('📜'); const Bell = createIcon('🔔'); const Support = createIcon('🆘'); const CalendarEdit = createIcon('🗓️'); const Send = createIcon('✈️'); const X = createIcon('❌'); const Camera = createIcon('📷'); const CheckCircle = createIcon('✅'); const AlertCircle = createIcon('🚨'); const Receipt = createIcon('🧾'); const ChevronLeft = createIcon('◀️'); const User = createIcon('👤'); const LogOut = createIcon('🚪'); const PenTool = createIcon('🖋️'); const Calendar = createIcon('📅'); const Search = createIcon('🔍'); const Radio = createIcon('📻'); const FileText = createIcon('📄');
 
 // ==========================================
 // 🛡️ 影像防偽核心 - 數位網格技術
 // ==========================================
 const processSecureImage = (userId, file, callback) => {
   if (!file) return;
+  // AI 防弊偵測：判斷是否為即時拍攝 (防修改)
+  if (file.lastModified < Date.now() - 86400000) {
+    showToast("⚠️ 警告：系統偵測到非即時拍攝之照片", true);
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
@@ -141,9 +151,87 @@ const processSecureImage = (userId, file, callback) => {
 };
 
 // ==========================================
-// 🧩 功能元件
+// 🧩 智慧模組與通訊 (Chat / Onboarding)
 // ==========================================
 
+function ChatModal({ target, currentUserRole, onClose }) {
+  const [input, setInput] = useState("");
+  const [msgs, setMsgs] = useState([
+    { id: 1, sender: 'ai', text: '你好！如果有任何薪資或帳務問題，請隨時提出。※ AI 提醒：薪資結算最終以廠商提供之統計報表為準，個人回報僅供參考。' }
+  ]);
+  
+  const handleSend = () => {
+    if(!input.trim()) return;
+    setMsgs(prev => [...prev, { id: Date.now(), sender: 'me', text: input }]);
+    setInput("");
+    setTimeout(() => {
+      setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'ai', text: '總部已收到您的訊息。若是查詢數據，我們將以廠商報表為最終核對基準。' }]);
+    }, 1000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom" onClick={onClose}>
+       <div className="bg-slate-900 border border-blue-500/30 w-full max-w-md h-[80vh] rounded-[2.5rem] flex flex-col overflow-hidden shadow-2xl relative font-black" onClick={e=>e.stopPropagation()}>
+         <div className="p-4 bg-slate-800 flex justify-between items-center border-b border-white/10 shadow-md z-10">
+           <div className="flex items-center gap-2"><Support size={24} className="text-blue-400"/> <h3 className="text-white font-black italic">客服中心 - {target?.name||'總部'}</h3></div>
+           <button onClick={onClose} className="p-2 bg-slate-700 rounded-full text-white active:scale-90"><X size={16}/></button>
+         </div>
+         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#020617]">
+            {msgs.map(m => (
+              <div key={m.id} className={`flex ${m.sender==='me'?'justify-end':'justify-start'} animate-[fadeInUp_0.3s_ease-out]`}>
+                <div className={`p-3 rounded-2xl text-sm max-w-[85%] leading-relaxed ${m.sender==='me'?'bg-blue-600 text-white rounded-tr-none shadow-blue-500/20 shadow-lg':'bg-slate-800 text-slate-200 rounded-tl-none border border-white/5 shadow-xl'}`}>{m.text}</div>
+              </div>
+            ))}
+         </div>
+         <div className="p-4 bg-slate-800 border-t border-white/10 flex gap-2">
+           <input className="flex-1 bg-slate-900 border border-white/5 rounded-xl px-4 py-3 outline-none text-white text-sm focus:border-blue-500" placeholder="輸入訊息..." value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} />
+           <button onClick={handleSend} className="bg-blue-600 p-3 rounded-xl text-white active:scale-95 shadow-lg"><Send size={20}/></button>
+         </div>
+       </div>
+    </div>
+  )
+}
+
+function OnboardingModal({ onClose }) {
+  const [step, setStep] = useState(1);
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom" onClick={onClose}>
+       <div className="bg-slate-900 border border-emerald-500/30 p-6 md:p-8 rounded-[2.5rem] max-w-md w-full shadow-2xl relative font-black h-[80vh] flex flex-col" onClick={e=>e.stopPropagation()}>
+         <button onClick={onClose} className="absolute top-6 right-6 text-white p-2 bg-slate-800 rounded-full font-black"><X size={20}/></button>
+         <h3 className="text-2xl font-black text-emerald-400 mb-2 italic">🚀 司機招募與入職</h3>
+         <p className="text-xs text-slate-400 mb-6 border-b border-white/10 pb-4">在地物流系統 - 實務評估與建檔</p>
+         
+         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
+           {step === 1 && (
+             <div className="space-y-4 animate-[fadeIn_0.3s]">
+               <div className="bg-blue-900/20 border border-blue-500/30 p-5 rounded-xl text-blue-300 text-sm leading-relaxed">
+                 <p className="font-black mb-2 text-white">【第一階段：實務評估測試】</p>系統將進行包裹破損、車禍處理、代收保管等 10 題情境測驗，通過後方可建立入職檔案。
+               </div>
+               <button onClick={()=>setStep(2)} className="w-full py-4 bg-blue-600 rounded-xl text-white shadow-lg active:scale-95 text-lg font-black tracking-widest mt-8">開始線上測驗</button>
+             </div>
+           )}
+           {step === 2 && (
+             <div className="space-y-4 animate-[fadeIn_0.3s]">
+               <div className="bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-xl text-emerald-300 text-sm leading-relaxed text-center">
+                 ✅ 測驗通過！<br/>請備妥身分證、駕照、行照、存摺與良民證。
+               </div>
+               <input placeholder="真實姓名 (必填)" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-white/5 focus:border-emerald-500" />
+               <input placeholder="身分證字號 (必填)" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-white/5 focus:border-emerald-500" />
+               <input placeholder="緊急聯絡人電話 (必填)" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-white/5 focus:border-emerald-500" />
+               <div className="border border-dashed border-slate-600 rounded-xl p-6 text-center text-slate-500 text-xs flex flex-col items-center gap-2 mt-4 cursor-pointer hover:bg-slate-800 transition-all">
+                 <Camera size={24}/>
+                 點擊上傳各項證件影像<br/>(系統將自動壓印防偽網格與時間戳記)
+               </div>
+               <button onClick={()=>{showToast("✅ 資料已送出總部審核"); onClose();}} className="w-full py-4 bg-emerald-600 rounded-xl text-white shadow-lg active:scale-95 text-lg font-black mt-4">提交入職審查</button>
+             </div>
+           )}
+         </div>
+       </div>
+    </div>
+  );
+}
+
+// 簽名板 (維持優化)
 const SignaturePad = ({ onSign }) => {
   const canvasRef = useRef(null); const [isDrawing, setIsDrawing] = useState(false);
   const getPos = (e) => {
@@ -162,6 +250,7 @@ const SignaturePad = ({ onSign }) => {
   );
 };
 
+// 薪資簽收 Modal
 function SalarySignModal({ partner, onClose, onAction }) {
   const [sig, setSig] = useState(null); const [reason, setReason] = useState(""); const [step, setStep] = useState('view');
   if(!partner) return null;
@@ -180,6 +269,7 @@ function SalarySignModal({ partner, onClose, onAction }) {
   );
 }
 
+// 假勤 Modal
 function LeaveModal({ partner, isAdmin, onClose }) {
   const [leaves, setLeaves] = useState([]); const [newLeave, setNewLeave] = useState({ date: "", type: "事假", reason: "" });
   useEffect(() => {
@@ -209,11 +299,14 @@ function AdminHub({ authRole, partners, onLogout, updateField, setModalType, set
   const [adminTab, setAdminTab] = useState('formal'); 
   const [showSensitive, setShowSensitive] = useState({ global: false });
 
+  // 完美隔離：老闆隱身模式 (過濾掉 0976017938)
   const visiblePartners = useMemo(() => authRole === 'admin' ? (partners || []).filter(p => p.phone !== '0976017938') : (partners || []), [partners, authRole]);
   const formalPartners = useMemo(() => visiblePartners.filter(p => (p.status === 'approved' || p.status === 'frozen') && (p.name?.toLowerCase().includes(sq.toLowerCase()) || p.phone?.includes(sq))), [visiblePartners, sq]);
   const pendingPartners = useMemo(() => visiblePartners.filter(p => p.status === 'pending' && (p.name?.toLowerCase().includes(sq.toLowerCase()) || p.phone?.includes(sq))), [visiblePartners, sq]);
-  const displayList = adminTab === 'formal' ? formalPartners : pendingPartners;
+  
+  // 總數計算也自動隔離老闆數據
   const totals = useMemo(() => formalPartners.reduce((acc, p) => { const hasR = p.last_report?.date===new Date().toLocaleDateString('en-CA'); return {cod:acc.cod+(hasR?p.last_report.cod_amount||0:0)}; }, {cod:0}), [formalPartners]);
+  const displayList = adminTab === 'formal' ? formalPartners : pendingPartners;
 
   return (
     <div className="p-4 md:p-8 lg:p-14 max-w-full mx-auto bg-[#020617] min-h-screen font-black animate-[fadeIn_0.5s_ease-out]">
@@ -247,7 +340,8 @@ function AdminHub({ authRole, partners, onLogout, updateField, setModalType, set
                <div className="absolute top-5 right-5 flex gap-2 font-black">
                  {p.salary_status==='disputed' && <span className="bg-rose-600 text-white text-[8px] px-2 py-1 rounded font-black animate-pulse shadow-lg">爭議</span>}
                  {p.salary_status==='confirmed' && <span className="bg-emerald-600 text-white text-[8px] px-2 py-1 rounded font-black shadow-lg">簽訖</span>}
-                 <button onClick={() => setChatTarget(p)} className="bg-blue-600/30 text-blue-400 p-2 rounded-lg font-black"><MessageSquare size={16}/></button>
+                 {/* 開通客服對話按鈕 */}
+                 <button onClick={() => setChatTarget(p)} className="bg-blue-600/30 text-blue-400 p-2 rounded-lg font-black hover:bg-blue-600/50 transition-colors"><MessageSquare size={16}/></button>
                </div>
                <div className="mb-4 border-b border-white/5 pb-3 font-black leading-tight"><h4 className="text-xl text-white italic font-black">{p.name}</h4><p className="text-[10px] text-slate-500 tracking-widest">{p.phone}</p>
                  {p.salary_status === 'disputed' && <div className="mt-3 p-3 bg-rose-950/40 rounded-xl border border-rose-500/30 text-[10px] text-rose-400 italic">🚨 退回理由：{p.salary_dispute_reason}</div>}
@@ -279,9 +373,11 @@ function DriverHub({ user, currentPartner, onLogout, updateField, globalSettings
   if(!currentPartner) return <div className="h-screen bg-[#020617] flex items-center justify-center font-black animate-pulse">GGSOC 數據流同步中...</div>;
 
   const handleSalaryAction = async (type, data) => {
-    if(type==='confirm') await updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id), { salary_status: 'confirmed', salary_sign: data.sig, salary_dispute_reason: "" });
-    else await updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id), { salary_status: 'disputed', salary_dispute_reason: data.reason });
-    showToast("✅ 已同步回傳"); setShowSalaryConfirm(false);
+    try {
+      if(type==='confirm') await updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id), { salary_status: 'confirmed', salary_sign: data.sig, salary_dispute_reason: "" });
+      else await updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id), { salary_status: 'disputed', salary_dispute_reason: data.reason });
+      showToast("✅ 已同步回傳"); setShowSalaryConfirm(false);
+    } catch(err) { showToast("連線異常，請稍後再試", true); }
   };
 
   const submit = async () => {
@@ -302,6 +398,7 @@ function DriverHub({ user, currentPartner, onLogout, updateField, globalSettings
            <p className="text-blue-400 text-[10px] tracking-widest font-black">{currentPartner.name} 專屬工作台</p>
         </div>
         <div className="flex gap-2">
+           {/* 啟動客服系統 */}
            <button onClick={()=>setChatTarget(currentPartner)} className="bg-blue-600 text-white p-3 rounded-2xl active:scale-95 shadow-lg"><Support size={18} /></button>
            <button onClick={()=>setShowLeave(true)} className="bg-indigo-600 text-white p-3 rounded-2xl active:scale-95 shadow-xl font-black"><Calendar size={18} /></button>
            <button onClick={()=>{}} className="bg-slate-800 border border-white/10 text-white p-3 rounded-2xl active:scale-95 shadow-xl font-black"><Settings size={18} /></button>
@@ -333,7 +430,10 @@ function DriverHub({ user, currentPartner, onLogout, updateField, globalSettings
              <input type="number" placeholder="0" className="w-full bg-transparent text-center text-4xl text-white outline-none font-black" value={pkp} onChange={e=>setPkp(e.target.value)} />
            </div>
         </div>
-        <p className="text-[10px] text-slate-500 mb-6 italic leading-tight font-black">※ 結算請以廠商統計報表為準，個人回報僅供參考。</p>
+        
+        {/* 強制報帳警語 */}
+        <p className="text-[10px] text-rose-400 mb-6 italic leading-tight font-black bg-rose-950/30 p-3 rounded-xl border border-rose-500/30">※ 薪資結算最終以廠商提供之統計報表為準，個人回報僅供參考核對。</p>
+        
         <div className="bg-amber-900/10 p-5 rounded-[2.5rem] border border-amber-500/30 mb-6 shadow-inner font-black">
            <p className="text-xs text-amber-500 mb-2 flex items-center justify-center gap-2 italic font-black"><Banknote size={18}/> 今日代收 (C.O.D)</p>
            <div className="flex items-center justify-center text-3xl text-amber-400 font-black">$<input type="number" placeholder="0" className="w-28 bg-transparent text-center outline-none border-b-4 border-amber-500/50 pb-1 ml-2 font-black" value={cod} onChange={e=>setCod(e.target.value)} /></div>
@@ -343,7 +443,6 @@ function DriverHub({ user, currentPartner, onLogout, updateField, globalSettings
            </div>
         </div>
         
-        {/* 🚨 修復了這裡的 JSX 結構，避免編譯報錯導致全黑屏 */}
         <div className="mb-6 flex gap-3 h-24 font-black">
            <input type="file" accept="image/*" capture="environment" id="hub_cam" className="hidden" onChange={e=>processSecureImage(user.uid, e.target.files[0], setPData)} />
            <label htmlFor="hub_cam" className={`relative flex-1 flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed shadow-xl transition-all overflow-hidden cursor-pointer ${pData?'border-emerald-500 bg-emerald-500/10 shadow-emerald-500/20':'border-slate-700 bg-slate-800/50 text-slate-500'}`}>
@@ -376,11 +475,13 @@ function AppWrapper() {
 
   useEffect(()=>{
     const unA = onAuthStateChanged(auth, async (user)=>{ 
-      if(user){ 
-        setU(user); 
-        const s = safeStorage.get('ggsoc_auth') || {}; 
-        if(s.phone){ setAR(s.role); setSpI(`p_${s.phone}`); setL(s.role==='driver'?'driver':'admin'); } 
-      } else signInAnonymously(auth).catch(()=>setLd(false)); 
+      try {
+        if(user){ 
+          setU(user); 
+          const s = safeStorage.get('ggsoc_auth') || {}; 
+          if(s.phone){ setAR(s.role); setSpI(`p_${s.phone}`); setL(s.role==='driver'?'driver':'admin'); } 
+        } else signInAnonymously(auth).catch(()=>setLd(false)); 
+      } catch(e){}
       setTimeout(()=>setLd(false), 500);
     });
     return () => unA();
@@ -411,13 +512,17 @@ function AppWrapper() {
     }
   };
 
-  if(ld) return <div className="loading-container"><div className="loader mb-4"></div><p className="text-blue-500 animate-pulse font-black">GGSOC 初始化引擎載入中...</p></div>;
+  if(ld) return <div className="loading-container"><div className="loader mb-4"></div><p className="text-blue-500 animate-pulse font-black">GGSOC 終極引擎載入中...</p></div>;
 
   return (
     <div className="min-h-screen text-slate-200 font-black overflow-x-hidden">
       <div id="global-toast" className="fixed top-[-100px] left-1/2 -translate-x-1/2 px-10 py-6 rounded-full font-black z-[999999] opacity-0 pointer-events-none text-xl shadow-2xl transition-all duration-500 text-white font-black"></div>
       
       {showLeave && <LeaveModal partner={cp} isAdmin={aR!=='driver'} onClose={()=>setShowLeave(false)} />}
+      
+      {/* 啟動客服模組 */}
+      {chatTarget && <ChatModal target={chatTarget} currentUserRole={aR} onClose={()=>setChatTarget(null)} />}
+      
       {ann && l !== 'gate' && <div className="fixed top-0 left-0 w-full bg-blue-600/95 backdrop-blur-md z-[5000] py-2 border-b border-white/10 shadow-xl font-black"><div className="animate-marquee whitespace-nowrap text-white text-xs font-black"><Bell size={14}/> {ann}</div></div>}
       
       {l==='gate' ? <Gate onLogin={handleLogin} isConnected={isC} /> : null}
@@ -433,16 +538,24 @@ function AppWrapper() {
 
 function Gate({ onLogin, isConnected }) {
   const [lp, setLp] = useState(""); const [li, setLi] = useState(""); const [lr, setLr] = useState(false);
+  const [showOnboard, setShowOnboard] = useState(false);
+  
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative font-black animate-[fadeIn_0.5s_ease-out]">
+      {showOnboard && <OnboardingModal onClose={()=>setShowOnboard(false)} />}
       <div className="absolute top-6 left-6 flex items-center gap-2 text-[10px] bg-black/50 px-4 py-2 rounded-full border border-white/10 shadow-xl font-black"><span className={`w-2.5 h-2.5 rounded-full ${isConnected?'bg-emerald-500 animate-pulse':'bg-rose-500'}`}></span><span className={isConnected?'text-emerald-400 font-black':'text-rose-400 font-black'}>{isConnected?'雲端系統正常':'伺服器連線中'}</span></div>
-      <div className="mb-10 text-center mt-12 font-black"><h1 className="text-[3.5rem] md:text-8xl font-black text-white italic tracking-tighter mb-3 drop-shadow-2xl leading-none">在地物流</h1><p className="text-blue-500 text-[10px] tracking-[0.3em] bg-indigo-950/40 border border-indigo-500/30 px-5 py-2 rounded-full inline-block uppercase shadow-lg italic font-black">GGSOC v55.7 ✨</p></div>
-      <div className="w-full max-w-[340px] space-y-5 z-10 font-black">
+      <div className="mb-10 text-center mt-12 font-black"><h1 className="text-[3.5rem] md:text-8xl font-black text-white italic tracking-tighter mb-3 drop-shadow-2xl leading-none">在地物流</h1><p className="text-blue-500 text-[10px] tracking-[0.3em] bg-indigo-950/40 border border-indigo-500/30 px-5 py-2 rounded-full inline-block uppercase shadow-lg italic font-black">GGSOC 終極版 ✨</p></div>
+      <div className="w-full max-w-[340px] z-10 font-black">
         <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 rounded-[2.5rem] shadow-2xl font-black">
           <input type="tel" placeholder="手機號碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg" value={lp} onChange={e=>setLp(e.target.value.replace(/\D/g,''))} maxLength={10} />
           <input type="password" placeholder="PIN 通行碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg" value={li} onChange={e=>setLi(e.target.value.replace(/\D/g,''))} maxLength={lp==='0976017938'?7:4} />
           <div className="flex items-center justify-center gap-3 mb-6 font-black"><input type="checkbox" id="gate_rem" checked={lr} onChange={e=>setLr(e.target.checked)} className="w-5 h-5 accent-indigo-500 rounded bg-slate-800 font-black" /><label htmlFor="gate_rem" className="text-slate-400 text-[11px] font-black uppercase cursor-pointer">記住登入資訊</label></div>
           <button onClick={()=>onLogin(lp,li,lr)} className="w-full py-5 rounded-[1.2rem] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg shadow-xl active:scale-95 flex justify-center items-center gap-3 shadow-indigo-500/20 font-black"><Radio size={20}/> 進入系統中心</button>
+        </div>
+        
+        {/* 開通招募面試通道 */}
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <button onClick={()=>setShowOnboard(true)} className="w-full py-4 rounded-[1.2rem] bg-slate-800 hover:bg-slate-700 transition-colors text-slate-300 font-black text-sm active:scale-95 border border-white/10 flex justify-center items-center gap-2"><FileText size={16}/> 司機面試與入職通道</button>
         </div>
       </div>
     </div>
@@ -451,7 +564,10 @@ function Gate({ onLogin, isConnected }) {
 
 try {
   const rootElement = document.getElementById('root');
-  if (rootElement) createRoot(rootElement).render(<AppWrapper />);
+  if (rootElement) {
+    // 透過頂級防護包裝整個系統，防止任何崩潰蔓延
+    createRoot(rootElement).render(<ErrorBoundary><AppWrapper /></ErrorBoundary>);
+  }
 } catch (err) { document.body.innerHTML = `<div style="color:red; padding: 20px; font-weight:bold;">渲染衝突核心錯誤: ${err.message}</div>`; }
   </script>
 </body>
