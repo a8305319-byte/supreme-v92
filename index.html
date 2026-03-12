@@ -1,272 +1,670 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+  <meta charset="UTF-8">
+  <!-- 完美手機版 Meta 設定：禁止雙擊放大、適應螢幕安全區 (瀏海屏) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>在地物流工作台</title>
+  
+  <!-- 引入 Tailwind CSS 框架 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 預先注入 Firebase 保護變數，防止您在本地打開時因找不到變數而全黑當機 -->
+  <script>
+    window.__app_id = window.__app_id || 'ggsoc-universal-v55-final';
+    window.__firebase_config = window.__firebase_config || JSON.stringify({});
+    window.__initial_auth_token = window.__initial_auth_token || '';
+  </script>
+
+  <!-- 引入 Babel 來在瀏覽器即時編譯 JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    body { background-color: #020617; color: white; margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+    .custom-scrollbar::-webkit-scrollbar{width:6px;}
+    .custom-scrollbar::-webkit-scrollbar-thumb{background-color:rgba(59,130,241,0.5);border-radius:20px;}
+    @keyframes marquee{0%{transform:translateX(100%);}100%{transform:translateX(-100%);}}
+    .animate-marquee{animation:marquee 15s linear infinite;}
+    .selectable{-webkit-user-select:text!important;user-select:text!important;}
     
-    <title>GGSOC | Supreme-V92</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        // 將 Firebase 掛載到全域，供後續使用
-        window.FB = { initializeApp, getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, getAuth, signInAnonymously, onAuthStateChanged };
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; }
-        .animate-fadeInUp { animation: fadeInUp 0.4s ease-out forwards; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    /* 手機優化：隱藏輸入框的上下箭頭 */
+    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  </style>
 </head>
 <body>
-    <div id="root">
-        <div style="height: 100vh; display: flex; align-items: center; justify-content: center; color: #3b82f6; font-weight: 900; font-style: italic; font-family: sans-serif; letter-spacing: 2px;">
-            SYSTEM BOOTING...
-        </div>
+  <!-- React 渲染的目標節點 -->
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module">
+// 引入 React 核心
+import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+// 引入 Firebase 官方 CDN (最穩定版本，防當機)
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { 
+  getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, 
+  collection, getDoc, query, where, serverTimestamp, getDocs
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { 
+  getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken 
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+// ===================================================================
+// 🛡️ 零延遲圖標系統 (完全相容您的代碼，且絕對不會引發手機載入阻塞)
+// ===================================================================
+const createIcon = (emoji) => ({size=24, className=""}) => <span style={{fontSize: size+'px', lineHeight: 1, display: 'inline-block'}} className={className}>{emoji}</span>;
+const Users = createIcon('👥'); const Package = createIcon('📦'); const TrendingUp = createIcon('📈'); 
+const ShieldCheck = createIcon('🛡️'); const LogOut = createIcon('🚪'); const Settings = createIcon('⚙️'); 
+const MessageSquare = createIcon('💬'); const Clipboard = createIcon('📋'); const Printer = createIcon('🖨️'); 
+const Search = createIcon('🔍'); const Eye = createIcon('👁️'); const EyeOff = createIcon('🙈'); 
+const Save = createIcon('💾'); const UserPlus = createIcon('👤+'); const Trash2 = createIcon('🗑️'); 
+const Download = createIcon('⬇️'); const ImageIcon = createIcon('🖼️'); const CheckCircle = createIcon('✅'); 
+const AlertCircle = createIcon('⚠️'); const Calendar = createIcon('📅'); const User = createIcon('👤'); 
+const DollarSign = createIcon('💲'); const Clock = createIcon('🕒'); const FileText = createIcon('📄'); 
+const X = createIcon('❌'); const Camera = createIcon('📷'); const Send = createIcon('✈️'); 
+const Shield = createIcon('🛡️'); const ToggleLeft = createIcon('⚪'); const ToggleRight = createIcon('🟢'); 
+const Snowflake = createIcon('❄️'); const PenTool = createIcon('🖋️'); const Radio = createIcon('📻'); 
+const Key = createIcon('🔑'); const Lock = createIcon('🔒'); const Receipt = createIcon('🧾'); 
+const Banknote = createIcon('💵'); const Sparkles = createIcon('✨'); const BrainCircuit = createIcon('🧠'); 
+const Activity = createIcon('📊'); const BarChart3 = createIcon('📉'); const ChevronLeft = createIcon('◀️'); 
+const Smartphone = createIcon('📱'); const Info = createIcon('ℹ️'); const Share = createIcon('🔗'); 
+const Bot = createIcon('🤖'); const Terminal = createIcon('💻');
+
+// ==========================================
+// ⚙️ GGSOC v55.7 系統核心配置
+// ==========================================
+const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'ggsoc-universal-v55-final';
+let firebaseConfig = {};
+try { firebaseConfig = window.__firebase_config ? JSON.parse(window.__firebase_config) : {}; } catch(e) {}
+const app = Object.keys(firebaseConfig).length > 0 ? initializeApp(firebaseConfig) : null;
+const db = app ? getFirestore(app) : null;
+const auth = app ? getAuth(app) : null;
+const apiKey = ""; // Gemini API Key 自動注入
+
+// 📈 2026 勞健保級距對照表
+const INSURANCE_TABLE = [
+  { bracket: 29500, labor: 679, health: 457 }, { bracket: 30300, labor: 697, health: 470 },
+  { bracket: 31800, labor: 731, health: 493 }, { bracket: 33300, labor: 766, health: 516 },
+  { bracket: 34800, labor: 800, health: 540 }, { bracket: 36300, labor: 835, health: 563 },
+  { bracket: 38200, labor: 879, health: 592 }, { bracket: 40100, labor: 922, health: 622 },
+  { bracket: 42000, labor: 966, health: 651 }, { bracket: 43900, labor: 1010, health: 681 },
+  { bracket: 45800, labor: 1053, health: 710 }, { bracket: 156400, labor: 1145, health: 2426 },
+  { bracket: 313000, labor: 1145, health: 4855 }
+];
+
+// 🌍 多國語系翻譯
+const TRANSLATIONS = {
+  zh: { brand: "在地物流", login: "進入管理中心", phone: "手機號碼", pin: "PIN 安全碼", rem: "記住我的登入資訊", interview: "線上實務評估", dataOnboarding: "資料建檔", install: "APP 下載教學", delivery: "今日配送", pickup: "今日逆收", cod: "今日代收 (C.O.D)", submit: "加密送出數據", verify: "系統核對", sign: "數位簽章存證", logout: "安全退出", back: "返回首頁", idF: "身分證正面", idB: "身分證反面", lic: "駕照正面", reg: "行照正面", book: "存摺封面", cr: "良民證", emergency: "緊急聯絡人", bank: "銀行資訊", address: "戶籍地址", dob: "出生日期", idNum: "身分證字號" }
+};
+
+// 🤖 Gemini AI
+const callGemini = async (prompt, imageData = null) => {
+  let retryCount = 0; const maxRetries = 3;
+  const performRequest = async () => {
+    const model = "gemini-2.5-flash-preview-09-2025";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    let contents = [{ parts: [{ text: prompt }] }];
+    if (imageData) {
+      const base64Data = imageData.split(',')[1];
+      contents[0].parts.push({ inlineData: { mimeType: "image/jpeg", data: base64Data } });
+    }
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents }) });
+    const result = await response.json();
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || "暫無回應";
+  };
+  while (retryCount < maxRetries) {
+    try { return await performRequest(); } catch (e) { retryCount++; await new Promise(res => setTimeout(res, 1000 * Math.pow(2, retryCount))); }
+  }
+};
+
+let toastTimeout;
+const showToast = (msg, isError = false) => {
+  const t = document.getElementById('global-toast');
+  if(t) {
+    t.innerText = msg;
+    t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-6 py-4 md:px-10 md:py-6 rounded-full font-black z-[99999] shadow-2xl transition-all duration-500 flex items-center gap-2 text-sm md:text-lg w-11/12 md:w-auto text-center justify-center ${isError ? 'bg-rose-600 text-white' : 'bg-indigo-600 text-white'}`;
+    t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 3000);
+  }
+};
+
+const processImage = (file, callback) => {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas'); const M = 800; let w=img.width, h=img.height;
+      if(w>M){ h=Math.round(h*M/w); w=M; }
+      canvas.width=w; canvas.height=h; canvas.getContext('2d').drawImage(img,0,0,w,h);
+      callback(canvas.toDataURL('image/jpeg', 0.6));
+    }; img.src = e.target.result;
+  }; reader.readAsDataURL(file);
+};
+
+// ==========================================
+// 🧩 組件定義
+// ==========================================
+
+const SignaturePad = ({ onSign }) => {
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const startDrawing = (e) => { setIsDrawing(true); const ctx = canvasRef.current.getContext('2d'); const pos = getPos(canvasRef.current, e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); };
+  const draw = (e) => { if (!isDrawing) return; e.preventDefault(); const ctx = canvasRef.current.getContext('2d'); const pos = getPos(canvasRef.current, e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); };
+  const endDrawing = () => { setIsDrawing(false); onSign(canvasRef.current.toDataURL()); };
+  const getPos = (canvas, e) => { const rect = canvas.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; };
+  useEffect(() => { if(canvasRef.current) { const ctx = canvasRef.current.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#fff'; } }, []);
+  return (
+    <div className="w-full">
+      <div className="bg-slate-900 border border-white/20 rounded-2xl overflow-hidden mb-2 relative shadow-inner"><canvas ref={canvasRef} width={400} height={150} className="w-full h-[150px] touch-none cursor-crosshair" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={endDrawing} onMouseOut={endDrawing} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={endDrawing} /><p className="absolute bottom-2 right-4 text-[10px] text-slate-500 font-black italic opacity-20 pointer-events-none">SIGNATURE</p></div>
+      <button onClick={() => { const ctx = canvasRef.current.getContext('2d'); ctx.clearRect(0, 0, 400, 150); onSign(null); }} className="w-full py-3 border border-rose-500/30 text-rose-500 rounded-xl text-sm font-black shadow-md active:scale-95 transition-all">重新簽名</button>
     </div>
+  );
+};
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-        const { LogOut, PlusSquare, Activity, X, RefreshCw } = lucide;
+// 老闆管理端仍保留 AI 指揮官名稱
+function AIAssistant({ partners, onClose }) {
+  const [chat, setChat] = useState([{ role: 'bot', msg: "老闆您好！我是 AI 助理。您可以詢問關於車隊運作或司機數據的問題。" }]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef(null);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat]);
 
-        // --- 金鑰區 ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-            authDomain: "supreme-v92.firebaseapp.com",
-            projectId: "supreme-v92",
-            storageBucket: "supreme-v92.firebasestorage.app",
-            messagingSenderId: "485530156296",
-            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-        };
-        const appId = 'supreme-v92'; 
+  const askAI = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input; setInput("");
+    setChat(prev => [...prev, { role: 'user', msg: userMsg }]);
+    setLoading(true);
+    try {
+      const dataContext = partners.map(p => ({ name: p.name, del: p.total_del, cod: p.last_report?.cod_amount || 0, status: p.work_status }));
+      const res = await callGemini(`物流顧問。數據：${JSON.stringify(dataContext)}。回答老闆：${userMsg}。請專業且簡短。`);
+      setChat(prev => [...prev, { role: 'bot', msg: res }]);
+    } catch (e) { setChat(prev => [...prev, { role: 'bot', msg: "分析發生錯誤，請重試。" }]); }
+    setLoading(false);
+  };
 
-        // 全域變數延遲初始化
-        let app, db, auth;
-
-        function AppWrapper() {
-            const [u, setU] = useState(null);
-            const [aR, setAR] = useState('guest');
-            const [ps, setPs] = useState([]);
-            const [l, setL] = useState('gate');
-            const [ld, setLd] = useState(true);
-            const [spI, setSpI] = useState(null);
-            const [showTools, setShowTools] = useState(false);
-            const [connError, setConnError] = useState("");
-
-            useEffect(() => {
-                window.FB.signInAnonymously(auth).catch(err => setConnError("驗證失敗: " + err.message));
-                window.FB.onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        setU(user);
-                        const saved = JSON.parse(localStorage.getItem('ggsoc_auth') || '{}');
-                        if (saved.phone) {
-                            setAR(saved.role);
-                            setSpI(`p_${saved.phone}`);
-                            setL(saved.role === 'driver' ? 'driver' : 'admin');
-                        }
-                    }
-                });
-            }, []);
-
-            useEffect(() => {
-                if (!u) return;
-                
-                const timeoutId = setTimeout(() => {
-                    if (ld) setConnError("網路連線較慢，請重新整理");
-                }, 5000);
-
-                const unsub = window.FB.onSnapshot(
-                    window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'partners'), 
-                    (snap) => {
-                        setPs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                        setLd(false);
-                        setConnError(""); 
-                        clearTimeout(timeoutId);
-                    },
-                    (error) => {
-                        setConnError("資料庫讀取失敗: " + error.message);
-                        setLd(false);
-                    }
-                );
-                return () => { unsub(); clearTimeout(timeoutId); };
-            }, [u]);
-
-            const handleLogin = (phone, pin) => {
-                if (phone === "0976017938" && pin === "8305319") {
-                    localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'super_admin' }));
-                    setAR('super_admin'); setL('admin');
-                } else {
-                    const p = ps.find(x => x.phone === phone && x.pin === pin);
-                    if (p) {
-                        localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'driver' }));
-                        setAR('driver'); setSpI(p.id); setL('driver');
-                    } else { alert("驗證失敗：請檢查手機號碼與安全碼"); }
-                }
-            };
-
-            const updateField = async (id, field, val) => {
-                await window.FB.updateDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [field]: val });
-            };
-
-            if (ld || connError) return (
-                <div className="h-screen flex flex-col items-center justify-center font-black text-center p-6 space-y-6">
-                    {ld && !connError ? (
-                        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    ) : (
-                        <Activity className="text-rose-500 w-12 h-12 mx-auto" />
-                    )}
-                    <p className={`italic tracking-widest ${connError ? 'text-rose-400' : 'text-blue-500 animate-pulse'}`}>
-                        {connError || "SUPREME-V92 SECURING..."}
-                    </p>
-                    <button onClick={() => window.location.reload(true)} className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-full border border-white/10 shadow-lg active:scale-95">
-                        <RefreshCw size={18} /> 強制重新連線
-                    </button>
-                </div>
-            );
-
-            return (
-                <div className="min-h-screen">
-                    {l === 'gate' && <Gate onLogin={handleLogin} />}
-                    {l === 'driver' && <DriverHub partner={ps.find(x=>x.id===spI)} updateField={updateField} onLogout={()=>{localStorage.clear(); window.location.reload(true);}} />}
-                    {l === 'admin' && <AdminHub partners={ps} updateField={updateField} onLogout={()=>{localStorage.clear(); window.location.reload(true);}} setShowTools={setShowTools} />}
-                    {showTools && <ToolsModal onClose={()=>setShowTools(false)} db={db} appId={appId} />}
-                </div>
-            );
-        }
-
-        const ToolsModal = ({ onClose, db, appId }) => {
-            const [n, setN] = useState(""); const [p, setP] = useState("");
-            const add = async () => {
-                if(!n || !p) return alert("姓名與手機為必填");
-                await window.FB.setDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${p}`), {
-                    id: `p_${p}`, name: n, phone: p, pin: "0000", status: 'approved', total_del: 0, custom_del_price: 15
-                });
-                alert("✅ 建立成功！預設 PIN 為 0000"); onClose();
-            };
-            return (
-                <div className="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-6 animate-fadeInUp">
-                    <div className="bg-slate-900 border border-white/10 p-8 rounded-[2rem] w-full max-w-sm relative shadow-2xl">
-                        <button onClick={onClose} className="absolute top-6 right-6 text-slate-400"><X/></button>
-                        <h3 className="text-2xl font-black mb-8 italic text-white">新增夥伴</h3>
-                        <input placeholder="輸入真實姓名" className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-4 text-white font-black outline-none focus:border-blue-500" value={n} onChange={e=>setN(e.target.value)} />
-                        <input type="tel" placeholder="輸入手機號碼" className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-8 text-white font-black outline-none focus:border-blue-500" value={p} onChange={e=>setP(e.target.value)} />
-                        <button onClick={add} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl shadow-lg active:scale-95">建立帳號</button>
-                    </div>
-                </div>
-            );
-        };
-
-        const Gate = ({ onLogin }) => {
-            const [p, setP] = useState(""); const [pin, setPin] = useState("");
-            return (
-                <div className="h-screen flex flex-col items-center justify-center p-6">
-                    <h1 className="text-6xl font-black italic mb-10 tracking-tighter text-white">在地物流</h1>
-                    <div className="bg-slate-900 border border-white/10 p-10 rounded-[3rem] w-full max-w-sm shadow-2xl">
-                        <input type="tel" placeholder="手機號碼" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-4 text-center text-xl font-black text-white outline-none focus:border-blue-500" />
-                        <input type="password" placeholder="PIN 安全碼" value={pin} onChange={e=>setPin(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-8 text-center text-xl font-black text-white outline-none focus:border-blue-500" />
-                        <button onClick={()=>onLogin(p, pin)} className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all text-white tracking-widest">進入系統</button>
-                    </div>
-                </div>
-            );
-        };
-
-        const DriverHub = ({ partner, updateField, onLogout }) => {
-            const [del, setDel] = useState(""); const [cod, setCod] = useState("");
-            const submit = async () => {
-                if(!del) return alert("請輸入件數！");
-                await updateField(partner.id, 'total_del', (partner.total_del || 0) + Number(del));
-                await updateField(partner.id, 'last_report', { date: new Date().toLocaleDateString(), cod_amount: Number(cod || 0) });
-                alert("✅ 報帳完成"); setDel(""); setCod("");
-            };
-            return (
-                <div className="p-6 max-w-md mx-auto animate-fadeInUp text-white">
-                    <div className="flex justify-between items-center mb-10">
-                        <h2 className="text-3xl font-black italic">你好, {partner?.name}</h2>
-                        <button onClick={onLogout} className="text-rose-500 bg-rose-500/10 p-3 rounded-xl active:scale-90"><LogOut/></button>
-                    </div>
-                    <div className="space-y-6">
-                        <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
-                            <p className="text-sm text-blue-400 mb-4 font-black uppercase tracking-widest">今日正件數</p>
-                            <input type="number" value={del} onChange={e=>setDel(e.target.value)} className="w-full bg-transparent text-7xl font-black outline-none" placeholder="0" />
-                        </div>
-                        <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/20 shadow-inner">
-                            <p className="text-sm text-amber-500 mb-4 font-black uppercase tracking-widest">今日 C.O.D</p>
-                            <div className="flex items-center text-6xl font-black text-amber-400">
-                                $<input type="number" value={cod} onChange={e=>setCod(e.target.value)} className="bg-transparent outline-none ml-4 w-full" placeholder="0" />
-                            </div>
-                        </div>
-                        <button onClick={submit} className="w-full py-6 mt-4 bg-blue-600 text-white rounded-[2rem] font-black text-2xl shadow-xl active:scale-95 transition-all">傳送報帳數據</button>
-                    </div>
-                </div>
-            );
-        };
-
-        const AdminHub = ({ partners, updateField, onLogout, setShowTools }) => (
-            <div className="p-8 animate-fadeInUp text-white">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-                    <h2 className="text-4xl font-black italic tracking-tighter">指揮中心</h2>
-                    <div className="flex gap-4 w-full md:w-auto">
-                        <button onClick={()=>setShowTools(true)} className="flex-1 md:flex-none bg-blue-600 px-6 py-4 rounded-2xl font-black flex justify-center items-center gap-2 active:scale-95 shadow-lg"><PlusSquare size={20}/> 新增夥伴</button>
-                        <button onClick={onLogout} className="bg-slate-800 px-6 py-4 rounded-2xl text-rose-500 font-black border border-rose-500/20 active:scale-95">退出</button>
-                    </div>
-                </div>
-                <div className="overflow-x-auto bg-slate-900 rounded-[2.5rem] border border-white/5 shadow-2xl">
-                    <table className="w-full text-left min-w-[600px]">
-                        <thead className="bg-black/50 text-blue-400 text-xs tracking-widest uppercase">
-                            <tr>
-                                <th className="p-6">夥伴資訊</th>
-                                <th className="p-6 text-center">正件單價</th>
-                                <th className="p-6 text-center">今日 C.O.D</th>
-                                <th className="p-6 text-center text-white text-lg">預計實領</th>
-                            </tr>
-                        </thead>
-                        <tbody className="font-black text-sm">
-                            {partners.map(p => {
-                                const net = (p.total_del * (p.custom_del_price || 15)) + (p.custom_adj || 0);
-                                return (
-                                    <tr key={p.id} className="border-b border-white/5 hover:bg-slate-800/50 transition-colors">
-                                        <td className="p-6">{p.name}<br/><span className="text-[11px] text-slate-500">{p.phone}</span></td>
-                                        <td className="p-6 text-center">
-                                            $<input type="number" className="w-16 bg-transparent border-b-2 border-slate-700 text-center outline-none text-sky-400 text-xl focus:border-sky-400 transition-colors" value={p.custom_del_price || 15} onChange={e=>updateField(p.id, 'custom_del_price', Number(e.target.value))} />
-                                        </td>
-                                        <td className="p-6 text-center text-amber-400 text-xl">${(p.last_report?.cod_amount || 0).toLocaleString()}</td>
-                                        <td className="p-6 text-center text-3xl text-white italic drop-shadow-md">${net.toLocaleString()}</td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+  return (
+    <div className="fixed bottom-0 md:bottom-6 right-0 md:right-6 w-full md:w-[380px] h-[80vh] md:h-[550px] bg-slate-900 border-t md:border border-blue-500/30 rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl z-[10000] flex flex-col overflow-hidden animate-[fadeInUp_0.4s_ease-out] font-black">
+       <header className="p-5 bg-blue-600 text-white flex justify-between items-center shadow-lg"><div className="flex items-center gap-3"><Bot size={24}/><h3>✨ 在地 AI 指揮官</h3></div><button onClick={onClose} className="p-2"><X size={20}/></button></header>
+       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/20 custom-scrollbar pb-10">
+          {chat.map((c, i) => (
+            <div key={i} className={`flex ${c.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+               <div className={`max-w-[85%] p-3 rounded-2xl text-sm font-black leading-relaxed shadow-lg ${c.role === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-100 border border-white/5'}`}>{c.msg}</div>
             </div>
-        );
+          ))}
+          {loading && <div className="text-slate-500 text-xs italic">正在思考中...</div>}
+          <div ref={endRef} />
+       </div>
+       <div className="p-4 bg-slate-800 border-t border-white/5 flex gap-2 pb-8 md:pb-4">
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&askAI()} placeholder="詢問數據..." className="flex-1 bg-black/50 border border-white/10 rounded-full p-3 text-sm text-white outline-none focus:border-blue-500 font-black" />
+          <button onClick={askAI} className="bg-blue-600 p-3 rounded-full text-white active:scale-90 transition-all"><Send size={18}/></button>
+       </div>
+    </div>
+  );
+}
 
-        // --- 核心啟動器：確保模組載入完畢才啟動 React ---
-        const bootSystem = () => {
-            if (!window.FB) {
-                // 如果 Firebase 還沒抓完，就等 50 毫秒再試一次
-                setTimeout(bootSystem, 50);
-                return;
-            }
-            // 抓到了！正式啟動
-            app = window.FB.initializeApp(firebaseConfig);
-            db = window.FB.getFirestore(app);
-            auth = window.FB.getAuth(app);
+function MaintenanceModal({ partners, onClose }) {
+  const [report, setReport] = useState("");
+  const [loading, setLoading] = useState(false);
+  const runMaintenance = async () => {
+    setLoading(true);
+    try {
+      const summary = partners.map(p => `${p.name}:結餘${p.total_del},狀態${p.work_status}`);
+      const res = await callGemini(`系統維護報告請求。數據：${JSON.stringify(summary)}。風險診斷 150 字內，使用繁體中文。`);
+      setReport(res); showToast("✨ 智慧診斷完成");
+    } catch (e) { showToast("診斷失敗", true); }
+    setLoading(false);
+  };
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-blue-500/30 p-8 md:p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl relative overflow-hidden font-black">
+        <button onClick={onClose} className="absolute top-6 right-6 text-white p-2 active:scale-90"><X size={28}/></button>
+        <h3 className="text-2xl md:text-3xl font-black text-blue-400 mb-6 italic flex items-center gap-3"><Terminal size={28}/> 系統維護診斷</h3>
+        <div className="bg-black/50 p-5 rounded-2xl min-h-[150px] mb-6 font-black text-slate-200 text-sm md:text-base leading-relaxed whitespace-pre-wrap shadow-inner overflow-y-auto max-h-[350px]">
+          {loading ? "系統正透過雲端分析各項數據完整性..." : (report || "點擊下方按鈕執行系統體檢報告。")}
+        </div>
+        <button onClick={runMaintenance} disabled={loading} className="w-full py-4 md:py-5 rounded-2xl bg-blue-600 text-white font-black text-lg md:text-xl shadow-xl active:scale-95 transition-all flex justify-center items-center gap-3"><Activity size={24}/> 開始掃描</button>
+      </div>
+    </div>
+  );
+}
 
-            const root = ReactDOM.createRoot(document.getElementById('root'));
-            root.render(<AppWrapper />);
-        };
+function PartnerDetail({ partner, onClose, updateField, deletePartner }) {
+  if (!partner) return null;
+  const labels = {id_f:'身分證正面', id_b:'身分證反面', lic:'駕照正面', reg:'行照正面', book:'存摺封面', cr:'良民證'};
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 font-black backdrop-blur-sm">
+      <div className="bg-slate-900 border border-white/10 p-6 md:p-8 rounded-[2.5rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar">
+        <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-rose-400 active:scale-90 p-2"><X size={28}/></button>
+        <h3 className="text-2xl md:text-3xl font-black text-white mb-6 border-b border-white/5 pb-4 italic flex items-center gap-3"><User className="text-blue-400"/> 夥伴檔案全覽</h3>
+        <div className="space-y-6 font-black">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-black/30 p-5 rounded-2xl border border-white/5 shadow-inner">
+             <div><label className="text-[10px] text-slate-500 uppercase">姓名</label><p className="text-white text-lg font-black">{partner.name}</p></div>
+             <div><label className="text-[10px] text-slate-500 uppercase">手機</label><p className="text-white text-lg font-black">{partner.phone}</p></div>
+             <div><label className="text-[10px] text-slate-500 uppercase">身分證號</label><p className="text-white text-lg font-black">{partner.p_id_num || '---'}</p></div>
+             <div><label className="text-[10px] text-slate-500 uppercase">生日</label><p className="text-white text-lg font-black">{partner.p_dob || '---'}</p></div>
+          </div>
+          <div className="bg-slate-800/40 p-5 rounded-2xl border border-white/5">
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {Object.keys(labels).map(key => (
+                   <div key={key} className="bg-black/30 p-3 rounded-2xl border border-white/5 text-center shadow-inner">
+                     <p className="text-[9px] text-slate-500 mb-2 font-black uppercase tracking-tighter">{labels[key]}</p>
+                     {partner[`p_${key}`] ? <img src={partner[`p_${key}`]} className="w-full h-24 object-cover rounded-xl border border-white/10 active:scale-95 transition-all" onClick={() => window.open(partner[`p_${key}`], '_blank')} alt={labels[key]} /> : <div className="h-24 flex items-center justify-center text-[10px] text-slate-700 italic border-2 border-dashed border-slate-800/50 rounded-xl">未傳</div>}
+                   </div>
+                ))}
+             </div>
+          </div>
+          <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row gap-4">
+            <button onClick={() => updateField(partner.id, 'status', partner.status==='frozen'?'approved':'frozen')} className={`flex-1 py-4 rounded-xl text-sm font-black shadow-lg active:scale-95 transition-all ${partner.status==='frozen'?'bg-emerald-600/20 text-emerald-500':'bg-cyan-600/20 text-cyan-500'}`}>{partner.status==='frozen'?'✔️ 解除凍結':'🧊 凍結帳號'}</button>
+            <button onClick={() => { if(window.confirm("確認移除此檔案？")) deletePartner(partner.id); }} className="flex-1 py-4 bg-rose-900/30 text-rose-500 rounded-xl text-sm font-black shadow-md active:scale-95 transition-all">🗑️ 徹底移除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ToolsModal({ onClose, db, appId, resetData }) {
+  const [newN, setNewN] = useState(""); const [newP, setNewP] = useState(""); const [newPin, setNewPin] = useState("0000");
+  const addManual = async () => {
+    if(!newN || !newP) return showToast("姓名手機為必填", true);
+    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${newP}`), { id:`p_${newP}`, name:newN, phone:newP, pin:newPin, status:'approved', total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10, custom_adj:0, labor_fee:0, health_fee:0, dependents:0, insurance_bracket: 0 });
+    showToast("✅ 夥伴已手動建立"); setNewN(""); setNewP("");
+  };
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 font-black backdrop-blur-md">
+      <div className="bg-slate-900 border border-white/10 p-8 md:p-10 rounded-[2.5rem] max-w-md w-full relative shadow-2xl">
+        <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-rose-400 active:scale-90 p-2"><X size={28}/></button>
+        <h3 className="text-2xl md:text-3xl font-black text-blue-400 mb-8 text-center italic tracking-widest uppercase">系統工具箱</h3>
+        <div className="space-y-6">
+          <div className="bg-black/40 p-6 md:p-8 rounded-[2rem] border border-white/5 font-black shadow-inner">
+            <p className="text-[11px] md:text-[12px] text-slate-500 mb-5 font-black italic uppercase tracking-[0.2em] text-center">● 手動快速建檔系統</p>
+            <div className="grid grid-cols-2 gap-3 mb-4 font-black">
+              <input type="text" placeholder="姓名" className="w-full bg-slate-800 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-blue-500 font-black text-base" value={newN} onChange={e => setNewN(e.target.value)} />
+              <input type="tel" placeholder="手機" className="w-full bg-slate-800 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-blue-500 font-black text-base" value={newP} onChange={e => setNewP(e.target.value)} />
+            </div>
+            <input type="text" placeholder="PIN 安全碼 (預設0000)" className="w-full bg-slate-800 border border-white/10 p-4 rounded-xl text-amber-500 outline-none mb-5 tracking-widest font-black text-center shadow-inner text-base" value={newPin} onChange={e => setNewPin(e.target.value)} />
+            <button onClick={addManual} className="w-full py-4 bg-blue-600 text-white font-black rounded-xl shadow-xl active:scale-95 transition-all text-base italic tracking-widest">建立帳號</button>
+          </div>
+          <button onClick={() => { if(window.confirm("嚴重警告：全體配送件數將立即歸零，且無法復原！")) { resetData(); onClose(); } }} className="w-full py-5 bg-rose-900/20 text-rose-500 rounded-[1.5rem] border border-rose-500/20 text-sm md:text-md italic font-black shadow-lg active:scale-95 transition-all">🛑 月末數據結清歸零</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SystemSettingsModal({ onClose, db, appId, globalSettings }) {
+  const [newAccPin, setNewAccPin] = useState(globalSettings?.accountantPin || "0172");
+  const toggleSetting = async (key) => { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), { ...globalSettings, [key]: !globalSettings[key] }, { merge: true }); showToast(`✅ 系統狀態更新`); };
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 font-black backdrop-blur-md">
+      <div className="bg-slate-900 border border-amber-500/40 p-8 md:p-10 rounded-[2.5rem] max-w-md w-full shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-amber-400 active:scale-90 p-2"><X size={28}/></button>
+        <h3 className="text-2xl md:text-3xl font-black text-amber-500 mb-8 text-center flex items-center justify-center gap-3 italic"><Shield size={28} /> 總裁控制台</h3>
+        <div className="space-y-4 mb-8 text-base md:text-lg font-black">
+          <div className="flex justify-between items-center bg-black/40 p-5 rounded-[1.5rem] border border-white/5"><div><p className="text-white font-black italic">全站維護戒嚴</p></div><button onClick={() => toggleSetting('systemLocked')} className="active:scale-90 transition-all">{globalSettings?.systemLocked ? <ToggleRight className="text-rose-500" size={48} /> : <ToggleLeft className="text-slate-600" size={48} />}</button></div>
+          <div className="flex justify-between items-center bg-black/40 p-5 rounded-[1.5rem] border border-white/5"><div><p className="text-white font-black italic">開放司機打卡</p></div><button onClick={() => toggleSetting('allowReporting')} className="active:scale-90 transition-all">{globalSettings?.allowReporting !== false ? <ToggleRight className="text-emerald-500" size={48} /> : <ToggleLeft className="text-slate-600" size={48} />}</button></div>
+        </div>
+        <div className="bg-amber-900/10 border border-amber-500/20 p-6 rounded-[2rem] mb-2 shadow-inner text-center font-black">
+           <p className="text-xs text-amber-500 mb-3 font-black uppercase">變更行政安全碼</p>
+           <div className="flex gap-2">
+             <input type="text" className="flex-1 bg-black/50 border border-amber-500/30 p-3 rounded-xl text-white font-black text-center text-xl tracking-[0.3em] outline-none shadow-inner" value={newAccPin} onChange={e=>setNewAccPin(e.target.value)} />
+             <button onClick={async () => { await setDoc(doc(db,'artifacts',appId,'public','data','settings','global'), { accountantPin: newAccPin }, {merge:true}); showToast("✅ 密碼已更改"); }} className="px-6 bg-amber-600 text-black rounded-xl text-sm font-black active:scale-95 transition-all shadow-lg shadow-amber-500/10">修改</button>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Gate({ onLogin, announcement, setLayer, globalSettings, isConnected }) {
+  const [lp, setLp] = useState(""); const [li, setLi] = useState(""); const [lr, setLr] = useState(false);
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative font-black animate-[fadeIn_0.5s_ease-out]">
+      <div className="absolute top-6 left-6 flex items-center gap-2 text-[10px] md:text-[11px] font-black bg-black/50 px-4 py-2 rounded-full border border-white/10 shadow-xl"><span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span><span className={isConnected ? 'text-emerald-400' : 'text-rose-400'}>{isConnected ? '雲端在線' : '系統離線'}</span></div>
+      
+      {/* 手機版適應字體大小 */}
+      <div className="mb-10 md:mb-14 text-center mt-12">
+        <h1 className="text-[3.5rem] md:text-8xl font-black text-white italic tracking-tighter mb-3 drop-shadow-2xl leading-none">在地物流</h1>
+        <p className="text-blue-500 text-[10px] md:text-xs tracking-[0.3em] bg-indigo-950/40 border border-indigo-500/30 px-5 py-2 rounded-full inline-block uppercase shadow-lg italic">GGSOC v55.7 ✨</p>
+      </div>
+      
+      <div className="w-full max-w-[340px] md:max-w-[360px] space-y-5 z-10 font-black">
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,1)]">
+          <input type="tel" placeholder="手機號碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 md:p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg md:text-xl shadow-inner transition-all" value={lp} onChange={e => setLp(e.target.value)} maxLength={10} />
+          <input type="password" placeholder="PIN 安全碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 md:p-5 text-center text-white outline-none mb-4 focus:border-blue-500 font-black tracking-widest text-lg md:text-xl shadow-inner transition-all" value={li} onChange={e => setLi(e.target.value)} maxLength={lp === '0976017938' ? 7 : 4} />
+          <div className="flex items-center justify-center gap-3 mb-6">
+             <input type="checkbox" id="gate_rem_final" checked={lr} onChange={e => setLr(e.target.checked)} className="w-5 h-5 accent-indigo-500 rounded bg-slate-800" />
+             <label htmlFor="gate_rem_final" className="text-slate-400 text-[11px] md:text-xs font-black uppercase">記住登入資訊</label>
+          </div>
+          <button onClick={() => onLogin(lp, li, lr)} className="w-full py-4 md:py-5 rounded-[1.2rem] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg md:text-xl shadow-xl active:scale-95 transition-all flex justify-center items-center gap-3 italic tracking-[0.1em] shadow-indigo-500/30"><Radio size={20}/> 進入系統</button>
+        </div>
         
-        // 觸發啟動
-        bootSystem();
-    </script>
+        {announcement && <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-[1.5rem] overflow-hidden flex items-center shadow-2xl"><div className="overflow-hidden w-full relative font-black text-center"><p className="text-white text-sm font-black whitespace-nowrap animate-marquee inline-block italic tracking-widest">{String(announcement)}</p></div></div>}
+        
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={() => setLayer('onboarding')} className="w-full py-4 rounded-[1.2rem] border border-blue-500/30 text-blue-400 font-black text-xs md:text-sm bg-blue-900/10 shadow-xl italic flex flex-col justify-center items-center gap-1 active:scale-95 shadow-blue-500/10"><Clipboard size={18}/> 實務測驗</button>
+          <button onClick={() => setLayer('onboarding_data')} className="w-full py-4 rounded-[1.2rem] border border-orange-500/30 text-orange-400 font-black text-xs md:text-sm bg-orange-900/10 shadow-xl italic flex flex-col justify-center items-center gap-1 active:scale-95 shadow-orange-500/10">補齊建檔</button>
+        </div>
+        <button onClick={() => setLayer('install_tutorial')} className="w-full py-4 rounded-[1.2rem] border border-slate-700 text-slate-400 font-black text-[10px] md:text-xs bg-slate-950/50 shadow-xl italic active:scale-95 tracking-widest uppercase">手機下載 APP 教學引導</button>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 🚀 指揮中心 & 夥伴主介面
+// ==========================================
+
+function AdminHub({ authRole, partners, onLogout, autoInsur, updateField, setModalType, setSelectedPartner, showSensitive, setShowSensitive, sq, setSq }) {
+  const [adminTab, setAdminTab] = useState('formal'); const [aiInsight, setAiInsight] = useState(""); const [isInsightLoading, setIsInsightLoading] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false); const [showMaintenance, setShowMaintenance] = useState(false);
+
+  const getGlobalInsight = async () => { setIsInsightLoading(true); try { const result = await callGemini(`物流數據彙整：\n${partners.map(p=>`${p.name}:${p.total_del}件`).join('\n')}`); setAiInsight(result); showToast("✨ 智慧戰報更新"); } catch(e){ showToast("診斷失敗",true); } setIsInsightLoading(false); };
+  
+  let vP = partners; if (authRole === 'admin') vP = vP.filter(p => p.phone !== '0976017938');
+  let formalPartners = vP.filter(p => p.status === 'approved' || p.status === 'frozen');
+  let pendingPartners = vP.filter(p => p.status === 'pending');
+  formalPartners = formalPartners.filter(p => p.name?.toLowerCase().includes(sq.toLowerCase()) || p.phone?.includes(sq));
+  const totals = formalPartners.reduce((acc, p) => { const net = (p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10))+(p.custom_adj||0)-(p.labor_fee||0)-(p.health_fee||0); const hasR = p.last_report?.date===new Date().toLocaleDateString('en-CA'); const cod = hasR ? (p.last_report.cod_amount||0) : 0; return {del:acc.del+(p.total_del||0),pkp:acc.pkp+(p.total_pkp||0),net:acc.net+net,cod:acc.cod+cod}; }, {del:0,pkp:0,net:0,cod:0});
+
+  return (
+    <div className="p-4 md:p-8 lg:p-14 max-w-full mx-auto bg-[#020617] min-h-screen font-black animate-[fadeInUp_0.4s_ease-out] relative">
+      
+      {/* Header 針對手機調整字體與按鈕排版 */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 md:mb-14 gap-6">
+         <div>
+            <h2 className="text-white font-black text-4xl md:text-6xl italic tracking-tighter uppercase mb-2">營運指揮中心</h2>
+            <span className={`inline-block text-sm md:text-lg px-4 py-1 rounded-xl border ${authRole === 'super_admin' ? 'text-amber-500 bg-amber-900/30 border-amber-500/20 shadow-xl' : 'text-blue-400 bg-blue-900/30 border-blue-500/30'}`}>{authRole === 'super_admin' ? '👑 BOSS' : '⚖️ ADMIN'}</span>
+         </div>
+         <div className="flex flex-wrap gap-2 md:gap-4 w-full xl:w-auto">
+            {authRole === 'super_admin' && <button onClick={() => setModalType('system_settings')} className="flex-1 xl:flex-none justify-center bg-amber-600 text-black px-4 py-3 md:px-8 md:py-4 rounded-xl text-sm md:text-md font-black shadow-xl active:scale-95 transition-all flex items-center gap-1"><Shield size={16} /> 總裁</button>}
+            <button onClick={() => setModalType('tools')} className="flex-1 xl:flex-none justify-center bg-blue-600 text-white px-4 py-3 md:px-8 md:py-4 rounded-xl text-sm md:text-md font-black shadow-xl active:scale-95 transition-all flex items-center gap-1"><Settings size={16} /> 工具</button>
+            <button onClick={async()=>{let c="\uFEFF姓名,手機,實領\n";partners.forEach(p=>{const n=(p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10))+(p.custom_adj||0)-(p.labor_fee||0)-(p.health_fee||0);c+=`${p.name},${p.phone},${n}\n`;});const k=document.createElement("a");k.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));k.download=`PAYROLL.csv`;k.click();}} className="flex-1 xl:flex-none justify-center bg-emerald-600 text-white px-4 py-3 md:px-8 md:py-4 rounded-xl text-sm md:text-md font-black shadow-xl active:scale-95 flex items-center gap-1"><Download size={16} /> 匯出</button>
+            <button onClick={onLogout} className="flex-1 xl:flex-none justify-center bg-slate-800 text-rose-500 px-4 py-3 md:px-8 md:py-4 rounded-xl text-sm md:text-md font-black border border-rose-500/20 active:scale-95 flex items-center gap-1">退出</button>
+         </div>
+      </div>
+      
+      {/* 數據看板 (手機堆疊，電腦並排) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-8 md:mb-14 text-center font-black">
+         <button onClick={() => setShowMaintenance(true)} className="bg-slate-900/60 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-t-4 border-t-blue-500/50 shadow-xl hover:bg-blue-900/10 transition-all text-left relative overflow-hidden group col-span-2 lg:col-span-1 flex flex-col justify-center">
+            <div className="absolute -right-4 -top-4 text-blue-500/10 group-hover:text-blue-500/20 transition-all rotate-12"><Activity size={100}/></div>
+            <p className="text-blue-400 text-[10px] md:text-xs mb-2 uppercase italic font-black flex items-center gap-1"><Sparkles size={14}/> System Check</p>
+            <p className="text-xl md:text-3xl font-black text-white group-hover:translate-x-2 transition-all">系統診斷</p>
+         </button>
+         <div className="bg-slate-900/60 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-t-4 border-t-amber-500/50 shadow-xl flex flex-col justify-center">
+            <p className="text-slate-500 text-[10px] md:text-sm mb-2 uppercase italic font-black tracking-widest">今日 C.O.D</p>
+            <p className="text-2xl md:text-5xl font-black text-amber-400 drop-shadow-lg">${totals.cod.toLocaleString()}</p>
+         </div>
+         <div className="bg-slate-900/60 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-t-4 border-t-blue-500/50 shadow-xl flex flex-col justify-center">
+            <p className="text-slate-500 text-[10px] md:text-sm mb-2 uppercase font-black tracking-widest">現役人數</p>
+            <p className="text-2xl md:text-5xl font-black text-blue-400 drop-shadow-lg">{partners.filter(p=>p.status==='approved').length}</p>
+         </div>
+         <button onClick={() => setShowAIAssistant(true)} className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-[0_15px_30px_rgba(30,58,138,0.4)] active:scale-95 transition-all text-center col-span-2 lg:col-span-1">
+            <div className="flex flex-col items-center justify-center gap-1 text-white">
+               <Bot className="animate-pulse mb-1" size={32}/>
+               <p className="text-lg md:text-xl font-black italic tracking-widest uppercase">✨ 智慧指揮</p>
+               <p className="text-[9px] md:text-[10px] opacity-70 uppercase tracking-widest">Launch Chat</p>
+            </div>
+         </button>
+      </div>
+
+      <div className="bg-slate-900/60 p-5 md:p-8 rounded-[2rem] md:rounded-[3.5rem] mb-8 flex flex-col md:flex-row items-center gap-4 md:gap-8 border border-white/5 shadow-xl backdrop-blur-md font-black">
+         <div className="flex-1 flex items-center gap-4 bg-black/40 p-4 md:p-6 rounded-2xl w-full shadow-inner">
+            <Search size={24} className="text-blue-500 flex-shrink-0" />
+            <input type="text" placeholder="搜尋姓名或手機..." className="bg-transparent border-none outline-none text-white text-base md:text-2xl w-full font-black selectable" value={sq} onChange={e => setSq(e.target.value)} />
+         </div>
+         <button onClick={() => { const ns = !showSensitive.global; setShowSensitive({ global:ns, ...partners.reduce((a,p)=>({...a,[p.id]:ns}),{}) }); }} className="w-full md:w-auto bg-slate-800 text-amber-400 rounded-2xl px-6 py-4 md:px-12 md:py-6 text-sm md:text-lg font-black active:scale-95 transition-all shadow-inner border border-white/10 flex items-center justify-center gap-2">
+            {showSensitive.global ? <><EyeOff size={20}/> 隱藏個資</> : <><Eye size={20}/> 解鎖個資</>}
+         </button>
+      </div>
+
+      {/* ======================================================== */}
+      {/* 📱 手機版專用卡片視圖 (完美解決 1900px 表格在手機跑版的問題) */}
+      {/* ======================================================== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 xl:hidden pb-24">
+        {partners.filter(p=>p.status!=='pending' && (p.name.includes(sq)||p.phone.includes(sq))).map(p => { 
+           const p_net = (p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10))+(p.custom_adj||0)-(p.labor_fee||0)-(p.health_fee||0); 
+           const hasR = p.last_report?.date===new Date().toLocaleDateString('en-CA'); 
+           return (
+             <div key={p.id} className="bg-slate-900/80 p-6 rounded-[2rem] border border-white/5 shadow-2xl relative">
+               {/* 報帳燈號 */}
+               <div className="absolute top-6 right-6">
+                  <span className={`w-4 h-4 rounded-full inline-block shadow-lg border-2 border-white/10 ${p.status==='frozen'?'bg-cyan-500 shadow-cyan-500/50':(hasR?'bg-emerald-500 animate-pulse shadow-emerald-500/50':'bg-slate-800 shadow-black')}`}></span>
+               </div>
+               
+               {/* 基本資訊 */}
+               <div className="mb-4 border-b border-white/5 pb-4">
+                 <h4 className="text-2xl font-black text-white italic tracking-widest">{p.name}</h4>
+                 <p className="text-sm text-slate-500 font-black mt-1">📞 {!showSensitive[p.id] ? p.phone.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p>
+               </div>
+
+               {/* 數據編輯區 */}
+               <div className="grid grid-cols-2 gap-3 mb-4">
+                 <div className="bg-black/40 p-3 rounded-xl border border-white/5 text-center">
+                   <p className="text-[10px] text-amber-500 mb-1">💰 代收 C.O.D</p>
+                   <p className="text-lg text-amber-400 font-black italic">${(hasR?p.last_report.cod_amount:0).toLocaleString()}</p>
+                 </div>
+                 <div className="bg-black/40 p-3 rounded-xl border border-white/5 text-center flex flex-col items-center">
+                   <p className="text-[10px] text-slate-500 mb-1">眷屬</p>
+                   <input type="number" value={p.dependents||0} onChange={e=>updateField(p.id,'dependents',Number(e.target.value))} className="w-12 bg-transparent text-center text-white font-black outline-none border-b border-white/10" />
+                 </div>
+                 <div className="bg-black/40 p-3 rounded-xl border border-white/5 text-center flex flex-col items-center justify-center">
+                   <p className="text-[10px] text-sky-400 mb-1">正件單價</p>
+                   <div className="flex text-sky-400 font-black">$<input type="number" value={p.custom_del_price||15} onChange={e=>updateField(p.id,'custom_del_price',Number(e.target.value))} className="w-10 bg-transparent text-center outline-none border-b border-white/10 focus:border-sky-500" /></div>
+                 </div>
+                 <div className="bg-black/40 p-3 rounded-xl border border-white/5 text-center flex flex-col items-center justify-center">
+                   <p className="text-[10px] text-orange-400 mb-1">逆收單價</p>
+                   <div className="flex text-orange-400 font-black">$<input type="number" value={p.custom_pkp_price||10} onChange={e=>updateField(p.id,'custom_pkp_price',Number(e.target.value))} className="w-10 bg-transparent text-center outline-none border-b border-white/10 focus:border-orange-500" /></div>
+                 </div>
+               </div>
+
+               {/* 勞健保下拉 */}
+               <div className="bg-blue-900/10 p-3 rounded-xl border border-blue-500/20 mb-4">
+                 <select className="w-full bg-slate-900 text-white text-sm font-black p-2 rounded-lg border border-blue-500/30 outline-none mb-2" value={p.insurance_bracket||0} onChange={async(e)=>{if(db){const t=INSURANCE_TABLE.find(x=>x.bracket===Number(e.target.value));if(t)await updateDoc(doc(db,'artifacts',appId,'public','data','partners',p.id),{insurance_bracket:Number(e.target.value),labor_fee:t.labor,health_fee:Math.round(t.health*(1+Math.min(p.dependents||0,3)))});}}}>
+                   <option value="0">--- 2026 投保薪資 ---</option>
+                   {INSURANCE_TABLE.map(t=>(<option key={t.bracket} value={t.bracket}>$ {t.bracket.toLocaleString()}</option>))}
+                 </select>
+                 <div className="flex justify-between text-[11px] text-rose-400 italic font-black">
+                   <span>勞保扣除: -${p.labor_fee||0}</span><span>健保扣除: -${p.health_fee||0}</span>
+                 </div>
+               </div>
+
+               {/* 總計與操作按鈕 */}
+               <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                 <div>
+                   <p className="text-[10px] text-slate-500">預計實領淨額</p>
+                   <p className="text-3xl text-white font-black italic selectable">${p_net.toLocaleString()}</p>
+                 </div>
+                 <div className="flex gap-2">
+                   {p.last_report?.cod_receipt && <button onClick={()=>window.open(p.last_report.cod_receipt,'_blank')} className="bg-amber-900/30 text-amber-500 p-3 rounded-xl active:scale-90"><Receipt size={18}/></button>}
+                   {p.last_report?.photo && <button onClick={()=>window.open(p.last_report.photo,'_blank')} className="bg-emerald-900/30 text-emerald-400 p-3 rounded-xl active:scale-90"><ImageIcon size={18}/></button>}
+                   <button onClick={()=>{setSelectedPartner(p); setModalType('detail');}} className="bg-blue-600/20 text-blue-400 px-4 py-2 rounded-xl text-xs font-black active:scale-90 border border-blue-500/30">櫥窗</button>
+                 </div>
+               </div>
+             </div>
+           );
+        })}
+      </div>
+
+      {/* ======================================================== */}
+      {/* 💻 電腦版 1900px 大表格 (大於 xl 螢幕才會顯示，保留您的原始設計) */}
+      {/* ======================================================== */}
+      <div className="hidden xl:block w-full overflow-x-auto rounded-[3.5rem] border border-white/10 bg-slate-900/60 shadow-[0_80px_160px_-40px_rgba(0,0,0,1)] mb-48"><table className="w-full min-w-[1900px] border-collapse text-left font-black"><thead><tr className="bg-slate-950 text-blue-400 text-sm uppercase border-b-2 border-blue-500/20 font-black"><th className="p-10 text-center w-36">報帳燈號</th><th className="p-10 w-72">夥伴數位檔案</th><th className="p-10 text-amber-500 text-center">💰 今日 C.O.D.</th><th className="p-10 text-center">正件單價</th><th className="p-10 text-center">逆收單價</th><th className="p-10 text-center">眷屬</th><th className="p-10 text-center text-blue-400 bg-blue-900/10 italic text-xl">2026 投保薪資</th><th className="p-10 text-center text-rose-400">勞健保扣除</th><th className="p-10 text-center text-white text-4xl font-black bg-blue-900/5 shadow-inner">預計實領淨額</th><th className="p-10 text-center">操作</th></tr></thead><tbody>{partners.filter(p=>p.status!=='pending' && (p.name.includes(sq)||p.phone.includes(sq))).map(p => { const p_net = (p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10))+(p.custom_adj||0)-(p.labor_fee||0)-(p.health_fee||0); const hasR = p.last_report?.date===new Date().toLocaleDateString('en-CA'); return (<tr key={p.id} className="border-b border-slate-800/50 hover:bg-blue-900/10 transition-all font-black group font-black"><td className="p-9 text-center font-black"><span className={`w-6 h-6 rounded-full inline-block shadow-2xl border-2 border-white/5 ${p.status==='frozen'?'bg-cyan-500 shadow-cyan-500/50':(hasR?'bg-emerald-500 animate-pulse shadow-emerald-500/50':'bg-slate-800 shadow-black')}`}></span></td><td className="p-9 font-black"><p className="text-white text-3xl font-black mb-1 italic">{p.name}</p><p className="text-sm text-slate-500 font-black opacity-70">📞 {!showSensitive[p.id] ? p.phone.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p></td><td className="p-9 text-amber-400 font-black text-center font-black"><div className="flex items-center justify-center gap-4 font-black"><span className="text-3xl font-black italic font-black font-black">${(hasR?p.last_report.cod_amount:0).toLocaleString()}</span>{p.last_report?.cod_receipt && <button onClick={()=>window.open(p.last_report.cod_receipt,'_blank')} className="text-amber-500 bg-amber-900/30 p-3 rounded-2xl transition-all shadow-xl active:scale-90 hover:bg-amber-800"><Receipt size={28}/></button>}</div></td><td className="p-9 text-center text-sky-400 font-black text-2xl tracking-tighter font-black">$<input type="number" value={p.custom_del_price||15} onChange={e=>updateField(p.id,'custom_del_price',Number(e.target.value))} className="w-16 bg-transparent text-center font-black outline-none border-b-2 border-white/5 focus:border-sky-500 shadow-sm" /></td><td className="p-9 text-center text-orange-400 font-black text-2xl tracking-tighter font-black font-black font-black">$<input type="number" value={p.custom_pkp_price||10} onChange={e=>updateField(p.id,'custom_pkp_price',Number(e.target.value))} className="w-16 bg-transparent text-center font-black outline-none border-b-2 border-white/5 focus:border-orange-500 shadow-sm font-black font-black" /></td><td className="p-9 text-center font-black"><input type="number" value={p.dependents||0} onChange={e=>updateField(p.id,'dependents',Number(e.target.value))} className="w-12 bg-transparent text-center font-black text-2xl outline-none" /></td><td className="p-9 text-center bg-blue-900/5 shadow-inner font-black"><select className="bg-slate-900 text-white text-lg font-black p-4 rounded-2xl border border-blue-500/30 outline-none cursor-pointer hover:border-blue-500 transition-all shadow-xl shadow-blue-500/5" value={p.insurance_bracket||0} onChange={async(e)=>{if(db){const t=INSURANCE_TABLE.find(x=>x.bracket===Number(e.target.value));if(t)await updateDoc(doc(db,'artifacts',appId,'public','data','partners',p.id),{insurance_bracket:Number(e.target.value),labor_fee:t.labor,health_fee:Math.round(t.health*(1+Math.min(p.dependents||0,3)))});}}}><option value="0">--- 選取級距 ---</option>{INSURANCE_TABLE.map(t=>(<option key={t.bracket} value={t.bracket}>$ {t.bracket.toLocaleString()}</option>))}</select></td><td className="p-9 text-center text-rose-400 font-black font-black"><div className="flex flex-col gap-2 text-sm italic font-black font-black font-black"><span>勞: -${p.labor_fee||0}</span><span>健: -${p.health_fee||0}</span></div></td><td className="p-9 text-center text-white text-5xl tracking-tighter italic font-black bg-blue-900/5 shadow-inner font-black drop-shadow-[0_10px_20px_rgba(59,130,246,0.3)]" style={{ userSelect:'text' }}>${p_net.toLocaleString()}</td><td className="p-9 text-center font-black"><div className="flex gap-4 justify-center font-black">{p.last_report?.photo && <button onClick={()=>window.open(p.last_report.photo,'_blank')} className="text-emerald-400 bg-emerald-900/30 p-4 rounded-[1.5rem] hover:bg-emerald-800 shadow-xl active:scale-90 shadow-emerald-500/10"><ImageIcon size={32}/></button>}<button onClick={()=>{setSelectedPartner(p); setModalType('detail');}} className="bg-blue-900/50 text-blue-300 px-8 py-4 rounded-[1.5rem] text-sm font-black hover:bg-blue-800 transition-all italic border border-blue-500/20 shadow-lg">櫥窗</button></div></td></tr>); })}</tbody></table></div>
+      
+      {showAIAssistant && <AIAssistant partners={partners} onClose={()=>setShowAIAssistant(false)} />}
+      {showMaintenance && <MaintenanceModal partners={partners} onClose={()=>setShowMaintenance(false)} />}
+    </div>
+  );
+}
+
+function DriverHub({ currentPartner, onLogout, updateField, globalSettings, authRole }) {
+  const [del,setDel]=useState(""); const [pkp,setPkp]=useState(""); const [cod,setCod]=useState(""); const [pData,setPData]=useState(null); const [sData,setSData]=useState(null); const [cRData,setCRData]=useState(null); const [isAiV,setIsAiV]=useState(false);
+  const submit=()=>{ if(globalSettings?.systemLocked&&authRole!=='super_admin')return showToast("系統維護中",true); if(!pData||!sData)return showToast("照片與簽名為必填",true); if(Number(cod)>0&&!cRData)return showToast("🚨 有代收需拍照收據",true); updateField(currentPartner.id,'total_del',(currentPartner.total_del||0)+Number(del)); updateField(currentPartner.id,'total_pkp',(currentPartner.total_pkp||0)+Number(pkp)); updateField(currentPartner.id,'last_report',{date:new Date().toLocaleDateString('en-CA'),photo:pData,signature:sData,cod_amount:Number(cod),cod_receipt:cRData}); setDel("");setPkp("");setCod("");setPData(null);setSData(null);setCRData(null); showToast("✅ 報帳同步成功！"); };
+  return (
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4 md:p-6 pb-24 font-black">
+      <div className="bg-slate-900/80 backdrop-blur-xl p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] w-full max-w-[500px] shadow-2xl border border-blue-500/20 text-center relative font-black font-black">
+        <h2 className="text-3xl md:text-4xl font-black text-white italic mb-8 md:mb-12 tracking-tighter uppercase font-black">在地物流 工作台</h2>
+        
+        {/* 手機版適應的配送/逆收輸入格 */}
+        <div className="grid grid-cols-2 gap-3 md:gap-6 mb-6 font-black font-black">
+           <div className="bg-black/50 p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-inner font-black">
+             <p className="text-[10px] md:text-xs text-blue-400 mb-2 uppercase font-black">今日配送</p>
+             <input type="number" placeholder="0" className="w-full bg-transparent text-center text-4xl md:text-6xl text-white outline-none font-black shadow-sm font-black" value={del} onChange={e=>setDel(e.target.value)} />
+           </div>
+           <div className="bg-black/50 p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-inner font-black font-black">
+             <p className="text-[10px] md:text-xs text-cyan-400 mb-2 uppercase font-black">今日逆收</p>
+             <input type="number" placeholder="0" className="w-full bg-transparent text-center text-4xl md:text-6xl text-white outline-none font-black shadow-sm font-black" value={pkp} onChange={e=>setPkp(e.target.value)} />
+           </div>
+        </div>
+
+        <div className="bg-amber-900/10 p-6 md:p-8 rounded-[2.5rem] border border-amber-500/30 mb-8 shadow-inner font-black font-black">
+           <p className="text-xs md:text-sm text-amber-500 mb-4 font-black flex items-center justify-center gap-2 italic font-black font-black font-black"><Banknote size={20}/> 今日代收 (C.O.D)</p>
+           <div className="flex items-center justify-center text-3xl md:text-5xl text-amber-400 font-black mb-4 font-black font-black font-black">
+             $<input type="number" placeholder="0" className="w-28 md:w-44 bg-transparent text-center outline-none border-b-4 border-amber-500/50 pb-1 md:pb-2 ml-2 font-black shadow-sm font-black font-black" value={cod} onChange={e=>setCod(e.target.value)} />
+           </div>
+           {Number(cod)>0 && (
+             <div className="flex gap-4 mt-6 animate-[fadeInUp_0.3s_ease-out] font-black font-black font-black">
+               <input type="file" accept="image/*" capture="environment" id="cod_last_cam" className="hidden" onChange={e=>processImage(e.target.files[0],setCRData)} />
+               <label htmlFor="cod_last_cam" className={`flex-1 flex flex-col items-center justify-center p-4 md:p-5 rounded-2xl border-2 border-dashed transition-all shadow-xl font-black font-black font-black ${cRData?'border-emerald-500 bg-emerald-500/10 text-emerald-400':'border-amber-500/50 text-amber-500'}`}>
+                 {cRData ? <CheckCircle size={28}/> : <><Receipt size={28}/><span className="text-[10px] md:text-xs font-black mt-2 font-black font-black">拍照收據</span></>}
+               </label>
+             </div>
+           )}
+        </div>
+
+        <div className="mb-8 flex gap-3 md:gap-4 font-black font-black">
+           <input type="file" accept="image/*" capture="environment" id="hub_cam" className="hidden" onChange={e=>processImage(e.target.files[0],setPData)} />
+           <label htmlFor="hub_cam" className={`flex-1 flex flex-col items-center justify-center p-6 md:p-8 rounded-[2rem] border-2 border-dashed shadow-inner transition-all font-black font-black ${pData?'border-emerald-500 bg-emerald-500/10 text-emerald-400':'border-slate-700 bg-slate-800/50 text-slate-500'}`}>
+             {pData ? <CheckCircle size={36}/> : <><Camera size={36}/><span className="text-[11px] md:text-sm font-black uppercase mt-2 font-black">拍照今日回單</span></>}
+           </label>
+           {pData && 
+             <button onClick={async()=>{if(!pData||!del)return; setIsAiV(true); try{const res=await callGemini(`核帳：單據件數？司機報${del}。格式：辨識X件|相符`, pData); showToast(`✨ 系統: ${res}`);}catch(e){} setIsAiV(false);}} disabled={isAiV} className="flex-none w-24 md:w-32 rounded-[2rem] border border-blue-500/30 bg-blue-900/20 text-blue-400 flex flex-col items-center justify-center active:scale-95 transition-all font-black font-black font-black">
+               {isAiV ? <span className="animate-spin font-black font-black"><Activity size={28}/></span> : <><Sparkles size={28}/><span className="text-[10px] font-black mt-2 uppercase font-black">系統核對</span></>}
+             </button>
+           }
+        </div>
+
+        <div className="mb-10 font-black font-black font-black font-black font-black font-black">
+           <div className="flex items-center gap-2 mb-3 justify-center text-blue-400 text-[10px] md:text-xs italic uppercase font-black font-black font-black font-black font-black font-black"><PenTool size={16}/> 數位簽章數據存證</div>
+           <SignaturePad onSign={setSData} />
+        </div>
+
+        <button onClick={submit} className="w-full py-5 md:py-7 rounded-[2rem] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xl md:text-3xl shadow-2xl mb-10 active:scale-95 transition-all shadow-indigo-500/20 uppercase font-black font-black">加密傳送數據</button>
+        <button onClick={onLogout} className="text-rose-500 text-sm md:text-lg font-black underline italic flex items-center justify-center gap-2 mx-auto active:scale-90 transition-all uppercase font-black font-black font-black font-black"><LogOut size={20}/> 安全退出系統</button>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 💡 「去 AI 化」的招募引導系統
+// ==========================================
+function OnboardingFlow({ setLayer, db, appId }) {
+  const [messages,setMessages]=useState([{type:'bot',text: "您好，歡迎進入招募流程。入職前系統將進行 10 題實務評估。請先輸入您的真實姓名與手機號碼建立檔案。"}]);
+  const [step,setStep]=useState('info'); const [n,setN]=useState(""); const [p,setP]=useState(""); const [cQ,setCQ]=useState(0); const [ans,setAns]=useState([]); const [iT,setIT]=useState("");
+  const quizDB = ["1/10.若發生車禍？","2/10.包裹破損？","3/10.代收保管？","4/10.違禁品？","5/10.不在家？","6/10.拒收？","7/10.車拋錨？","8/10.下班帳務？","9/10.爆量？","10/10.改址？"];
+  const sendAns=()=>{ if(!iT.trim())return; setMessages(prev=>[...prev,{type:'user',text:iT}]); const nA=[...ans,{q:quizDB[cQ],a:iT}]; setAns(nA); setIT(""); if(cQ<9){ const nx=cQ+1; setCQ(nx); setTimeout(()=>setMessages(px=>[...px,{type:'bot',text:quizDB[nx]}]),600); }else{ setStep('done'); setTimeout(async()=>{ setMessages(px=>[...px,{type:'bot',text:"✅ 測驗完成！請返回首頁並繼續補齊證件資料。"}]); if(db){ await setDoc(doc(db,'artifacts',appId,'public','data','partners',`p_${p}`), { id:`p_${p}`, name:n, phone:p, pin:"0000", status:'pending', quiz_results:nA, total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10, custom_adj:0, labor_fee:0, health_fee:0, dependents:0, created_at:serverTimestamp() }); } },800); } };
+  return (
+    <div className="h-screen bg-[#020617] flex flex-col font-black shadow-2xl animate-[fadeInUp_0.4s_ease-out]">
+      <header className="p-6 md:p-8 flex items-center gap-4 bg-slate-900/50 border-b border-white/10 backdrop-blur-md shadow-lg">
+        <button onClick={()=>setLayer('gate')} className="p-2 bg-slate-800 rounded-full text-white active:scale-90 transition-all"><ChevronLeft size={28}/></button>
+        <h2 className="text-2xl md:text-3xl text-white font-black italic tracking-tighter">📋 線上實務評估</h2>
+      </header>
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar pb-10">
+        {messages.map((m,i)=>(
+          <div key={i} className={`max-w-[85%] rounded-[1.5rem] text-sm md:text-lg p-5 shadow-2xl leading-relaxed font-black ${m.type==='bot' ? 'bg-[#1e293b] text-slate-100 rounded-bl-sm border border-white/5' : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-sm self-end ml-auto'}`}>{m.text}</div>
+        ))}
+      </div>
+      <div className="p-6 md:p-8 bg-slate-900/90 border-t border-white/5 pb-10">
+        {step==='info'?(
+          <div className="space-y-4 font-black">
+            <input type="text" placeholder="真實姓名" className="w-full bg-black/50 border border-white/10 p-5 rounded-2xl text-center text-white outline-none font-black text-xl shadow-inner" value={n} onChange={e=>setN(e.target.value)} />
+            <input type="tel" placeholder="手機號碼" className="w-full bg-black/50 border border-white/10 p-5 rounded-2xl text-center text-white outline-none font-black text-xl shadow-inner" value={p} onChange={e=>setP(e.target.value)} maxLength={10} />
+            <button onClick={()=>{if(!n||p.length<10)return; setStep('quiz'); setMessages(px=>[...px,{type:'bot',text:`建檔成功。評估開始：\n${quizDB[0]}`}]);}} className="w-full py-5 rounded-2xl bg-blue-600 text-white shadow-2xl font-black text-xl active:scale-95 transition-all italic tracking-widest mt-2">開始進行測驗</button>
+          </div>
+        ):step==='quiz'?(
+          <div className="flex items-center gap-3">
+            <input type="text" placeholder="輸入您的處置方式..." className="flex-1 bg-black/50 border border-white/10 p-5 rounded-full text-white outline-none text-base md:text-xl font-black shadow-inner" value={iT} onChange={e=>setIT(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendAns()} />
+            <button onClick={sendAns} className="bg-blue-600 text-white p-5 rounded-full shadow-2xl active:scale-90 transition-all"><Send size={24}/></button>
+          </div>
+        ):(
+          <button onClick={()=>setLayer('gate')} className="w-full py-5 rounded-2xl bg-emerald-600 text-white font-black text-xl shadow-xl shadow-emerald-500/10 active:scale-95">測驗完成返回</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function AppWrapper() {
+  const [lang, setLang] = useState('zh');
+  const [u,setU]=useState(null); const [aR,setAR]=useState('guest'); const [ps,setPs]=useState([]); const [l,setL]=useState('gate'); const [ld,setLd]=useState(true); const [ann,setAnn]=useState(""); const [gs,setGs]=useState({systemLocked:false,accountantPin:"0172"}); const [ss,setSs]=useState({global:false}); const [mT,setMT]=useState(null); const [spI,setSpI]=useState(null); const [isC,setIsC]=useState(false);
+  const [sq,setSq]=useState(""); 
+  const cp=ps.find(p=>p.id===spI);
+
+  useEffect(()=>{
+    if(!auth){ setLd(false); return; }
+    const initA=async()=>{ if(typeof window.__initial_auth_token!=='undefined'&&window.__initial_auth_token){await signInWithCustomToken(auth,window.__initial_auth_token);}else{await signInAnonymously(auth);}}; initA();
+    const unAuth = onAuthStateChanged(auth,(user)=>{ if(user){setU(user); const s=JSON.parse(localStorage.getItem('ggsoc_auth')||'{}'); if(s.phone){setAR(s.role); if(s.phone)setSpI(`p_${s.phone}`); if(s.role==='super_admin'||s.role==='admin')setL('admin');else setL('driver');}}});
+    return () => unAuth();
+  },[]);
+
+  useEffect(()=>{
+    if(!u || !db) return;
+    const unP=onSnapshot(collection(db,'artifacts',appId,'public', 'data', 'partners'),(s)=>{setPs(s.docs.map(d=>({id:d.id,...d.data()})));setLd(false);setIsC(true);},()=>setIsC(false));
+    const unA=onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'announcement'), (sn)=>{if(sn.exists())setAnn(String(sn.data().content || ""));});
+    const unS=onSnapshot(doc(db,'artifacts',appId,'public','data','settings','global'),(s)=>{if(s.exists()){setGs(s.data()); if(s.data().systemLocked && localStorage.getItem('ggsoc_auth')){ const sa=JSON.parse(localStorage.getItem('ggsoc_auth')||'{}'); if(sa.phone!=="0976017938"){ localStorage.removeItem('ggsoc_auth'); setAR('guest'); setL('gate'); alert("Restricted."); } } }});
+    const timeout = setTimeout(()=>setLd(false), 5000); return()=>{unP();unA();unS();clearTimeout(timeout);};
+  },[u]);
+
+  const handleLogin = (phone,pin,rem)=>{
+    if(gs?.systemLocked && phone!=="0976017938") return showToast("🚫 Restricted",true);
+    if(phone==="0976017938"&&pin==="8305319"){if(rem)localStorage.setItem('ggsoc_auth',JSON.stringify({phone,role:'super_admin'})); setAR('super_admin');setL('admin');}
+    else if(phone==="0988128172"&&pin===(gs?.accountantPin||"0172")){if(rem)localStorage.setItem('ggsoc_auth',JSON.stringify({phone,role:'admin'})); setAR('admin');setL('admin');}
+    else{const p=ps.find(x=>x.phone===phone&&x.pin===pin); if(p){if(p.status==='frozen')return showToast("🚫 Frozen",true); if(rem)localStorage.setItem('ggsoc_auth',JSON.stringify({phone,role:'driver'})); setAR('driver');setSpI(p.id);setL('driver');}else showToast("登入失敗或未開通",true);}
+  };
+
+  const updateField = async (id,f,v)=>{ if(db) await updateDoc(doc(db,'artifacts',appId,'public','data', 'partners', id),{[f]:v}); };
+
+  if(ld)return(<div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center font-black"><div className="w-20 h-20 md:w-24 md:h-24 border-4 border-blue-500/10 border-t-blue-500 rounded-full animate-spin shadow-2xl"></div><p className="mt-8 md:mt-12 text-blue-500 animate-pulse italic text-lg md:text-2xl tracking-[0.5em] font-black">GGSOC SECURING...</p></div>);
+
+  return (
+    <div className="min-h-screen text-slate-200 font-black">
+      <div id="global-toast" className="fixed top-[-100px] left-1/2 -translate-x-1/2 px-10 py-6 rounded-full font-black z-[99999] opacity-0 pointer-events-none text-xl shadow-2xl transition-all duration-500"></div>
+      
+      {l==='gate' && <Gate onLogin={handleLogin} announcement={ann} setLayer={setL} globalSettings={gs} isConnected={isC} />}
+
+      {l==='admin' && ( 
+        <AdminHub authRole={aR} partners={ps} onLogout={()=>{localStorage.removeItem('ggsoc_auth');setAR('guest');setL('gate');}} updateField={updateField} setModalType={setMT} setSelectedPartner={p=>setSpI(p.id)} showSensitive={ss} setShowSensitive={setSs} sq={sq} setSq={setSq} autoInsur={async(pId,bv,dp)=>{if(db){const t=INSURANCE_TABLE.find(x=>x.bracket===Number(bv));if(t)await updateDoc(doc(db,'artifacts',appId,'public','data','partners',pId),{insurance_bracket:Number(bv),labor_fee:t.labor,health_fee:Math.round(t.health*(1+Math.min(dp||0,3)))});} }} />
+      )}
+
+      {l==='driver' && <DriverHub currentPartner={cp} onLogout={()=>{localStorage.removeItem('ggsoc_auth');setAR('guest');setL('gate');}} updateField={updateField} globalSettings={gs} authRole={aR} />}
+      {l==='onboarding' && <OnboardingFlow setLayer={setL} db={db} appId={appId} />}
+      {l==='onboarding_data' && <OnboardingDataFlow setLayer={setL} db={db} appId={appId} />}
+      {l==='install_tutorial' && <InstallationGuide setLayer={setL} />}
+      
+      {mT==='system_settings' && aR==='super_admin' && <SystemSettingsModal onClose={()=>setMT(null)} db={db} appId={appId} globalSettings={gs} />}
+      {mT==='tools' && <ToolsModal onClose={()=>setMT(null)} db={db} appId={appId} resetData={async()=>{if(db){for(const p of ps)await updateDoc(doc(db,'artifacts',appId,'public','data','partners',p.id),{total_del:0,total_pkp:0,custom_adj:0}); showToast("數據重置成功");} }} />}
+      {mT==='detail' && <PartnerDetail partner={cp} onClose={()=>setMT(null)} updateField={updateField} deletePartner={async id=>{if(db){await deleteDoc(doc(db,'artifacts',appId,'public','data','partners',id));setMT(null);showToast("檔案已刪除");} }} />}
+    </div>
+  );
+}
+
+// ==========================================
+// 🛡️ 防黑屏安全渲染機制
+// ==========================================
+try {
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    createRoot(rootElement).render(<AppWrapper />);
+  }
+} catch (err) {
+  document.body.innerHTML = `<div style="color:red; padding: 20px; font-weight: bold; background: white; margin-top:50px;">系統啟動失敗 (已阻擋黑屏當機): <br/><br/>${err.message}</div>`;
+}
+  </script>
 </body>
 </html>
+
+
