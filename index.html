@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GGSOC | Supreme-V92</title>
+    <title>DEBUG | Supreme-V92</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -11,167 +11,83 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        window.FB = { initializeApp, getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, getAuth, signInAnonymously, onAuthStateChanged };
+        window.FB = { initializeApp, getFirestore, collection, onSnapshot, getAuth, signInAnonymously, onAuthStateChanged };
     </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; user-select: none; }
-        .animate-fadeInUp { animation: fadeInUp 0.4s ease-out forwards; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
 </head>
-<body>
+<body class="bg-[#020617] text-white">
     <div id="root"></div>
+    <div id="debug-log" class="fixed bottom-0 left-0 w-full p-4 bg-black/80 text-[10px] font-mono text-rose-400 break-all z-[9999]">系統初始化中...</div>
+
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-        const { LogOut, Shield, Send, Camera, Activity, CheckCircle, Receipt } = lucide;
-
-        // --- 核心配置 (已填入您的 Supreme-V92 金鑰) ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-            authDomain: "supreme-v92.firebaseapp.com",
-            projectId: "supreme-v92",
-            storageBucket: "supreme-v92.firebasestorage.app",
-            messagingSenderId: "485530156296",
-            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-        };
-        const appId = 'supreme-v92'; 
-
-        const app = window.FB.initializeApp(firebaseConfig);
-        const db = window.FB.getFirestore(app);
-        const auth = window.FB.getAuth(app);
+        const { useState, useEffect } = React;
 
         function AppWrapper() {
-            const [u, setU] = useState(null);
-            const [aR, setAR] = useState('guest');
-            const [ps, setPs] = useState([]);
-            const [l, setL] = useState('gate');
-            const [ld, setLd] = useState(true);
-            const [spI, setSpI] = useState(null);
+            const [status, setStatus] = useState("正在連線至 Firebase...");
+            const [showGate, setShowGate] = useState(false);
 
-            useEffect(() => {
-                window.FB.signInAnonymously(auth);
-                window.FB.onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        setU(user);
-                        const saved = JSON.parse(localStorage.getItem('ggsoc_auth') || '{}');
-                        if (saved.phone) {
-                            setAR(saved.role);
-                            setSpI(`p_${saved.phone}`);
-                            setL(saved.role === 'driver' ? 'driver' : 'admin');
-                        }
-                    }
-                });
-            }, []);
-
-            useEffect(() => {
-                if (!u) return;
-                const unsub = window.FB.onSnapshot(window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'partners'), (snap) => {
-                    setPs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                    setLd(false);
-                });
-                return () => unsub();
-            }, [u]);
-
-            const handleLogin = (phone, pin) => {
-                if (phone === "0976017938" && pin === "8305319") {
-                    localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'super_admin' }));
-                    setAR('super_admin'); setL('admin');
-                } else {
-                    const p = ps.find(x => x.phone === phone && x.pin === pin);
-                    if (p) {
-                        localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'driver' }));
-                        setAR('driver'); setSpI(p.id); setL('driver');
-                    } else { alert("驗證失敗：請檢查資料庫是否有此帳號"); }
-                }
+            const log = (msg) => {
+                console.log(msg);
+                document.getElementById('debug-log').innerText = msg;
             };
 
-            if (ld) return <div className="h-screen flex items-center justify-center font-black text-blue-500 italic">SUPREME-V92 SECURING...</div>;
+            useEffect(() => {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+                    authDomain: "supreme-v92.firebaseapp.com",
+                    projectId: "supreme-v92",
+                    storageBucket: "supreme-v92.firebasestorage.app",
+                    messagingSenderId: "485530156296",
+                    appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
+                };
+
+                try {
+                    log("1. 正在初始化 App...");
+                    const app = window.FB.initializeApp(firebaseConfig);
+                    const db = window.FB.getFirestore(app);
+                    const auth = window.FB.getAuth(app);
+
+                    log("2. 正在嘗試匿名登入...");
+                    window.FB.signInAnonymously(auth)
+                        .then(() => {
+                            log("3. 匿名登入成功！正在掛載監聽器...");
+                            const unsub = window.FB.onSnapshot(window.FB.collection(db, 'artifacts', 'supreme-v92', 'public', 'data', 'partners'), 
+                                (snap) => {
+                                    log("4. 資料庫連線完全正常！");
+                                    setStatus("連線成功");
+                                    setShowGate(true);
+                                }, 
+                                (err) => {
+                                    log("❌ 資料庫讀取失敗: " + err.message);
+                                }
+                            );
+                        })
+                        .catch((err) => {
+                            log("❌ 登入失敗: " + err.message + " (請確認 Firebase 匿名登入已開啟)");
+                        });
+                } catch (err) {
+                    log("❌ 程式碼崩潰: " + err.message);
+                }
+            }, []);
 
             return (
-                <div className="min-h-screen">
-                    {l === 'gate' && <Gate onLogin={handleLogin} />}
-                    {l === 'driver' && <DriverHub partner={ps.find(x=>x.id===spI)} onLogout={()=>{localStorage.clear(); location.reload();}} />}
-                    {l === 'admin' && <AdminHub partners={ps} onLogout={()=>{localStorage.clear(); location.reload();}} />}
+                <div class="h-screen flex flex-col items-center justify-center p-6 text-center">
+                    {!showGate ? (
+                        <div class="space-y-4">
+                            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                            <h1 class="text-xl font-black italic text-blue-500 tracking-tighter">SUPREME-V92 SECURING</h1>
+                            <p class="text-xs text-slate-500">{status}</p>
+                        </div>
+                    ) : (
+                        <div class="animate-bounce text-emerald-500 font-black">
+                            ✅ 連線成功！這代表你的網頁跟資料庫通了！
+                            <br/><span class="text-white text-sm">（請老闆移除除錯代碼，換回正式版）</span>
+                        </div>
+                    )}
                 </div>
             );
         }
-
-        const Gate = ({ onLogin }) => {
-            const [p, setP] = useState("");
-            const [pin, setPin] = useState("");
-            return (
-                <div className="h-screen flex flex-col items-center justify-center p-6 animate-fadeInUp">
-                    <h1 className="text-6xl font-black italic mb-10 tracking-tighter text-white">在地物流</h1>
-                    <div className="bg-slate-900 border border-white/10 p-10 rounded-[3rem] w-full max-w-sm shadow-2xl">
-                        <input type="tel" placeholder="手機號碼" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-4 text-center text-xl font-black text-white outline-none focus:border-blue-500" />
-                        <input type="password" placeholder="PIN 安全碼" value={pin} onChange={e=>setPin(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-8 text-center text-xl font-black text-white outline-none focus:border-blue-500" />
-                        <button onClick={()=>onLogin(p, pin)} className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all text-white uppercase tracking-widest">進入管理中心</button>
-                    </div>
-                </div>
-            );
-        };
-
-        const DriverHub = ({ partner, onLogout }) => {
-            const [del, setDel] = useState("");
-            const [cod, setCod] = useState("");
-            const submit = async () => {
-                if(!del) return alert("請輸入今日件數");
-                await window.FB.updateDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', 'partners', partner.id), {
-                    total_del: (partner.total_del || 0) + Number(del),
-                    last_report: { date: new Date().toLocaleDateString(), cod_amount: Number(cod || 0) }
-                });
-                alert("✅ 同步成功"); setDel(""); setCod("");
-            };
-            return (
-                <div className="p-6 max-w-md mx-auto animate-fadeInUp text-white">
-                    <div className="flex justify-between items-center mb-8">
-                        <h2 className="text-2xl font-black italic">你好, {partner?.name}</h2>
-                        <button onClick={onLogout} className="text-rose-500"><LogOut /></button>
-                    </div>
-                    <div className="space-y-6">
-                        <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
-                            <p className="text-xs text-blue-400 font-black mb-2 uppercase italic">今日正件數</p>
-                            <input type="number" value={del} onChange={e=>setDel(e.target.value)} className="w-full bg-transparent text-6xl font-black outline-none" placeholder="0" />
-                        </div>
-                        <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/20 shadow-inner">
-                            <p className="text-xs text-amber-500 font-black mb-2 uppercase italic">今日 C.O.D (代收)</p>
-                            <div className="flex items-center text-5xl font-black text-amber-400">
-                                $ <input type="number" value={cod} onChange={e=>setCod(e.target.value)} className="bg-transparent outline-none ml-2 w-full" placeholder="0" />
-                            </div>
-                        </div>
-                        <button onClick={submit} className="w-full py-6 bg-blue-600 rounded-[2rem] font-black text-2xl shadow-xl active:scale-95 transition-all">傳送報帳數據</button>
-                    </div>
-                </div>
-            );
-        };
-
-        const AdminHub = ({ partners, onLogout }) => (
-            <div className="p-8 animate-fadeInUp text-white">
-                <div className="flex justify-between items-center mb-10">
-                    <h2 className="text-4xl font-black italic tracking-tighter">指揮中心</h2>
-                    <button onClick={onLogout} className="bg-slate-800 px-6 py-2 rounded-xl text-rose-500 font-black border border-rose-500/20">安全退出</button>
-                </div>
-                <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl">
-                    <table className="w-full text-left">
-                        <thead className="bg-black/50 text-blue-400 text-[10px] uppercase tracking-widest">
-                            <tr><th className="p-6">夥伴</th><th className="p-6 text-center">今日 C.O.D</th><th className="p-6 text-center">累計件數</th></tr>
-                        </thead>
-                        <tbody className="font-black text-sm">
-                            {partners.map(p => (
-                                <tr key={p.id} className="border-b border-white/5 hover:bg-blue-900/10 transition-all">
-                                    <td className="p-6">{p.name}<br/><span className="text-[10px] text-slate-500">{p.phone}</span></td>
-                                    <td className="p-6 text-center text-amber-400 font-black">${(p.last_report?.cod_amount || 0).toLocaleString()}</td>
-                                    <td className="p-6 text-center text-blue-400">{p.total_del || 0}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        );
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<AppWrapper />);
