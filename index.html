@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DEBUG | Supreme-V92</title>
+    <title>GGSOC | Supreme-V92 營運指揮中心</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -11,83 +11,211 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        window.FB = { initializeApp, getFirestore, collection, onSnapshot, getAuth, signInAnonymously, onAuthStateChanged };
+        window.FB = { initializeApp, getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, getAuth, signInAnonymously, onAuthStateChanged };
     </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; }
+        .animate-fadeInUp { animation: fadeInUp 0.4s ease-out forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body class="bg-[#020617] text-white">
+<body>
     <div id="root"></div>
-    <div id="debug-log" class="fixed bottom-0 left-0 w-full p-4 bg-black/80 text-[10px] font-mono text-rose-400 break-all z-[9999]">系統初始化中...</div>
-
     <script type="text/babel">
         const { useState, useEffect } = React;
+        const { LogOut, Settings, PlusSquare, Trash2, Shield, User, DollarSign, Activity, X } = lucide;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+            authDomain: "supreme-v92.firebaseapp.com",
+            projectId: "supreme-v92",
+            storageBucket: "supreme-v92.firebasestorage.app",
+            messagingSenderId: "485530156296",
+            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
+        };
+        const appId = 'supreme-v92'; 
+
+        const app = window.FB.initializeApp(firebaseConfig);
+        const db = window.FB.getFirestore(app);
+        const auth = window.FB.getAuth(app);
+
+        // --- 勞健保級距表 ---
+        const INSURANCE_TABLE = [
+            { bracket: 29500, labor: 679, health: 457 },
+            { bracket: 45800, labor: 1053, health: 710 },
+            { bracket: 156400, labor: 1145, health: 2426 }
+        ];
 
         function AppWrapper() {
-            const [status, setStatus] = useState("正在連線至 Firebase...");
-            const [showGate, setShowGate] = useState(false);
-
-            const log = (msg) => {
-                console.log(msg);
-                document.getElementById('debug-log').innerText = msg;
-            };
+            const [u, setU] = useState(null);
+            const [aR, setAR] = useState('guest');
+            const [ps, setPs] = useState([]);
+            const [l, setL] = useState('gate');
+            const [ld, setLd] = useState(true);
+            const [spI, setSpI] = useState(null);
+            const [showTools, setShowTools] = useState(false);
 
             useEffect(() => {
-                const firebaseConfig = {
-                    apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-                    authDomain: "supreme-v92.firebaseapp.com",
-                    projectId: "supreme-v92",
-                    storageBucket: "supreme-v92.firebasestorage.app",
-                    messagingSenderId: "485530156296",
-                    appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-                };
-
-                try {
-                    log("1. 正在初始化 App...");
-                    const app = window.FB.initializeApp(firebaseConfig);
-                    const db = window.FB.getFirestore(app);
-                    const auth = window.FB.getAuth(app);
-
-                    log("2. 正在嘗試匿名登入...");
-                    window.FB.signInAnonymously(auth)
-                        .then(() => {
-                            log("3. 匿名登入成功！正在掛載監聽器...");
-                            const unsub = window.FB.onSnapshot(window.FB.collection(db, 'artifacts', 'supreme-v92', 'public', 'data', 'partners'), 
-                                (snap) => {
-                                    log("4. 資料庫連線完全正常！");
-                                    setStatus("連線成功");
-                                    setShowGate(true);
-                                }, 
-                                (err) => {
-                                    log("❌ 資料庫讀取失敗: " + err.message);
-                                }
-                            );
-                        })
-                        .catch((err) => {
-                            log("❌ 登入失敗: " + err.message + " (請確認 Firebase 匿名登入已開啟)");
-                        });
-                } catch (err) {
-                    log("❌ 程式碼崩潰: " + err.message);
-                }
+                window.FB.signInAnonymously(auth);
+                window.FB.onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        setU(user);
+                        const saved = JSON.parse(localStorage.getItem('ggsoc_auth') || '{}');
+                        if (saved.phone) {
+                            setAR(saved.role);
+                            setSpI(`p_${saved.phone}`);
+                            setL(saved.role === 'driver' ? 'driver' : 'admin');
+                        }
+                    }
+                });
             }, []);
 
+            useEffect(() => {
+                if (!u) return;
+                const unsub = window.FB.onSnapshot(window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'partners'), (snap) => {
+                    setPs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                    setLd(false);
+                });
+                return () => unsub();
+            }, [u]);
+
+            const handleLogin = (phone, pin) => {
+                if (phone === "0976017938" && pin === "8305319") {
+                    localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'super_admin' }));
+                    setAR('super_admin'); setL('admin');
+                } else {
+                    const p = ps.find(x => x.phone === phone && x.pin === pin);
+                    if (p) {
+                        localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'driver' }));
+                        setAR('driver'); setSpI(p.id); setL('driver');
+                    } else { alert("驗證失敗"); }
+                }
+            };
+
+            const updateField = async (id, field, val) => {
+                await window.FB.updateDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [field]: val });
+            };
+
+            if (ld) return <div className="h-screen flex items-center justify-center font-black text-blue-500 italic">SUPREME-V92 LOADING...</div>;
+
             return (
-                <div class="h-screen flex flex-col items-center justify-center p-6 text-center">
-                    {!showGate ? (
-                        <div class="space-y-4">
-                            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                            <h1 class="text-xl font-black italic text-blue-500 tracking-tighter">SUPREME-V92 SECURING</h1>
-                            <p class="text-xs text-slate-500">{status}</p>
-                        </div>
-                    ) : (
-                        <div class="animate-bounce text-emerald-500 font-black">
-                            ✅ 連線成功！這代表你的網頁跟資料庫通了！
-                            <br/><span class="text-white text-sm">（請老闆移除除錯代碼，換回正式版）</span>
-                        </div>
-                    )}
+                <div className="min-h-screen">
+                    {l === 'gate' && <Gate onLogin={handleLogin} />}
+                    {l === 'driver' && <DriverHub partner={ps.find(x=>x.id===spI)} updateField={updateField} onLogout={()=>{localStorage.clear(); location.reload();}} />}
+                    {l === 'admin' && <AdminHub partners={ps} updateField={updateField} onLogout={()=>{localStorage.clear(); location.reload();}} setShowTools={setShowTools} />}
+                    {showTools && <ToolsModal onClose={()=>setShowTools(false)} db={db} appId={appId} />}
                 </div>
             );
         }
+
+        // --- 子組件：手動建檔工具 ---
+        const ToolsModal = ({ onClose, db, appId }) => {
+            const [n, setN] = useState(""); const [p, setP] = useState("");
+            const add = async () => {
+                if(!n || !p) return alert("必填");
+                await window.FB.setDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', 'partners', `p_${p}`), {
+                    id: `p_${p}`, name: n, phone: p, pin: "0000", status: 'approved', total_del: 0, custom_del_price: 15
+                });
+                alert("建立成功！預設 PIN 為 0000"); onClose();
+            };
+            return (
+                <div className="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-6">
+                    <div className="bg-slate-900 border border-white/10 p-8 rounded-[2rem] w-full max-w-sm relative">
+                        <button onClick={onClose} className="absolute top-4 right-4"><X/></button>
+                        <h3 className="text-xl font-black mb-6">快速新增夥伴</h3>
+                        <input placeholder="姓名" className="w-full bg-black p-4 rounded-xl mb-4" value={n} onChange={e=>setN(e.target.value)} />
+                        <input placeholder="手機" className="w-full bg-black p-4 rounded-xl mb-6" value={p} onChange={e=>setP(e.target.value)} />
+                        <button onClick={add} className="w-full py-4 bg-blue-600 rounded-xl font-black">建立帳號</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const Gate = ({ onLogin }) => {
+            const [p, setP] = useState(""); const [pin, setPin] = useState("");
+            return (
+                <div className="h-screen flex flex-col items-center justify-center p-6">
+                    <h1 className="text-6xl font-black italic mb-10 tracking-tighter">在地物流</h1>
+                    <div className="bg-slate-900 border border-white/10 p-10 rounded-[3rem] w-full max-w-sm shadow-2xl">
+                        <input type="tel" placeholder="手機號碼" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-4 text-center text-xl font-black" />
+                        <input type="password" placeholder="PIN" value={pin} onChange={e=>setPin(e.target.value)} className="w-full bg-black border border-white/5 p-5 rounded-2xl mb-8 text-center text-xl font-black" />
+                        <button onClick={()=>onLogin(p, pin)} className="w-full py-5 bg-blue-600 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all">進入系統</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const DriverHub = ({ partner, updateField, onLogout }) => {
+            const [del, setDel] = useState(""); const [cod, setCod] = useState("");
+            const submit = async () => {
+                await updateField(partner.id, 'total_del', (partner.total_del || 0) + Number(del));
+                await updateField(partner.id, 'last_report', { date: new Date().toLocaleDateString(), cod_amount: Number(cod || 0) });
+                alert("報帳完成"); setDel(""); setCod("");
+            };
+            return (
+                <div className="p-6 max-w-md mx-auto">
+                    <div className="flex justify-between items-center mb-10">
+                        <h2 className="text-2xl font-black">你好, {partner?.name}</h2>
+                        <button onClick={onLogout} className="text-rose-500"><LogOut/></button>
+                    </div>
+                    <div className="space-y-6">
+                        <div className="bg-slate-900 p-8 rounded-[2rem] border border-white/5">
+                            <p className="text-xs text-blue-400 mb-2 font-black uppercase">今日件數</p>
+                            <input type="number" value={del} onChange={e=>setDel(e.target.value)} className="w-full bg-transparent text-6xl font-black outline-none" placeholder="0" />
+                        </div>
+                        <div className="bg-amber-900/10 p-8 rounded-[2rem] border border-amber-500/20">
+                            <p className="text-xs text-amber-500 mb-2 font-black uppercase">今日 C.O.D</p>
+                            <div className="flex items-center text-5xl font-black text-amber-400">
+                                $ <input type="number" value={cod} onChange={e=>setCod(e.target.value)} className="bg-transparent outline-none ml-2 w-full" placeholder="0" />
+                            </div>
+                        </div>
+                        <button onClick={submit} className="w-full py-6 bg-blue-600 rounded-[2rem] font-black text-2xl shadow-xl">傳送數據</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const AdminHub = ({ partners, updateField, onLogout, setShowTools }) => (
+            <div className="p-8">
+                <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                    <h2 className="text-4xl font-black italic tracking-tighter">營運指揮中心</h2>
+                    <div className="flex gap-4">
+                        <button onClick={()=>setShowTools(true)} className="bg-blue-600 px-6 py-2 rounded-xl font-black flex items-center gap-2"><PlusSquare size={18}/> 新增夥伴</button>
+                        <button onClick={onLogout} className="bg-slate-800 px-6 py-2 rounded-xl text-rose-500 font-black border border-rose-500/20">退出</button>
+                    </div>
+                </div>
+                <div className="overflow-x-auto bg-slate-900 rounded-[2.5rem] border border-white/5">
+                    <table className="w-full text-left">
+                        <thead className="bg-black/50 text-blue-400 text-xs">
+                            <tr>
+                                <th className="p-6">夥伴姓名/手機</th>
+                                <th className="p-6">正件單價</th>
+                                <th className="p-6">今日 C.O.D</th>
+                                <th className="p-6 text-white text-xl">預計實領</th>
+                            </tr>
+                        </thead>
+                        <tbody className="font-black text-sm">
+                            {partners.map(p => {
+                                const net = (p.total_del * (p.custom_del_price || 15)) + (p.custom_adj || 0);
+                                return (
+                                    <tr key={p.id} className="border-b border-white/5">
+                                        <td className="p-6">{p.name}<br/><span className="text-[10px] text-slate-500">{p.phone}</span></td>
+                                        <td className="p-6">
+                                            $<input type="number" className="w-12 bg-transparent border-b border-white/20 ml-1 outline-none text-sky-400" value={p.custom_del_price || 15} onChange={e=>updateField(p.id, 'custom_del_price', Number(e.target.value))} />
+                                        </td>
+                                        <td className="p-6 text-amber-400">${p.last_report?.cod_amount || 0}</td>
+                                        <td className="p-6 text-2xl text-white italic">${net.toLocaleString()}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<AppWrapper />);
