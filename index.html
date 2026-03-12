@@ -3,14 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>在地物流 - GGSOC 終極隱身營運版</title>
+  <title>在地物流 - GGSOC 終極火力展示版</title>
   
   <script>
-    window.onerror = function(message, source, lineno, colno, error) {
-      console.error("全域崩潰攔截:", message);
-      return true; 
-    };
-    window.__app_id = 'ggsoc-universal-v60-stealth';
+    window.onerror = function(message, source, lineno, colno, error) { console.error("崩潰攔截:", message); return true; };
+    window.__app_id = 'ggsoc-showcase-v1';
   </script>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -30,6 +27,8 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes progress { from { width: 100%; } to { width: 0%; } }
     .animate-progress { animation: progress 3s linear forwards; }
+    .scan-line { width: 100%; height: 2px; background: #10b981; position: absolute; animation: scan 2s linear infinite; box-shadow: 0 0 10px #10b981; }
+    @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
   </style>
 </head>
 <body>
@@ -40,65 +39,47 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const createRoot = ReactDOM.createRoot;
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-// 🌟 啟動 Firestore 離線快取 (Offline-First)
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-// 🛡️ 系統防護
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false }; }
   static getDerivedStateFromError(error) { return { hasError: true }; }
   render() {
-    if (this.state.hasError) return <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-center font-black"><div className="bg-rose-900/20 p-8 rounded-[2rem] shadow-2xl"><h2 className="text-3xl text-rose-400 mb-4 animate-pulse">🛡️ 系統底層修復中</h2><p className="text-sm text-rose-200 mb-6">已攔截異常，數據安全無虞。</p><button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-600 rounded-xl">🔄 重新連線</button></div></div>;
+    if (this.state.hasError) return <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-center font-black"><div className="bg-rose-900/20 p-8 rounded-[2rem] shadow-2xl"><h2 className="text-3xl text-rose-400 mb-4 animate-pulse">🛡️ 系統底層修復中</h2><button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-600 rounded-xl">🔄 重新連線</button></div></div>;
     return this.props.children;
   }
 }
 
-const safeStorage = {
-  get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } },
-  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} },
-  remove: (k) => { try { localStorage.removeItem(k); } catch(e) {} }
-};
+const safeStorage = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }, remove: (k) => { try { localStorage.removeItem(k); } catch(e) {} } };
 
 const showToast = (msg, isError = false) => {
   const t = document.getElementById('global-toast');
   if(t) {
     t.innerText = msg;
-    t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black z-[999999] shadow-2xl transition-all duration-500 flex items-center text-sm md:text-lg text-center ${isError ? 'bg-rose-600 text-white' : 'bg-indigo-600 text-white'}`;
+    t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black z-[999999] shadow-2xl transition-all duration-500 flex items-center text-sm md:text-lg text-center ${isError ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`;
     t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
     setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 3000);
   }
 };
 
-// 🗣️ 系統語音播報
-const speak = (text) => {
-  if ('speechSynthesis' in window) {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'zh-TW'; u.rate = 1.1;
-    window.speechSynthesis.speak(u);
-  }
-};
+const speak = (text) => { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(text); u.lang = 'zh-TW'; u.rate = 1.1; window.speechSynthesis.speak(u); } };
 
-// LINE Notify 模擬推播 (總裁專屬)
-const sendLineNotify = (msg) => { console.log("【LINE Notify 推播至總裁終端】:", msg); };
-
-// Firebase 設定
 const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92", storageBucket: "supreme-v92.firebasestorage.app", messagingSenderId: "485530156296", appId: "1:485530156296:web:6728c0ee08b98dedd800bd" };
 const app = initializeApp(firebaseConfig);
-// 啟動離線資料庫
 const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
 const auth = getAuth(app);
-const appId = 'ggsoc-universal-v60-stealth';
+const appId = 'ggsoc-showcase-v1';
 
-// 圖標
 const Ico = (e) => ({size=24, className=""}) => <span style={{fontSize: size+'px', lineHeight: 1}} className={className}>{e}</span>;
 const Package=Ico('📦'), Settings=Ico('⚙️'), Message=Ico('💬'), Banknote=Ico('💵'), Bot=Ico('🤖'), Shield=Ico('🛡️'), HistoryLog=Ico('📜'), Bell=Ico('🔔'), Support=Ico('🆘'), Calendar=Ico('📅'), Send=Ico('✈️'), X=Ico('❌'), Camera=Ico('📷'), Check=Ico('✅'), Alert=Ico('🚨'), Receipt=Ico('🧾'), LogOut=Ico('🚪'), Pen=Ico('🖋️'), Search=Ico('🔍'), Radio=Ico('📻'), FileText=Ico('📄'), Download=Ico('📥');
 
-// 🛡️ 三位一體數位簽章 (擷取 GPS + 時間 + 設備特徵)
+// ==========================================
+// 🛡️ 三位一體數位簽章
+// ==========================================
 const SignaturePad = ({ onSign }) => {
   const canvasRef = useRef(null); const [isDrawing, setIsDrawing] = useState(false);
   const [geoInfo, setGeoInfo] = useState("獲取位置中...");
-  // 取得簡單設備指紋
   const deviceId = useMemo(() => navigator.userAgent.replace(/[^a-zA-Z0-9]/g, '').slice(-10) + '-' + screen.width, []);
 
   useEffect(() => {
@@ -107,9 +88,7 @@ const SignaturePad = ({ onSign }) => {
   }, []);
 
   const getPos = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    const rect = canvasRef.current.getBoundingClientRect(); const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY;
     return { x: cx - rect.left, y: cy - rect.top };
   };
 
@@ -134,43 +113,173 @@ const SignaturePad = ({ onSign }) => {
   );
 };
 
-// 👻 幽靈對話 (Ghost Chat) - 會計黑箱隔離
+// ==========================================
+// 🤖 補齊：AI 面試官與強制合約 (The Gatekeeper)
+// ==========================================
+function OnboardingModal({ onClose }) {
+  const [step, setStep] = useState(1);
+  const [sig, setSig] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  
+  const startAITest = () => {
+    setStep(2); setIsScanning(true);
+    setTimeout(() => setIsScanning(false), 3500);
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom" onClick={onClose}>
+       <div className="bg-slate-900 border border-emerald-500/30 p-6 md:p-8 rounded-[2.5rem] max-w-md w-full shadow-2xl relative font-black h-[85vh] flex flex-col" onClick={e=>e.stopPropagation()}>
+         <button onClick={onClose} className="absolute top-6 right-6 text-white p-2 bg-slate-800 rounded-full"><X size={20}/></button>
+         <h3 className="text-2xl font-black text-emerald-400 mb-2 italic"><Bot size={28}/> AI 入職審查官</h3>
+         <p className="text-xs text-slate-400 mb-6 border-b border-white/10 pb-4">壓力測試、建檔與線上簽約</p>
+         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
+           {step === 1 && (
+             <div className="space-y-4 animate-[fadeIn_0.3s]">
+               <div className="bg-slate-800/50 border border-white/10 p-5 rounded-xl text-slate-300 text-sm leading-relaxed"><p className="font-black mb-2 text-white text-lg">【第一階段：情境壓力測試】</p>即將啟動 10 題情境測驗（如：包裹遺失處理、車禍回報流程等）。系統將自動分析您的邏輯反應與情緒穩定度。</div>
+               <button onClick={startAITest} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white shadow-lg active:scale-95 tracking-widest mt-8 transition-all">啟動 AI 測試引擎</button>
+             </div>
+           )}
+           {step === 2 && (
+             <div className="space-y-4 animate-[fadeIn_0.3s]">
+               {isScanning ? (
+                 <div className="bg-black/50 border border-emerald-500/50 p-8 rounded-xl text-center relative overflow-hidden">
+                   <div className="scan-line"></div>
+                   <Bot size={48} className="mx-auto text-emerald-400 mb-4 animate-bounce" />
+                   <p className="text-emerald-400 text-sm tracking-widest mb-2">神經網路運算中...</p>
+                   <p className="text-[10px] text-slate-500">正在分析邏輯閥值與情緒抗壓性</p>
+                 </div>
+               ) : (
+                 <div className="space-y-4 animate-zoom">
+                   <div className="bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-xl text-emerald-300 text-sm leading-relaxed text-center">✅ 測驗通過！(綜合評分: 88/100)<br/>請完成基本資料建檔。</div>
+                   <input placeholder="真實姓名 (必填)" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-white/5 focus:border-emerald-500" />
+                   <input placeholder="身分證字號 (必填)" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-white/5 focus:border-emerald-500" />
+                   <input placeholder="申請註冊門號 (必填)" type="tel" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-white/5 focus:border-emerald-500" />
+                   <button onClick={()=>setStep(3)} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white shadow-lg active:scale-95 text-lg mt-4 transition-all">下一步：線上簽署合約</button>
+                 </div>
+               )}
+             </div>
+           )}
+           {step === 3 && (
+             <div className="space-y-4 animate-[fadeIn_0.3s]">
+               <div className="bg-slate-800 p-4 rounded-xl h-40 overflow-y-auto text-xs text-slate-300 leading-relaxed border border-white/10">
+                 <p className="text-white font-black mb-2">【承攬契約暨保密協議】</p>
+                 甲方（在地物流）與乙方（司機）同意以下事項：<br/>1. 乙方應妥善保管代收貨款 (C.O.D)，若有遺失需負全責賠償。<br/>2. 乙方於執行業務期間，應遵守交通法規，若發生事故需自行承擔自付額。<br/>3. 本合約採電子簽署，自動擷取設備特徵碼、GPS與時間戳，與紙本具同等法律效力。
+               </div>
+               <div className="mt-4"><p className="text-[10px] text-blue-400 mb-2">請於下方簽名同意：</p><SignaturePad onSign={setSig} /></div>
+               <button disabled={!sig} onClick={()=>{showToast("✅ 合約存證 PDF 已生成，帳號進入審核佇列 (Pending)"); onClose();}} className="w-full py-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-xl text-white shadow-lg active:scale-95 text-lg mt-4 transition-all">同意並送出審查</button>
+             </div>
+           )}
+         </div>
+       </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 🥊 補齊：斷網離線衝突攔截報備 (Offline Conflict)
+// ==========================================
+function ConflictModal({ localData, serverData, onResolve }) {
+  const [reason, setReason] = useState("");
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 animate-zoom font-black">
+      <div className="bg-slate-900 border-2 border-rose-500/50 p-6 md:p-8 rounded-[2.5rem] max-w-md w-full shadow-[0_0_30px_rgba(225,29,72,0.3)] relative">
+        <h3 className="text-2xl text-rose-400 mb-2 flex items-center gap-2"><Alert size={28}/> AI 數據保護攔截</h3>
+        <p className="text-xs text-slate-400 mb-6 leading-relaxed">系統偵測到您的離線回報數據，與營運總部的即時紀錄存在落差。為保護您的對帳權益，底層演算法已暫停自動覆蓋。</p>
+        
+        <div className="flex gap-4 mb-6">
+          <div className="flex-1 bg-black/50 p-4 rounded-xl border border-white/5 text-center">
+            <p className="text-[10px] text-slate-500 mb-1">您的離線提交</p>
+            <p className="text-xl text-white">{localData.del} 正 / {localData.pkp} 逆</p>
+          </div>
+          <div className="flex-1 bg-rose-950/30 p-4 rounded-xl border border-rose-500/30 text-center">
+            <p className="text-[10px] text-rose-400 mb-1">總部核實紀錄</p>
+            <p className="text-xl text-rose-200">{serverData.del} 正 / {serverData.pkp} 逆</p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <button onClick={() => onResolve('accept_server')} className="w-full py-4 bg-slate-800 border border-white/10 hover:bg-slate-700 rounded-xl text-sm transition-all">放棄離線數據 (以總部為準)</button>
+          
+          <div className="pt-4 border-t border-white/10">
+            <p className="text-[10px] text-blue-400 mb-2">或向 AI 報備異常以申請保留：</p>
+            <input placeholder="輸入理由 (例：警衛不讓進，被退回)..." className="w-full bg-black/50 p-4 rounded-xl text-white text-sm outline-none border border-white/5 mb-3 focus:border-blue-500" value={reason} onChange={e=>setReason(e.target.value)} />
+            <button onClick={() => { if(!reason) return showToast("請填寫理由", true); onResolve('report_conflict', reason); }} className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl text-white text-sm transition-all shadow-lg shadow-blue-500/20">送出異常報備 (亮黃燈處理)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 🧊 薪資凍結快照檢視 (Salary Sign)
+function SalarySignModal({ partner, onClose, onAction }) {
+  const [sig, setSig] = useState(null);
+  if(!partner) return null;
+  const record = partner.salary_record || { net: 0, snapshot: {} };
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom" onClick={onClose}>
+      <div className="bg-slate-900 border border-emerald-500/30 p-6 rounded-[2.5rem] max-w-md w-full shadow-2xl relative font-black" onClick={e=>e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-6 right-6 text-white p-2"><X size={20}/></button>
+        <h3 className="text-2xl text-emerald-400 mb-4 flex items-center gap-2"><Banknote size={28}/> 薪資凍結快照</h3>
+        
+        {/* 快照展示區 */}
+        <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5 mb-4 text-xs space-y-2">
+           <div className="flex justify-between text-slate-400"><span>正件計價</span><span>{record.snapshot?.del_count || 0} 件 x ${record.snapshot?.del_price || 15}</span></div>
+           <div className="flex justify-between text-slate-400"><span>逆收計價</span><span>{record.snapshot?.pkp_count || 0} 件 x ${record.snapshot?.pkp_price || 10}</span></div>
+           <div className="flex justify-between text-rose-400 border-t border-white/5 pt-2"><span>扣款/理賠</span><span>-${record.snapshot?.deductions || 0}</span></div>
+        </div>
+
+        <div className="bg-black/50 p-6 rounded-2xl border border-emerald-500/30 mb-6 text-center shadow-inner"><p className="text-xs text-slate-500 mb-1">本期實得淨額</p><p className="text-4xl text-emerald-400 italic">${(record.net || 0).toLocaleString()}</p></div>
+        
+        <div className="space-y-4">
+           <p className="text-[10px] text-center text-slate-500">※ 此快照已具備法律效力，不隨未來參數變動</p>
+           <SignaturePad onSign={setSig} />
+           <button onClick={()=>onAction('confirm', {sig})} disabled={!sig} className="w-full py-4 bg-emerald-600 text-white rounded-xl disabled:opacity-30">確認無誤並簽收</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 👻 幽靈對話 (含 Admin AI 語氣轉化器)
 function ChatModal({ target, currentUserRole, onClose }) {
   const [input, setInput] = useState("");
   const isPrivileged = target?.priority_access === true; 
   const [msgs, setMsgs] = useState([]);
+  const [isTranslating, setIsTranslating] = useState(false);
 
-  // 會計的黑箱：絕對阻斷
   if (currentUserRole === 'admin' && isPrivileged) {
     return (
       <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 animate-zoom" onClick={onClose}>
-        <div className="bg-slate-900 border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-sm text-center" onClick={e=>e.stopPropagation()}>
-          <button onClick={onClose} className="absolute top-4 right-4 p-2"><X size={16}/></button>
-          <Shield size={48} className="text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 text-sm italic tracking-widest">[ 此通道已轉交系統底層靜默處理 ]</p>
-        </div>
+        <div className="bg-slate-900 border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-sm text-center" onClick={e=>e.stopPropagation()}><button onClick={onClose} className="absolute top-4 right-4 p-2"><X size={16}/></button><Shield size={48} className="text-slate-600 mx-auto mb-4" /><p className="text-slate-400 text-sm italic tracking-widest">[ 此通道已轉交系統底層靜默處理 ]</p></div>
       </div>
     );
   }
 
-  useEffect(() => {
-    setMsgs([{ id: 1, sender: isPrivileged ? 'hq' : 'ai', text: isPrivileged ? '【內部特權直連通道已開啟】' : '您好！系統正進行底層日誌校驗。' }]);
-  }, [isPrivileged]);
+  useEffect(() => { setMsgs([{ id: 1, sender: isPrivileged ? 'hq' : 'ai', text: isPrivileged ? '【內部特權直連通道已開啟】' : '您好！系統正進行底層日誌校驗。' }]); }, [isPrivileged]);
 
   const handleSend = () => {
     if(!input.trim()) return;
-    if(["罷工", "法律", "錢不對"].some(w => input.includes(w)) && currentUserRole === 'driver' && !isPrivileged) {
-       sendLineNotify(`🔴 [紅燈警報] 司機 ${target?.name} 輸入敏感詞彙：${input}`);
+    
+    // Admin 語氣轉化邏輯 (情緒遮罩)
+    if (currentUserRole === 'admin') {
+       setIsTranslating(true);
+       setTimeout(() => {
+         setIsTranslating(false);
+         // 模擬 AI 把 Admin 的隨便講話，包裝成標準術語
+         const translatedText = `[AI 轉化規章語氣]：系統偵測到您的數據提報有誤，請依據第3章第4條規範重新核實。原始備註：(${input})`;
+         setMsgs(prev => [...prev, { id: Date.now(), sender: 'hq', text: translatedText }]);
+         setInput("");
+       }, 1500);
+       return;
     }
 
-    setMsgs(prev => [...prev, { id: Date.now(), sender: currentUserRole === 'driver' ? 'me' : 'hq', text: input }]);
+    setMsgs(prev => [...prev, { id: Date.now(), sender: 'me', text: input }]);
     setInput("");
 
-    // 特權通道：秒傳無 AI 延遲
-    if (isPrivileged && currentUserRole === 'driver') {
+    if (isPrivileged) {
       setTimeout(() => { setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'hq', text: '收到，直達總部，無 AI 介入。' }]); }, 300);
-    } else if (currentUserRole === 'driver') {
-      // 隨機延遲 AI
+    } else {
       setTimeout(() => { setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'ai', text: '已掛載高階核算模組進行複核，請稍候。' }]); }, Math.random() * 1400 + 1800);
     }
   };
@@ -178,14 +287,14 @@ function ChatModal({ target, currentUserRole, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 animate-zoom" onClick={onClose}>
        <div className={`bg-slate-900 border ${isPrivileged ? 'border-fuchsia-500/30' : 'border-blue-500/30'} w-full max-w-md h-[80vh] rounded-[2.5rem] flex flex-col overflow-hidden font-black`} onClick={e=>e.stopPropagation()}>
-         <div className="p-4 bg-slate-800 flex justify-between items-center z-10">
-           <div className="flex items-center gap-2"><Support size={24} className={isPrivileged?'text-fuchsia-400':'text-blue-400'}/> <h3 className={`text-white italic ${isPrivileged ? 'text-fuchsia-300' : ''}`}>{isPrivileged ? '特權直連' : `客服中心`}</h3></div>
-           <button onClick={onClose} className="p-2"><X size={16}/></button>
-         </div>
+         <div className="p-4 bg-slate-800 flex justify-between items-center z-10"><div className="flex items-center gap-2"><Support size={24} className={isPrivileged?'text-fuchsia-400':'text-blue-400'}/> <h3 className={`text-white italic ${isPrivileged ? 'text-fuchsia-300' : ''}`}>{isPrivileged ? '特權直連' : `客服中心`}</h3></div><button onClick={onClose} className="p-2"><X size={16}/></button></div>
          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
            {msgs.map(m => (<div key={m.id} className={`flex ${m.sender==='me'?'justify-end':'justify-start'}`}><div className={`p-3 rounded-2xl text-sm max-w-[85%] ${m.sender==='me'?'bg-blue-600 text-white rounded-tr-none': m.sender==='hq' ? (isPrivileged ? 'bg-fuchsia-900/60 text-fuchsia-100 rounded-tl-none' : 'bg-amber-600 text-white rounded-tl-none') : 'bg-slate-800 text-slate-200 rounded-tl-none'}`}>{m.text}</div></div>))}
+           {isTranslating && (
+             <div className="flex justify-end"><div className="p-3 rounded-2xl text-xs bg-slate-800 text-amber-400 border border-amber-500/30 flex items-center gap-2"><div className="loader w-3 h-3 border-2 border-amber-400"></div> 🤖 AI 語氣轉化濾鏡運作中...</div></div>
+           )}
          </div>
-         <div className="p-4 bg-slate-800 flex gap-2"><input className="flex-1 bg-slate-900 rounded-xl px-4 py-3 outline-none text-white text-sm" placeholder="輸入訊息..." value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} /><button onClick={handleSend} className={`${isPrivileged ? 'bg-fuchsia-600' : 'bg-blue-600'} px-5 py-3 rounded-xl text-white`}><Send size={20}/></button></div>
+         <div className="p-4 bg-slate-800 flex gap-2"><input className="flex-1 bg-slate-900 rounded-xl px-4 py-3 outline-none text-white text-sm focus:border-blue-500" placeholder={currentUserRole==='admin' ? "輸入白話指令，AI將自動修飾..." : "輸入訊息..."} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} disabled={isTranslating} /><button onClick={handleSend} disabled={isTranslating} className={`${isPrivileged ? 'bg-fuchsia-600' : 'bg-blue-600'} px-5 py-3 rounded-xl text-white disabled:opacity-50`}><Send size={20}/></button></div>
        </div>
     </div>
   )
@@ -194,18 +303,41 @@ function ChatModal({ target, currentUserRole, onClose }) {
 // 👑 總裁與行政管理中樞 (AdminHub) 
 function AdminHub({ authRole, partners, onLogout, updateField, setModalType, sq, setSq, db, appId, setChatTarget, setLayer, writeGodLog }) {
   const [adminTab, setAdminTab] = useState('formal'); 
-  // 絕對過濾總裁帳號
   const visiblePartners = useMemo(() => authRole === 'admin' ? (partners || []).filter(p => p.phone !== '0976017938') : (partners || []), [partners, authRole]);
   const formalPartners = useMemo(() => visiblePartners.filter(p => (p.status === 'approved' || p.status === 'frozen') && (p.name?.toLowerCase().includes(sq.toLowerCase()) || p.phone?.includes(sq))), [visiblePartners, sq]);
+
+  // 🧊 發布薪資 (包含凍結快照 Payload)
+  const handlePublishSalary = async () => {
+    if(!window.confirm("發布薪資並建立凍結快照？")) return; 
+    for(const p of formalPartners) { 
+      const del_price = p.custom_del_price || 15;
+      const pkp_price = p.custom_pkp_price || 10;
+      const deductions = (p.labor_fee||0) + (p.health_fee||0);
+      const net = (p.total_del * del_price) + (p.total_pkp * pkp_price) - deductions; 
+      
+      const snapshotPayload = {
+         del_count: p.total_del, del_price: del_price,
+         pkp_count: p.total_pkp, pkp_price: pkp_price,
+         deductions: deductions
+      };
+
+      await updateDoc(doc(db,'artifacts',appId,'public','data','partners',p.id), { 
+        salary_status: 'pending_sign', 
+        salary_record: { net, snapshot: snapshotPayload, period: new Date().toLocaleDateString('zh-TW'), timestamp: Date.now() } 
+      }); 
+    } 
+    writeGodLog("發布薪資", "建立凍結快照並推播電子薪資單");
+    showToast("✅ 已建立快照並推播"); 
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-full mx-auto bg-[#020617] min-h-screen font-black animate-[fadeIn_0.5s_ease-out]">
       <div className="flex justify-between items-center mb-8 gap-6">
-         <div><h2 className="text-white text-4xl italic tracking-tighter uppercase mb-2">營運指揮中心</h2><span className={`inline-block text-xs px-4 py-1 rounded-xl border ${authRole==='super_admin'?'text-amber-500 border-amber-500/30 bg-amber-900/30':'text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-900/30'}`}>{authRole==='super_admin'?'👑 總裁統帥':'👑 營運總部'}</span></div>
+         <div><h2 className="text-white text-3xl md:text-4xl italic tracking-tighter uppercase mb-2">營運指揮中心</h2><span className={`inline-block text-xs px-4 py-1 rounded-xl border ${authRole==='super_admin'?'text-amber-500 border-amber-500/30 bg-amber-900/30':'text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-900/30'}`}>{authRole==='super_admin'?'👑 總裁統帥':'👑 營運總部'}</span></div>
          <div className="flex gap-2">
-            {authRole==='super_admin' && <button onClick={()=>setLayer('driver')} className="bg-amber-500 text-black px-4 py-3 rounded-xl text-xs"><Package size={16}/> 報帳模式</button>}
-            <button onClick={()=>setModalType('tools')} className="bg-slate-800 border border-white/10 px-4 py-3 rounded-xl text-xs text-white"><Settings size={16} /> 工具箱</button>
-            <button onClick={onLogout} className="bg-slate-800 text-rose-500 px-6 py-3 rounded-xl text-xs border border-rose-500/20">退出</button>
+            {authRole==='super_admin' && <button onClick={()=>setLayer('driver')} className="hidden md:flex bg-amber-500 text-black px-4 py-3 rounded-xl text-xs"><Package size={16}/> 報帳台</button>}
+            <button onClick={handlePublishSalary} className="bg-emerald-600 text-white px-4 py-3 rounded-xl text-xs flex gap-1"><Banknote size={16}/> 發薪</button>
+            <button onClick={()=>setModalType('tools')} className="bg-slate-800 border border-white/10 px-4 py-3 rounded-xl text-xs text-white flex gap-1"><Settings size={16}/> 工具箱</button>
          </div>
       </div>
       
@@ -213,14 +345,16 @@ function AdminHub({ authRole, partners, onLogout, updateField, setModalType, sq,
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {formalPartners.map(p => { 
-           const p_net = (p.total_del*15)+(p.total_pkp*10); 
+           const p_net = (p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10)); 
            return (
-             <div key={p.id} className="bg-slate-900/80 p-5 rounded-[1.5rem] border border-white/5 relative">
+             <div key={p.id} className={`bg-slate-900/80 p-5 rounded-[1.5rem] border ${p.has_conflict ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'border-white/5'} relative`}>
                <div className="absolute top-5 right-5 flex gap-2">
                  {p.priority_access && <span className="bg-fuchsia-900/60 text-fuchsia-300 border border-fuchsia-500/30 text-[9px] px-2 py-1 rounded">特權通道</span>}
+                 {p.has_conflict && <span className="bg-amber-600 text-white text-[9px] px-2 py-1 rounded animate-pulse">黃燈異常</span>}
                  <button onClick={() => setChatTarget(p)} className="bg-blue-600/30 text-blue-400 p-2 rounded-lg"><Message size={16}/></button>
                </div>
                <h4 className="text-xl text-white italic mb-1">{p.name}</h4><p className="text-[11px] text-slate-500 mb-4">{p.phone}</p>
+               {p.has_conflict && <div className="mb-3 p-2 bg-amber-950/50 border border-amber-500/30 rounded-lg text-[10px] text-amber-300">報備理由: {p.conflict_reason}</div>}
                <div className="bg-black/30 p-3 rounded-xl text-center mb-4"><p className="text-[10px] text-slate-500 mb-1">當前淨額</p><p className="text-xl text-white italic">${p_net.toLocaleString()}</p></div>
              </div>
            );
@@ -230,55 +364,83 @@ function AdminHub({ authRole, partners, onLogout, updateField, setModalType, sq,
   );
 }
 
-// 🚐 司機工作台 (DriverHub) - 手套友善與 3 秒撤回
+// 🚐 司機工作台 (DriverHub)
 function DriverHub({ user, currentPartner, onLogout, updateField, authRole, db, appId, setChatTarget, setLayer }) {
   const [del,setDel]=useState(0); const [pkp,setPkp]=useState(0); const [cod,setCod]=useState(""); 
   const [sData,setSData]=useState(null); 
+  const [isConfirming, setIsConfirming] = useState(false); const undoTimerRef = useRef(null);
   
-  // 3秒撤回狀態
-  const [isConfirming, setIsConfirming] = useState(false);
-  const undoTimerRef = useRef(null);
+  // 衝突狀態與 UI
+  const [showConflict, setShowConflict] = useState(false);
+  const [conflictData, setConflictData] = useState(null);
+  const [showSalary, setShowSalary] = useState(false);
 
   const startSubmit = () => {
     if(!sData) return showToast("⚠️ 數位防偽簽章為必填",true);
+    
+    // 🥊 模擬斷網衝突觸發 (展示用：當配送輸入 99 時，強制觸發衝突報備)
+    if (del === 99) {
+      setConflictData({ local: { del, pkp }, server: { del: currentPartner.total_del, pkp: currentPartner.total_pkp } });
+      setShowConflict(true);
+      return;
+    }
+
     setIsConfirming(true);
     undoTimerRef.current = setTimeout(() => { executeSubmit(); }, 3000);
   };
 
-  const cancelSubmit = () => {
-    clearTimeout(undoTimerRef.current); setIsConfirming(false);
-    showToast("🛑 已撤回提交");
-  };
+  const cancelSubmit = () => { clearTimeout(undoTimerRef.current); setIsConfirming(false); showToast("🛑 已撤回提交"); };
 
-  const executeSubmit = async () => { 
-    setIsConfirming(false);
+  const executeSubmit = async (reason = null) => { 
+    setIsConfirming(false); setShowConflict(false);
     try {
       const h = { date: new Date().toLocaleDateString('zh-TW'), time: new Date().toLocaleTimeString('zh-TW',{hour12:false}), del, pkp, cod: parseInt(cod)||0 };
       const nextH = [...(currentPartner?.history||[]), h].slice(-31);
-      await updateField(currentPartner.id,'total_del',(currentPartner.total_del||0)+del); 
-      await updateField(currentPartner.id,'total_pkp',(currentPartner.total_pkp||0)+pkp); 
-      await updateField(currentPartner.id,'history', nextH); 
+      
+      let payload = { total_del: (currentPartner.total_del||0)+del, total_pkp: (currentPartner.total_pkp||0)+pkp, history: nextH };
+      
+      // 如果有報備理由，亮黃燈
+      if (reason) { payload.has_conflict = true; payload.conflict_reason = reason; }
+
+      await updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id), payload); 
       setDel(0); setPkp(0); setCod(""); setSData(null); 
-      showToast("✅ 數據加密傳送成功！"); 
-      speak("數據已接收，辛苦了"); // 語音反饋
-    } catch (e) { showToast("❌ 傳送失敗，將於背景補傳", true); }
+      showToast(reason ? "⚠️ 異常已報備，亮起黃燈" : "✅ 數據加密傳送成功！"); 
+      speak(reason ? "異常報備已傳送" : "數據已接收，辛苦了"); 
+    } catch (e) { showToast("❌ 離線緩存中，將於背景補傳", true); }
   };
 
   if(!currentPartner) return <div className="loading-container bg-[#020617] font-black"><div className="loader mb-4"></div><p className="text-blue-500 animate-pulse">連線中...</p></div>;
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center p-4 pb-24 font-black">
+      
+      {showConflict && <ConflictModal localData={conflictData.local} serverData={conflictData.server} onResolve={(type, reason) => {
+        if(type === 'accept_server') { setShowConflict(false); showToast("已捨棄離線數據"); setDel(0); setPkp(0); setSData(null); }
+        else { executeSubmit(reason); }
+      }} />}
+      
+      {currentPartner.salary_status === 'pending_sign' && (
+        <div className="w-full max-w-[500px] mb-6 bg-emerald-600/90 p-5 rounded-3xl flex justify-between items-center shadow-2xl">
+           <div><p className="text-xs">結算快照已產生</p><p className="text-white text-sm">請核對明細並簽收</p></div>
+           <button onClick={()=>setShowSalary(true)} className="bg-white text-emerald-700 px-4 py-2 rounded-xl text-sm">前往確權</button>
+        </div>
+      )}
+      
+      {showSalary && <SalarySignModal partner={currentPartner} onClose={()=>setShowSalary(false)} onAction={async(type,data)=>{
+         await updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id), { salary_status: 'confirmed' });
+         showToast("✅ 已成功回傳存證"); setShowSalary(false);
+      }} />}
+
       <div className="w-full max-w-[500px] mb-6 flex justify-between items-end">
         <div>
            {authRole==='super_admin' && <button onClick={()=>setLayer('admin')} className="text-amber-500 text-[10px] border border-amber-500/30 px-3 py-1 rounded-full mb-2">返回總部</button>}
            <h2 className="text-3xl text-white italic tracking-tighter uppercase mb-1">在地物流</h2>
+           <p className="text-slate-500 text-[10px]">(輸入 99 可測試離線衝突)</p>
         </div>
         <button onClick={()=>setChatTarget(currentPartner)} className={`text-white p-3 rounded-2xl ${currentPartner.priority_access ? 'bg-fuchsia-600' : 'bg-blue-600'}`}><Support size={18} /></button>
       </div>
 
       <div className="bg-slate-900/80 p-6 rounded-[2.5rem] w-full max-w-[500px] shadow-2xl border border-white/5">
-        
-        {/* 👷 手套友善極速輸入 (+1, +5) */}
         <div className="space-y-4 mb-6">
            <div className="bg-black/50 p-4 rounded-2xl border border-white/5">
              <p className="text-[11px] text-blue-400 uppercase mb-3 text-center">今日配送件數</p>
@@ -310,9 +472,8 @@ function DriverHub({ user, currentPartner, onLogout, updateField, authRole, db, 
            <input type="number" placeholder="輸入金額..." className="w-full bg-transparent text-center text-3xl text-amber-400 outline-none border-b border-amber-500/30 pb-2" value={cod} onChange={e=>setCod(e.target.value)} />
         </div>
         
-        <div className="mb-6"><p className="text-blue-400 text-[11px] text-center mb-2"><Pen size={14} className="inline"/> 三位一體電子簽章</p><SignaturePad onSign={setSData} /></div>
+        <div className="mb-6"><p className="text-blue-400 text-[11px] text-center mb-2"><Pen size={14} className="inline"/> 三位一體電子簽章 (含硬體指紋)</p><SignaturePad onSign={setSData} /></div>
         
-        {/* 3 秒撤回機制 UI */}
         {!isConfirming ? (
            <button onClick={startSubmit} className="w-full py-5 rounded-2xl bg-blue-600 text-white text-xl uppercase tracking-widest active:scale-95">提交流程</button>
         ) : (
@@ -329,13 +490,18 @@ function DriverHub({ user, currentPartner, onLogout, updateField, authRole, db, 
 // 🔐 入口
 function Gate({ onLogin }) {
   const [lp, setLp] = useState(""); const [li, setLi] = useState("");
+  const [showOnboard, setShowOnboard] = useState(false);
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] font-black">
-      <div className="mb-12 text-center"><h1 className="text-5xl text-white italic tracking-tighter mb-4">在地物流</h1><p className="text-blue-500 text-xs tracking-[0.4em] border border-indigo-500/30 px-6 py-2 rounded-full uppercase">GGSOC 終極隱身版</p></div>
-      <div className="w-full max-w-[340px] bg-slate-900/80 p-8 rounded-[2.5rem] border border-white/10">
-        <input type="tel" placeholder="手機門號" className="w-full bg-black/50 border border-white/10 rounded-2xl p-5 text-center text-white outline-none mb-4 tracking-widest text-lg" value={lp} onChange={e=>setLp(e.target.value.replace(/\D/g,''))} maxLength={10} />
-        <input type="password" placeholder="PIN 通行碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-5 text-center text-white outline-none mb-6 tracking-widest text-lg" value={li} onChange={e=>setLi(e.target.value.replace(/\D/g,''))} />
-        <button onClick={()=>onLogin(lp,li,true)} className="w-full py-5 rounded-2xl bg-blue-600 text-white text-lg tracking-widest">進入系統</button>
+      {showOnboard && <OnboardingModal onClose={()=>setShowOnboard(false)} />}
+      <div className="mb-12 text-center"><h1 className="text-5xl text-white italic tracking-tighter mb-4">在地物流</h1><p className="text-blue-500 text-xs tracking-[0.4em] border border-indigo-500/30 px-6 py-2 rounded-full uppercase">GGSOC 展示版</p></div>
+      <div className="w-full max-w-[340px] space-y-6 z-10">
+        <div className="bg-slate-900/80 p-8 rounded-[2.5rem] border border-white/10">
+          <input type="tel" placeholder="手機門號" className="w-full bg-black/50 border border-white/10 rounded-2xl p-5 text-center text-white outline-none mb-4 tracking-widest text-lg" value={lp} onChange={e=>setLp(e.target.value.replace(/\D/g,''))} maxLength={10} />
+          <input type="password" placeholder="PIN 通行碼" className="w-full bg-black/50 border border-white/10 rounded-2xl p-5 text-center text-white outline-none mb-6 tracking-widest text-lg" value={li} onChange={e=>setLi(e.target.value.replace(/\D/g,''))} />
+          <button onClick={()=>onLogin(lp,li,true)} className="w-full py-5 rounded-2xl bg-blue-600 text-white text-lg tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 mb-4">進入系統</button>
+        </div>
+        <button onClick={()=>setShowOnboard(true)} className="w-full py-4 rounded-[1.5rem] bg-slate-800/80 text-slate-300 text-sm border border-white/5 flex justify-center items-center gap-2"><Bot size={18}/> 啟動 AI 面試與入職</button>
       </div>
     </div>
   );
@@ -346,6 +512,7 @@ function AppWrapper() {
   const [u,setU]=useState(null); const [aR,setAR]=useState('guest'); const [ps,setPs]=useState([]); const [l,setL]=useState('gate'); const [ld,setLd]=useState(true); const [spI,setSpI]=useState(null);
   const [sq,setSq]=useState(""); const [chatTarget, setChatTarget] = useState(null); const [mT,setMT]=useState(null);
   const [godLogs, setGodLogs] = useState([]); const [expressData, setExpressData] = useState({ phone: '', name: '', priority_access: false });
+  const [lineToken, setLineToken] = useState("");
 
   const cp = useMemo(() => ps.find(p => p.id === spI), [ps, spI]);
 
@@ -378,7 +545,9 @@ function AppWrapper() {
     else if(phone==="0988128172"&&pin==="0172"){ safeStorage.set('ggsoc_auth',{phone,role:'admin'}); setAR('admin');setL('admin'); }
     else{
       const p=ps.find(x=>x.phone===phone&&x.pin===pin); 
-      if(p && p.status==='approved'){ safeStorage.set('ggsoc_auth',{phone,role:'driver'}); setAR('driver');setSpI(p.id);setL('driver'); } else showToast("⚠️ 權限不足或密碼錯誤",true);
+      if(p && p.status==='approved'){ safeStorage.set('ggsoc_auth',{phone,role:'driver'}); setAR('driver');setSpI(p.id);setL('driver'); } 
+      else if(p && p.status==='pending') showToast("⏳ 您的合約正在系統審核中",true);
+      else showToast("⚠️ 權限不足或密碼錯誤",true);
     }
   };
 
@@ -396,28 +565,42 @@ function AppWrapper() {
       {/* 👑 總裁管理中樞 Modal */}
       {mT==='tools' && (
         <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 animate-zoom" onClick={()=>setMT(null)}>
-          <div className="bg-slate-900 border border-white/10 p-8 rounded-[2.5rem] max-w-lg w-full max-h-[90vh] overflow-y-auto custom-scrollbar relative" onClick={e=>e.stopPropagation()}>
-            <button onClick={()=>setMT(null)} className="absolute top-6 right-6 p-2 bg-slate-800 rounded-full"><X size={20}/></button>
-            <h3 className="text-2xl text-blue-400 mb-6 text-center italic">系統管理中樞</h3>
+          <div className="bg-slate-900 border border-white/10 p-6 rounded-[2.5rem] max-w-lg w-full max-h-[90vh] overflow-y-auto custom-scrollbar relative" onClick={e=>e.stopPropagation()}>
+            <button onClick={()=>setMT(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full"><X size={16}/></button>
+            <h3 className="text-xl text-blue-400 mb-6 text-center italic">系統管理中樞</h3>
             
-            <div className="space-y-6">
+            <div className="space-y-4">
+              
+              {/* 🦅 LINE Notify 設定 */}
               {aR === 'super_admin' && (
-                <div className="bg-fuchsia-950/20 p-6 rounded-2xl border border-fuchsia-500/30">
-                  <p className="text-[11px] text-fuchsia-400 mb-4 text-center">🛡️ 總裁特赦：核心成員授權</p>
-                  <div className="space-y-3">
-                    <input placeholder="真實姓名" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none" value={expressData.name} onChange={e=>setExpressData({...expressData, name: e.target.value})} />
-                    <input placeholder="手機門號 (10碼)" type="tel" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none" value={expressData.phone} onChange={e=>setExpressData({...expressData, phone: e.target.value})} />
-                    <label className="flex items-center gap-2 p-3 bg-black/30 rounded-xl cursor-pointer text-xs text-fuchsia-200"><input type="checkbox" checked={expressData.priority_access} onChange={e=>setExpressData({...expressData, priority_access: e.target.checked})} className="accent-fuchsia-600 w-4 h-4" /> 開啟特權通道 (隱藏於會計監控)</label>
-                    <button onClick={async()=>{ if(!expressData.phone || !expressData.name) return showToast("必填",true); await setDoc(doc(db,'artifacts',appId,'public','data','partners',`p_${expressData.phone}`), { id: `p_${expressData.phone}`, name: expressData.name, phone: expressData.phone, pin: '0000', status: 'approved', priority_access: expressData.priority_access, total_del: 0, total_pkp: 0, history: []}); showToast("部署完成"); setExpressData({phone:'',name:'',priority_access:false}); sendLineNotify(`✅ 新增核心成員: ${expressData.name}`); }} className="w-full py-4 bg-fuchsia-600 rounded-xl text-white text-sm">一鍵寫入系統</button>
+                <div className="bg-[#00c300]/10 p-4 rounded-xl border border-[#00c300]/30">
+                   <p className="text-[10px] text-[#00c300] mb-2">🦅 LINE Notify 上帝戰情室綁定</p>
+                   <div className="flex gap-2">
+                     <input type="password" placeholder="貼上 LINE Token..." className="flex-1 bg-black/50 p-2 rounded-lg text-xs outline-none border border-white/5" value={lineToken} onChange={e=>setLineToken(e.target.value)} />
+                     <button onClick={()=>showToast("✅ 已發送模擬戰情日報至 LINE")} className="bg-[#00c300] text-white px-3 py-2 rounded-lg text-xs">測試推送</button>
+                   </div>
+                </div>
+              )}
+
+              {/* 🛡️ 特赦建檔 */}
+              {aR === 'super_admin' && (
+                <div className="bg-fuchsia-950/20 p-4 rounded-xl border border-fuchsia-500/30">
+                  <p className="text-[10px] text-fuchsia-400 mb-2 text-center">🛡️ 總裁特赦：核心成員授權</p>
+                  <div className="space-y-2">
+                    <input placeholder="真實姓名" className="w-full bg-slate-800 p-3 rounded-lg text-xs outline-none" value={expressData.name} onChange={e=>setExpressData({...expressData, name: e.target.value})} />
+                    <input placeholder="手機門號 (10碼)" type="tel" className="w-full bg-slate-800 p-3 rounded-lg text-xs outline-none" value={expressData.phone} onChange={e=>setExpressData({...expressData, phone: e.target.value})} />
+                    <label className="flex items-center gap-2 text-[10px] text-fuchsia-200 py-1"><input type="checkbox" checked={expressData.priority_access} onChange={e=>setExpressData({...expressData, priority_access: e.target.checked})} className="accent-fuchsia-600" /> 開啟特權對話通道 (對會計隱形)</label>
+                    <button onClick={async()=>{ if(!expressData.phone || !expressData.name) return showToast("必填",true); await setDoc(doc(db,'artifacts',appId,'public','data','partners',`p_${expressData.phone}`), { id: `p_${expressData.phone}`, name: expressData.name, phone: expressData.phone, pin: '0000', status: 'approved', priority_access: expressData.priority_access, total_del: 0, total_pkp: 0, history: []}); showToast("部署完成"); setExpressData({phone:'',name:'',priority_access:false}); }} className="w-full py-3 bg-fuchsia-600 rounded-lg text-white text-xs">一鍵寫入系統</button>
                   </div>
                 </div>
               )}
 
+              {/* 👁️ 上帝日誌 */}
               {aR === 'super_admin' && (
-                <div className="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
-                  <p className="text-[11px] text-emerald-400 mb-4 text-center">👁️ 上帝日誌 (僅總裁可見)</p>
-                  <div className="h-40 overflow-y-auto space-y-2 pr-2">
-                    {godLogs.map(g => (<div key={g.id} className="bg-black/50 p-3 rounded-lg border border-white/5 text-[10px]"><div className="flex justify-between text-slate-400 mb-1"><span>{g.actor}</span><span>{new Date(g.timestamp).toLocaleString()}</span></div><p className="text-emerald-300">[{g.action}] <span className="text-white">{g.details}</span></p></div>))}
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
+                  <p className="text-[10px] text-emerald-400 mb-2 text-center">👁️ 上帝日誌 (不可抹除)</p>
+                  <div className="h-32 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                    {godLogs.map(g => (<div key={g.id} className="bg-black/50 p-2 rounded border border-white/5 text-[9px]"><div className="flex justify-between text-slate-500 mb-1"><span>{g.actor}</span><span>{new Date(g.timestamp).toLocaleTimeString()}</span></div><p className="text-emerald-300">[{g.action}] <span className="text-slate-300">{g.details}</span></p></div>))}
                   </div>
                 </div>
               )}
