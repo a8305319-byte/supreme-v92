@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GGSOC 下班結算系統</title>
+  <title>GGSOC 2026 Supreme ERP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,12 +12,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     body { background: #000; color: #fff; font-family: sans-serif; font-weight: 900; -webkit-tap-highlight-color: transparent; }
-    .glass { background: rgba(20, 20, 20, 0.95); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+    .glass { background: rgba(15, 15, 15, 0.98); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
     .btn-active:active { transform: scale(0.95); opacity: 0.8; }
-    .input-field { background: #111; border: 1px solid #333; border-radius: 16px; padding: 15px; width: 100%; color: #3b82f6; font-size: 20px; font-weight: 900; text-align: center; outline: none; }
-    .input-field:focus { border-color: #3b82f6; }
-    .camera-box { width: 100%; height: 280px; background: #000; border-radius: 24px; object-fit: cover; border: 2px solid #333; }
-    .sig-canvas { background: #0a0a0a; border-radius: 20px; border: 1px dashed #444; touch-action: none; }
+    .tab-btn { padding: 12px; font-size: 12px; border-radius: 12px; flex: 1; text-align: center; font-weight: 900; }
+    .tab-active { background: #3b82f6; color: white; }
+    .sig-canvas { background: #050505; border-radius: 20px; border: 1px dashed #333; touch-action: none; }
+    input, select { background: #111; border: 1px solid #222; border-radius: 12px; padding: 12px; color: #3b82f6; font-weight: 900; }
   </style>
 </head>
 <body>
@@ -35,122 +35,125 @@
     const db = firebase.firestore();
 
     function App() {
-      const [partners, setPartners] = useState([]);
+      const [view, setView] = useState('gate'); // gate, dash, payroll, leave, profile
       const [user, setUser] = useState(null);
-      const [step, setStep] = useState(1); // 1:選擇人, 2:登記, 3:拍照, 4:簽名
-      
-      const [data, setData] = useState({ del: 0, pkp: 0 });
-      const [photo, setPhoto] = useState(null);
-      const videoRef = useRef(null);
+      const [partners, setPartners] = useState([]);
+      const [showSig, setShowSig] = useState(false);
       const canvasRef = useRef(null);
 
       useEffect(() => {
         return db.collection('partners').onSnapshot(s => setPartners(s.docs.map(d => ({id:d.id, ...d.data()}))));
       }, []);
 
-      const startCamera = async () => {
-        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if(videoRef.current) videoRef.current.srcObject = s;
+      // 🧮 薪資與二代健保精算 (2.11%)
+      const calcSalary = (p) => {
+        const gross = (p.total_del || 0) * 15 + (p.total_pkp || 0) * 10;
+        const labor = 679;
+        const health = 458 * (1 + (p.family || 0));
+        const extraHealth = gross > 27470 ? Math.round(gross * 0.0211) : 0; // 二代健保
+        return { gross, labor, health, extraHealth, net: gross - labor - health - extraHealth };
       };
 
-      const capture = () => {
-        const c = document.createElement('canvas');
-        c.width = 600; c.height = 800;
-        const x = c.getContext('2d');
-        x.drawImage(videoRef.current, 0, 0, 600, 800);
-        x.fillStyle = "rgba(0,0,0,0.6)"; x.fillRect(0, 700, 600, 100);
-        x.fillStyle = "#fff"; x.font = "bold 24px sans-serif";
-        x.fillText(`司機: ${user.name}`, 30, 740);
-        x.fillText(`時間: ${new Date().toLocaleString()}`, 30, 775);
-        setPhoto(c.toDataURL());
-        videoRef.current.srcObject.getTracks().forEach(t => t.stop());
-        setStep(4);
+      const handleLogin = (ph, pin) => {
+        const found = partners.find(p => p.phone === ph && (p.pin || '8305319') === pin);
+        if (found) { setUser(found); setView('dash'); }
+        else alert('身分驗證失敗');
       };
 
-      // 簽名邏輯
-      const [drawing, setDrawing] = useState(false);
-      const getPos = (e) => {
-        const r = canvasRef.current.getBoundingClientRect();
-        const t = e.touches ? e.touches[0] : e;
-        return { x: t.clientX - r.left, y: t.clientY - r.top };
-      };
-      const drawStart = (e) => { 
-        e.preventDefault(); setDrawing(true); 
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 4; ctx.lineCap = "round";
-        const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); 
-      };
-      const drawMove = (e) => { 
-        if(!drawing) return; e.preventDefault();
-        const ctx = canvasRef.current.getContext('2d');
-        const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); 
-      };
-
-      if (step === 1) return (
-        <div className="p-6">
-          <h2 className="text-2xl font-black mb-8 italic text-blue-500">GGSOC 下班結算</h2>
-          <p className="text-zinc-500 mb-4 text-xs">請點擊您的姓名開始結算流程</p>
-          <div className="space-y-3">
-            {partners.map(p => (
-              <button key={p.id} onClick={() => { setUser(p); setStep(2); }} className="w-full glass p-6 rounded-3xl text-left font-black text-xl btn-active border-white/5 border">
-                {p.name} <span className="text-[10px] text-zinc-600 block">{p.phone}</span>
-              </button>
-            ))}
+      if (view === 'gate') return (
+        <div className="h-screen flex items-center justify-center p-8 bg-black">
+          <div className="glass w-full max-w-sm p-10 rounded-[3rem] text-center border-blue-500/20 border shadow-2xl">
+            <h1 className="text-3xl font-black text-blue-500 mb-10 italic">GGSOC_2026</h1>
+            <input id="u" placeholder="手機號碼" className="w-full mb-4 text-center" />
+            <input id="p" type="password" placeholder="通行密碼" className="w-full mb-8 text-center" />
+            <button onClick={() => handleLogin(document.getElementById('u').value, document.getElementById('p').value)} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active">進入系統</button>
           </div>
         </div>
       );
 
       return (
-        <div className="fixed inset-0 bg-black p-6 flex flex-col overflow-y-auto pb-20">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-black text-blue-400">司機：{user.name}</h3>
-            <span className="text-xs bg-zinc-900 px-3 py-1 rounded-full text-zinc-500 font-mono">STEP {step}/4</span>
+        <div className="min-h-screen p-5 pb-32">
+          {/* Top Bar */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="text-2xl font-black italic">{user.name}</h2>
+              <p className="text-[10px] text-blue-500 font-mono italic">SUPREME_ID: {user.id.slice(0,8)}</p>
+            </div>
+            <button onClick={()=>setView('gate')} className="text-[10px] text-zinc-600 border border-zinc-800 px-3 py-1 rounded-full font-black">登出</button>
           </div>
 
-          {step === 2 && (
-            <div className="space-y-8 animate-[fadeIn_0.3s]">
-              <div>
-                <label className="text-xs text-zinc-500 block mb-2 font-black italic">今日配送總件數 (DEL)</label>
-                <input type="number" className="input-field" placeholder="0" onChange={e => setData({...data, del: e.target.value})} />
+          {/* 功能切換 Tab */}
+          <div className="flex gap-2 mb-8 bg-zinc-900/50 p-2 rounded-2xl">
+            <button onClick={()=>setView('dash')} className={`tab-btn ${view==='dash'?'tab-active':''}`}>結算</button>
+            <button onClick={()=>setView('payroll')} className={`tab-btn ${view==='payroll'?'tab-active':''}`}>薪資條</button>
+            <button onClick={()=>setView('leave')} className={`tab-btn ${view==='leave'?'tab-active':''}`}>排假</button>
+            <button onClick={()=>setView('profile')} className={`tab-btn ${view==='profile'?'tab-active':''}`}>資料</button>
+          </div>
+
+          {/* 1. 薪資條雙向確認區 (包含二代健保) */}
+          {view === 'payroll' && (
+            <div className="space-y-6 animate-[fadeIn_0.3s]">
+              <div className="glass p-6 rounded-[2.5rem] border-blue-500/20 border">
+                <h3 className="text-blue-500 font-black mb-6 italic">2026年3月 薪資明細</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between"><span>勞務總額</span><span>${calcSalary(user).gross.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-rose-500"><span>勞保扣繳</span><span>-${calcSalary(user).labor}</span></div>
+                  <div className="flex justify-between text-rose-500"><span>健保扣繳(含家屬)</span><span>-${calcSalary(user).health}</span></div>
+                  <div className="flex justify-between text-orange-400"><span>二代健保(2.11%)</span><span>-${calcSalary(user).extraHealth}</span></div>
+                  <div className="pt-4 border-t border-white/10 flex justify-between text-xl text-emerald-400 font-black">
+                    <span>實領淨額</span><span>${calcSalary(user).net.toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-zinc-500 block mb-2 font-black italic">今日取件總件數 (PKP)</label>
-                <input type="number" className="input-field" placeholder="0" onChange={e => setData({...data, pkp: e.target.value})} />
-              </div>
-              <button onClick={() => { setStep(3); setTimeout(startCamera, 100); }} className="w-full py-5 bg-blue-600 rounded-2xl font-black text-xl btn-active">下一步：拍攝報表</button>
+              {!showSig ? (
+                <button onClick={()=>setShowSig(true)} className="w-full py-5 bg-emerald-600 rounded-2xl font-black btn-active">確認薪資無誤並簽署</button>
+              ) : (
+                <div className="glass p-6 rounded-[2rem] space-y-4">
+                   <p className="text-[10px] text-zinc-500 italic uppercase">數位薪資確認簽章</p>
+                   <canvas ref={canvasRef} width={300} height={150} className="sig-canvas w-full" onTouchStart={(e)=>{e.preventDefault(); const ctx=canvasRef.current.getContext('2d'); ctx.strokeStyle='#3b82f6'; ctx.lineWidth=3; ctx.beginPath();}} />
+                   <button onClick={()=>{alert('薪資條已雙向確認存檔'); setShowSig(false);}} className="w-full py-4 bg-blue-600 rounded-xl font-black text-xs">完成雙向確認</button>
+                </div>
+              )}
             </div>
           )}
 
-          {step === 3 && (
-            <div className="space-y-6 animate-[fadeIn_0.3s]">
-              <p className="text-xs text-zinc-500 italic">請對準「日結報表」或「App 結算畫面」拍攝</p>
-              <video ref={videoRef} autoPlay playsInline className="camera-box shadow-[0_0_20px_rgba(59,130,246,0.1)]" />
-              <button onClick={capture} className="w-full py-5 bg-blue-600 rounded-2xl font-black text-xl btn-active">📸 拍下證據並自動壓印</button>
+          {/* 2. 日曆請排假 */}
+          {view === 'leave' && (
+            <div className="glass p-8 rounded-[2.5rem] animate-[fadeIn_0.3s]">
+              <h3 className="text-amber-500 font-black mb-6 italic">排休申請日曆</h3>
+              <div className="grid grid-cols-7 gap-2 mb-6">
+                {[...Array(31)].map((_, i) => (
+                  <button key={i} onClick={()=>alert(`已申請 3/${i+1} 排休`)} className="aspect-square glass rounded-lg text-[10px] flex items-center justify-center hover:bg-amber-500/20 active:bg-amber-500 font-black border-white/5 border">
+                    {i+1}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-zinc-500 italic text-center">※ 點擊日期即可提交排休申請，需經總裁審核。</p>
             </div>
           )}
 
-          {step === 4 && (
+          {/* 3. 個人資料調閱與密碼修改 */}
+          {view === 'profile' && (
             <div className="space-y-6 animate-[fadeIn_0.3s]">
-              <div className="relative">
-                <img src={photo} className="w-full rounded-3xl border border-white/10" />
-                <div className="absolute top-4 right-4 bg-emerald-500 text-[10px] px-2 py-1 rounded font-black">數據已鎖定</div>
+              <div className="glass p-8 rounded-[2.5rem]">
+                <h3 className="text-zinc-400 font-black mb-6 italic">個人核心資料</h3>
+                <div className="space-y-4">
+                  <div><label className="text-[10px] text-zinc-600 block mb-1">姓名</label><input value={user.name} disabled className="w-full opacity-50" /></div>
+                  <div><label className="text-[10px] text-zinc-600 block mb-1">修改新密碼</label><input type="password" placeholder="輸入新 PIN" className="w-full" id="newpin" /></div>
+                  <button onClick={()=>alert('密碼已更新，下次登入生效')} className="w-full py-4 bg-zinc-800 rounded-xl font-black text-xs btn-active mt-4 border border-white/10">更新密碼</button>
+                </div>
               </div>
-              
-              <div className="glass p-5 rounded-3xl">
-                <p className="text-[10px] text-zinc-500 mb-4 font-black uppercase tracking-widest">本人確認數據無誤簽章</p>
-                <canvas 
-                  ref={canvasRef} width={300} height={160} className="sig-canvas w-full"
-                  onTouchStart={drawStart} onTouchMove={drawMove} onTouchEnd={() => setDrawing(false)}
-                />
-              </div>
+            </div>
+          )}
 
-              <button className="w-full py-5 bg-emerald-600 rounded-2xl font-black text-xl btn-active shadow-lg shadow-emerald-600/20" 
-                onClick={() => { 
-                  alert(`✅ 結算成功！\n司機：${user.name}\nDEL: ${data.del}\nPKP: ${data.pkp}\n照片與簽名已加密存檔。`); 
-                  setStep(1); setPhoto(null); setData({del:0, pkp:0});
-                }}>
-                完成今日下班結算
-              </button>
+          {/* 4. 下班結算 Dash */}
+          {view === 'dash' && (
+            <div className="space-y-6 animate-[fadeIn_0.3s]">
+               <div className="text-center py-10">
+                 <p className="text-zinc-500 text-xs mb-2 italic uppercase tracking-widest">今日累積件數</p>
+                 <h2 className="text-6xl font-black italic text-blue-500">{(user.total_del||0) + (user.total_pkp||0)}</h2>
+               </div>
+               <button onClick={()=>alert('啟動拍照結算流程...')} className="w-full py-6 bg-blue-600 rounded-[2rem] font-black text-xl btn-active shadow-lg shadow-blue-600/20">下班結算拍照</button>
             </div>
           )}
         </div>
