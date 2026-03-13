@@ -21,63 +21,16 @@
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-    // 🚀 核心大腦匯入
+  // 🚀 核心大腦匯入
     import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, onSnapshot, collection, addDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-    const { useState, useEffect, useRef, useMemo } = React;
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
     const createRoot = ReactDOM.createRoot;
 
-    // 🌟 Firebase 配置const firebaseConfig = { 
-      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
-      authDomain: "supreme-v92.firebaseapp.com", 
-      projectId: "supreme-v92", 
-      storageBucket: "supreme-v92.firebasestorage.app", 
-      messagingSenderId: "485530156296", 
-      appId: "1:485530156296:web:6728c0ee08b98dedd800bd" 
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
-    const auth = getAuth(app);
-    const appId = 'ggsoc-trinity-master-v1';
-
-    // 🤖 AI 總裁特助組件 (手機優化浮動版)
-    const LocalLogisticsAI = ({ data }) => {
-      const [q, setQ] = useState("");
-      const [ans, setAns] = useState("");
-      const [loading, setLoading] = useState(false);
-      const [show, setShow] = useState(false);
-
-      const handleAsk = async () => {
-        if (!q || loading) return;
-        setLoading(true);
-        try {
-          const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-          const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
-          setAns(res.response.text());
-        } catch (e) { setAns("連線失敗..."); }
-        setLoading(false);
-      };
-
-      if (!show) return (
-        <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '90px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: '2px solid #fff', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>
-      );
-
-      return (
-        <div style={{ position: 'fixed', bottom: '90px', right: '20px', zIndex: 99999, width: '280px', background: '#0f172a', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', fontFamily: 'sans-serif' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: '#60a5fa', fontWeight: 'bold' }}>AI 營運特助</span>
-            <button onClick={() => setShow(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px' }}>✕</button>
-          </div>
-          <input style={{ width: '100%', background: '#1e293b', border: '1px solid #334155', padding: '10px', borderRadius: '10px', color: '#fff', marginBottom: '10px', fontSize: '16px' }} value={q} onChange={e => setQ(e.target.value)} placeholder="分析數據..." />
-          <button onClick={handleAsk} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold' }} disabled={loading}>{loading ? "分析中..." : "問 AI"}</button>
-          {ans && <div style={{ marginTop: '10px', fontSize: '12px', background: '#000', padding: '10px', borderRadius: '10px', maxHeight: '120px', overflowY: 'auto', border: '1px solid #1e293b', lineHeight: '1.5' }}>{ans}</div>}
-        </div>
-      );
-    };
+    // 🌟 Firebase 配置 (唯一版)
     const firebaseConfig = { 
       apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
       authDomain: "supreme-v92.firebaseapp.com", 
@@ -91,63 +44,58 @@
     const auth = getAuth(app);
     const appId = 'ggsoc-trinity-master-v1';
 
-   // 🤖 AI 總裁特助組件 (雙模組完全體)
-const LocalLogisticsAI = ({ data }) => {
-  const [q, setQ] = useState("");
-  const [ans, setAns] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [show, setShow] = useState(false);
+    // 🤖 AI 總裁特助 (雙模組完全體：診斷 + 問答)
+    const LocalLogisticsAI = ({ data }) => {
+      const [q, setQ] = useState("");
+      const [ans, setAns] = useState("");
+      const [loading, setLoading] = useState(false);
+      const [show, setShow] = useState(false);
 
-  // 模式 1：針對你的提問回答 (原本的 askAI)
-  const handleAsk = async () => {
-    if (!q || loading) return;
-    setLoading(true);
-    try {
       const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
-      setAns(res.response.text());
-    } catch (e) { setAns("報告總裁：連線異常。"); }
-    setLoading(false);
-  };
 
-  // 模式 2：主動戰情診斷 (一鍵分析)
-  const diagnostic = async () => {
-    setLoading(true);
-    try {
-      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: "你是在地物流的老闆特助。請根據數據回報：1.今日 COD 總額 2.異常名單 3.經營建議。語氣要精煉霸氣。"
-      });
-      const res = await model.generateContent(`數據：${JSON.stringify(data || [])}`);
-      setAns(res.response.text());
-    } catch (e) { setAns("診斷模組異常。"); }
-    setLoading(false);
-  };
+      // 模式 1：針對提問回答
+      const handleAsk = async () => {
+        if (!q || loading) return;
+        setLoading(true);
+        try {
+          const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
+          setAns(res.response.text());
+        } catch (e) { setAns("報告總裁：連線異常。"); }
+        setLoading(false);
+      };
 
-  if (!show) return <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>;
+      // 模式 2：主動戰情診斷
+      const diagnostic = async () => {
+        setLoading(true);
+        try {
+          const res = await model.generateContent(`請根據這份數據快照進行「戰情診斷」。找出異常司機、財務風險或營運漏洞：${JSON.stringify(data)}`);
+          setAns(res.response.text());
+        } catch (e) { setAns("診斷模組異常。"); }
+        setLoading(false);
+      };
 
-  return (
-    <div className="animate-zoom" style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-xs text-blue-400 font-bold">GGSOC AI 總助</span>
-        <button onClick={() => setShow(false)} className="text-slate-400">✕</button>
-      </div>
-      
-      <input className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-white text-sm mb-2" value={q} onChange={e => setQ(e.target.value)} placeholder="輸入特定指令..." />
-      
-      <div className="flex gap-2 mb-2">
-        <button onClick={handleAsk} className="flex-1 py-2 bg-blue-600 rounded-lg font-bold text-xs" disabled={loading}>問 AI</button>
-        <button onClick={diagnostic} className="flex-1 py-2 bg-emerald-600 rounded-lg font-bold text-xs" disabled={loading}>⚡診斷</button>
-      </div>
+      if (!show) return (
+        <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '90px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '55px', height: '55px', borderRadius: '50%', border: '2px solid #fff', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>
+      );
 
-      {ans && <div className="mt-3 text-[11px] bg-black/30 p-2 rounded-lg max-h-48 overflow-y-auto leading-relaxed border border-white/5 whitespace-pre-wrap">{ans}</div>}
-    </div>
-  );
-};
-
-    // 🛡️ 錯誤攔截器
+      return (
+        <div style={{ position: 'fixed', bottom: '90px', right: '20px', zIndex: 99999, width: '300px', background: '#0f172a', border: '1px solid #3b82f6', borderRadius: '24px', padding: '15px', color: '#fff', boxShadow: '0 10px 50px rgba(0,0,0,0.8)', fontFamily: 'sans-serif' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: '#60a5fa', fontWeight: 'black' }}>GGSOC 戰情 AI</span>
+            <button onClick={() => setShow(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px' }}>✕</button>
+          </div>
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+            <button onClick={diagnostic} disabled={loading} style={{ flex: 1, background: '#1e293b', color: '#60a5fa', border: '1px solid #3b82f6', padding: '8px', borderRadius: '10px', fontSize: '12px' }}>📊 一鍵診斷</button>
+          </div>
+          <div style={{ display: 'flex', gap: '5px' }}>
+            <input style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', padding: '10px', borderRadius: '10px', color: '#fff', fontSize: '14px' }} value={q} onChange={e => setQ(e.target.value)} placeholder="下達進階指令..." />
+            <button onClick={handleAsk} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px 15px', borderRadius: '10px' }}>{loading ? "..." : "送出"}</button>
+          </div>
+          {ans && <div style={{ marginTop: '12px', fontSize: '13px', background: '#000', padding: '12px', borderRadius: '12px', maxHeight: '180px', overflowY: 'auto', border: '1px solid #1e293b', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{ans}</div>}
+        </div>
+      );
+    };
     class ErrorBoundary extends React.Component {
       constructor(props) { super(props); this.state = { hasError: false }; }
       static getDerivedStateFromError() { return { hasError: true }; }
