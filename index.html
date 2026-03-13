@@ -19,6 +19,9 @@
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     input { background: #111; border: 1px solid #222; border-radius: 14px; padding: 12px; color: #d4af37; text-align: center; font-weight: 900; width: 100%; outline: none; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
+    /* AI 對話與分析動畫 */
+    .typing::after { content: '...'; animation: blink 1s infinite; }
+    @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
   </style>
 </head>
 <body>
@@ -42,6 +45,8 @@
       const [snap, setSnap] = useState(null);
       const videoRef = useRef(null);
       const canvasRef = useRef(null);
+      // --- 🤖 AI 影像審核狀態 ---
+      const [aiReviewStatus, setAiReviewStatus] = useState(null); // null, reviewing, passed, failed
 
       // --- 💰 2026 財務精算邏輯 ---
       const calculateNet = (gross) => {
@@ -66,11 +71,16 @@
         ctx.fillText(`VERIFIED BY: ${agent.id} | ${new Date().toLocaleString()}`, 30, 765);
         setSnap(c.toDataURL());
         videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+        // --- 🤖 拍照後自動啟動 AI 模擬審核 ---
+        setAiReviewStatus('reviewing');
+        setTimeout(() => {
+          setAiReviewStatus('passed');
+        }, 2500); // 模擬 2.5 秒審核
       };
 
       if (view === 'login') return (
         <div className="h-screen flex items-center justify-center p-8 bg-black">
-          <div className="glass w-full max-w-sm p-12 rounded-[4rem] text-center border-zinc-900 border">
+          <div className="glass w-full max-w-sm p-12 rounded-[4rem] text-center border-zinc-900 border shadow-[0_0_50px_rgba(212,175,55,0.05)]">
             <h1 className="text-3xl font-black text-zinc-600 mb-10 italic tracking-widest">GGSOC_2026</h1>
             <input id="u" placeholder="聯絡手機" className="mb-4" />
             <input id="p" type="password" placeholder="通行代碼" className="mb-8" />
@@ -81,7 +91,7 @@
 
       return (
         <div className="min-h-screen p-6 pb-24 max-w-md mx-auto relative no-scrollbar">
-          {/* 🏛️ Header：會計部最高威權 */}
+          {/*Header：會計部最高威權 */}
           <div className="flex justify-between items-end mb-8">
             <div>
               <h2 className="text-xl font-black italic tracking-tighter text-zinc-400">GGSOC_會計部</h2>
@@ -90,37 +100,68 @@
             <button onClick={() => setView('chat')} className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-xl btn-active border border-white/5">{agent.icon}</button>
           </div>
 
-          {/* 導覽分頁 */}
+          {/*導覽分頁 */}
           <div className="flex gap-2 mb-8 bg-zinc-900/50 p-2 rounded-2xl border border-white/5">
             {['dash','payroll','vault'].map(t => (
               <button key={t} onClick={()=>setView(t)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest ${view===t?'bg-amber-600 text-black':'text-zinc-600'}`}>{t}</button>
             ))}
           </div>
 
-          {/* 1. 下班結算確權 (拍照 + 簽名) */}
+          {/* 1. 下班結算確權 (含 AI 影像審核 + 簽名) */}
           {view === 'dash' && (
-            <div className="space-y-6">
+            <div className="space-y-6 relative">
               {!snap ? (
                 <div className="space-y-6">
                   <div className="accounting-gold p-6 rounded-r-3xl">
                     <h3 className="text-sm font-black text-amber-500 mb-2 italic">STEP 1: 實體報表確權</h3>
-                    <p className="text-[10px] text-zinc-500">請對準今日結算單據，由系統萬事通自動存證。</p>
+                    <p className="text-[10px] text-zinc-500">請對準今日結算單據，拍照後將由 **核心 AI ** 執行首要審核。</p>
                   </div>
                   <video ref={videoRef} autoPlay playsInline className="camera-live shadow-2xl" />
-                  <button onClick={()=>{startCam(); setTimeout(capture, 1500);}} className="w-full py-6 bg-zinc-900 border border-amber-600/30 rounded-[2.5rem] font-black text-amber-600 btn-active italic">📸 啟動行政拍照存證</button>
+                  <button onClick={()=>{startCam(); setTimeout(capture, 1500);}} className="w-full py-6 bg-zinc-900 border border-amber-600/30 rounded-[2.5rem] font-black text-amber-600 btn-active italic">📸 啟動行政拍照存證 (含 AI 審核)</button>
                 </div>
               ) : (
-                <div className="space-y-6 animate-[fadeIn_0.5s]">
+                <div className="space-y-6 animate-[fadeIn_0.5s] relative">
                   <img src={snap} className="w-full rounded-[2.5rem] border border-zinc-800" />
-                  <div className="glass p-7 rounded-[2.5rem] border-white/5 border">
-                    <p className="text-[10px] text-zinc-500 mb-4 font-black italic uppercase">STEP 2: 本人數據確認簽章</p>
+                  
+                  {/* --- 🤖 AI 審核狀態與對話泡泡 (重型 UI) --- */}
+                  <div className="glass p-6 rounded-[2.5rem] border border-white/5 shadow-inner">
+                      {aiReviewStatus === 'reviewing' && (
+                        <div className="flex gap-3 items-start animate-[fadeIn_0.3s]">
+                          <span className="text-xl">{agent.icon}</span>
+                          <div>
+                            <p className="text-[10px] font-black text-blue-500 italic">萬事通_{agent.name} (AI 分析中)</p>
+                            <p className="text-xs text-zinc-400 mt-1 typing">核心 AI 正在對影像執行 360 度核對與數位指紋嵌入...</p>
+                          </div>
+                        </div>
+                      )}
+                      {aiReviewStatus === 'passed' && (
+                        <div className="flex gap-3 items-start animate-[fadeIn_0.3s]">
+                          <span className="text-xl">✅</span>
+                          <div>
+                            <p className="text-[10px] font-black text-emerald-500 italic">GGSOC AI 審核通過</p>
+                            <p className="text-xs text-zinc-400 mt-1">影像清晰，無偽造跡象。行政編號 {agent.id} 已完成指紋嵌入。請完成下方確認簽名。</p>
+                          </div>
+                        </div>
+                      )}
+                  </div>
+
+                  {/*確權簽名 (含模擬審核阻塞邏輯) */}
+                  <div className={`glass p-7 rounded-[2.5rem] border-white/5 border ${aiReviewStatus !== 'passed' ? 'opacity-30' : ''}`}>
+                    <p className="text-[10px] text-zinc-500 mb-4 font-black italic uppercase">STEP 2: 本人數據確認簽章 (AI 審核通過後解鎖)</p>
                     <canvas ref={canvasRef} width={320} height={160} className="sig-canvas w-full" 
-                      onTouchStart={(e)=>{e.preventDefault(); const x=canvasRef.current.getContext('2d'); x.strokeStyle='#d4af37'; x.lineWidth=3; x.beginPath();}}
+                      onTouchStart={(e)=>{if(aiReviewStatus !== 'passed') return; e.preventDefault(); const x=canvasRef.current.getContext('2d'); x.strokeStyle='#d4af37'; x.lineWidth=3; x.beginPath();}}
+                      // touchAction property should be applied on the component/element to prevent scrolling while drawing
+                      style={{touchAction: 'none'}}
                     />
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
-                    <button onClick={()=>{alert('數據已加密送往會計部金庫。'); setSnap(null); setView('vault');}} className="bg-emerald-900/20 text-emerald-500 py-6 rounded-3xl font-black border border-emerald-500/20 btn-active">🟢 完成結算</button>
-                    <button onClick={()=>setSnap(null)} className="bg-zinc-900 py-6 rounded-3xl font-black text-zinc-500 btn-active">重拍</button>
+                    <button 
+                      onClick={()=>{if(aiReviewStatus !== 'passed') return; alert('確權數據已加密送往會計部金庫。'); setSnap(null); setAiReviewStatus(null); setView('vault');}} 
+                      className={`bg-emerald-900/20 text-emerald-500 py-6 rounded-3xl font-black btn-active border border-emerald-500/20 ${aiReviewStatus !== 'passed' ? 'opacity-30' : ''}`}
+                      disabled={aiReviewStatus !== 'passed'}
+                    >🟢 完成確權</button>
+                    <button onClick={()=>{setSnap(null); setAiReviewStatus(null);}} className="bg-zinc-900 py-6 rounded-3xl font-black text-zinc-500 btn-active">重拍</button>
                   </div>
                 </div>
               )}
@@ -164,7 +205,7 @@
 
           {/* 4. 萬事通服務中心 (隨扈對話) */}
           {view === 'chat' && (
-            <div className="fixed inset-0 bg-black z-[9999] p-6 flex flex-col">
+            <div className="fixed inset-0 bg-black z-[9999] p-6 flex flex-col no-scrollbar overflow-y-auto">
                <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
                  <div className="flex items-center gap-3">
                     <span className="text-2xl">{agent.icon}</span>
@@ -175,12 +216,14 @@
                  </div>
                  <button onClick={()=>setView('dash')} className="text-zinc-600 text-[10px] font-black">EXIT</button>
                </div>
-               <div className="flex-1 overflow-y-auto space-y-4 mb-6">
-                 <div className="bg-zinc-900 p-5 rounded-r-3xl rounded-tl-3xl text-xs text-zinc-400 border border-white/5 shadow-xl">
-                   您好，我是行政編號 {agent.id} 的 {agent.name}。會計部已交派我處理您的請求。請詳述問題，系統將自動同步至財務總帳。
+               <div className="flex-1 overflow-y-auto space-y-4 mb-6 chat-content">
+                 <div className="flex justify-start">
+                    <div className="bg-zinc-900 p-5 rounded-r-3xl rounded-tl-3xl text-xs text-zinc-400 border border-white/5 shadow-xl max-w-[80%]">
+                        您好，我是行政編號 {agent.id} 的 {agent.name}。會計部已交派我處理您的請求。請詳述問題，系統將自動同步至財務總帳。
+                    </div>
                  </div>
                </div>
-               <div className="flex gap-2 p-2 bg-zinc-900 rounded-2xl">
+               <div className="flex gap-2 p-2 bg-zinc-900 rounded-2xl mt-auto">
                  <input className="flex-1 bg-transparent p-3 text-xs outline-none" placeholder="輸入傳令或回報..." />
                  <button onClick={()=>alert('已轉呈會計部核定。')} className="bg-blue-600 px-6 rounded-xl font-black text-xs btn-active italic">發送</button>
                </div>
