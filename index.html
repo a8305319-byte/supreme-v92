@@ -1,107 +1,63 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>在地物流 - GGSOC 終極完全體</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GGSOC 急救版</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    body { background-color: #020617; color: white; margin: 0; font-family: sans-serif; overflow-x: hidden; }
-    .loader { border: 4px solid rgba(255,255,255,0.1); border-left-color: #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-zoom { animation: fadeIn 0.3s ease-out forwards; }
-  </style>
 </head>
-<body>
+<body class="bg-slate-950 text-white">
   <div id="root"></div>
-
-  <script type="text/babel" data-type="module">
-    // 🚀 核心大腦匯入
-    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-
-    const { useState, useEffect, useRef, useMemo } = React;
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
     const createRoot = ReactDOM.createRoot;
 
-    // 🌟 Firebase 配置
-    const firebaseConfig = { 
-      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
-      authDomain: "supreme-v92.firebaseapp.com", 
-      projectId: "supreme-v92", 
-      storageBucket: "supreme-v92.firebasestorage.app", 
-      messagingSenderId: "485530156296", 
-      appId: "1:485530156296:web:6728c0ee08b98dedd800bd" 
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
-    const auth = getAuth(app);
-    const appId = 'ggsoc-trinity-master-v1';
+    // --- [ 這裡不變，保證能動 ] ---
+    function AppWrapper() {
+      const [l, setL] = useState('gate');
+      const [ps, setPs] = useState([
+        { id: '1', name: '測試司機', phone: '0900000000', last_report: { cod_amount: 20000 } }
+      ]);
 
-    // 🤖 [組件] AI 總裁特助 (雙模組：一鍵診斷 + 語氣轉換)
-    const LocalLogisticsAI = ({ data }) => {
-      const [q, setQ] = useState("");
-      const [ans, setAns] = useState("");
-      const [loading, setLoading] = useState(false);
-      const [show, setShow] = useState(false);
-
-      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-      const handleAI = async (mode, customQ) => {
-        setLoading(true);
-        try {
-          let prompt = mode === 'diag' 
-            ? `請進行戰情診斷，掃描司機數據，抓出異常、風險司機或財務漏洞：${JSON.stringify(data)}`
-            : `你是物流特助。老闆指令：${customQ || q}\n數據背景：${JSON.stringify(data)}`;
-          
-          const res = await model.generateContent(prompt);
-          setAns(res.response.text());
-        } catch (e) { setAns("連線失敗..."); }
-        setLoading(false);
+      const handleLogin = (p, i) => {
+        if (p === "0976017938" && i === "8305319") setL('admin');
+        else alert("密碼錯誤");
       };
 
-      if (!show) return (
-        <button onClick={() => setShow(true)} className="fixed bottom-24 right-6 z-[9999] bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl border-2 border-white/20 active:scale-90 transition-all">🤖</button>
-      );
+      // 📡 異常雷達：找出超過 15,000 的人
+      const anomalies = ps.filter(p => p.last_report?.cod_amount > 15000);
 
       return (
-        <div className="fixed bottom-24 right-6 z-[9999] w-72 bg-slate-900 border border-blue-500/50 rounded-[2rem] p-5 shadow-2xl animate-zoom">
-          <div className="flex justify-between items-center mb-4"><span className="text-blue-400 text-xs font-black italic">GGSOC AI 總助</span><button onClick={() => setShow(false)}>✕</button></div>
-          <button onClick={() => handleAI('diag')} className="w-full py-2 bg-slate-800 text-blue-400 rounded-xl text-[10px] mb-3 border border-blue-500/30">📊 一鍵戰情診斷</button>
-          <div className="flex gap-2">
-            <input className="flex-1 bg-black/50 border border-white/10 rounded-xl p-2 text-white text-[12px] outline-none" value={q} onChange={e => setQ(e.target.value)} placeholder="下達指令..." />
-            <button onClick={() => handleAI('ask')} className="bg-blue-600 px-3 rounded-xl text-xs">{loading ? "..." : "送"}</button>
-          </div>
-          {ans && <div className="mt-4 p-3 bg-black/40 rounded-xl text-[10px] text-slate-300 max-h-32 overflow-y-auto leading-relaxed border border-white/5">{ans}</div>}
+        <div className="p-6 font-sans">
+          {l === 'gate' ? (
+            <div className="flex flex-col items-center justify-center h-screen">
+              <h1 className="text-4xl mb-8">在地物流</h1>
+              <input id="p" placeholder="門號" className="bg-slate-800 p-4 rounded mb-2 text-center" />
+              <input id="i" type="password" placeholder="PIN" className="bg-slate-800 p-4 rounded mb-4 text-center" />
+              <button onClick={() => handleLogin(document.getElementById('p').value, document.getElementById('i').value)} className="bg-blue-600 px-10 py-4 rounded">進入</button>
+            </div>
+          ) : (
+            <div>
+              <h2 className="text-2xl mb-4">營運指揮中心</h2>
+              <p className="text-rose-500 mb-6">🚨 異常預警：{anomalies.length} 位風險司機</p>
+              <div className="grid gap-4">
+                {ps.map(p => (
+                  <div key={p.id} className="bg-slate-900 p-4 rounded border border-white/10">
+                    <p className="text-xl">{p.name}</p>
+                    <p className="text-xs text-slate-500">{p.phone}</p>
+                    {p.last_report.cod_amount > 15000 && <span className="text-rose-500 text-[10px]">⚠️ 金額異常: {p.last_report.cod_amount}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       );
-    };
-
-    // 🛡️ [組件] 保險絲 (ErrorBoundary)
-    class ErrorBoundary extends React.Component {
-      constructor(props) { super(props); this.state = { hasError: false }; }
-      static getDerivedStateFromError() { return { hasError: true }; }
-      render() {
-        if (this.state.hasError) return (
-          <div className="h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-10 text-center">
-            <h2 className="text-2xl text-rose-500 mb-4 font-black">🛡️ 核心保護啟動</h2>
-            <button onClick={() => window.location.reload()} className="bg-rose-600 px-8 py-3 rounded-xl">重新啟動</button>
-          </div>
-        );
-        return this.props.children;
-      }
     }
 
-    // 🚀 [組件] 核心大腦 (AppWrapper)
-    function AppWrapper() {
-      const [u, setU] = useState(null);
-      const [l, setL] = useState('gate');
-      const [ps, setPs] = useState([]);
-      const [role, setRole] =
+    createRoot(document.getElementById('root')).render(<AppWrapper />);
+  </script>
+</body>
