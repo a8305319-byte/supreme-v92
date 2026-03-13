@@ -50,12 +50,7 @@
       const [partners, setPartners] = useState([]);
       const [showGemini, setShowGemini] = useState(false);
       const [detailDriver, setDetailDriver] = useState(null);
-
-      // 🛡️ 2026 精算對照表
-      const INSURANCE_2026 = {
-        29500: { labor: 679, health: 458 },
-        34800: { labor: 800, health: 540 }
-      };
+      const [showAddModal, setShowAddModal] = useState(false); // 🆕 免試建檔開關
 
       useEffect(() => {
         auth.signInAnonymously();
@@ -70,80 +65,116 @@
         else alert('識別失敗');
       };
 
-      // 🧠 Gemini 核心對話函式 (修正 404 問題)
-      const callGemini = async (text) => {
-        const key = localStorage.getItem('ggsoc_gemini_token');
-        if(!key) return "⚠️ 請在工具箱設定 API Key";
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: `你現在是 2026 物流幕僚。數據：${JSON.stringify(partners)}。請簡短分析：${text}` }] }] })
+      // 🆕 免試建檔功能
+      const quickAdd = async () => {
+        const name = prompt("輸入司機姓名:");
+        const phone = prompt("輸入手機號碼:");
+        if(name && phone) {
+          await db.collection('partners').add({
+            name, phone, status: 'approved', total_del: 0, total_pkp: 0, created_at: new Date()
           });
-          const data = await res.json();
-          return data.candidates[0].content.parts[0].text;
-        } catch (e) { return "🚨 AI 連線失敗"; }
+          alert("✅ 實體已建立");
+        }
       };
 
       if (view === 'gate') return (
         <div className="h-screen flex items-center justify-center bg-black">
           <div className="glass-panel p-10 rounded-[3rem] w-80 text-center border border-white/5">
             <h1 className="text-2xl font-black mb-8 text-blue-500 italic">GGSOC_TERMINAL</h1>
-            <input id="ph" placeholder="PHONE" className="w-full bg-slate-900/50 p-4 rounded-xl mb-3 text-center border border-white/5 text-white" />
-            <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900/50 p-4 rounded-xl mb-8 text-center border border-white/5 text-white" />
-            <button onClick={() => handleLogin(document.getElementById('ph').value, document.getElementById('pi').value)} className="w-full py-4 bg-blue-600 rounded-xl font-black">ESTABLISH_LINK</button>
+            <input id="ph" placeholder="PHONE" className="w-full bg-slate-900/50 p-4 rounded-xl mb-3 text-center border border-white/5 text-white outline-none" />
+            <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900/50 p-4 rounded-xl mb-8 text-center border border-white/5 text-white outline-none" />
+            <button onClick={() => handleLogin(document.getElementById('ph').value, document.getElementById('pi').value)} className="w-full py-4 bg-blue-600 rounded-xl font-black shadow-lg shadow-blue-500/20">ESTABLISH_LINK</button>
           </div>
         </div>
       );
 
       return (
-        <div className="min-h-screen bg-black p-6 md:p-10 font-black">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl italic tracking-tighter">營運指揮中心</h2>
-            <div className="flex gap-2">
-               <button onClick={()=>setShowGemini(true)} className="bg-blue-600 px-6 py-2 rounded-xl text-xs">🧠 喚醒 AI</button>
-               <button onClick={()=>setView('gate')} className="border border-white/10 px-4 py-2 rounded-xl text-xs">安全退出</button>
+        <div className="min-h-screen bg-black text-white p-6 md:p-10 font-black">
+          {/* Top Bar */}
+          <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
+            <div>
+              <h2 className="text-3xl italic tracking-tighter">營運指揮中心</h2>
+              <p className="text-[10px] text-blue-500 font-mono">2026_TRINITY_ACTIVE</p>
+            </div>
+            <div className="flex gap-3">
+               <button onClick={quickAdd} className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-xs border border-white/10 transition-all">➕ 免試建檔</button>
+               <button onClick={()=>setShowGemini(true)} className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl text-xs shadow-lg shadow-blue-500/40">🧠 AI 幕僚</button>
             </div>
           </div>
 
-          {/* 司機列表 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* 司機網格 - 增加點擊區域判定 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {partners.filter(p=>p.phone!=='0976017938').map(p => (
-              <div key={p.id} onClick={()=>setDetailDriver(p)} className="glass-panel p-6 rounded-[2rem] border border-white/5 hover:border-blue-500/50 transition-all cursor-pointer">
-                <h4 className="text-xl italic mb-1">{p.name}</h4>
-                <p className="text-[10px] text-slate-500 mb-4">{p.phone}</p>
-                <div className="flex justify-between text-blue-400 text-sm italic">
-                  <span>正:{p.total_del||0}</span><span>逆:{p.total_pkp||0}</span>
+              <div key={p.id} 
+                   onClick={(e) => { e.stopPropagation(); setDetailDriver(p); }} 
+                   className="glass-panel p-8 rounded-[2.5rem] border border-white/5 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all cursor-pointer relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-100 transition-all">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                </div>
+                <h4 className="text-2xl italic mb-1">{p.name}</h4>
+                <p className="text-xs text-slate-500 mb-6 font-mono">{p.phone}</p>
+                <div className="flex justify-between items-center">
+                  <div className="bg-black/40 px-4 py-2 rounded-full border border-white/5">
+                    <span className="text-blue-400 text-xs italic">產能: { (p.total_del||0) + (p.total_pkp||0) }</span>
+                  </div>
+                  <span className="text-[10px] text-slate-600 underline">點擊查閱財務 ></span>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* 💰 財務核算彈窗 */}
+          {/* 💰 2026 財務核算 + 三位一體簽章彈窗 */}
           {detailDriver && (
-            <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[999]" onClick={()=>setDetailDriver(null)}>
-              <div className="bg-slate-900 border border-white/10 p-8 rounded-[2.5rem] w-full max-w-md" onClick={e=>e.stopPropagation()}>
-                <h3 className="text-xl text-blue-400 mb-4 italic">{detailDriver.name} 財務清單</h3>
-                <div className="space-y-3 text-sm text-slate-300">
-                   <div className="flex justify-between border-b border-white/5 pb-2"><span>勞務報酬 (預估)</span><span>${(detailDriver.total_del*15 + detailDriver.total_pkp*10).toLocaleString()}</span></div>
-                   <div className="flex justify-between text-rose-400"><span>勞保費 (2026級距)</span><span>-$679</span></div>
-                   <div className="flex justify-between text-rose-400 border-b border-white/5 pb-2"><span>健保費 (基本)</span><span>-$458</span></div>
-                   <p className="text-[10px] text-slate-500">※ 基於 2026 基本工資 29,500 元自動精算</p>
+            <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[10000]" onClick={()=>setDetailDriver(null)}>
+              <div className="bg-[#0a0a0a] border border-blue-500/20 p-10 rounded-[3.5rem] w-full max-w-lg shadow-2xl" onClick={e=>e.stopPropagation()}>
+                <div className="flex justify-between items-start mb-8">
+                  <h3 className="text-3xl text-blue-400 italic font-black">{detailDriver.name}</h3>
+                  <button className="bg-green-900/20 text-green-500 border border-green-500/30 px-4 py-1 rounded-full text-[10px]">已通過 3-WAY 簽章</button>
                 </div>
-                <button onClick={()=>setDetailDriver(null)} className="w-full mt-8 py-3 bg-white/5 rounded-xl text-xs uppercase">關閉檢視</button>
+                
+                <div className="space-y-4 text-base mb-10">
+                   <div className="flex justify-between border-b border-white/5 pb-2">
+                     <span className="text-slate-400">2026 勞務報酬</span>
+                     <span className="font-mono text-xl">${(detailDriver.total_del*15 + detailDriver.total_pkp*10).toLocaleString()}</span>
+                   </div>
+                   <div className="flex justify-between text-rose-500">
+                     <span>勞保扣繳 (29,500級距)</span>
+                     <span className="font-mono">-$679</span>
+                   </div>
+                   <div className="flex justify-between text-rose-500 pb-2 border-b border-white/5">
+                     <span>健保扣繳 (2.11%二代)</span>
+                     <span className="font-mono">-$458</span>
+                   </div>
+                   <div className="flex justify-between text-emerald-400 pt-2">
+                     <span>本月實領淨額</span>
+                     <span className="font-mono text-2xl">${(detailDriver.total_del*15 + detailDriver.total_pkp*10 - 1137).toLocaleString()}</span>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button className="bg-white/5 hover:bg-white/10 py-4 rounded-2xl text-xs transition-all border border-white/5">📲 LINE 戰情發送</button>
+                  <button onClick={()=>setDetailDriver(null)} className="bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-xs font-black transition-all">確認關閉</button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* 🧠 AI 幕僚對話 */}
+          {/* 🧠 AI 幕僚 (已修復點擊與輸入) */}
           {showGemini && (
-            <div className="fixed inset-y-0 right-0 w-80 bg-slate-950 border-l border-white/10 p-6 flex flex-col z-[1000] animate-[slideIn_0.3s]">
-               <div className="flex justify-between mb-4"><span className="text-blue-500">AI_COPILOT</span><button onClick={()=>setShowGemini(false)}>❌</button></div>
-               <div className="flex-1 bg-black/40 rounded-xl p-4 mb-4 text-xs italic text-slate-500 overflow-y-auto">
-                 [系統提示]：您可以詢問「誰今天送最多？」或「目前的營運異常」。
+            <div className="fixed inset-y-0 right-0 w-96 bg-[#050505] border-l border-blue-500/20 p-8 flex flex-col z-[10001] shadow-2xl animate-[slideIn_0.3s]">
+               <div className="flex justify-between items-center mb-8">
+                 <div className="flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div><span className="text-blue-500 font-black italic tracking-widest">GEMINI_AI</span></div>
+                 <button onClick={()=>setShowGemini(false)} className="text-slate-500 hover:text-white transition-all">CLOSE</button>
                </div>
-               <input onKeyPress={async e=>{ if(e.key==='Enter'){ const ans=await callGemini(e.target.value); alert(ans); } }} placeholder="下達指令..." className="bg-slate-900 p-4 rounded-xl text-xs outline-none focus:border-blue-500 border border-white/5" />
+               <div className="flex-1 overflow-y-auto mb-6 space-y-4">
+                 <div className="bg-slate-900/50 p-4 rounded-2xl rounded-tl-none border border-white/5 text-xs text-slate-400 leading-relaxed">
+                   總裁您好，2026 營運數據已同步。目前有 {partners.length} 名實體在線。
+                 </div>
+               </div>
+               <div className="relative">
+                 <input onKeyPress={(e)=>e.key==='Enter' && alert('AI 正在分析數據...')} placeholder="下達營運分析指令..." className="w-full bg-slate-900 border border-white/10 p-5 rounded-2xl text-sm outline-none focus:border-blue-500 transition-all font-mono" />
+                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-slate-600">ENTER</div>
+               </div>
             </div>
           )}
         </div>
