@@ -128,37 +128,75 @@ function DriverHub({ currentPartner, onLogout, db, globalSettings }) {
 // [此處回填您提供的 AdminHub 完整代碼，並在工具箱加入 system_lock 控制項]
 
 // --- 主要應用程式 (AppWrapper) ---
-function AppWrapper() {
-  const [user, setUser] = useState(null);
-  const [authRole, setAuthRole] = useState('guest');
-  const [partners, setPartners] = useState([]);
-  const [layer, setLayer] = useState('gate');
-  const [loading, setLoading] = useState(true);
-  const [spI, setSpI] = useState(null);
-  const [gs, setGs] = useState(null); // 全域設定
+function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLayer, writeGodLog, globalSettings }) {
+  const [adminTab, setAdminTab] = useState('formal'); 
+  const [sq, setSq] = useState("");
+  const [showSensitive, setShowSensitive] = useState({ global: false });
+  const [mT, setMT] = useState(null);
+  const [chatTarget, setChatTarget] = useState(null);
+  const [detailTarget, setDetailTarget] = useState(null);
+  const [showAiCopilot, setShowAiCopilot] = useState(false);
 
-  useEffect(() => {
-    onAuthStateChanged(auth, u => { if(u) setUser(u); else signInAnonymously(auth); setLoading(false); });
-    // 監聽全域設定 (天啟開關所在處)
-    onSnapshot(doc(db,'artifacts',window.__app_id,'public','data','settings','global'), d => { if(d.exists()) setGs(d.data()); });
-    onSnapshot(collection(db,'artifacts',window.__app_id,'public','data','partners'), s => {
-      setPartners(s.docs.map(d=>({id:d.id, ...d.data()})));
-    });
-  }, []);
+  // 🛡️ 總裁過濾邏輯：排除自己 (0976017938)
+  const visiblePartners = useMemo(() => (partners || []).filter(p => p.phone !== '0976017938'), [partners]);
 
-  // 登入邏輯 (保留 0976017938 造物主判斷)
-  const handleLogin = (phone, pin) => {
-    if (phone === "0976017938" && pin === "8305319") {
-       setAuthRole('super_admin'); setLayer('admin');
-    } else {
-       /* 原有登入邏輯 */
+  // 🤖 核心控制：處理全域開關切換
+  const handleToggleSwitch = async (field, currentValue) => {
+    try {
+      const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
+      await updateDoc(settingsRef, { [field]: !currentValue });
+      writeGodLog("系統開關", `切換 [${field}] 為 ${!currentValue ? 'ON' : 'OFF'}`);
+      showToast(`⚡ 模式已切換`);
+    } catch (err) {
+      showToast("❌ 同步失敗", true);
     }
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#020617]"><div className="loader"></div></div>;
+  // 🤖 AI 自動駕駛背景作業 (Auto-Pilot)
+  useEffect(() => {
+    if (globalSettings?.ai_auto_pilot && authRole === 'super_admin') {
+      const autoApprove = async () => {
+        const pendingList = visiblePartners.filter(p => 
+          p.status === 'pending' && 
+          (p.total_del > 0 || p.total_pkp > 0) && 
+          !p.has_conflict
+        );
+
+        if (pendingList.length > 0) {
+          for (const p of pendingList) {
+            await updateField(p.id, 'status', 'approved');
+          }
+          writeGodLog("AI 自動駕駛", `自動核准了 ${pendingList.length} 位有產出且無異常之司機`);
+          showToast(`🤖 AI 已自動核准 ${pendingList.length} 位司機`);
+        }
+      };
+      autoApprove();
+    }
+  }, [visiblePartners, globalSettings?.ai_auto_pilot]);
+
+  // 🤖 AI 戰情分析 (防崩潰修正版)
+  const aiInsights = useMemo(() => {
+    if (!visiblePartners.length) return { topDriver: { name: '觀測中' }, conflictCount: 0, zeroYield: [] };
+    const active = visiblePartners.filter(p => p.status === 'approved');
+    const topDriver = active.reduce((p, c) => ((p.total_del||0)+(p.total_pkp||0)) > ((c.total_del||0)+(c.total_pkp||0)) ? p : c, active[0] || {});
+    return { topDriver, conflictCount: active.filter(x => x.has_conflict).length, zeroYield: active.filter(x => (x.total_del||0)+(x.total_pkp||0) === 0) };
+  }, [visiblePartners]);
 
   return (
-    <div className="min-h-screen">
+    <div className="p-4 md:p-10 max-w-full mx-auto bg-[#020617] min-h-screen font-black animate-[fadeIn_0.5s]">
+      {/* 標題區：應用 Ghost Mode 偽裝 */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-6">
+        <div>
+          <h2 className="text-white text-4xl md:text-5xl italic font-black uppercase tracking-tighter">
+            {globalSettings?.ghost_mode ? '物流數據監控終端' : '營運指揮中心'}
+          </h2>
+          <div className="flex gap-2 mt-2">
+            <span className={`text-[10px] px-3 py-1 rounded-full border ${authRole==='super_admin'?'text-amber-500 border-amber-500/30 bg-amber-900/20':'text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-900/20'}`}>
+              {globalSettings?.ghost_mode ? '🔍 系統維護狀態 (STABLE)' : (authRole==='super_admin'?'👑 總裁造物主模式':'👑 營運總部')}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 w-full xl:w
       {layer === 'gate' && <Gate onLogin={handleLogin} />}
       {layer === 'admin' && <AdminHub authRole={authRole} partners={partners} globalSettings={gs} appId={window.__app_id} onLogout={()=>setLayer('gate')} />}
       {layer === 'driver' && <DriverHub currentPartner={partners.find(p=>p.id===spI)} db={db} globalSettings={gs} onLogout={()=>setLayer('gate')} />}
