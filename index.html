@@ -64,7 +64,34 @@
         } catch (e) { setAns("報告總裁：連線異常。"); }
         setLoading(false);
       };
+// 🛡️ [核心保護：保險絲] 
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return (
+      <div className="h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-10 text-center font-black">
+        <div className="bg-rose-900/20 p-8 rounded-[2rem] border border-rose-500/30 shadow-2xl">
+          <h2 className="text-3xl text-rose-500 mb-4 animate-pulse">🛡️ 底層核心保護啟動</h2>
+          <p className="text-slate-400 text-xs mb-8">偵測到代碼衝突，已暫停運行以保護數據安全性。</p>
+          <button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-600 rounded-xl text-white">🔄 重新連線</button>
+        </div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 
+// 🚀 [啟動馬達：渲染 App]
+try {
+  createRoot(document.getElementById('root')).render(
+    <ErrorBoundary>
+      <AppWrapper />
+    </ErrorBoundary>
+  );
+} catch (err) {
+  console.error("系統啟動失敗:", err);
+}
       // 模式 2：主動戰情診斷
       const diagnostic = async () => {
         setLoading(true);
