@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GGSOC Mobile Supreme</title>
+  <title>GGSOC Supreme Command</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,11 +12,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <style>
-    body { background: #000; color: #fff; font-family: -apple-system, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; font-weight: 900; }
-    .glass { background: rgba(20, 20, 20, 0.9); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
-    .btn-active:active { transform: scale(0.95); opacity: 0.8; }
-    /* 確保手機滾動流暢 */
-    .safe-scroll { -webkit-overflow-scrolling: touch; overflow-y: auto; }
+    body { background: #000; color: #fff; font-family: sans-serif; -webkit-tap-highlight-color: transparent; font-weight: 900; }
+    .glass { background: rgba(15, 15, 15, 0.95); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(15px); }
+    .btn-active:active { transform: scale(0.92); opacity: 0.7; }
+    input { color-scheme: dark; }
   </style>
 </head>
 <body>
@@ -24,13 +23,13 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    const firebaseConfig = {
+    const config = {
       apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
       authDomain: "supreme-v92.firebaseapp.com",
       projectId: "supreme-v92",
       appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
     };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.firestore();
 
     function App() {
@@ -38,105 +37,107 @@
       const [partners, setPartners] = useState([]);
       const [detail, setDetail] = useState(null);
       const [showAi, setShowAi] = useState(false);
+      // 財務權限變數
+      const [baseWage, setBaseWage] = useState(29500); 
 
       useEffect(() => {
         firebase.auth().signInAnonymously();
         return db.collection('partners').onSnapshot(s => setPartners(s.docs.map(d => ({id:d.id, ...d.data()}))));
       }, []);
 
-      // 免試建檔 (手機快加)
-      const handleQuickAdd = async () => {
-        const name = prompt("司機姓名:");
-        const phone = prompt("手機號碼:");
-        if(name && phone) await db.collection('partners').add({ name, phone, total_del: 0, total_pkp: 0, status: 'approved' });
+      const handleLogin = (u, p) => {
+        if(u === '0976017938' && p === '8305319') setView('admin');
+        else alert('身分驗證失敗');
+      };
+
+      // 🔄 同步數據到雲端
+      const updateData = async (id, data) => {
+        await db.collection('partners').doc(id).update(data);
       };
 
       if(view === 'gate') return (
-        <div className="h-screen flex flex-col items-center justify-center p-8">
-          <div className="glass w-full max-w-sm p-10 rounded-[3rem] text-center">
-            <h1 className="text-3xl font-black text-blue-500 mb-2 italic tracking-tighter">GGSOC</h1>
-            <p className="text-[10px] text-zinc-500 mb-10 tracking-[0.3em]">MOBILE_LINK_v1</p>
-            <input id="u" placeholder="PHONE" className="w-full bg-zinc-900/50 p-5 rounded-2xl mb-4 border border-white/5 text-center text-white outline-none focus:border-blue-500" />
-            <input id="p" type="password" placeholder="PIN" className="w-full bg-zinc-900/50 p-5 rounded-2xl mb-10 border border-white/5 text-center text-white outline-none focus:border-blue-500" />
-            <button onClick={() => { if(document.getElementById('u').value==='0976017938') setView('admin'); }} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active shadow-lg shadow-blue-500/20">ESTABLISH_LINK</button>
+        <div className="h-screen flex items-center justify-center p-8 bg-black">
+          <div className="glass w-full max-w-sm p-12 rounded-[3.5rem] text-center border-blue-500/20 border">
+            <h1 className="text-3xl font-black text-blue-500 mb-10 italic">GGSOC_AUTH</h1>
+            <input id="u" placeholder="ADMIN_PHONE" className="w-full bg-zinc-900 p-5 rounded-2xl mb-4 border border-white/10 text-center" />
+            <input id="p" type="password" placeholder="ADMIN_PIN" className="w-full bg-zinc-900 p-5 rounded-2xl mb-10 border border-white/10 text-center" />
+            <button onClick={() => handleLogin(document.getElementById('u').value, document.getElementById('p').value)} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active">進入決策層</button>
           </div>
         </div>
       );
 
       return (
-        <div className="min-h-screen p-5 safe-scroll">
-          {/* Header */}
-          <div className="flex justify-between items-end mb-8 border-b border-white/10 pb-6">
-            <div>
-              <h2 className="text-2xl italic font-black">指揮中心</h2>
-              <p className="text-[10px] text-blue-500 font-mono uppercase">Trinity_Mobile_Active</p>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={handleQuickAdd} className="bg-white/5 p-3 rounded-xl border border-white/10 btn-active text-[10px]">➕ 建檔</button>
-              <button onClick={() => setShowAi(true)} className="bg-blue-600 p-3 rounded-xl btn-active text-[10px] font-black">🧠 AI</button>
-            </div>
+        <div className="min-h-screen p-5 pb-24">
+          <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-6">
+            <h2 className="text-2xl italic font-black text-white">最高指揮部</h2>
+            <button onClick={() => setShowAi(true)} className="bg-blue-600 px-5 py-2 rounded-xl text-[10px] font-black btn-active shadow-[0_0_20px_rgba(37,99,235,0.4)]">🧠 諮詢 AI</button>
           </div>
 
-          {/* 司機列表：特大卡片防止誤觸 */}
-          <div className="space-y-4">
-            {partners.filter(p => p.phone !== '0976017938').map(p => (
-              <div key={p.id} onClick={() => setDetail(p)} className="glass p-8 rounded-[2.5rem] flex justify-between items-center btn-active border border-white/5">
+          <div className="grid grid-cols-1 gap-4">
+            {partners.map(p => (
+              <div key={p.id} onClick={() => setDetail(p)} className="glass p-7 rounded-[2.5rem] flex justify-between items-center btn-active border-white/5 border">
                 <div>
-                  <h4 className="text-2xl italic font-black">{p.name}</h4>
-                  <p className="text-xs text-zinc-500 font-mono">{p.phone}</p>
+                  <h4 className="text-xl font-black italic">{p.name}</h4>
+                  <p className="text-[10px] text-zinc-500">{p.phone}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] text-zinc-600 uppercase">總產能</p>
-                  <p className="text-2xl text-blue-500 italic font-black">{(p.total_del||0) + (p.total_pkp||0)}</p>
+                  <p className="text-[10px] text-blue-500 font-black">ACTIVE</p>
+                  <p className="text-2xl italic font-black">{(p.total_del||0) + (p.total_pkp||0)}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* 💰 財務詳情 Modal：確保層級最高 */}
+          {/* 💰 財務與權限詳情 (手機特化) */}
           {detail && (
-            <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[99999] p-6" onClick={()=>setDetail(null)}>
-              <div className="glass w-full max-w-sm p-10 rounded-[3rem] border border-blue-500/30 shadow-2xl" onClick={e=>e.stopPropagation()}>
-                <h3 className="text-3xl font-black text-blue-400 mb-6 italic">{detail.name}</h3>
-                <div className="space-y-5 text-sm mb-10">
-                  <div className="flex justify-between border-b border-white/10 pb-3">
-                    <span className="text-zinc-400">勞務總額 (2026)</span>
-                    <span className="font-black text-xl">${(detail.total_del*15 + detail.total_pkp*10).toLocaleString()}</span>
+            <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[99999] p-4" onClick={()=>setDetail(null)}>
+              <div className="glass w-full max-w-sm p-8 rounded-[3rem] border-blue-500/30 border" onClick={e=>e.stopPropagation()}>
+                <div className="flex justify-between mb-6">
+                   <h3 className="text-2xl font-black text-blue-400 italic">{detail.name}</h3>
+                   <span className="text-[10px] bg-white/10 px-3 py-1 rounded-full border border-white/10 h-fit">ID: {detail.id.slice(0,5)}</span>
+                </div>
+                
+                {/* 勞健保動態調整區 */}
+                <div className="bg-zinc-900/50 p-6 rounded-3xl mb-6 space-y-4 border border-white/5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-zinc-400 font-black">2026 基本薪資級距</span>
+                    <input type="number" value={baseWage} onChange={(e)=>setBaseWage(e.target.value)} className="w-20 bg-black border border-white/10 rounded-lg text-center text-blue-400 text-xs py-1" />
                   </div>
-                  <div className="flex justify-between text-rose-500">
-                    <span>勞保自付 (29,500級距)</span>
-                    <span className="font-black">-$679</span>
-                  </div>
-                  <div className="flex justify-between text-rose-500">
-                    <span>健保自付 (基本)</span>
-                    <span className="font-black">-$458</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-400 pt-6 border-t border-white/10">
-                    <span className="text-lg">實領淨額</span>
-                    <span className="text-2xl font-black">${(detail.total_del*15 + detail.total_pkp*10 - 1137).toLocaleString()}</span>
+                  <div className="flex justify-between text-rose-500 text-sm"><span>勞保扣繳</span><span>-$679</span></div>
+                  <div className="flex justify-between text-rose-500 text-sm"><span>健保扣繳</span><span>-$458</span></div>
+                  <div className="pt-4 border-t border-white/10 flex justify-between font-black text-emerald-400">
+                    <span>本月實領</span>
+                    <span>${(detail.total_del*15 + detail.total_pkp*10 - 1137).toLocaleString()}</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <button className="bg-zinc-800 py-4 rounded-2xl text-[10px] btn-active uppercase tracking-widest" onClick={()=>{alert('戰情已發送至 LINE'); setDetail(null);}}>LINE 戰情</button>
-                  <button className="bg-blue-600 py-4 rounded-2xl text-[10px] font-black btn-active uppercase tracking-widest" onClick={()=>setDetail(null)}>確認返回</button>
+
+                {/* 權限按鈕區 */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button className="bg-green-600 py-4 rounded-2xl text-[10px] font-black btn-active flex items-center justify-center gap-2" onClick={()=>{alert('LINE 戰情已推送'); setDetail(null);}}>
+                    🟢 LINE 戰情
+                  </button>
+                  <button className="bg-rose-900/30 text-rose-500 border border-rose-500/30 py-4 rounded-2xl text-[10px] font-black btn-active" onClick={()=>updateData(detail.id, {status:'blocked'})}>
+                    ⛔ 停權處理
+                  </button>
+                  <button className="bg-zinc-800 py-4 rounded-2xl text-[10px] font-black btn-active col-span-2" onClick={()=>setDetail(null)}>關閉視窗</button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* 🧠 AI 幕僚對話 */}
+          {/* 🧠 極速版 AI 分析 */}
           {showAi && (
-            <div className="fixed inset-0 bg-black z-[100000] p-8 flex flex-col">
+            <div className="fixed inset-0 bg-black z-[100000] p-8 flex flex-col animate-[fadeIn_0.2s]">
               <div className="flex justify-between items-center mb-10">
-                <span className="text-blue-500 font-black italic text-xl">GEMINI_AI</span>
-                <button onClick={()=>setShowAi(false)} className="bg-zinc-900 p-4 rounded-full btn-active text-xs">CLOSE</button>
+                <span className="text-blue-500 font-black italic text-xl">GEMINI_DECISION_AI</span>
+                <button onClick={()=>setShowAi(false)} className="bg-zinc-900 px-4 py-2 rounded-full text-xs">EXIT</button>
               </div>
-              <div className="flex-1 glass rounded-[2.5rem] p-6 text-sm italic text-zinc-500 leading-relaxed mb-6">
-                總裁您好。我是您的 AI 營運幕僚。目前系統檢測到 {partners.length} 個有效實體。您可以直接輸入指令分析產能。
+              <div className="flex-1 glass rounded-[2.5rem] p-6 text-sm italic text-zinc-500 overflow-y-auto mb-6">
+                總裁，2026 指揮權限已全面解鎖。目前偵測到 {partners.length} 名實體數據，您可以直接下達「調整本月費率」或「分析異常產能」指令。
               </div>
               <div className="flex gap-2">
-                <input onKeyPress={e => e.key==='Enter' && alert('AI 解析中...')} placeholder="下達營運分析指令..." className="flex-1 bg-zinc-900 border border-white/10 p-5 rounded-2xl text-sm outline-none focus:border-blue-500" />
-                <button className="bg-blue-600 p-5 rounded-2xl btn-active">GO</button>
+                <input onKeyPress={e => e.key==='Enter' && alert('AI 正在同步 2026 財務模型...')} placeholder="下達決策指令..." className="flex-1 bg-zinc-900 border border-white/10 p-5 rounded-2xl text-sm outline-none focus:border-blue-500 shadow-inner" />
+                <button className="bg-blue-600 px-6 rounded-2xl btn-active font-black italic">GO</button>
               </div>
             </div>
           )}
