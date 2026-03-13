@@ -43,9 +43,26 @@
 
   <script type="text/babel" data-type="module">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
-const createRoot = ReactDOM.createRoot;
-
-// 🌟 Firebase Initialization (Offline First)
+// --- 2026 員工自付費用對照表 (精準對應圖片數據) ---
+const INSURANCE_TABLE_2026 = {
+  11100: { labor: 277, health: 458 },
+  12540: { labor: 313, health: 458 },
+  13500: { labor: 338, health: 458 },
+  15840: { labor: 396, health: 458 },
+  16500: { labor: 413, health: 458 },
+  17280: { labor: 432, health: 458 },
+  17880: { labor: 447, health: 458 },
+  19047: { labor: 476, health: 458 },
+  20008: { labor: 500, health: 458 },
+  21009: { labor: 525, health: 458 },
+  22000: { labor: 550, health: 458 },
+  23100: { labor: 577, health: 458 },
+  24000: { labor: 600, health: 458 },
+  25250: { labor: 632, health: 458 },
+  26400: { labor: 660, health: 458 },
+  27600: { labor: 690, health: 458 },
+  28590: { labor: 715, health: 458 }
+};
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
