@@ -116,15 +116,44 @@ const LocalLogisticsAI = ({ data }) => {
     } catch (e) { setAns("連線失敗，請稍後再試。"); }
     setLoading(false);
   };
+<script type="text/babel" data-type="module">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const createRoot = ReactDOM.createRoot;
 
-  if(!show) return <button onClick={()=>setShow(true)} style={{position:'fixed', bottom:'100px', right:'20px', zIndex:99999, background:'#3b82f6', color:'#fff', padding:'12px', borderRadius:'50%', boxShadow:'0 4px 15px rgba(0,0,0,0.4)', border:'none'}}>🤖</button>;
+// 🚀 [AI 總裁特助] - 手機修正版
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
+const LocalLogisticsAI = ({ data }) => {
+  const [q, setQ] = useState("");
+  const [ans, setAns] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
+
+  const ask = async () => {
+    if (!q) return;
+    setLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const res = await model.generateContent(`你是在地物流 AI 特助。老闆很懶，請精簡建議。數據：${JSON.stringify(data)}\n指令：${q}`);
+      setAns(res.response.text());
+    } catch (e) { setAns("連線失敗，請稍後再試。"); }
+    setLoading(false);
+  };
+
+  // 這一行最重要：它會強制浮現在所有畫面最前方
   return (
-    <div style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><span style={{fontSize:'12px', color:'#60a5fa', fontWeight:'900'}}>GGSOC AI 助理</span><button onClick={()=>setShow(false)} style={{color:'#94a3b8', background:'none', border:'none'}}>✕</button></div>
-      <input style={{ width: '100%', background: '#0f172a', border: '1px solid #334155', padding: '10px', borderRadius: '10px', color: '#fff', marginBottom: '10px', fontSize:'14px', outline:'none' }} value={q} onChange={e => setQ(e.target.value)} placeholder="分析數據或下指令..." />
-      <button onClick={ask} style={{ width: '100%', background: '#3b82f6', color:'#fff', padding: '10px', borderRadius: '10px', fontSize:'14px', border:'none', fontWeight:'bold' }} disabled={loading}>{loading ? "運算中..." : "問 AI"}</button>
-      {ans && <div style={{ marginTop: '10px', fontSize: '12px', background: '#0f172a', padding: '10px', borderRadius: '10px', maxHeight: '150px', overflowY: 'auto', border:'1px solid #334155', whiteSpace: 'pre-wrap' }}>{ans}</div>}
+    <div style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 999999 }}>
+      {!show ? (
+        <button onClick={()=>setShow(true)} style={{ background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>
+      ) : (
+        <div style={{ width: '280px', background: '#0f172a', border: '2px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><span style={{fontSize:'12px', fontWeight:'900', color:'#60a5fa'}}>GGSOC AI 助理</span><button onClick={()=>setShow(false)} style={{background:'none', border:'none', color:'#94a3b8'}}>✕</button></div>
+          <input style={{ width: '100%', background: '#1e293b', border: '1px solid #334155', padding: '10px', borderRadius: '10px', color: '#fff', marginBottom: '10px', outline: 'none' }} value={q} onChange={e => setQ(e.target.value)} placeholder="分析數據..." />
+          <button onClick={ask} style={{ width: '100%', background: '#3b82f6', color: '#fff', padding: '10px', borderRadius: '10px', border: 'none', fontWeight: 'bold' }} disabled={loading}>{loading ? "..." : "問 AI"}</button>
+          {ans && <div style={{ marginTop: '10px', fontSize: '11px', background: '#000', padding: '10px', borderRadius: '10px', maxHeight: '120px', overflowY: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' }}>{ans}</div>}
+        </div>
+      )}
     </div>
   );
 };
