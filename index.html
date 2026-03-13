@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GGSOC 2026 數位結算中樞</title>
+    <title>GGSOC 2026 數位作業系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { background-color: #f1f5f9; font-family: "Inter", "PingFang TC", sans-serif; }
-        .system-card { border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid #e2e8f0; }
-        .btn-action { background: #0f172a; color: white; transition: all 0.2s; border-radius: 0.5rem; }
-        .btn-action:active { transform: scale(0.98); }
-        .grid-bg { background-image: linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px); background-size: 20px 20px; }
+        body { background-color: #f1f5f9; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
+        .work-card { border-radius: 12px; border: 1px solid #e2e8f0; background: white; transition: all 0.2s; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .btn-work { background: #0f172a; color: white; border-radius: 8px; font-weight: 700; transition: all 0.2s; }
+        .btn-work:active { transform: scale(0.98); }
+        .btn-work:disabled { background: #94a3b8; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -22,79 +23,116 @@
         const { useState } = React;
         const App = () => {
             const [step, setStep] = useState('login'); 
+            const [hasInterviewed, setHasInterviewed] = useState(false);
             const [user, setUser] = useState({ phone: '', id: '' });
 
             if (step === 'login') return (
-                <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100 grid-bg">
-                    <div className="w-full max-w-sm bg-white p-8 system-card">
-                        <div className="mb-8">
-                            <h1 className="text-xl font-black text-slate-900 tracking-tight">GGSOC 2026</h1>
-                            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Administrative Access</p>
+                <div className="min-h-screen flex items-center justify-center p-6">
+                    <div className="w-full max-w-sm bg-white p-8 work-card shadow-2xl">
+                        <div className="mb-8 border-l-4 border-slate-900 pl-4">
+                            <h1 className="text-xl font-black text-slate-900 uppercase">GGSOC 2026</h1>
+                            <p className="text-slate-400 text-[10px] font-bold tracking-widest">系統作業登入</p>
                         </div>
                         <div className="space-y-4">
-                            <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">手機號碼</label>
-                                <input onChange={e => setUser({...user, phone: e.target.value})} placeholder="09XX-XXX-XXX" className="w-full bg-slate-50 p-3 rounded-lg text-sm font-bold border border-slate-200 outline-none focus:border-slate-900" />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">身分驗證 (工號/末四碼)</label>
-                                <input type="password" onChange={e => setUser({...user, id: e.target.value})} placeholder="****" className="w-full bg-slate-50 p-3 rounded-lg text-sm font-bold border border-slate-200 outline-none focus:border-slate-900" />
-                            </div>
-                            <button onClick={() => user.phone && user.id ? setStep('payout') : null} className="w-full btn-action font-bold py-3 text-sm mt-4 shadow-lg">驗證登入</button>
+                            <input onChange={e => setUser({...user, phone: e.target.value})} placeholder="手機號碼" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-lg font-bold outline-none focus:border-slate-900" />
+                            <input onChange={e => setUser({...user, id: e.target.value})} placeholder="工號 / 身分證末四碼" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-lg font-bold outline-none focus:border-slate-900" />
+                            <button onClick={() => user.phone && user.id ? setStep('dashboard') : null} className="w-full btn-work py-4 mt-4 shadow-lg">進入工作系統</button>
                         </div>
+                    </div>
+                </div>
+            );
+
+            if (step === 'dashboard') return (
+                <div className="min-h-screen bg-slate-50 p-6">
+                    <div className="max-w-md mx-auto">
+                        <header className="mb-8 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-black text-slate-900 italic">系統作業看板</h2>
+                                <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Task Dashboard</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs font-bold text-slate-900">{user.phone}</p>
+                                <p className="text-[10px] text-slate-400">ID: {user.id}</p>
+                            </div>
+                        </header>
+
+                        <div className="space-y-4">
+                            {/* 任務一：行政核對 (原面試功能) */}
+                            <div className="work-card p-6 flex justify-between items-center">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className={`status-dot ${hasInterviewed ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                                        <h3 className="font-bold text-slate-800">行政作業核對</h3>
+                                    </div>
+                                    <p className="text-xs text-slate-400">法規告知與身分確認</p>
+                                </div>
+                                <button 
+                                    onClick={() => setStep('interview')} 
+                                    disabled={hasInterviewed}
+                                    className={`px-4 py-2 text-xs font-bold rounded-lg ${hasInterviewed ? 'bg-slate-100 text-slate-400' : 'bg-slate-900 text-white'}`}
+                                >
+                                    {hasInterviewed ? '已完成' : '去執行'}
+                                </button>
+                            </div>
+
+                            {/* 任務二：薪資結算領取 */}
+                            <div className={`work-card p-6 flex justify-between items-center ${!hasInterviewed ? 'opacity-50' : ''}`}>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="status-dot bg-slate-300"></div>
+                                        <h3 className="font-bold text-slate-800">薪資結算發放</h3>
+                                    </div>
+                                    <p className="text-xs text-slate-400">本期應領：$9,789</p>
+                                </div>
+                                <button 
+                                    onClick={() => hasInterviewed ? setStep('payout') : alert('請先完成行政核對')} 
+                                    className="bg-slate-900 text-white px-4 py-2 text-xs font-bold rounded-lg"
+                                >
+                                    去領錢
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            if (step === 'interview') return (
+                <div className="min-h-screen bg-slate-50 p-6 flex items-center">
+                    <div className="w-full max-w-md mx-auto bg-white work-card p-8 shadow-xl">
+                        <h3 className="text-lg font-black text-slate-900 mb-6">行政作業核對 (作業編號: INT-2026)</h3>
+                        <div className="space-y-6 text-sm text-slate-600 font-medium">
+                            <p className="border-l-2 border-slate-200 pl-4">1. 依 2026 法規，系統將自動扣繳 2.11% 二代健保費。</p>
+                            <p className="border-l-2 border-slate-200 pl-4">2. 領錢時需進行數位簽名，簽名即視為認可對帳單金額。</p>
+                            <p className="border-l-2 border-slate-200 pl-4">3. 為確保撥款順利，需配合系統進行影像採集紀錄。</p>
+                        </div>
+                        <button onClick={() => {setHasInterviewed(true); setStep('dashboard');}} className="w-full btn-work py-4 mt-10">我已瞭解並同意上述作業規範</button>
                     </div>
                 </div>
             );
 
             if (step === 'payout') return (
-                <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center">
-                    <div className="w-full max-w-md">
-                        <div className="flex justify-between items-end mb-6">
-                            <h2 className="text-lg font-black text-slate-900">結算報表</h2>
-                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">狀態：待簽收</span>
+                <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center justify-center">
+                    <div className="w-full max-w-md bg-white work-card p-8 shadow-xl">
+                        <div className="text-center mb-8">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">確認撥款金額</p>
+                            <h2 className="text-5xl font-black text-slate-900 mt-2">$9,789</h2>
+                            <p className="text-[10px] text-red-500 font-bold mt-2">已自動扣除 2.11% 行政規費</p>
                         </div>
-                        
-                        <div className="bg-white system-card p-6 mb-4">
-                            <div className="flex justify-between items-start mb-6 pb-4 border-b border-slate-50">
-                                <div>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase">應撥總額 (Net Payout)</p>
-                                    <h3 className="text-4xl font-black text-slate-900 mt-1">$9,789</h3>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[10px] text-slate-400 font-bold">日期</p>
-                                    <p className="text-xs font-bold text-slate-900">2026.03.14</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3 mb-8">
-                                <div className="flex justify-between text-xs font-bold text-slate-500">
-                                    <span>跑車勞務報酬</span>
-                                    <span>$10,000</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-bold text-red-500">
-                                    <span>二代健保代扣 (2.11%)</span>
-                                    <span>- $211</span>
-                                </div>
-                            </div>
-
-                            <div className="w-full h-32 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center mb-6">
-                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">數位簽名區 (Signature)</span>
-                            </div>
-
-                            <button onClick={() => setStep('done')} className="w-full btn-action font-bold py-4 text-sm shadow-xl">確認領取薪資</button>
+                        <div className="w-full h-32 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center mb-8">
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">在此簽名確認 (Digital Signature)</span>
                         </div>
-                        <p className="text-center text-[8px] text-slate-300 font-mono">HASH: 812-GGSOC-2026-PAYROLL-SECURED</p>
+                        <button onClick={() => setStep('done')} className="w-full btn-work py-4 shadow-xl">簽署並領取</button>
                     </div>
                 </div>
             );
 
             return (
-                <div className="min-h-screen flex items-center justify-center p-10 bg-slate-50 text-center">
-                    <div className="bg-white p-10 system-card max-w-xs">
-                        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-6">✓</div>
-                        <h2 className="text-xl font-black text-slate-900">核發完成</h2>
-                        <p className="text-slate-500 text-xs mt-3 font-bold leading-relaxed">款項已排入銀行發放流程。<br/>相關紀錄已加密封存。</p>
-                        <button onClick={() => window.location.reload()} className="mt-8 text-slate-400 text-[10px] font-bold border-b border-slate-200 pb-1">返回系統</button>
+                <div className="min-h-screen flex items-center justify-center bg-slate-50 p-10">
+                    <div className="text-center bg-white p-12 work-card shadow-xl max-w-xs">
+                        <div className="text-5xl mb-6">✅</div>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">作業完成</h2>
+                        <p className="text-slate-500 text-xs mt-4 font-bold">款項已發放至您的帳戶。<br/>系統已封存本次作業紀錄。</p>
+                        <button onClick={() => window.location.reload()} className="mt-8 text-slate-400 text-[10px] font-bold border-b border-slate-200">返回看板</button>
                     </div>
                 </div>
             );
