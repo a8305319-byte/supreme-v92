@@ -51,17 +51,22 @@
       const [loading, setLoading] = useState(false);
       const [show, setShow] = useState(false);
 
-      const const diagnostic = async () => {
-    setLoading(true);
+      const diagnostic = async () => {
+  setLoading(true);
+  try {
     const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
       systemInstruction: "你是在地物流的老闆特助。請分析數據並回報：1. 今日 COD 總金額。2. 異常司機名單與原因。3. 表現最穩定的前三名。請用條列式，語氣要精煉、霸氣，像是在跟總裁匯報。"
     });
-    const res = await model.generateContent(`目前全體司機數據快照：${JSON.stringify(data)}`);
+    // 這裡我多幫你加了一個安全檢查，防止 data 是空的
+    const res = await model.generateContent(`目前全體司機數據快照：${JSON.stringify(data || [])}`);
     setAns(res.response.text());
-    setLoading(false);
-  };
+  } catch (e) {
+    setAns("報告總裁：AI 能量不足，請檢查連線或金鑰。");
+  }
+  setLoading(false);
+};
       if (!show) return <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>;
 
       return (
