@@ -330,36 +330,73 @@ function ChatModal({ target, currentUserRole, onClose }) {
 // 🧑‍💼 管理/會計專屬：數據錄入與初審面板
 // ==========================================
 function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
+  // --- 狀態定義 ---
   const [deductionAmount, setDeductionAmount] = useState(partner.current_deduction || 0);
   const [deductionReason, setDeductionReason] = useState(partner.deduction_reason || "");
   const [bonusAmount, setBonusAmount] = useState(partner.current_bonus || 0);
   const [isTaskDone, setIsTaskDone] = useState(partner.task_5000_done || false);
-  const [tab, setTab] = useState('audit'); // audit, finance, files
+  const [tab, setTab] = useState('audit');
+  
+  // --- 2026 新增核算欄位 ---
+  const [insuranceBracket, setInsuranceBracket] = useState(partner.insurance_bracket || 0);
+  const [enableSecGen, setEnableSecGen] = useState(partner.enable_sec_gen || false);
+  const [dependents, setDependents] = useState(partner.dependents || 0);
 
+  // --- 核心邏輯：2026 財務自動精算 ---
   const handleSaveFinance = () => {
+    // 1. 基礎收入與獎金
+    const baseIncome = (partner.total_del * (partner.custom_del_price || 15)) + (partner.total_pkp * (partner.custom_pkp_price || 10));
     let finalBonus = Number(bonusAmount);
     if (isTaskDone && finalBonus < 5000) finalBonus += 5000;
-    onUpdate(partner.id, {
+    
+    // 2. 自動查表：勞健保自付額
+    const entry = INSURANCE_TABLE_2026[insuranceBracket] || { labor: 0, health: 0 };
+    const laborFee = entry.labor;
+    const healthFee = Math.round(entry.health * (1 + dependents));
+    
+    // 3. 二代健保計算 (20,000 門檻, 2.11%)
+    const totalForSecGen = baseIncome + finalBonus;
+    const secGenFee = enableSecGen && totalForSecGen >= 20000 ? Math.round(totalForSecGen * 0.0211) : 0;
+
+    const payload = {
       current_deduction: Number(deductionAmount),
       deduction_reason: deductionReason,
       current_bonus: finalBonus,
-      task_5000_done: isTaskDone
-    });
-    showToast("✅ 獎懲數據已同步至結算草稿");
+      task_5000_done: isTaskDone,
+      insurance_bracket: Number(insuranceBracket),
+      enable_sec_gen: enableSecGen,
+      dependents: dependents,
+      labor_fee: laborFee,
+      health_fee: healthFee,
+      sec_gen_fee: secGenFee
+    };
+
+    // ⚡ 造物主特權：如果是您操作，直接繞過攔截站發布
+    if (authRole === 'super_admin') {
+      payload.salary_status = 'pending_sign';
+      showToast("⚡ 神諭降臨：數據已強制覆寫並放行");
+    } else {
+      showToast("✅ 核算數據已存入草稿");
+    }
+    
+    onUpdate(partner.id, null, payload);
   };
 
   return (
     <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom font-black" onClick={onClose}>
       <div className="bg-slate-900 border border-blue-500/30 p-6 rounded-[2rem] w-full max-w-lg h-[80vh] flex flex-col relative shadow-2xl" onClick={e=>e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-slate-800 rounded-full hover:bg-rose-500 text-white"><X size={16}/></button>
+        
+        {/* 頭部資訊 */}
         <div className="mb-4 border-b border-white/10 pb-4">
           <h3 className="text-2xl text-blue-400 italic mb-1 flex items-center gap-2"><User size={24}/> {partner.name} <span className="text-xs text-slate-500 not-italic font-mono">{partner.phone}</span></h3>
-          <p className="text-[10px] text-slate-400">目前累積正件：{partner.total_del} / 逆收：{partner.total_pkp}</p>
+          <p className="text-[10px] text-slate-400 uppercase tracking-widest">目前累積正件：{partner.total_del} / 逆收：{partner.total_pkp}</p>
         </div>
         
+        {/* 頁籤切換 */}
         <div className="flex gap-2 mb-4">
-          <button onClick={()=>setTab('audit')} className={`flex-1 py-2 rounded-lg text-xs transition-all ${tab==='audit'?'bg-blue-600 text-white':'bg-slate-800 text-slate-400'}`}>每日報帳審核</button>
-          <button onClick={()=>setTab('finance')} className={`flex-1 py-2 rounded-lg text-xs transition-all ${tab==='finance'?'bg-amber-600 text-white':'bg-slate-800 text-slate-400'}`}>扣款與獎金錄入</button>
+          <button onClick={()=>setTab('audit')} className={`flex-1 py-2 rounded-lg text-xs transition-all ${tab==='audit'?'bg-blue-600 text-white':'bg-slate-800 text-slate-400'}`}>報帳審核</button>
+          <button onClick={()=>setTab('finance')} className={`flex-1 py-2 rounded-lg text-xs transition-all ${tab==='finance'?'bg-amber-600 text-white':'bg-slate-800 text-slate-400'}`}>財務核算</button>
           <button onClick={()=>setTab('files')} className={`flex-1 py-2 rounded-lg text-xs transition-all ${tab==='files'?'bg-indigo-600 text-white':'bg-slate-800 text-slate-400'}`}>檔案調閱</button>
         </div>
 
@@ -367,69 +404,72 @@ function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
           {tab === 'audit' && (
             <div className="space-y-4">
               <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
-                <p className="text-sm text-white mb-2">最新回傳照片 (包含水印防偽)</p>
-                {partner.last_photo ? (
-                  <img src={partner.last_photo} alt="Receipt" className="w-full rounded-lg border border-white/10" />
-                ) : (
-                  <div className="h-32 bg-black/50 rounded-lg flex items-center justify-center text-slate-600 text-xs">今日無照片回傳</div>
-                )}
+                <p className="text-sm text-white mb-2 italic">最新回傳單據</p>
+                {partner.last_photo ? <img src={partner.last_photo} className="w-full rounded-lg" /> : <div className="h-32 bg-black/50 rounded-lg flex items-center justify-center text-slate-600 text-xs italic">無照片回傳</div>}
               </div>
-              <button onClick={()=>{ onUpdate(partner.id, { has_conflict: true, conflict_reason: "會計標記異常：單據不符" }); showToast("已標記為異常列管"); }} className="w-full py-3 bg-rose-900/40 text-rose-400 rounded-xl border border-rose-500/30 text-sm active:scale-95">🚨 標記為異常 (退回說明)</button>
+              <button onClick={()=>{ onUpdate(partner.id, null, { has_conflict: true, conflict_reason: "會計標記異常：單據不符" }); }} className="w-full py-3 bg-rose-900/40 text-rose-400 rounded-xl border border-rose-500/30 text-sm">🚨 標記為異常 (退回說明)</button>
             </div>
           )}
 
           {tab === 'finance' && (
-            <div className="space-y-5">
-              <div className="bg-rose-950/20 p-4 rounded-xl border border-rose-500/30">
-                <p className="text-xs text-rose-400 mb-2 flex items-center gap-1"><Alert size={14}/> 手動扣款輸入 (罰單/貨損)</p>
-                <div className="flex gap-2 mb-2">
-                  <span className="bg-black/50 p-3 rounded-lg text-slate-400">$</span>
-                  <input type="number" placeholder="金額" className="flex-1 bg-black/50 p-3 rounded-lg text-white outline-none focus:border-rose-500 border border-transparent" value={deductionAmount} onChange={e=>setDeductionAmount(e.target.value)} />
+            <div className="space-y-4">
+              {/* 勞健保分級選擇器 */}
+              <div className="bg-blue-950/20 p-4 rounded-xl border border-blue-500/30">
+                <p className="text-xs text-blue-400 mb-2 italic">2026 社會成本核算</p>
+                <select className="w-full bg-black/50 p-3 rounded-lg text-white mb-2 text-sm outline-none" value={insuranceBracket} onChange={e=>setInsuranceBracket(e.target.value)}>
+                  <option value="0">不投保 / 自理</option>
+                  {Object.keys(INSURANCE_TABLE_2026).map(b => <option key={b} value={b}>分級：${b}</option>)}
+                </select>
+                <div className="flex gap-2">
+                  <label className="flex-1 flex items-center gap-2 bg-black/30 p-2 rounded text-[10px] cursor-pointer">
+                    <input type="checkbox" checked={enableSecGen} onChange={e=>setEnableSecGen(e.target.checked)} /> 二代健保
+                  </label>
+                  <input type="number" placeholder="眷屬人數" className="w-20 bg-black/30 p-2 rounded text-[10px]" value={dependents} onChange={e=>setDependents(e.target.value)} />
                 </div>
-                <input placeholder="輸入扣款事由..." className="w-full bg-black/50 p-3 rounded-lg text-white text-xs outline-none focus:border-rose-500 border border-transparent" value={deductionReason} onChange={e=>setDeductionReason(e.target.value)} />
+              </div>
+
+              {/* 獎懲錄入 */}
+              <div className="bg-rose-950/20 p-4 rounded-xl border border-rose-500/30">
+                <p className="text-xs text-rose-400 mb-2 italic">手動扣款與事由</p>
+                <input type="number" placeholder="金額" className="w-full bg-black/50 p-3 rounded-lg text-white mb-2 outline-none" value={deductionAmount} onChange={e=>setDeductionAmount(e.target.value)} />
+                <input placeholder="扣款理由..." className="w-full bg-black/50 p-3 rounded-lg text-white text-xs outline-none" value={deductionReason} onChange={e=>setDeductionReason(e.target.value)} />
               </div>
               
               <div className="bg-amber-950/20 p-4 rounded-xl border border-amber-500/30">
-                <p className="text-xs text-amber-400 mb-3 flex items-center gap-1"><Star size={14}/> 激勵獎金設定</p>
-                <label className="flex items-center gap-3 bg-black/50 p-3 rounded-lg mb-3 cursor-pointer border border-white/5">
-                  <input type="checkbox" className="accent-amber-500 w-5 h-5" checked={isTaskDone} onChange={e=>setIsTaskDone(e.target.checked)} />
-                  <span className="text-sm text-amber-100">達成 5,000 元品質任務</span>
-                </label>
-                <div className="flex gap-2">
-                  <span className="bg-black/50 p-3 rounded-lg text-slate-400 text-xs flex items-center">其他加給 $</span>
-                  <input type="number" placeholder="金額" className="flex-1 bg-black/50 p-3 rounded-lg text-white outline-none focus:border-amber-500 border border-transparent text-sm" value={bonusAmount} onChange={e=>setBonusAmount(e.target.value)} />
-                </div>
+                <p className="text-xs text-amber-400 mb-3 italic">獎金設定</p>
+                <label className="flex items-center gap-3 bg-black/50 p-3 rounded-lg mb-3 cursor-pointer"><input type="checkbox" className="w-5 h-5 accent-amber-500" checked={isTaskDone} onChange={e=>setIsTaskDone(e.target.checked)} /> <span className="text-sm">5,000 元品質任務</span></label>
+                <input type="number" placeholder="其他加給金額" className="w-full bg-black/50 p-3 rounded-lg text-white outline-none" value={bonusAmount} onChange={e=>setBonusAmount(e.target.value)} />
               </div>
               
-              <button onClick={handleSaveFinance} className="w-full py-4 bg-amber-600 text-white rounded-xl text-sm shadow-lg active:scale-95 transition-all">💾 儲存結算草稿</button>
+              <button onClick={handleSaveFinance} className="w-full py-4 bg-amber-600 text-white rounded-xl text-sm font-black shadow-lg active:scale-95 transition-all">💾 執行 2026 財務核算儲存</button>
             </div>
           )}
 
           {tab === 'files' && (
             <div className="space-y-4">
               <div className="bg-slate-800 p-4 rounded-xl border border-white/5">
-                <p className="text-xs text-slate-400 mb-1">基本資料</p>
-                <p className="text-sm text-white">身分證字號：A123456789 (已驗證)</p>
-                <p className="text-sm text-white">聯絡電話：{partner.phone}</p>
+                <p className="text-xs text-slate-500 mb-1 italic">身分與合約</p>
+                <p className="text-sm">身分證：{partner.id_number || '未建檔'}</p>
+                <p className="text-sm">地址：{partner.address || '未建檔'}</p>
+                <p className="text-sm text-emerald-400">✅ 勞務承攬合約 (已簽署)</p>
               </div>
-              <div className="bg-slate-800 p-4 rounded-xl border border-white/5 flex justify-between items-center">
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">合約狀態</p>
-                  <p className="text-sm text-emerald-400 flex items-center gap-1"><Check size={14}/> 已簽署《勞務承攬合約書》</p>
+              {/* 造物主專屬：單價覆寫 */}
+              {authRole === 'super_admin' && (
+                <div className="bg-fuchsia-950/20 p-4 rounded-xl border border-fuchsia-500/30">
+                  <p className="text-xs text-fuchsia-400 mb-2 italic">造物主：單價定義</p>
+                  <div className="flex gap-2">
+                    <input type="number" className="flex-1 bg-black/50 p-2 rounded text-xs" placeholder="正件單價" defaultValue={partner.custom_del_price || 15} onBlur={(e)=>onUpdate(partner.id, null, {custom_del_price: Number(e.target.value)})} />
+                    <input type="number" className="flex-1 bg-black/50 p-2 rounded text-xs" placeholder="逆收單價" defaultValue={partner.custom_pkp_price || 10} onBlur={(e)=>onUpdate(partner.id, null, {custom_pkp_price: Number(e.target.value)})} />
+                  </div>
                 </div>
-                <button className="p-2 bg-slate-700 text-white rounded-lg"><FileText size={16}/></button>
-              </div>
-              <div className="bg-slate-800 p-4 rounded-xl border border-white/5">
-                <p className="text-xs text-slate-400 mb-1">當前單價設定 (僅限查閱)</p>
-                <p className="text-sm text-white">正件：${partner.custom_del_price || 15} / 逆收：${partner.custom_pkp_price || 10}</p>
-              </div>
+              )}
             </div>
           )}
         </div>
       </div>
     </div>
   );
-}
+}}
 
 
 
