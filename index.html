@@ -1,157 +1,130 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GGSOC 造物主監視樞紐</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <style>
-    body { background: #050505; color: #fff; font-family: "PingFang TC", sans-serif; -webkit-tap-highlight-color: transparent;}
-    .glass-panel { background: rgba(20, 20, 25, 0.95); border: 1px solid rgba(255,255,255,0.05); }
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
-    .typing-btn:active { transform: scale(0.95); }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+// ==========================================
+// 🎭 AI 語氣濾鏡與對話框 (修復版)
+// ==========================================
+function ChatModal({ target, currentUserRole, onClose }) {
+  const [input, setInput] = useState("");
+  const [msgs, setMsgs] = useState([]);
 
-    const config = {
-      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-      authDomain: "supreme-v92.firebaseapp.com",
-      projectId: "supreme-v92",
-      appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-    };
-    if (!firebase.apps.length) firebase.initializeApp(config);
-    const db = firebase.firestore();
+  useEffect(() => { 
+    setMsgs([{ id: 1, sender: 'ai', text: `您好，正在為您接通與 ${target.name} 的安全頻道...` }]); 
+  }, [target]);
 
-    function AdminChatHub() {
-      const [chats, setChats] = useState([]);
-      const [activeId, setActiveId] = useState(null);
-      const [input, setInput] = useState("");
-      const bottomRef = useRef(null);
+  const handleSend = () => {
+    if(!input.trim()) return;
+    setMsgs(prev => [...prev, { id: Date.now(), sender: 'me', text: input }]);
+    setInput("");
+  };
 
-      // 監聽所有司機對話
-      useEffect(() => {
-        return db.collection('chats').onSnapshot(snap => {
-          const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setChats(list.sort((a, b) => (b.msgs?.[b.msgs.length-1]?.time || 0) - (a.msgs?.[a.msgs.length-1]?.time || 0)));
-        });
-      }, []);
-
-      useEffect(() => {
-        if(bottomRef.current) bottomRef.current.scrollIntoView({ behavior: 'smooth' });
-      }, [chats, activeId]);
-
-      const activeChat = chats.find(c => c.id === activeId);
-
-      // 手動觸發 AI 運算狀態 (心理戰核心)
-      const toggleTyping = async (status) => {
-        if (!activeId) return;
-        await db.collection('chats').doc(activeId).set({ isTyping: status }, { merge: true });
-      };
-
-      // 總裁發送訊息 (偽裝成萬事通)
-      const sendReply = async () => {
-        if (!input.trim() || !activeId || !activeChat) return;
-        
-        const newMsg = { role: 'admin', text: input, time: new Date().getTime() };
-        
-        // 關閉 typing 狀態並送出訊息，完美模擬真人打字結束
-        await db.collection('chats').doc(activeId).set({ 
-          msgs: [...(activeChat.msgs || []), newMsg],
-          isTyping: false
-        }, { merge: true });
-        
-        setInput("");
-      };
-
-      return (
-        <div className="flex h-screen p-4 gap-4 bg-black">
-          {/* 左側：雷達列表 */}
-          <div className="w-1/3 md:w-1/4 glass-panel rounded-3xl p-6 flex flex-col">
-            <h2 className="text-xl font-black text-fuchsia-500 mb-6 italic tracking-widest border-b border-white/10 pb-4">上帝監視樞紐</h2>
-            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
-              {chats.map(c => (
-                <div 
-                  key={c.id} 
-                  onClick={() => setActiveId(c.id)}
-                  className={`p-4 rounded-2xl cursor-pointer transition-all border ${activeId === c.id ? 'bg-blue-900/40 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-zinc-900/50 border-transparent hover:bg-zinc-800'}`}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold text-white text-sm">{c.driverName || '未知目標'}</span>
-                    <span className="text-[10px] text-zinc-500 font-mono">{c.id}</span>
-                  </div>
-                  <p className="text-xs text-zinc-400 truncate">{c.lastMsg}</p>
-                  {c.isTyping && <span className="text-[9px] text-amber-500 mt-2 block animate-pulse font-bold">⚠️ 您正在啟動偽裝信號</span>}
-                </div>
-              ))}
-              {chats.length === 0 && <p className="text-xs text-zinc-600 text-center mt-10 font-bold">雷達範圍內無目標</p>}
-            </div>
-          </div>
-
-          {/* 右側：操控台 */}
-          <div className="flex-1 glass-panel rounded-3xl flex flex-col relative overflow-hidden">
-            {!activeId ? (
-              <div className="flex-1 flex items-center justify-center text-zinc-600 font-black tracking-widest text-lg">
-                請鎖定監控目標
-              </div>
-            ) : (
-              <>
-                <div className="bg-zinc-900/80 p-6 border-b border-white/10 flex justify-between items-center">
-                  <div>
-                    <h3 className="text-blue-400 font-black text-xl italic">TARGET: {activeChat?.driverName}</h3>
-                    <p className="text-[10px] text-zinc-500 font-mono mt-1">ID: {activeId}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => toggleTyping(true)} className={`px-4 py-3 rounded-xl text-xs font-black typing-btn transition-colors ${activeChat?.isTyping ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'bg-zinc-800 text-amber-500 border border-amber-500/30'}`}>
-                      啟動「分析中」信號
-                    </button>
-                    <button onClick={() => toggleTyping(false)} className="px-4 py-3 bg-zinc-800 text-zinc-500 border border-zinc-700 rounded-xl text-xs font-black typing-btn hover:bg-zinc-700">
-                      取消信號
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                  {(activeChat?.msgs || []).map((m, i) => (
-                    <div key={i} className={`flex ${m.role === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`p-4 rounded-2xl text-sm max-w-[70%] font-black shadow-lg leading-relaxed ${m.role === 'admin' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-300 border border-white/5'}`}>
-                        {m.role === 'admin' && <span className="text-[9px] text-blue-300 block mb-2 tracking-widest">GGSOC 萬事通 (上帝代發)</span>}
-                        {m.role === 'user' && <span className="text-[9px] text-zinc-500 block mb-2 tracking-widest">目標發送</span>}
-                        {m.text}
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={bottomRef} />
-                </div>
-
-                <div className="p-6 bg-zinc-900/80 border-t border-white/10 flex gap-3 items-center">
-                  <input 
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendReply()}
-                    placeholder="輸入神諭..." 
-                    className="flex-1 bg-black p-4 rounded-xl text-sm outline-none border border-white/10 focus:border-blue-500 text-white transition-colors" 
-                  />
-                  <button onClick={sendReply} className="bg-blue-600 px-8 py-4 rounded-xl font-black typing-btn text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] tracking-widest">
-                    發送
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+  return (
+    <div className="fixed inset-0 bg-black/90 z-[99999] flex items-center justify-center p-4 backdrop-blur-md" onClick={onClose}>
+      <div className="bg-slate-900 border border-blue-500/30 w-full max-w-md h-[70vh] rounded-[2rem] flex flex-col overflow-hidden" onClick={e=>e.stopPropagation()}>
+        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-slate-800/50">
+          <span className="text-blue-400 font-black italic">聯絡：{target.name}</span>
+          <button onClick={onClose} className="text-white"><X size={20}/></button>
         </div>
-      );
-    }
-    ReactDOM.createRoot(document.getElementById('root')).render(<AdminChatHub />);
-  </script>
-</body>
-</html>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {msgs.map(m => (
+            <div key={m.id} className={`flex ${m.sender==='me'?'justify-end':'justify-start'}`}>
+              <div className={`max-w-[80%] p-3 rounded-2xl text-xs ${m.sender==='me'?'bg-blue-600 text-white':'bg-slate-800 text-slate-300'}`}>{m.text}</div>
+            </div>
+          ))}
+        </div>
+        <div className="p-4 bg-slate-950 flex gap-2">
+          <input className="flex-1 bg-slate-800 rounded-xl px-4 py-2 text-sm outline-none" placeholder="輸入訊息..." value={input} onChange={e=>setInput(e.target.value)} />
+          <button onClick={handleSend} className="bg-blue-600 p-2 rounded-xl text-white"><Send size={18}/></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 🚪 入口閘門 (Gate) - 支援快速免密登入
+// ==========================================
+function Gate({ onLogin }) {
+  const [p, setP] = useState("");
+  const [pin, setPin] = useState("");
+
+  return (
+    <div className="h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden">
+      {/* 背景裝飾 */}
+      <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-blue-600/10 rounded-full blur-[100px]"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-emerald-600/10 rounded-full blur-[100px]"></div>
+
+      <div className="z-10 w-full max-w-sm text-center">
+        <h1 className="text-5xl font-black italic text-white mb-2 tracking-tighter">GGSOC</h1>
+        <p className="text-xs text-slate-500 mb-10 tracking-[0.5em] uppercase">Trinity Master V1</p>
+        
+        <div className="space-y-4 mb-8">
+          <input placeholder="手機門號" className="w-full bg-slate-900 border border-white/5 p-4 rounded-2xl text-white outline-none focus:border-blue-500/50 transition-all" value={p} onChange={e=>setP(e.target.value)} />
+          <input type="password" placeholder="PIN 碼" className="w-full bg-slate-900 border border-white/5 p-4 rounded-2xl text-white outline-none focus:border-blue-500/50 transition-all" value={pin} onChange={e=>setPin(e.target.value)} />
+          <button onClick={() => onLogin(p, pin)} className="w-full py-4 bg-blue-600 rounded-2xl text-white font-black shadow-lg shadow-blue-500/20 active:scale-95 transition-all">正式登入</button>
+        </div>
+
+        <div className="pt-6 border-t border-white/5 space-y-3">
+          <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-4">快速開發通道</p>
+          <button 
+            onClick={() => onLogin("0976017938", "8305319")} 
+            className="w-full py-3 bg-amber-600/20 border border-amber-600/30 rounded-xl text-amber-500 text-xs font-black hover:bg-amber-600 hover:text-white transition-all"
+          >
+            👑 以造物主身分直接接入
+          </button>
+          <button 
+            onClick={() => onLogin("0988128172", "0172")} 
+            className="w-full py-3 bg-slate-800 border border-white/5 rounded-xl text-slate-400 text-xs font-black"
+          >
+            💼 以營運總部身分接入
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 🚚 司機端指揮中心 (DriverHub)
+// ==========================================
+function DriverHub({ currentPartner, onLogout, db, appId }) {
+  const [showSign, setShowSign] = useState(false);
+  
+  return (
+    <div className="p-6 max-w-md mx-auto min-h-screen pb-24">
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h2 className="text-3xl font-black italic text-white">{currentPartner.name}</h2>
+          <p className="text-xs text-slate-500">ID: {currentPartner.phone}</p>
+        </div>
+        <button onClick={onLogout} className="bg-slate-800 p-3 rounded-xl"><LogOut size={20}/></button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-blue-600/20 border border-blue-500/30 p-4 rounded-[1.5rem]">
+          <p className="text-[10px] text-blue-400 uppercase mb-1">本月正件</p>
+          <p className="text-3xl font-black text-white">{currentPartner.total_del}</p>
+        </div>
+        <div className="bg-amber-600/20 border border-amber-500/30 p-4 rounded-[1.5rem]">
+          <p className="text-[10px] text-amber-400 uppercase mb-1">本月逆收</p>
+          <p className="text-3xl font-black text-white">{currentPartner.total_pkp}</p>
+        </div>
+      </div>
+
+      {currentPartner.salary_status === 'pending_sign' && (
+        <button onClick={()=>setShowSign(true)} className="w-full py-6 bg-emerald-600 rounded-[2rem] text-white font-black text-xl mb-6 animate-bounce shadow-xl shadow-emerald-600/20">
+          📩 您有一份薪資待簽收
+        </button>
+      )}
+
+      {showSign && <SalarySignModal partner={currentPartner} onClose={()=>setShowSign(false)} onAction={(type, data)=>console.log(type, data)} />}
+      
+      <div className="bg-slate-900 border border-white/5 p-6 rounded-[2rem] text-center">
+        <Bot size={40} className="mx-auto text-slate-700 mb-4" />
+        <p className="text-xs text-slate-500">更多功能連線中...</p>
+      </div>
+    </div>
+  );
+}
+
+// 最終啟動
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(<ErrorBoundary><AppWrapper /></ErrorBoundary>);
