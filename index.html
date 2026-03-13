@@ -3,217 +3,155 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>在地物流 - 自動化結算系統</title>
+  <title>GGSOC 造物主監視樞紐</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    body { background-color: #f8fafc; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; }
-    .btn-primary { background-color: #0f172a; color: white; transition: all 0.2s; }
-    .btn-primary:active { transform: scale(0.98); }
-    .btn-primary:disabled { background-color: #cbd5e1; color: #64748b; cursor: not-allowed; transform: none; }
-    .progress-bar { height: 4px; background: #2563eb; width: 0%; transition: width 0.5s ease; }
+    body { background: #050505; color: #fff; font-family: "PingFang TC", sans-serif; -webkit-tap-highlight-color: transparent;}
+    .glass-panel { background: rgba(20, 20, 25, 0.95); border: 1px solid rgba(255,255,255,0.05); }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+    .typing-btn:active { transform: scale(0.95); }
   </style>
 </head>
 <body>
   <div id="root"></div>
-
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
-    const App = () => {
-      const [view, setView] = useState('login'); // login, loading, dashboard, document, payout, success
-      const [loadingText, setLoadingText] = useState('');
-      const [tasks, setTasks] = useState({ termsAccepted: false, payoutSigned: false });
-      const [user, setUser] = useState({ phone: '', id: '' });
-      
-      // 自動化算帳引擎資料 (模擬從資料庫撈取)
-      const payrollData = {
-        baseGross: 10000,
-        healthInsuranceRate: 0.0211,
-      };
-      
-      // 自動計算
-      const healthDeduction = Math.ceil(payrollData.baseGross * payrollData.healthInsuranceRate);
-      const netPayout = payrollData.baseGross - healthDeduction;
-
-      // 模擬系統處理 (不秒回機制)
-      const triggerLoading = (text, nextView, delay = 1500) => {
-        setLoadingText(text);
-        setView('loading');
-        setTimeout(() => setView(nextView), delay);
-      };
-
-      const handleLogin = () => {
-        if (!user.phone || !user.id) return alert("請輸入完整識別資訊");
-        triggerLoading('驗證身分與調閱帳務資料...', 'dashboard');
-      };
-
-      if (view === 'login') return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="card max-w-sm w-full p-8">
-            <div className="mb-8">
-              <h1 className="text-xl font-bold text-slate-900">在地物流結算系統</h1>
-              <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Partner Portal</p>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">手機號碼</label>
-                <input type="text" placeholder="09XX-XXX-XXX" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-slate-900" onChange={e => setUser({...user, phone: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">身分驗證 (工號 / 末四碼)</label>
-                <input type="password" placeholder="****" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-slate-900" onChange={e => setUser({...user, id: e.target.value})} />
-              </div>
-              <button onClick={handleLogin} className="w-full btn-primary font-bold py-3 rounded-lg mt-2">安全登入</button>
-            </div>
-          </div>
-        </div>
-      );
-
-      if (view === 'loading') return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4">
-          <div className="w-64 bg-slate-200 rounded-full overflow-hidden h-1 mb-4">
-            <div className="progress-bar animate-[pulse_1s_ease-in-out_infinite]" style={{width: '100%'}}></div>
-          </div>
-          <p className="text-xs font-semibold text-slate-500 tracking-widest">{loadingText}</p>
-        </div>
-      );
-
-      if (view === 'dashboard') return (
-        <div className="min-h-screen p-4 md:p-8 max-w-lg mx-auto">
-          <header className="mb-8 flex justify-between items-end border-b border-slate-200 pb-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">系統作業看板</h2>
-              <p className="text-xs text-slate-500 mt-1">請依序完成本期待辦事項</p>
-            </div>
-            <div className="text-right text-xs font-medium text-slate-600">
-              {user.phone}
-            </div>
-          </header>
-
-          <div className="space-y-4">
-            {/* 任務 A：法規查核 */}
-            <div className="card p-6 flex justify-between items-center">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-2 h-2 rounded-full ${tasks.termsAccepted ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                  <h3 className="font-bold text-slate-800 text-sm">行政法規與明細確認</h3>
-                </div>
-                <p className="text-xs text-slate-500">2026 承攬扣繳作業規範</p>
-              </div>
-              <button 
-                onClick={() => setView('document')}
-                disabled={tasks.termsAccepted}
-                className={`px-5 py-2 rounded-lg text-xs font-bold ${tasks.termsAccepted ? 'bg-slate-100 text-slate-400' : 'btn-primary'}`}
-              >
-                {tasks.termsAccepted ? '已完成' : '前往執行'}
-              </button>
-            </div>
-
-            {/* 任務 B：自動化解鎖領錢 */}
-            <div className={`card p-6 flex justify-between items-center transition-opacity ${!tasks.termsAccepted ? 'opacity-40' : 'opacity-100'}`}>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-2 h-2 rounded-full ${tasks.payoutSigned ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                  <h3 className="font-bold text-slate-800 text-sm">薪資結算與數位簽收</h3>
-                </div>
-                <p className="text-xs text-slate-500">本期應撥金額：${netPayout.toLocaleString()}</p>
-              </div>
-              <button 
-                onClick={() => tasks.termsAccepted ? triggerLoading('系統結算中...', 'payout', 1000) : null}
-                disabled={!tasks.termsAccepted || tasks.payoutSigned}
-                className={`px-5 py-2 rounded-lg text-xs font-bold ${tasks.payoutSigned ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 hover:bg-emerald-700 text-white transition-colors'}`}
-              >
-                {tasks.payoutSigned ? '已簽收' : '前往領款'}
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-
-      if (view === 'document') return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
-          <div className="card max-w-sm w-full p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">行政法規與明細確認</h3>
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-3 mb-6 font-medium leading-relaxed">
-              <p>1. 依現行法規，系統將自動代扣 <span className="text-rose-600 font-bold">2.11% 二代健保費</span>。</p>
-              <p>2. 執行數位簽名即視同認可結算金額，並確認雙方之勞務承攬關係。</p>
-              <p>3. 系統將於簽名時自動紀錄存證資訊以保障雙方權益。</p>
-            </div>
-            <button 
-              onClick={() => {
-                setTasks({...tasks, termsAccepted: true});
-                triggerLoading('資料建檔中...', 'dashboard', 1200);
-              }} 
-              className="w-full btn-primary py-3 rounded-lg text-sm font-bold"
-            >
-              同意並返回看板
-            </button>
-          </div>
-        </div>
-      );
-
-      if (view === 'payout') return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
-          <div className="card max-w-sm w-full p-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">本期自動結算報表</h3>
-            
-            <div className="space-y-3 mb-6 border-b border-slate-100 pb-6">
-              <div className="flex justify-between text-sm font-medium text-slate-600">
-                <span>勞務報酬總額</span>
-                <span>${payrollData.baseGross.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-sm font-medium text-rose-500">
-                <span>自動代扣健保 (2.11%)</span>
-                <span>-${healthDeduction.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <p className="text-xs text-slate-500 font-medium mb-1">實領撥款淨額</p>
-              <h2 className="text-4xl font-black text-slate-900">${netPayout.toLocaleString()}</h2>
-            </div>
-
-            <div className="w-full h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center mb-6 text-slate-300 text-xs font-bold">
-              [ 數位簽名區域 ]
-            </div>
-
-            <button 
-              onClick={() => triggerLoading('驗證簽章與傳輸款項...', 'success', 2000)} 
-              className="w-full btn-primary py-4 rounded-lg text-sm font-bold"
-            >
-              確認無誤並簽收
-            </button>
-            <p className="text-center text-[10px] text-slate-400 mt-4 font-mono">
-              Net = Gross - ⌈Gross × 2.11%⌉
-            </p>
-          </div>
-        </div>
-      );
-
-      if (view === 'success') return (
-        <div className="min-h-screen flex items-center justify-center p-4 text-center">
-          <div className="card p-8 max-w-xs w-full">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">✓</div>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">作業完成</h2>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              您的款項已排入撥款流程<br/>簽收紀錄與系統存證已自動歸檔
-            </p>
-            <button onClick={() => window.location.reload()} className="mt-6 text-xs font-bold text-slate-400 hover:text-slate-600">
-              返回登入頁
-            </button>
-          </div>
-        </div>
-      );
-
-      return null;
+    const config = {
+      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+      authDomain: "supreme-v92.firebaseapp.com",
+      projectId: "supreme-v92",
+      appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
     };
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    const db = firebase.firestore();
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    function AdminChatHub() {
+      const [chats, setChats] = useState([]);
+      const [activeId, setActiveId] = useState(null);
+      const [input, setInput] = useState("");
+      const bottomRef = useRef(null);
+
+      // 監聽所有司機對話
+      useEffect(() => {
+        return db.collection('chats').onSnapshot(snap => {
+          const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setChats(list.sort((a, b) => (b.msgs?.[b.msgs.length-1]?.time || 0) - (a.msgs?.[a.msgs.length-1]?.time || 0)));
+        });
+      }, []);
+
+      useEffect(() => {
+        if(bottomRef.current) bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      }, [chats, activeId]);
+
+      const activeChat = chats.find(c => c.id === activeId);
+
+      // 手動觸發 AI 運算狀態 (心理戰核心)
+      const toggleTyping = async (status) => {
+        if (!activeId) return;
+        await db.collection('chats').doc(activeId).set({ isTyping: status }, { merge: true });
+      };
+
+      // 總裁發送訊息 (偽裝成萬事通)
+      const sendReply = async () => {
+        if (!input.trim() || !activeId || !activeChat) return;
+        
+        const newMsg = { role: 'admin', text: input, time: new Date().getTime() };
+        
+        // 關閉 typing 狀態並送出訊息，完美模擬真人打字結束
+        await db.collection('chats').doc(activeId).set({ 
+          msgs: [...(activeChat.msgs || []), newMsg],
+          isTyping: false
+        }, { merge: true });
+        
+        setInput("");
+      };
+
+      return (
+        <div className="flex h-screen p-4 gap-4 bg-black">
+          {/* 左側：雷達列表 */}
+          <div className="w-1/3 md:w-1/4 glass-panel rounded-3xl p-6 flex flex-col">
+            <h2 className="text-xl font-black text-fuchsia-500 mb-6 italic tracking-widest border-b border-white/10 pb-4">上帝監視樞紐</h2>
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+              {chats.map(c => (
+                <div 
+                  key={c.id} 
+                  onClick={() => setActiveId(c.id)}
+                  className={`p-4 rounded-2xl cursor-pointer transition-all border ${activeId === c.id ? 'bg-blue-900/40 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-zinc-900/50 border-transparent hover:bg-zinc-800'}`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-bold text-white text-sm">{c.driverName || '未知目標'}</span>
+                    <span className="text-[10px] text-zinc-500 font-mono">{c.id}</span>
+                  </div>
+                  <p className="text-xs text-zinc-400 truncate">{c.lastMsg}</p>
+                  {c.isTyping && <span className="text-[9px] text-amber-500 mt-2 block animate-pulse font-bold">⚠️ 您正在啟動偽裝信號</span>}
+                </div>
+              ))}
+              {chats.length === 0 && <p className="text-xs text-zinc-600 text-center mt-10 font-bold">雷達範圍內無目標</p>}
+            </div>
+          </div>
+
+          {/* 右側：操控台 */}
+          <div className="flex-1 glass-panel rounded-3xl flex flex-col relative overflow-hidden">
+            {!activeId ? (
+              <div className="flex-1 flex items-center justify-center text-zinc-600 font-black tracking-widest text-lg">
+                請鎖定監控目標
+              </div>
+            ) : (
+              <>
+                <div className="bg-zinc-900/80 p-6 border-b border-white/10 flex justify-between items-center">
+                  <div>
+                    <h3 className="text-blue-400 font-black text-xl italic">TARGET: {activeChat?.driverName}</h3>
+                    <p className="text-[10px] text-zinc-500 font-mono mt-1">ID: {activeId}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => toggleTyping(true)} className={`px-4 py-3 rounded-xl text-xs font-black typing-btn transition-colors ${activeChat?.isTyping ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'bg-zinc-800 text-amber-500 border border-amber-500/30'}`}>
+                      啟動「分析中」信號
+                    </button>
+                    <button onClick={() => toggleTyping(false)} className="px-4 py-3 bg-zinc-800 text-zinc-500 border border-zinc-700 rounded-xl text-xs font-black typing-btn hover:bg-zinc-700">
+                      取消信號
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                  {(activeChat?.msgs || []).map((m, i) => (
+                    <div key={i} className={`flex ${m.role === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`p-4 rounded-2xl text-sm max-w-[70%] font-black shadow-lg leading-relaxed ${m.role === 'admin' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-300 border border-white/5'}`}>
+                        {m.role === 'admin' && <span className="text-[9px] text-blue-300 block mb-2 tracking-widest">GGSOC 萬事通 (上帝代發)</span>}
+                        {m.role === 'user' && <span className="text-[9px] text-zinc-500 block mb-2 tracking-widest">目標發送</span>}
+                        {m.text}
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={bottomRef} />
+                </div>
+
+                <div className="p-6 bg-zinc-900/80 border-t border-white/10 flex gap-3 items-center">
+                  <input 
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && sendReply()}
+                    placeholder="輸入神諭..." 
+                    className="flex-1 bg-black p-4 rounded-xl text-sm outline-none border border-white/10 focus:border-blue-500 text-white transition-colors" 
+                  />
+                  <button onClick={sendReply} className="bg-blue-600 px-8 py-4 rounded-xl font-black typing-btn text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] tracking-widest">
+                    發送
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<AdminChatHub />);
   </script>
 </body>
 </html>
