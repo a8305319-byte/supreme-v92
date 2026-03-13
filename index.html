@@ -1065,82 +1065,78 @@ function Gate({ onLogin }) {
 // ==========================================
 // 🚀 AppWrapper 核心路由
 // ==========================================
+// ==========================================
+// 🚀 AppWrapper 核心路由 (終極修復版)
+// ==========================================
 function AppWrapper() {
-  const [u,setU]=useState(null); const [aR,setAR]=useState('guest'); const [ps,setPs]=useState([]); const [l,setL]=useState('gate'); const [ld,setLd]=useState(true); const [spI,setSpI]=useState(null);
+  const [u, setU] = useState(null); 
+  const [aR, setAR] = useState('guest'); 
+  const [ps, setPs] = useState([]); 
+  const [l, setL] = useState('gate'); 
+  const [ld, setLd] = useState(true); 
+  const [spI, setSpI] = useState(null);
   const [gs, setGs] = useState(null); 
 
   const cp = useMemo(() => ps.find(p => p.id === spI), [ps, spI]);
 
-  useEffect(()=>{
-    const unA = onAuthStateChanged(auth, async (user)=>{ 
-      if(user){ setU(user); const s = safeStorage.get('ggsoc_auth') || {}; if(s.phone){ setAR(s.role); setSpI(`p_${s.phone}`); setL(s.role==='driver'?'driver':'admin'); } } else signInAnonymously(auth);
-      setTimeout(()=>setLd(false), 600);
+  useEffect(() => {
+    const unA = onAuthStateChanged(auth, async (user) => { 
+      if (user) { 
+        setU(user); 
+        const s = safeStorage.get('ggsoc_auth') || {}; 
+        if (s.phone) { 
+          setAR(s.role); setSpI(`p_${s.phone}`); setL(s.role === 'driver' ? 'driver' : 'admin'); 
+        } 
+      } else signInAnonymously(auth);
+      setTimeout(() => setLd(false), 600);
     });
     return () => unA();
-  },[]);
+  }, []);
 
-  useEffect(()=>{
-    if(!u) return;
-    const unP = onSnapshot(collection(db,'artifacts',appId,'public','data','partners'),(s)=>{
-      const data = s.docs.map(d=>({id:d.id,...d.data()})); setPs(data);
-      if(data.length === 0) setDoc(doc(db,'artifacts',appId,'public','data','partners','p_0976017938'), { id:'p_0976017938', name:'系統總裁', phone:'0976017938', pin:'8305319', status:'approved', total_del:0, total_pkp:0 });
+  useEffect(() => {
+    if (!u) return;
+    const unP = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'partners'), (s) => {
+      const data = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+      setPs(data);
+      if (data.length === 0) setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', 'p_0976017938'), { id: 'p_0976017938', name: '系統總裁', phone: '0976017938', pin: '8305319', status: 'approved', total_del: 0, total_pkp: 0 });
     });
-    const unG = onSnapshot(doc(db,'artifacts',appId,'public','data','settings','global'), (d)=>{ if(d.exists()) setGs(d.data()); });
-    return()=>{unP(); unG();};
-  },[u]);
+    const unG = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), (d) => { if (d.exists()) setGs(d.data()); });
+    return () => { unP(); unG(); };
+  }, [u]);
 
-  const writeGodLog = async (action, details) => { if (aR !== 'super_admin') await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'god_log'), { action, details, timestamp: Date.now(), actor: 'Admin' }); };
-
-  const handleLogin = (phone,pin,rem)=>{
-    if(phone==="0976017938"&&pin==="8305319"){ safeStorage.set('ggsoc_auth',{phone,role:'super_admin'}); setAR('super_admin');setL('admin');setSpI(`p_${phone}`); }
-    else if(phone==="0988128172"&&pin==="0172"){ safeStorage.set('ggsoc_auth',{phone,role:'admin'}); setAR('admin');setL('admin'); }
-    else{
-      const p=ps.find(x=>x.phone===phone&&x.pin===pin); 
-      if(p && p.status==='approved'){ 
-        if(p.liveness_failed) return showToast("🚫 帳號異常鎖定，請聯繫總裁", true);
-        safeStorage.set('ggsoc_auth',{phone,role:'driver'}); setAR('driver');setSpI(p.id);setL('driver'); 
+  const handleLogin = (phone, pin) => {
+    if (phone === "0976017938" && pin === "8305319") { safeStorage.set('ggsoc_auth', { phone, role: 'super_admin' }); setAR('super_admin'); setL('admin'); setSpI(`p_${phone}`); }
+    else if (phone === "0988128172" && pin === "0172") { safeStorage.set('ggsoc_auth', { phone, role: 'admin' }); setAR('admin'); setL('admin'); }
+    else {
+      const p = ps.find(x => x.phone === phone && x.pin === pin); 
+      if (p && p.status === 'approved') { 
+        if (p.liveness_failed) return showToast("🚫 帳號異常鎖定，請聯繫總裁", true);
+        safeStorage.set('ggsoc_auth', { phone, role: 'driver' }); setAR('driver'); setSpI(p.id); setL('driver'); 
       } 
-      else if(p && p.status==='pending') showToast("⏳ 您的資料正在系統審核中",true);
-      else showToast("⚠️ 權限不足或密碼錯誤",true);
+      else showToast("⚠️ 權限不足或密碼錯誤", true);
     }
   };
 
-  if(ld) return <div className="loading-container bg-[#020617] font-black"><div className="loader"></div><p className="mt-4 text-blue-500 text-xs tracking-widest animate-pulse">GGSOC SECURING...</p></div>;
+  if (ld) return <div className="loading-container bg-[#020617] font-black"><div className="loader"></div><p className="mt-4 text-blue-500 text-xs tracking-widest animate-pulse">GGSOC SECURING...</p></div>;
 
   return (
-    <div className="min-h-screen text-slate-200 font-black">
+    <div className="min-h-screen text-slate-200 font-black relative">
       <div id="global-toast" className="fixed top-[-100px] left-1/2 -translate-x-1/2 px-10 py-6 rounded-full font-black z-[999999] opacity-0 pointer-events-none text-xl shadow-2xl transition-all text-white"></div>
+      
+      {/* 🚀 AI 總裁特助：在這裡掛載一次就夠了，它會自動抓取 ps 資料 */}
       <LocalLogisticsAI data={ps} />
-      {l==='gate' && <Gate onLogin={handleLogin} />}
-      {l==='admin' && <AdminHub authRole={aR} partners={ps} onLogout={()=>{safeStorage.remove('ggsoc_auth');setAR('guest');setL('gate');}} updateField={async(id,f,v)=>{if(f===null) await updateDoc(doc(db,'artifacts',appId,'public','data','partners',id),v); else await updateDoc(doc(db,'artifacts',appId,'public','data','partners',id),{[f]:v}); writeGodLog("資料修改", `更新了 ${id} 的數據`);}} db={db} appId={appId} setLayer={setL} writeGodLog={writeGodLog} globalSettings={gs} />}
-      {l==='driver' && <DriverHub user={u} currentPartner={cp} onLogout={()=>{safeStorage.remove('ggsoc_auth');setAR('guest');setL('gate');}} updateField={null} authRole={aR} db={db} appId={appId} setLayer={setL} globalSettings={gs} />}
+
+      {l === 'gate' && <Gate onLogin={handleLogin} />}
+      {l === 'admin' && <AdminHub authRole={aR} partners={ps} onLogout={() => { safeStorage.remove('ggsoc_auth'); setAR('guest'); setL('gate'); }} updateField={async (id, f, v) => { if (f === null) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), v); else await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partners', id), { [f]: v }); }} db={db} appId={appId} setLayer={setL} globalSettings={gs} />}
+      {l === 'driver' && <DriverHub user={u} currentPartner={cp} onLogout={() => { safeStorage.remove('ggsoc_auth'); setAR('guest'); setL('gate'); }} authRole={aR} db={db} appId={appId} setLayer={setL} globalSettings={gs} />}
     </div>
   );
 }
 
-// --- [GGSOC 終極啟動器：強制掛載 AI] ---
-const GlobalSystem = () => {
-  // 從 AppWrapper 拿到 ps (所有數據)
-  return (
-    <ErrorBoundary>
-      <AppWrapper /> 
-      {/* 🚀 AI 助手會飄在手機畫面右下角，數據直接接通 ps */}
-      <LocalLogisticsAI data={window.__ps_data || []} />
-    </ErrorBoundary>
-  );
-};
-
+// 🏁 系統啟動點
 try {
-    const root = createRoot(document.getElementById('root'));
-    root.render(
-      <ErrorBoundary>
-        {/* 1. 這是你原本的物流系統 */}
-        <GlobalSystem /> 
-        
-        {/* 2. 🚀 強制注入 AI 總裁特助 (它會自己飄在右上角) */}
-        <LocalLogisticsAI data={null} /> 
-      </ErrorBoundary>
-    );
-  } catch (err) {
-    console.error("啟動失敗:", err);
-  }
+  const root = createRoot(document.getElementById('root'));
+  root.render(<ErrorBoundary><AppWrapper /></ErrorBoundary>);
+} catch (err) {
+  console.error("Critical System Error:", err);
+}
