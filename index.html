@@ -116,14 +116,50 @@ const SignaturePad = ({ onSign }) => {
     if(canvasRef.current){ const ctx = canvasRef.current.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap='round'; ctx.strokeStyle='#fff'; } 
   }, []);
   const getPos = (e) => { const rect = canvasRef.current.getBoundingClientRect(); const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; return { x: cx - rect.left, y: cy - rect.top }; };
-  const handleFinish = () => {
-    setIsDrawing(false);
-    if(canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d'); ctx.font = "8px monospace"; ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-      ctx.fillText(`${geoInfo} | ID:${deviceId} | ${new Date().toISOString()}`, 5, 145);
-      onSign(canvasRef.current.toDataURL());
+ const handleSend = async () => {
+  if (!input.trim() || isTyping) return;
+  const userText = input;
+  setInput("");
+  setMessages(prev => [...prev, { role: 'user', text: userText }]);
+  setIsTyping(true);
+
+  try {
+    const apiKey = localStorage.getItem('ggsoc_gemini_token');
+    if (!apiKey) {
+      setMessages(prev => [...prev, { role: 'model', text: '⚠️ 核心未授權。請至系統工具箱輸入 Gemini API Key。' }]);
+      setIsTyping(false);
+      return;
     }
-  };
+
+    // 🧠 自動抓取當前畫面上所有司機的營運產能
+    const contextData = systemData.map(p => ({
+      name: p.name, 
+      yield: (Number(p.total_del)||0) + (Number(p.total_pkp)||0),
+      is_conflict: p.has_conflict
+    }));
+    
+    const systemPrompt = `你現在是物流營運總部的超級 AI 幕僚。目前日期是 2026 年 3 月 13 日。這是當前所有實體的即時營運數據：${JSON.stringify(contextData)}。請根據數據精準回答總裁的問題。總裁問：`;
+
+    // 🚀 使用 2026 最穩定的 v1beta Flash 路徑
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: systemPrompt + userText }] }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    
+    const reply = data.candidates[0].content.parts[0].text;
+    setMessages(prev => [...prev, { role: 'model', text: reply }]);
+  } catch (err) {
+    setMessages(prev => [...prev, { role: 'model', text: `🚨 神經網路斷線: ${err.message}` }]);
+  } finally {
+    setIsTyping(false);
+  }
+};
   return (
     <div className="w-full">
       <div className="bg-slate-950 border border-white/20 rounded-2xl overflow-hidden relative shadow-inner">
