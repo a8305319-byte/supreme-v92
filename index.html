@@ -48,13 +48,17 @@
     function App() {
       const [view, setView] = useState('gate');
       const [partners, setPartners] = useState([]);
-      const [user, setUser] = useState(null);
+      const [showGemini, setShowGemini] = useState(false);
+      const [detailDriver, setDetailDriver] = useState(null);
+
+      // 🛡️ 2026 精算對照表
+      const INSURANCE_2026 = {
+        29500: { labor: 679, health: 458 },
+        34800: { labor: 800, health: 540 }
+      };
 
       useEffect(() => {
-        auth.signInAnonymously().catch(e => console.error(e));
-        auth.onAuthStateChanged(u => setUser(u));
-        
-        // 實時監聽 2026 營運數據
+        auth.signInAnonymously();
         const unsub = db.collection('partners').onSnapshot(snap => {
           setPartners(snap.docs.map(d => ({id: d.id, ...d.data()})));
         });
@@ -62,56 +66,84 @@
       }, []);
 
       const handleLogin = (ph, pi) => {
-        if(ph === '0976017938' && pi === '8305319') {
-          setView('admin');
-        } else {
-          showToast('❌ 終端識別錯誤');
-        }
+        if(ph === '0976017938' && pi === '8305319') setView('admin');
+        else alert('識別失敗');
       };
 
-      if (view === 'gate') {
-        return (
-          <div className="h-screen flex items-center justify-center p-6 bg-black">
-            <div className="glass-panel p-10 rounded-[2.5rem] w-full max-w-sm text-center shadow-2xl">
-              <h1 className="text-2xl font-black italic mb-2 tracking-tighter text-blue-500">GGSOC_TERMINAL</h1>
-              <p className="text-[10px] text-slate-500 mb-8 font-mono">2026_TRINITY_SYSTEM_v1</p>
-              <input id="ph" placeholder="PHONE" className="w-full bg-slate-900/50 p-4 rounded-xl mb-3 text-center border border-white/5 outline-none focus:border-blue-500 transition-all" />
-              <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900/50 p-4 rounded-xl mb-8 text-center border border-white/5 outline-none focus:border-blue-500 transition-all" />
-              <button onClick={() => handleLogin(document.getElementById('ph').value, document.getElementById('pi').value)} className="w-full py-4 bg-blue-600 rounded-xl font-black text-white hover:bg-blue-500 transition-all">ESTABLISH_LINK</button>
-            </div>
+      // 🧠 Gemini 核心對話函式 (修正 404 問題)
+      const callGemini = async (text) => {
+        const key = localStorage.getItem('ggsoc_gemini_token');
+        if(!key) return "⚠️ 請在工具箱設定 API Key";
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: `你現在是 2026 物流幕僚。數據：${JSON.stringify(partners)}。請簡短分析：${text}` }] }] })
+          });
+          const data = await res.json();
+          return data.candidates[0].content.parts[0].text;
+        } catch (e) { return "🚨 AI 連線失敗"; }
+      };
+
+      if (view === 'gate') return (
+        <div className="h-screen flex items-center justify-center bg-black">
+          <div className="glass-panel p-10 rounded-[3rem] w-80 text-center border border-white/5">
+            <h1 className="text-2xl font-black mb-8 text-blue-500 italic">GGSOC_TERMINAL</h1>
+            <input id="ph" placeholder="PHONE" className="w-full bg-slate-900/50 p-4 rounded-xl mb-3 text-center border border-white/5 text-white" />
+            <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900/50 p-4 rounded-xl mb-8 text-center border border-white/5 text-white" />
+            <button onClick={() => handleLogin(document.getElementById('ph').value, document.getElementById('pi').value)} className="w-full py-4 bg-blue-600 rounded-xl font-black">ESTABLISH_LINK</button>
           </div>
-        );
-      }
+        </div>
+      );
 
       return (
-        <div className="min-h-screen bg-black p-4 md:p-10 animate-[fadeIn_0.5s]">
+        <div className="min-h-screen bg-black p-6 md:p-10 font-black">
+          {/* Header */}
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-black italic tracking-tighter uppercase">營運指揮中心</h2>
-            <button onClick={() => setView('gate')} className="text-rose-500 text-xs font-black uppercase border border-rose-500/20 px-4 py-2 rounded-xl">安全退出</button>
+            <h2 className="text-3xl italic tracking-tighter">營運指揮中心</h2>
+            <div className="flex gap-2">
+               <button onClick={()=>setShowGemini(true)} className="bg-blue-600 px-6 py-2 rounded-xl text-xs">🧠 喚醒 AI</button>
+               <button onClick={()=>setView('gate')} className="border border-white/10 px-4 py-2 rounded-xl text-xs">安全退出</button>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {partners.filter(p => p.phone !== '0976017938').map(p => (
-              <div key={p.id} className="glass-panel p-6 rounded-3xl border border-white/5 relative group">
-                <h4 className="text-xl font-black italic mb-1">{p.name || '未名實體'}</h4>
-                <p className="text-[10px] text-slate-500 font-mono mb-4">{p.phone}</p>
-                <div className="flex justify-between items-end border-t border-white/5 pt-4">
-                   <div>
-                     <p className="text-[8px] text-slate-600 font-black">正件產能</p>
-                     <p className="text-xl text-blue-400 font-mono italic">{p.total_del || 0}</p>
-                   </div>
-                   <div className="text-right">
-                     <p className="text-[8px] text-slate-600 font-black">逆收產能</p>
-                     <p className="text-xl text-amber-400 font-mono italic">{p.total_pkp || 0}</p>
-                   </div>
+
+          {/* 司機列表 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {partners.filter(p=>p.phone!=='0976017938').map(p => (
+              <div key={p.id} onClick={()=>setDetailDriver(p)} className="glass-panel p-6 rounded-[2rem] border border-white/5 hover:border-blue-500/50 transition-all cursor-pointer">
+                <h4 className="text-xl italic mb-1">{p.name}</h4>
+                <p className="text-[10px] text-slate-500 mb-4">{p.phone}</p>
+                <div className="flex justify-between text-blue-400 text-sm italic">
+                  <span>正:{p.total_del||0}</span><span>逆:{p.total_pkp||0}</span>
                 </div>
               </div>
             ))}
           </div>
-          
-          {partners.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-slate-700 italic font-black text-xs">NO_ENTITY_DETECTED_IN_DATABASE</p>
+
+          {/* 💰 財務核算彈窗 */}
+          {detailDriver && (
+            <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[999]" onClick={()=>setDetailDriver(null)}>
+              <div className="bg-slate-900 border border-white/10 p-8 rounded-[2.5rem] w-full max-w-md" onClick={e=>e.stopPropagation()}>
+                <h3 className="text-xl text-blue-400 mb-4 italic">{detailDriver.name} 財務清單</h3>
+                <div className="space-y-3 text-sm text-slate-300">
+                   <div className="flex justify-between border-b border-white/5 pb-2"><span>勞務報酬 (預估)</span><span>${(detailDriver.total_del*15 + detailDriver.total_pkp*10).toLocaleString()}</span></div>
+                   <div className="flex justify-between text-rose-400"><span>勞保費 (2026級距)</span><span>-$679</span></div>
+                   <div className="flex justify-between text-rose-400 border-b border-white/5 pb-2"><span>健保費 (基本)</span><span>-$458</span></div>
+                   <p className="text-[10px] text-slate-500">※ 基於 2026 基本工資 29,500 元自動精算</p>
+                </div>
+                <button onClick={()=>setDetailDriver(null)} className="w-full mt-8 py-3 bg-white/5 rounded-xl text-xs uppercase">關閉檢視</button>
+              </div>
+            </div>
+          )}
+
+          {/* 🧠 AI 幕僚對話 */}
+          {showGemini && (
+            <div className="fixed inset-y-0 right-0 w-80 bg-slate-950 border-l border-white/10 p-6 flex flex-col z-[1000] animate-[slideIn_0.3s]">
+               <div className="flex justify-between mb-4"><span className="text-blue-500">AI_COPILOT</span><button onClick={()=>setShowGemini(false)}>❌</button></div>
+               <div className="flex-1 bg-black/40 rounded-xl p-4 mb-4 text-xs italic text-slate-500 overflow-y-auto">
+                 [系統提示]：您可以詢問「誰今天送最多？」或「目前的營運異常」。
+               </div>
+               <input onKeyPress={async e=>{ if(e.key==='Enter'){ const ans=await callGemini(e.target.value); alert(ans); } }} placeholder="下達指令..." className="bg-slate-900 p-4 rounded-xl text-xs outline-none focus:border-blue-500 border border-white/5" />
             </div>
           )}
         </div>
