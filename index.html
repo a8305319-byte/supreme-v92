@@ -117,116 +117,15 @@ const LocalLogisticsAI = ({ data }) => {
     setLoading(false);
   };
 <script type="text/babel" data-type="module">
-const { useState, useEffect, useRef, useMemo, useCallback } = React;
-const createRoot = ReactDOM.createRoot;
-
-// 🚀 [AI 總裁特助] - 手機修正版
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
-
-const LocalLogisticsAI = ({ data }) => {
-  const [q, setQ] = useState("");
-  const [ans, setAns] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [show, setShow] = useState(false);
-
-  const ask = async () => {
-    if (!q) return;
-    setLoading(true);
-    try {
-      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const res = await model.generateContent(`你是在地物流 AI 特助。老闆很懶，請精簡建議。數據：${JSON.stringify(data)}\n指令：${q}`);
-      setAns(res.response.text());
-    } catch (e) { setAns("連線失敗，請稍後再試。"); }
-    setLoading(false);
-  };
-
-  // 這一行最重要：它會強制浮現在所有畫面最前方
-  return (
-import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const createRoot = ReactDOM.createRoot;
 
-const LocalLogisticsAI = ({ data }) => {
-  const [q, setQ] = useState("");
-  const [ans, setAns] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [show, setShow] = useState(false);
-
-  const ask = async () => {
-    if (!q || loading) return;
-    setLoading(true);
-    try {
-      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
-      setAns(res.response.text());
-    } catch (e) { setAns("連線失敗..."); }
-    setLoading(false);
-  };
-
-  const btnS = { position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' };
-  const boxS = { position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.6)', fontFamily: 'sans-serif' };
-
-  if (!show) return <button onClick={() => setShow(true)} style={btnS}>🤖</button>;
-
-  return (
-    <div style={boxS}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <span style={{ fontSize: '12px', color: '#60a5fa', fontWeight: 'bold' }}>AI 助手</span>
-        <button onClick={() => setShow(false)} style={{background:'none', border:'none', color:'#94a3b8'}}>✕</button>
-      </div>
-      <input style={{ width: '100%', background: '#0f172a', border: '1px solid #334155', padding: '10px', borderRadius: '8px', color: '#fff', marginBottom: '10px', fontSize: '14px' }} value={q} onChange={e => setQ(e.target.value)} placeholder="請輸入指令..." />
-      <button onClick={ask} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }} disabled={loading}>{loading ? "..." : "問 AI"}</button>
-      {ans && <div style={{ marginTop: '10px', fontSize: '12px', background: '#0f172a', padding: '10px', borderRadius: '8px', maxHeight: '120px', overflowY: 'auto', lineHeight: '1.5' }}>{ans}</div>}
-    </div>
-  );
-};
-
-const { useState, useEffect, useRef, useMemo, useCallback } = React;
-const createRoot = ReactDOM.createRoot;
-
-const LocalLogisticsAI = ({ data }) => {
-  const [q, setQ] = useState("");
-  const [ans, setAns] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [show, setShow] = useState(false);
-
-  const ask = async () => {
-    if (!q || loading) return;
-    setLoading(true);
-    try {
-      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
-      setAns(res.response.text());
-    } catch (e) { setAns("連線失敗..."); }
-    setLoading(false);
-  };
-
-  const btnS = { position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' };
-  const boxS = { position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.6)', fontFamily: 'sans-serif' };
-
-  if (!show) return <button onClick={() => setShow(true)} style={btnS}>🤖</button>;
-
-  return (
-    <div style={boxS}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <span style={{ fontSize: '12px', color: '#60a5fa', fontWeight: 'bold' }}>AI 助手</span>
-        <button onClick={() => setShow(false)} style={{background:'none', border:'none', color:'#94a3b8'}}>✕</button>
-      </div>
-      <input style={{ width: '100%', background: '#0f172a', border: '1px solid #334155', padding: '10px', borderRadius: '8px', color: '#fff', marginBottom: '10px', fontSize: '14px' }} value={q} onChange={e => setQ(e.target.value)} placeholder="請輸入指令..." />
-      <button onClick={ask} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }} disabled={loading}>{loading ? "..." : "問 AI"}</button>
-      {ans && <div style={{ marginTop: '10px', fontSize: '12px', background: '#0f172a', padding: '10px', borderRadius: '8px', maxHeight: '120px', overflowY: 'auto', lineHeight: '1.5' }}>{ans}</div>}
-    </div>
-  );
-};
-
-const { useState, useEffect, useRef, useMemo, useCallback } = React;
-const createRoot = ReactDOM.createRoot;
-
-// 🤖 AI 總裁特助組件 (手機優化封裝版)
+// 🤖 [AI 總裁特助] - 唯一正確定義
 const LocalLogisticsAI = ({ data }) => {
   const [q, setQ] = useState("");
   const [ans, setAns] = useState("");
@@ -262,14 +161,8 @@ const LocalLogisticsAI = ({ data }) => {
     </div>
   );
 };
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-// 🌟 Firebase Initialization (已幫老闆補回)
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
+// 🌟 [Firebase 初始化] - 唯一正確定義
 const firebaseConfig = { 
   apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
   authDomain: "supreme-v92.firebaseapp.com", 
@@ -283,6 +176,8 @@ const app = initializeApp(firebaseConfig);
 const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
 const auth = getAuth(app);
 const appId = 'ggsoc-trinity-master-v1';
+
+// 🛡️ [系統工具]
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false }; }
   static getDerivedStateFromError(error) { return { hasError: true }; }
@@ -306,17 +201,6 @@ const showToast = (msg, isError = false) => {
 
 const speak = (text) => { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(text); u.lang = 'zh-TW'; u.rate = 1.1; window.speechSynthesis.speak(u); } };
 const sendLineNotify = (token, msg) => { console.log("【LINE Notify API】:", msg); };
-
-const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92", storageBucket: "supreme-v92.firebasestorage.app", messagingSenderId: "485530156296", appId: "1:485530156296:web:6728c0ee08b98dedd800bd" };
-const app = initializeApp(firebaseConfig);
-const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
-const auth = getAuth(app);
-const appId = 'ggsoc-trinity-master-v1';
-import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const createRoot = ReactDOM.createRoot;
 
