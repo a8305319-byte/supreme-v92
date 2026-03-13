@@ -1076,11 +1076,16 @@ const GlobalSystem = () => {
 };
 
 try {
-  const root = createRoot(document.getElementById('root'));
-  root.render(<GlobalSystem />);
-} catch (err) {
-  console.error("啟動失敗:", err);
-}
-  </script>
-</body>
-</html>
+    const root = createRoot(document.getElementById('root'));
+    root.render(
+      <ErrorBoundary>
+        {/* 1. 這是你原本的物流系統 */}
+        <GlobalSystem /> 
+        
+        {/* 2. 🚀 強制注入 AI 總裁特助 (它會自己飄在右上角) */}
+        <LocalLogisticsAI data={null} /> 
+      </ErrorBoundary>
+    );
+  } catch (err) {
+    console.error("啟動失敗:", err);
+  }
