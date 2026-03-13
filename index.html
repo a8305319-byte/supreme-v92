@@ -803,434 +803,108 @@ function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
 // ==========================================
 
 function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLayer, writeGodLog, globalSettings }) {
-
+// ==========================================
+// 👑 管理中樞 (AdminHub - Super Admin & Admin)
+// ==========================================
+function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLayer, writeGodLog, globalSettings }) {
   const [adminTab, setAdminTab] = useState('formal'); // formal, pending, attendance, intercept
-
   const [sq, setSq] = useState("");
-
   const [showSensitive, setShowSensitive] = useState({ global: false }); const [mT, setMT] = useState(null);
-
   const [chatTarget, setChatTarget] = useState(null);
-
   const [detailTarget, setDetailTarget] = useState(null); // 開啟會計審核面板
-
-  const [expressData, setExpressData] = useState({ phone: '', name: '', priority_access: false });
-
+  
+  // 🌟 [修改] 擴充免試建檔的資料結構，加入台灣常規基本資料
+  const [expressData, setExpressData] = useState({ phone: '', name: '', priority_access: false, id_number: '', address: '', emergency_contact: '', plate_number: '' });
   const [lineToken, setLineToken] = useState(""); const [godLogs, setGodLogs] = useState([]);
-
   const [payoutLocked, setPayoutLocked] = useState(false); const [ann, setAnn] = useState(globalSettings?.announcement || "");
 
-
-
   // 總裁隱身：絕對過濾 0976017938
-
   const visiblePartners = useMemo(() => (partners || []).filter(p => p.phone !== '0976017938'), [partners]);
-
   const formalPartners = useMemo(() => visiblePartners.filter(p => (p.status === 'approved' || p.status === 'frozen') && (p.name?.toLowerCase().includes(sq.toLowerCase()) || p.phone?.includes(sq))), [visiblePartners, sq]);
-
   const pendingPartners = useMemo(() => visiblePartners.filter(p => p.status === 'pending' && (p.name?.toLowerCase().includes(sq.toLowerCase()) || p.phone?.includes(sq))), [visiblePartners, sq]);
-
   const interceptedPartners = useMemo(() => visiblePartners.filter(p => p.salary_status === 'intercepted_by_boss'), [visiblePartners]);
-
   
-
   const displayList = adminTab === 'formal' ? formalPartners : adminTab === 'pending' ? pendingPartners : interceptedPartners;
 
-
-
+  // 保留 COD 計算邏輯，遵守不刪除變數的鐵律
   const totalStats = useMemo(() => formalPartners.reduce((acc, p) => { return { cod: acc.cod + (p.last_report?.date === new Date().toLocaleDateString('en-CA') ? (p.last_report.cod_amount || 0) : 0), anomalies: acc.anomalies + (p.has_conflict ? 1 : 0) + (p.liveness_failed ? 1 : 0) + (p.salary_status === 'disputed' ? 1 : 0) }; }, { cod: 0, anomalies: 0 }), [formalPartners]);
-
-
 
   useEffect(() => { if (authRole === 'super_admin') { const unG = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'god_log'), orderBy('timestamp', 'desc')), (s) => setGodLogs(s.docs.map(d => ({id: d.id, ...d.data()})))); return () => unG(); } }, [authRole]);
 
-
-
   // 🎯 總裁隱形點名
-
   const toggleLivenessCheck = async (p) => {
-
     if(authRole !== 'super_admin') return;
-
     const newState = !p.pending_liveness_check; await updateField(p.id, 'pending_liveness_check', newState);
-
     showToast(`🎯 已${newState?'鎖定':'解除'}目標 [${p.name}]，下次報帳強制活性驗證`); writeGodLog("隱形點名", `標記了 ${p.name} 進行 AI 突擊`);
-
   };
-
-
 
   // 🧊 虛擬結算權（關鍵攔截邏輯）
-
   const handlePublishSalary = async () => {
-
     if(!window.confirm("確認發布薪資？")) return; 
-
     setPayoutLocked(true);
-
     
-
     for(const p of formalPartners) { 
-
       const del_p = p.custom_del_price || 15; const pkp_p = p.custom_pkp_price || 10; 
-
-      // 結合會計手動輸入的獎金與扣款
-
       const ded = (p.current_deduction || 0) + (p.labor_fee||0) + (p.health_fee||0);
-
       const bonus = p.current_bonus || 0;
-
       const net = (p.total_del * del_p) + (p.total_pkp * pkp_p) + bonus - ded; 
-
       
-
       const payload = { 
-
         salary_record: { net, snapshot: { del_count: p.total_del, del_price: del_p, pkp_count: p.total_pkp, pkp_price: pkp_p, deductions: ded, bonus: bonus }, period: new Date().toLocaleDateString('zh-TW'), timestamp: Date.now() },
-
-        salary_status: authRole === 'admin' ? 'intercepted_by_boss' : 'pending_sign' // 攔截邏輯核心
-
+        salary_status: authRole === 'admin' ? 'intercepted_by_boss' : 'pending_sign' 
       };
-
       await updateField(p.id, null, payload);
-
     } 
-
     
-
     if (authRole === 'admin') {
-
-      showToast("✅ 已發送至司機端"); // 對會計顯示假的成功
-
+      showToast("✅ 已發送至司機端"); 
       writeGodLog("會計結算", "會計發布了薪資，數據已送入總裁攔截站"); 
-
     } else {
-
       showToast("✅ 已放行快照。金庫進入鎖定期。"); 
-
       writeGodLog("金庫操作", "總裁直接發布薪資凍結快照"); 
-
     }
-
     
-
     setTimeout(() => setPayoutLocked(false), 2000); 
-
   };
 
-
-
-  // 內部特赦建檔
-
+  // 內部特赦建檔 (加入基本資料防呆驗證)
   const handleExpressAdd = async () => {
-
-    if(!expressData.phone || !expressData.name) return showToast("必填",true); 
-
+    if(!expressData.phone || !expressData.name || !expressData.id_number || !expressData.address || !expressData.emergency_contact || !expressData.plate_number) return showToast("所有基本資料皆為必填",true); 
     if(formalPartners.some(p => p.phone === expressData.phone)) return showToast("門號已存在", true);
-
     
-
     if(authRole === 'admin' && expressData.phone.startsWith('0988')) { showToast("⚠️ 雷達警示：該門號特徵與您高度重合", true); sendLineNotify(lineToken, `⚠️ [預警] 會計新增人員 ${expressData.name} 觸發利益衝突雷達。`); }
 
-
-
-    await setDoc(doc(db,'artifacts',appId,'public','data','partners',`p_${expressData.phone}`), { id: `p_${expressData.phone}`, name: expressData.name, phone: expressData.phone, pin: '0000', status: 'approved', priority_access: expressData.priority_access, total_del: 0, total_pkp: 0, history: [], created_by: authRole }); 
-
-    writeGodLog("免試建檔", `${authRole} 使用特快通道新增了 ${expressData.name}`); showToast("✅ 免試建檔成功 (預設密碼 0000)"); setExpressData({phone:'',name:'',priority_access:false});
-
+    // 🌟 [修改] 寫入資料庫時併入新增的常規基本資料
+    await setDoc(doc(db,'artifacts',appId,'public','data','partners',`p_${expressData.phone}`), { id: `p_${expressData.phone}`, name: expressData.name, phone: expressData.phone, pin: '0000', status: 'approved', priority_access: expressData.priority_access, id_number: expressData.id_number, address: expressData.address, emergency_contact: expressData.emergency_contact, plate_number: expressData.plate_number, total_del: 0, total_pkp: 0, history: [], created_by: authRole }); 
+    writeGodLog("免試建檔", `${authRole} 使用特快通道新增了 ${expressData.name}`); showToast("✅ 免試建檔成功 (預設密碼 0000)"); setExpressData({phone:'',name:'',priority_access:false, id_number:'', address:'', emergency_contact:'', plate_number:''});
   };
 
-
-
   return (
-
     <div className="p-4 md:p-8 lg:p-14 max-w-full mx-auto bg-[#020617] min-h-screen font-black animate-[fadeIn_0.5s_ease-out]">
-
       {chatTarget && <ChatModal target={chatTarget} currentUserRole={authRole} onClose={()=>setChatTarget(null)} />}
-
       {detailTarget && <AdminDriverDetailModal partner={detailTarget} onClose={()=>setDetailTarget(null)} onUpdate={(id, payload) => updateField(id, null, payload)} authRole={authRole} />}
-
       
-
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-6 leading-none">
-
          <div><h2 className="text-white text-4xl md:text-5xl italic tracking-tighter uppercase mb-2 font-black">營運指揮中心</h2><span className={`inline-block text-xs md:text-sm px-4 py-1 rounded-xl border ${authRole==='super_admin'?'text-amber-500 border-amber-500/30 bg-amber-900/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]':'text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-900/30 shadow-xl'}`}>{authRole==='super_admin'?'👑 總裁統帥':'👑 營運總部 (會計)'}</span></div>
-
          <div className="flex flex-wrap gap-2 w-full xl:w-auto">
-
             {authRole==='super_admin' && <button onClick={()=>setLayer('driver')} className="flex-1 xl:flex-none bg-amber-500 text-black px-4 py-3 rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"><Package size={16}/> 報帳視角</button>}
-
             <button onClick={handlePublishSalary} disabled={payoutLocked} className="flex-1 xl:flex-none bg-emerald-600 text-white px-4 py-3 rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50"><Banknote size={16}/> 結算數據存檔發出</button>
-
             <button onClick={()=>setMT('tools')} className="flex-1 xl:flex-none bg-slate-800 border border-white/10 px-4 py-3 rounded-xl text-xs text-white flex items-center justify-center gap-1 active:scale-95 transition-all hover:bg-slate-700"><Settings size={16}/> 工具箱</button>
-
             <button onClick={onLogout} className="w-full xl:w-auto bg-rose-900/40 text-rose-500 px-6 py-3 rounded-xl text-xs border border-rose-500/30 active:scale-95 transition-all">安全退出</button>
-
          </div>
-
       </div>
-
       
-
-      {/* 戰情大盤 */}
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-
-         <div className="glass-panel p-6 rounded-[2rem] border-t-4 border-t-amber-500 shadow-xl"><p className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">今日 C.O.D 總額</p><p className="text-3xl text-amber-400 italic">${totalStats.cod.toLocaleString()}</p></div>
-
+      {/* 戰情大盤 (修改版 Grid 排版與隱藏 COD) */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+         {/* 🌟 [修改] 將 C.O.D 面板加上 hidden 隱藏，不刪除原碼 */}
+         <div className="hidden glass-panel p-6 rounded-[2rem] border-t-4 border-t-amber-500 shadow-xl"><p className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">今日 C.O.D 總額</p><p className="text-3xl text-amber-400 italic">${totalStats.cod.toLocaleString()}</p></div>
+         
          <div className="glass-panel p-6 rounded-[2rem] border-t-4 border-t-blue-500 shadow-xl"><p className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">現役總兵力</p><p className="text-3xl text-blue-400 italic">{formalPartners.length}</p></div>
-
          <div className="glass-panel p-6 rounded-[2rem] border-t-4 border-t-rose-500 shadow-xl"><p className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">今日異常事件</p><p className="text-3xl text-rose-400 italic">{totalStats.anomalies}</p></div>
-
          <div className="bg-gradient-to-br from-indigo-600 to-blue-800 p-6 rounded-[2rem] shadow-2xl flex flex-col items-center justify-center text-white"><Bot size={32} className="mb-2"/><p className="text-[11px] uppercase tracking-widest italic">雲端防禦啟用</p></div>
-
       </div>
 
-
-
-      <div className="glass-panel p-5 rounded-[2rem] mb-6 flex flex-col gap-4">
-
-         <div className="flex flex-wrap gap-2">
-
-           <button onClick={()=>setAdminTab('formal')} className={`flex-1 min-w-[100px] py-3 rounded-xl text-sm transition-all ${adminTab==='formal'?'bg-blue-600 text-white shadow-lg':'bg-black/30 text-slate-500'}`}>現役名單</button>
-
-           <button onClick={()=>setAdminTab('pending')} className={`flex-1 min-w-[100px] py-3 rounded-xl text-sm transition-all ${adminTab==='pending'?'bg-orange-600 text-white shadow-lg':'bg-black/30 text-slate-500 relative'}`}>審核通道 {pendingPartners.length>0&&<span className="absolute -top-1 -right-1 bg-rose-500 text-[9px] w-5 h-5 flex items-center justify-center rounded-full animate-pulse">{pendingPartners.length}</span>}</button>
-
-           <button onClick={()=>setAdminTab('attendance')} className={`flex-1 min-w-[100px] py-3 rounded-xl text-sm transition-all ${adminTab==='attendance'?'bg-indigo-600 text-white shadow-lg':'bg-black/30 text-slate-500'}`}>公休/出勤牆</button>
-
-           {authRole === 'super_admin' && <button onClick={()=>setAdminTab('intercept')} className={`flex-1 min-w-[100px] py-3 rounded-xl text-sm transition-all ${adminTab==='intercept'?'bg-rose-600 text-white shadow-lg':'bg-black/30 text-slate-500 relative'}`}>總裁攔截站 {interceptedPartners.length>0&&<span className="absolute -top-1 -right-1 bg-rose-500 text-[9px] w-5 h-5 flex items-center justify-center rounded-full animate-pulse">{interceptedPartners.length}</span>}</button>}
-
-         </div>
-
-         {/* 隱私遮罩鎖 */}
-
-         <div className="flex items-center gap-4"><div className="flex-1 flex items-center gap-3 bg-black/50 p-4 rounded-2xl border border-white/5"><Search size={20} className="text-blue-500" /><input placeholder="搜尋戰力..." className="bg-transparent border-none outline-none text-white text-sm w-full" value={sq} onChange={e=>setSq(e.target.value)} /></div><button onClick={()=>setShowSensitive({global: !showSensitive.global})} className="bg-slate-800 text-amber-400 rounded-xl px-6 py-4 text-xs border border-white/10 shadow-inner flex items-center gap-2"><Eye size={16}/> {showSensitive.global?'解鎖隱私':'全域遮罩'}</button></div>
-
-      </div>
-
-
-
-      {/* 公休出勤牆畫面 */}
-
-      {adminTab === 'attendance' && (
-
-        <div className="glass-panel p-6 rounded-[1.5rem] border border-white/5">
-
-           <h3 className="text-xl text-indigo-400 mb-4 flex items-center gap-2"><Calendar size={20}/> 今日出勤名單與狀態</h3>
-
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-             {formalPartners.map(p => (
-
-               <div key={p.id} className="bg-black/50 p-4 rounded-xl border border-white/5 flex flex-col justify-center items-center text-center">
-
-                 <p className="text-white text-lg mb-1">{p.name}</p>
-
-                 <span className={`px-2 py-1 rounded text-[10px] ${p.has_conflict ? 'bg-amber-900/50 text-amber-400' : 'bg-emerald-900/50 text-emerald-400'}`}>出勤中</span>
-
-               </div>
-
-             ))}
-
-             {/* 假數據展示公休 */}
-
-             <div className="bg-black/50 p-4 rounded-xl border border-white/5 opacity-50 flex flex-col justify-center items-center text-center">
-
-                 <p className="text-white text-lg mb-1">王小明</p>
-
-                 <span className="bg-slate-800 text-slate-400 px-2 py-1 rounded text-[10px]">公休 (車修)</span>
-
-             </div>
-
-           </div>
-
-        </div>
-
-      )}
-
-
-
-      {/* 列表渲染 (包含攔截站) */}
-
-      {adminTab !== 'attendance' && (
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-24">
-
-          {displayList.map(p => { 
-
-             const p_net = (p.total_del*(p.custom_del_price||15))+(p.total_pkp*(p.custom_pkp_price||10)) + (p.current_bonus||0) - (p.current_deduction||0); 
-
-             return (
-
-               <div key={p.id} className={`glass-panel p-5 rounded-[1.5rem] border ${p.has_conflict ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : p.liveness_failed ? 'border-rose-500 shadow-[0_0_15px_rgba(225,29,72,0.3)]' : p.salary_status==='disputed' ? 'border-rose-500 border-2' : 'border-white/5'} relative transition-all cursor-pointer hover:bg-slate-800/80`} onClick={()=>setDetailTarget(p)}>
-
-                 <div className="absolute top-5 right-5 flex gap-2 items-center" onClick={e=>e.stopPropagation()}>
-
-                   {authRole === 'super_admin' && p.status === 'approved' && (
-
-                      <button onClick={() => toggleLivenessCheck(p)} className={`p-1.5 rounded-lg transition-all active:scale-90 ${p.pending_liveness_check ? 'bg-rose-600 text-white shadow-[0_0_10px_#e11d48]' : 'bg-slate-800 text-slate-500 hover:text-rose-400'}`} title="AI 活性突擊"><Target size={18}/></button>
-
-                   )}
-
-                   {p.priority_access && authRole === 'super_admin' && <span className="bg-fuchsia-900/60 text-fuchsia-300 border border-fuchsia-500/30 text-[9px] px-2 py-1 rounded">特權</span>}
-
-                   {p.liveness_failed && <span className="bg-rose-600 text-white text-[9px] px-2 py-1 rounded animate-pulse">活性失敗</span>}
-
-                   {p.has_conflict && <span className="bg-amber-600 text-white text-[9px] px-2 py-1 rounded animate-pulse">異常報備</span>}
-
-                   {p.salary_status==='disputed' && <span className="bg-rose-600 text-white text-[9px] px-2 py-1 rounded shadow-lg">爭議退回</span>}
-
-                   <button onClick={() => setChatTarget(p)} className="bg-blue-600/30 text-blue-400 p-2 rounded-lg hover:bg-blue-600/50 transition-colors active:scale-90"><Message size={16}/></button>
-
-                 </div>
-
-                 
-
-                 <div className="mb-4">
-
-                   <h4 className="text-xl text-white italic mb-1 flex items-center gap-2">{p.name}</h4>
-
-                   <p className="text-[11px] text-slate-500 font-mono tracking-widest">{!showSensitive.global ? p.phone.replace(/(\d{4})\d{3}(\d{3})/, "$1***$2") : p.phone}</p>
-
-                   {p.created_by === 'admin' && <p className="text-[8px] text-fuchsia-400 mt-1">※ 會計授權建檔</p>}
-
-                 </div>
-
-
-
-                 {p.salary_status==='disputed' && <div className="mb-3 p-2 bg-rose-950/40 rounded-lg border border-rose-500/30 text-[10px] text-rose-300">退回原因：{p.salary_dispute_reason}</div>}
-
-                 {p.has_conflict && <div className="mb-3 p-2 bg-amber-950/50 border border-amber-500/30 rounded-lg text-[10px] text-amber-300 leading-tight">衝突報備: {p.conflict_reason}</div>}
-
-                 
-
-                 {adminTab === 'intercept' ? (
-
-                   <div className="flex gap-2"><button onClick={async (e)=>{ e.stopPropagation(); await updateField(p.id, 'salary_status', 'pending_sign'); showToast("已放行，司機可見薪資條"); }} className="flex-1 py-3 bg-rose-600 rounded-xl text-xs text-white shadow-lg shadow-rose-500/30">🔓 放行薪資條給司機</button></div>
-
-                 ) : p.status === 'pending' ? (
-
-                   <div className="flex gap-2"><button onClick={(e)=>{ e.stopPropagation(); updateField(p.id, 'status', 'approved'); }} className="flex-1 py-3 bg-emerald-600 rounded-xl text-xs text-white">核准入職</button></div>
-
-                 ) : (
-
-                   <div className="bg-black/40 p-3 rounded-xl text-center mb-2 shadow-inner border border-white/5 flex justify-between items-center px-4">
-
-                     <div><p className="text-[10px] text-slate-500 mb-1 text-left">當前淨額草稿</p><p className="text-xl text-white italic">${p_net.toLocaleString()}</p></div>
-
-                     <span className="text-[10px] text-blue-400 border border-blue-500/30 bg-blue-900/30 px-2 py-1 rounded">點擊審核</span>
-
-                   </div>
-
-                 )}
-
-               </div>
-
-             );
-
-          })}
-
-        </div>
-
-      )}
-
-
-
-      {/* ⚙️ 內部工具箱 Modal */}
-
-      {mT === 'tools' && (
-
-        <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 animate-zoom" onClick={()=>setMT(null)}>
-
-          <div className="bg-slate-900 border border-white/10 p-6 rounded-[2.5rem] max-w-lg w-full max-h-[90vh] overflow-y-auto custom-scrollbar relative" onClick={e=>e.stopPropagation()}>
-
-            <button onClick={()=>setMT(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-rose-500"><X size={16}/></button>
-
-            <h3 className="text-xl text-blue-400 mb-6 text-center italic uppercase tracking-widest">內部系統管理</h3>
-
-            <div className="space-y-4">
-
-              
-
-              <div className="bg-blue-950/20 p-4 rounded-xl border border-blue-500/30 shadow-inner">
-
-                 <p className="text-[10px] text-blue-400 mb-2">📢 全域影子政策與語錄廣播</p>
-
-                 <textarea placeholder="輸入要全域廣播的文字..." className="w-full bg-black/50 p-3 rounded-lg text-xs text-white outline-none border border-white/5 focus:border-blue-500 mb-2" rows="2" value={ann} onChange={e=>setAnn(e.target.value)} />
-
-                 <button onClick={async()=>{ await setDoc(doc(db,'artifacts',appId,'public','data','settings','global'), {announcement: ann}, {merge:true}); showToast("✅ 公告已強制推送"); }} className="w-full bg-blue-600 text-white py-2 rounded-lg text-xs">發布公告</button>
-
-              </div>
-
-
-
-              {authRole === 'super_admin' && (
-
-                <div className="bg-[#00c300]/10 p-4 rounded-xl border border-[#00c300]/30 shadow-inner">
-
-                   <p className="text-[10px] text-[#00c300] mb-2 flex items-center gap-1"><Bell size={12}/> LINE Notify 上帝戰情網</p>
-
-                   <div className="flex gap-2"><input type="password" placeholder="貼上 LINE Token..." className="flex-1 bg-black/50 p-3 rounded-lg text-xs outline-none border border-white/5" value={lineToken} onChange={e=>setLineToken(e.target.value)} /><button onClick={()=>showToast("✅ 已發送模擬戰情日報至 LINE")} className="bg-[#00c300] text-white px-4 py-2 rounded-lg text-xs active:scale-95 shadow-lg">測試推播</button></div>
-
-                </div>
-
-              )}
-
-
-
-              <div className="bg-fuchsia-950/20 p-5 rounded-xl border border-fuchsia-500/30 shadow-inner">
-
-                <p className="text-[11px] text-fuchsia-400 mb-3 text-center tracking-widest">🛡️ 核心成員預先授權 (免試)</p>
-
-                <div className="space-y-3">
-
-                  <div className="flex gap-2"><input placeholder="真實姓名" className="flex-1 bg-slate-800 p-3 rounded-lg text-xs outline-none focus:border-fuchsia-500 border border-transparent" value={expressData.name} onChange={e=>setExpressData({...expressData, name: e.target.value})} /><input placeholder="手機 (10碼)" type="tel" className="flex-1 bg-slate-800 p-3 rounded-lg text-xs outline-none focus:border-fuchsia-500 border border-transparent" value={expressData.phone} onChange={e=>setExpressData({...expressData, phone: e.target.value})} maxLength={10} /></div>
-
-                  {authRole === 'super_admin' && <label className="flex items-center gap-2 text-[10px] text-fuchsia-200 py-1 cursor-pointer"><input type="checkbox" checked={expressData.priority_access} onChange={e=>setExpressData({...expressData, priority_access: e.target.checked})} className="accent-fuchsia-600 w-4 h-4" /> 啟動總裁特權對話通道 (對會計隱形)</label>}
-
-                  <button onClick={handleExpressAdd} className="w-full py-4 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-lg text-white text-xs shadow-lg active:scale-95 transition-all">寫入系統 (強制綁定責任追溯)</button>
-
-                </div>
-
-              </div>
-
-
-
-              {authRole === 'super_admin' && (
-
-                <div className="bg-slate-800/50 p-5 rounded-xl border border-white/5 shadow-inner">
-
-                  <p className="text-[11px] text-emerald-400 mb-3 text-center tracking-widest">👁️ 上帝日誌 (防竄改)</p>
-
-                  <div className="h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-
-                    {godLogs.length === 0 ? <p className="text-center text-xs text-slate-500 mt-10">尚無紀錄</p> : godLogs.map(g => (<div key={g.id} className="bg-black/50 p-3 rounded-lg border border-white/5 text-[9px]"><div className="flex justify-between text-slate-500 mb-1"><span>{g.actor}</span><span>{new Date(g.timestamp).toLocaleString()}</span></div><p className="text-emerald-300">[{g.action}] <span className="text-slate-300">{g.details}</span></p></div>))}
-
-                  </div>
-
-                </div>
-
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-
-      )}
-
-    </div>
-
-  );
-
-}
-
-
-
-// ==========================================
-
-// 🚐 司機端工作台 (DriverHub)
+      <div className="glass-panel p-5 rounded-[2rem] mb-6 flex flex-col gap-4">// 🚐 司機端工作台 (DriverHub)
 
 // ==========================================
 
