@@ -69,7 +69,7 @@ let app, db, auth;
 let doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc;
 let signInAnonymously, onAuthStateChanged;
 
-// 輔助函數 (完美修護斷點)
+// 輔助函數 (完美修護截斷錯誤)
 const showToast = (msg, isError = false) => {
   const t = document.getElementById('global-toast');
   if(!t) return;
@@ -78,10 +78,34 @@ const showToast = (msg, isError = false) => {
   t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
   setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 3000);
 };
-const sendLineNotify = (token, msg) => { console.log("【LINE Notify API】:", msg); };
 
 // ==========================================
-// 🛡️ 復原保留區：三位一體數位簽章
+// 🚀 防彈級引擎點火區 (修復 Await 崩潰問題)
+// ==========================================
+async function startEngine() {
+  try {
+    const firebaseApp = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const firebaseFirestore = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+    const firebaseAuth = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+
+    app = firebaseApp.initializeApp(window.firebaseConfig);
+    db = firebaseFirestore.getFirestore(app);
+    auth = firebaseAuth.getAuth(app);
+
+    doc = firebaseFirestore.doc; setDoc = firebaseFirestore.setDoc; updateDoc = firebaseFirestore.updateDoc; deleteDoc = firebaseFirestore.deleteDoc; onSnapshot = firebaseFirestore.onSnapshot; collection = firebaseFirestore.collection; query = firebaseFirestore.query; orderBy = firebaseFirestore.orderBy; addDoc = firebaseFirestore.addDoc;
+    signInAnonymously = firebaseAuth.signInAnonymously; onAuthStateChanged = firebaseAuth.onAuthStateChanged;
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<AppWrapper />);
+  } catch (error) { 
+    console.error("引擎啟動崩潰:", error); 
+    document.getElementById('root').innerHTML = `<div style="color:white; padding:20px; background:black; height:100vh;">系統連線失敗，請檢查網路與金鑰。</div>`;
+  }
+}
+startEngine();
+
+// ==========================================
+// 🛡️ 三位一體數位簽章
 // ==========================================
 const SignaturePad = ({ onSign }) => {
   const canvasRef = useRef(null); const [isDrawing, setIsDrawing] = useState(false);
@@ -112,7 +136,7 @@ const SignaturePad = ({ onSign }) => {
 };
 
 // ==========================================
-// 🚨 復原保留區：60秒物理活性突擊
+// 🚨 60秒物理活性突擊
 // ==========================================
 function LivenessCheckModal({ partnerId, onVerify, db, appId }) {
   const [timeLeft, setTimeLeft] = useState(60); const [photo, setPhoto] = useState(null);
@@ -140,7 +164,45 @@ function LivenessCheckModal({ partnerId, onVerify, db, appId }) {
 }
 
 // ==========================================
-// 🧠 新增：Gemini AI 幕僚對話引擎 (Gemini-Pro)
+// 🧊 薪資凍結快照檢視
+// ==========================================
+function SalarySignModal({ partner, onClose, onAction }) {
+  const [sig, setSig] = useState(null); const [dispute, setDispute] = useState(false); const [reason, setReason] = useState("");
+  if(!partner) return null; const record = partner.salary_record || { net: 0, snapshot: {} };
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom font-black" onClick={onClose}>
+      <div className="bg-slate-900 border border-emerald-500/30 p-6 rounded-[2.5rem] max-w-md w-full shadow-2xl relative" onClick={e=>e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-6 right-6 text-white p-2 hover:text-rose-400"><X size={20}/></button>
+        <h3 className="text-2xl text-emerald-400 mb-4 flex items-center gap-2"><Banknote size={28}/> 薪資凍結快照</h3>
+        <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5 mb-4 text-xs space-y-2">
+           <div className="flex justify-between text-slate-400"><span>正件計價</span><span>{record.snapshot?.del_count || 0} 件 x ${record.snapshot?.del_price || 15}</span></div>
+           <div className="flex justify-between text-slate-400"><span>逆收計價</span><span>{record.snapshot?.pkp_count || 0} 件 x ${record.snapshot?.pkp_price || 10}</span></div>
+        </div>
+        <div className="bg-black/50 p-6 rounded-2xl border border-emerald-500/30 mb-6 text-center shadow-inner"><p className="text-xs text-slate-500 mb-1">本期實得淨額</p><p className="text-4xl text-emerald-400 italic">${(record.net || 0).toLocaleString()}</p></div>
+        {!dispute ? (
+          <div className="space-y-4">
+             <SignaturePad onSign={setSig} />
+             <div className="flex gap-2">
+               <button onClick={()=>setDispute(true)} className="w-1/3 py-4 bg-rose-900/40 text-rose-400 rounded-xl border border-rose-500/30 text-sm">異議退回</button>
+               <button onClick={()=>onAction('confirm', {sig})} disabled={!sig} className="w-2/3 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl disabled:opacity-30 active:scale-95 transition-all">確認無誤並簽收</button>
+             </div>
+          </div>
+        ) : (
+          <div className="space-y-3 animate-zoom">
+            <input placeholder="輸入異議理由..." className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-rose-500/50" value={reason} onChange={e=>setReason(e.target.value)} />
+            <div className="flex gap-2">
+              <button onClick={()=>setDispute(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-xl text-sm">取消</button>
+              <button onClick={()=>{ if(!reason)return showToast("需填寫理由",true); onAction('dispute', {reason}); }} className="flex-1 py-4 bg-rose-600 text-white rounded-xl text-sm active:scale-95">送出異議</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 🧠 Gemini AI 幕僚對話引擎 (Gemini-Pro)
 // ==========================================
 function GeminiCopilotModal({ onClose, systemData, writeGodLog }) {
   const [input, setInput] = useState("");
@@ -154,10 +216,8 @@ function GeminiCopilotModal({ onClose, systemData, writeGodLog }) {
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
-    const userText = input;
-    setInput("");
-    setMessages(prev => [...prev, { role: 'user', text: userText }]);
-    setIsTyping(true);
+    const userText = input; setInput("");
+    setMessages(prev => [...prev, { role: 'user', text: userText }]); setIsTyping(true);
 
     try {
       const apiKey = localStorage.getItem('ggsoc_gemini_token');
@@ -166,7 +226,6 @@ function GeminiCopilotModal({ onClose, systemData, writeGodLog }) {
       const contextData = systemData.map(p => ({ name: p.name, del: Number(p.total_del)||0, pkp: Number(p.total_pkp)||0, conflict: p.has_conflict, blacklisted: p.is_blacklisted }));
       const systemPrompt = `你現在是物流系統的超級 AI 幕僚，說話風格專業帶科技感，稱呼對方總裁。這是即時數據 JSON：${JSON.stringify(contextData)}。總裁問：`;
 
-      // 使用最穩定的 gemini-pro 模型
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + userText }] }] })
@@ -207,7 +266,7 @@ function GeminiCopilotModal({ onClose, systemData, writeGodLog }) {
 }
 
 // ==========================================
-// 💬 復原：一般對話框組件 (ChatModal)
+// 💬 一般對話框組件 (ChatModal)
 // ==========================================
 function ChatModal({ target, currentUserRole, onClose }) {
   if (!target) return null;
@@ -298,7 +357,7 @@ function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
 }
 
 // ==========================================
-// 👑 營運指揮中心 (AdminHub) - 所有遺失功能完美回歸
+// 👑 營運指揮中心 (AdminHub)
 // ==========================================
 function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeGodLog, globalSettings }) {
   const [adminTab, setAdminTab] = useState('formal'); 
@@ -308,17 +367,12 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
   const [detailTarget, setDetailTarget] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showAiCopilot, setShowAiCopilot] = useState(false);
-  
-  // 🧠 Gemini 擴充狀態
   const [showGemini, setShowGemini] = useState(false);
   const [geminiToken, setGeminiToken] = useState(localStorage.getItem('ggsoc_gemini_token') || "");
-
-  // 🛡️ 復原保留區：免試建檔、LINE Notify、上帝日誌狀態
   const [expressData, setExpressData] = useState({ phone: '', name: '', id_number: '', priority_access: false });
   const [lineToken, setLineToken] = useState(localStorage.getItem('ggsoc_line_token') || "");
   const [godLogs, setGodLogs] = useState([]);
 
-  // 取得上帝日誌
   useEffect(() => {
     if(authRole !== 'super_admin') return;
     const unsub = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'god_log'), orderBy('timestamp', 'desc')), (snap) => {
@@ -355,7 +409,6 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
       const autoTask = async () => {
         const candidates = filteredList.filter(p => p.status === 'pending' && ((Number(p.total_del)||0) + (Number(p.total_pkp)||0)) > 0 && !p.has_conflict && !p.is_blacklisted);
         for (const p of candidates) await updateField(p.id, 'status', 'approved');
-        if(candidates.length > 0) showToast(`🤖 AI 自動核准 ${candidates.length} 位實體`);
       }; autoTask();
     }
   }, [filteredList, globalSettings?.ai_auto_pilot]);
@@ -368,12 +421,10 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
     return list.filter(p => p.status === 'approved' || p.status === 'frozen');
   }, [filteredList, adminTab, sq]);
 
-  // 復原：觸發活性檢查
   const toggleLivenessCheck = async (p) => {
     if(!window.confirm(`要對 ${p.name} 啟動 60 秒活性突擊檢查嗎？`)) return;
     await updateField(p.id, null, { pending_liveness_check: true, liveness_failed: false });
     showToast(`🎯 已對 ${p.name} 發射活性檢查指令`);
-    if(lineToken) sendLineNotify(lineToken, `🚨 總裁對 ${p.name} 啟動了物理活性檢查。`);
   };
 
   return (
@@ -388,7 +439,7 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
           <div className="flex items-center gap-2 mt-2"><span className={`text-[10px] px-3 py-1 rounded-full border ${authRole==='super_admin'?'text-amber-500 border-amber-500/30 bg-amber-900/20':'text-blue-400 border-blue-500/30 bg-blue-900/20'}`}>{globalSettings?.ghost_mode ? '🔍 STATUS: STABLE' : (authRole==='super_admin'?'👑 總裁模式':'👑 營運總部')}</span></div>
         </div>
         <div className="flex gap-2 w-full xl:w-auto flex-wrap">
-          {authRole === 'super_admin' && <button onClick={()=>setShowGemini(true)} className="flex-1 xl:flex-none bg-blue-900/20 border border-blue-500/30 px-6 py-3 rounded-xl text-xs font-black text-blue-400 hover:bg-blue-600 hover:text-white transition-all">🧠 喚醒 Gemini 幕僚</button>}
+          {authRole === 'super_admin' && <button onClick={()=>setShowGemini(true)} className="flex-1 xl:flex-none bg-blue-900/20 border border-blue-500/30 px-6 py-3 rounded-xl text-xs font-black text-blue-400 hover:bg-blue-600 hover:text-white transition-all">🧠 喚醒 Gemini</button>}
           {authRole === 'super_admin' && <button onClick={()=>setShowAiCopilot(!showAiCopilot)} className={`flex-1 xl:flex-none border px-6 py-3 rounded-xl text-xs transition-all ${showAiCopilot ? 'bg-cyan-600/30 border-cyan-400 text-cyan-300' : 'bg-slate-800 border-white/10 text-cyan-500'}`}>🤖 AI 戰情分析</button>}
           <button onClick={()=>setMT('tools')} className="flex-1 xl:flex-none bg-[#0a0a0a] border border-white/5 px-6 py-3 rounded-xl text-xs text-white hover:bg-slate-900 transition-all"><Settings size={16}/> 系統工具</button>
           <button onClick={onLogout} className="flex-1 xl:flex-none bg-rose-950/20 text-rose-500 px-6 py-3 rounded-xl text-xs border border-rose-500/10">安全退出</button>
@@ -415,7 +466,6 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
         {displayList.map(p => (
           <div key={p.id} className={`p-6 rounded-[2rem] bg-[#050505] border ${p.is_blacklisted ? 'border-rose-900' : 'border-white/5'} relative group hover:border-white/20 transition-all`}>
             <div className="absolute top-5 right-5 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity items-center">
-              {/* 復原：活性突擊按鈕 */}
               {authRole === 'super_admin' && p.status === 'approved' && (
                  <button onClick={(e) => { e.stopPropagation(); toggleLivenessCheck(p); }} className={`p-2 rounded-xl transition-all ${p.pending_liveness_check ? 'bg-rose-600 text-white animate-pulse' : 'bg-black border border-white/10 text-slate-600 hover:text-rose-400'}`} title="AI 活性突擊"><Target size={14}/></button>
               )}
@@ -435,19 +485,15 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
               <div className="flex flex-wrap gap-2">
                 {p.is_blacklisted && <span className="text-[8px] bg-rose-600 text-white px-2 py-0.5 rounded-lg italic">BLACKLISTED</span>}
                 {p.has_conflict && <span className="text-[8px] bg-amber-600 text-white px-2 py-0.5 rounded-lg animate-pulse italic">CONFLICT</span>}
-                {/* 復原：活性失敗標籤 */}
                 {p.liveness_failed && <span className="text-[8px] bg-rose-600 text-white px-2 py-0.5 rounded-lg animate-pulse italic">LIVENESS FAILED</span>}
                 {p.salary_status === 'disputed' && <span className="text-[8px] bg-rose-900 border border-rose-500 text-white px-2 py-0.5 rounded-lg italic">爭議退回</span>}
               </div>
-              
-              {/* 復原：顯示爭議原因 */}
               {p.salary_status === 'disputed' && <div className="mt-3 p-2 bg-rose-950/40 rounded-lg border border-rose-500/30 text-[10px] text-rose-300">退回原因：{p.salary_dispute_reason}</div>}
             </div>
           </div>
         ))}
       </div>
 
-      {/* ⚙️ 上帝開關面板 (工具箱) - 所有功能復原 */}
       {mT === 'tools' && (
         <div className="fixed inset-0 bg-black/98 z-[9999] flex items-center justify-center p-6 animate-zoom" onClick={()=>setMT(null)}>
           <div className="bg-[#050505] border border-white/10 p-10 rounded-[3rem] max-w-md w-full relative h-[85vh] overflow-y-auto custom-scrollbar" onClick={e=>e.stopPropagation()}>
@@ -455,19 +501,16 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
             <p className="text-blue-500 text-center text-[10px] tracking-[0.4em] mb-10 italic font-black">GOD COMMAND PANEL</p>
             
             <div className="space-y-6">
-              {/* Gemini Token */}
               <div className="bg-blue-950/10 p-5 rounded-3xl border border-blue-500/30 shadow-inner">
                 <p className="text-[10px] text-blue-400 mb-3 uppercase font-black italic">🧠 Gemini AI 核心連線金鑰</p>
                 <div className="flex gap-2 mb-2"><input type="password" placeholder="API Key..." className="flex-1 bg-black p-3 rounded-xl text-xs text-white outline-none border border-white/5" value={geminiToken} onChange={e=>{setGeminiToken(e.target.value); localStorage.setItem('ggsoc_gemini_token', e.target.value);}} /><button onClick={()=>{showToast(geminiToken?"✅ Gemini 神經網路已綁定":"已清除");}} className="bg-blue-600 text-white px-4 py-3 rounded-xl text-[10px] font-black">寫入</button></div>
               </div>
 
-              {/* 復原：LINE Notify */}
               <div className="bg-[#00c300]/10 p-5 rounded-3xl border border-[#00c300]/30 shadow-inner">
                 <p className="text-[10px] text-[#00c300] mb-3 uppercase font-black italic">🟢 LINE 上帝戰情網連線</p>
                 <div className="flex gap-2 mb-2"><input type="password" placeholder="LINE Notify Token..." className="flex-1 bg-black p-3 rounded-xl text-xs text-white outline-none border border-white/5" value={lineToken} onChange={e=>{setLineToken(e.target.value); localStorage.setItem('ggsoc_line_token', e.target.value);}} /><button onClick={()=>{showToast("✅ 戰情已同步至 LINE");}} className="bg-[#00c300] text-white px-4 py-3 rounded-xl text-[10px] font-black">測試</button></div>
               </div>
 
-              {/* 復原：免試授權建檔 */}
               <div className="bg-fuchsia-950/20 p-5 rounded-3xl border border-fuchsia-500/30">
                 <p className="text-[10px] text-fuchsia-400 mb-3 uppercase font-black italic">⚡ 核心成員免試授權</p>
                 <div className="grid grid-cols-2 gap-2 mb-3">
@@ -481,11 +524,9 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
                 }} className="w-full py-3 bg-fuchsia-600 text-white rounded-xl text-xs font-black">寫入上帝名單</button>
               </div>
 
-              {/* Toggles */}
               <div className={`p-5 rounded-3xl border transition-all ${globalSettings?.ai_auto_pilot ? 'bg-cyan-950/20 border-cyan-500/30' : 'bg-black border-white/5'}`}><div className="flex justify-between items-center"><span className="text-xs text-white font-black">AI_AUTO_PILOT / 自動駕駛</span><button onClick={()=>handleToggleSwitch('ai_auto_pilot', globalSettings?.ai_auto_pilot)} className={`w-12 h-6 rounded-full p-1 transition-all ${globalSettings?.ai_auto_pilot?'bg-cyan-500':'bg-slate-800'}`}><div className={`w-4 h-4 bg-white rounded-full transition-transform ${globalSettings?.ai_auto_pilot?'translate-x-6':'translate-x-0'}`} /></button></div></div>
               <div className={`p-5 rounded-3xl border transition-all ${globalSettings?.ghost_mode ? 'bg-fuchsia-950/20 border-fuchsia-500/30' : 'bg-black border-white/5'}`}><div className="flex justify-between items-center"><span className="text-xs text-white font-black">GHOST_MODE / 總裁隱身</span><button onClick={()=>handleToggleSwitch('ghost_mode', globalSettings?.ghost_mode)} className={`w-12 h-6 rounded-full p-1 transition-all ${globalSettings?.ghost_mode?'bg-fuchsia-600':'bg-slate-800'}`}><div className={`w-4 h-4 bg-white rounded-full transition-transform ${globalSettings?.ghost_mode?'translate-x-6':'translate-x-0'}`} /></button></div></div>
               
-              {/* 復原：上帝日誌 */}
               {authRole === 'super_admin' && (
                 <div className="bg-black p-4 rounded-3xl border border-white/5">
                   <p className="text-[10px] text-slate-500 mb-3 font-black flex items-center gap-1"><HistoryLog size={12}/> 上帝日誌 (God Log)</p>
@@ -503,9 +544,162 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
 }
 
 // ==========================================
-// 🚀 核心啟動引擎 (AppWrapper)
+// 🚀 核心重建區：門禁系統 (Gate)
 // ==========================================
-// 🚨 [修復關鍵]：將 auth 與 db 連線包裝確保等待 startEngine 完成
+function Gate({ onLogin }) {
+  const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
+
+  return (
+    <div className="h-screen flex items-center justify-center bg-black p-6 animate-zoom relative overflow-hidden">
+      {/* 門禁背景特效 */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-black to-black -z-10"></div>
+      
+      <div className="bg-[#050505] border border-white/5 p-10 rounded-[3rem] w-full max-w-sm text-center shadow-[0_0_50px_rgba(0,0,0,1)] relative z-10">
+         <Bot size={48} className="text-blue-500 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse" />
+         <h1 className="text-2xl italic font-black mb-2 tracking-tighter text-white">GGSOC_TERMINAL</h1>
+         <p className="text-[10px] text-slate-500 font-mono tracking-[0.2em] mb-10">AUTHORIZATION REQUIRED</p>
+         
+         <div className="space-y-4 mb-8">
+           <input 
+             value={phone} 
+             onChange={e => setPhone(e.target.value)} 
+             placeholder="PHONE / 終端識別碼" 
+             className="w-full bg-black p-4 rounded-2xl border border-white/5 text-center text-sm outline-none focus:border-blue-500 transition-all font-mono text-white placeholder:text-slate-700" 
+           />
+           <input 
+             type="password" 
+             value={pin} 
+             onChange={e => setPin(e.target.value)} 
+             placeholder="PIN / 安全密鑰" 
+             className="w-full bg-black p-4 rounded-2xl border border-white/5 text-center text-sm outline-none focus:border-blue-500 transition-all font-mono text-white placeholder:text-slate-700" 
+             onKeyPress={e => e.key === 'Enter' && onLogin(phone, pin)}
+           />
+         </div>
+         
+         <button onClick={() => onLogin(phone, pin)} className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-black italic shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all text-white tracking-widest text-lg">
+           ESTABLISH_LINK
+         </button>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 🚀 核心重建區：司機回報總端 (DriverHub)
+// ==========================================
+function DriverHub({ user, currentPartner, onLogout, db, appId, setLayer, globalSettings }) {
+  const [del, setDel] = useState("");
+  const [pkp, setPkp] = useState("");
+  const [showSalary, setShowSalary] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSubmit = async () => {
+    if (isSyncing) return;
+    if (!del && !pkp) return showToast("⚠️ 請至少輸入一項回報數據", true);
+    setIsSyncing(true);
+    try {
+      const ref = doc(db, 'artifacts', appId, 'public', 'data', 'partners', currentPartner.id);
+      await updateDoc(ref, {
+         total_del: (Number(currentPartner.total_del) || 0) + Number(del),
+         total_pkp: (Number(currentPartner.total_pkp) || 0) + Number(pkp),
+         last_update: Date.now()
+      });
+      showToast("✅ 數據已成功同步至總部核算");
+      setDel(""); setPkp("");
+    } catch (err) {
+      showToast("❌ 數據同步失敗", true);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-8 max-w-md mx-auto bg-black min-h-screen text-white font-black animate-[fadeIn_0.5s]">
+       {/* 如果有待處理的活性檢查 */}
+       {currentPartner.pending_liveness_check && (
+         <LivenessCheckModal 
+           partnerId={currentPartner.id} 
+           onVerify={() => { updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id), {pending_liveness_check: false, liveness_failed: false}); showToast("✅ 活性驗證通過，權限已恢復"); }} 
+           db={db} appId={appId} 
+         />
+       )}
+       
+       <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-4">
+         <div>
+           <h2 className="text-4xl italic text-white tracking-tighter">TERMINAL</h2>
+           <p className="text-blue-500 text-[10px] tracking-widest font-mono mt-1">ENTITY: {currentPartner.name} / {currentPartner.phone}</p>
+         </div>
+         <button onClick={onLogout} className="bg-rose-950/30 text-rose-500 p-3 rounded-2xl border border-rose-500/20 hover:bg-rose-600 hover:text-white transition-colors active:scale-90"><LogOut size={18}/></button>
+       </div>
+
+       {/* 回報區塊 */}
+       <div className="bg-[#050505] p-6 rounded-[2rem] border border-white/5 mb-6 shadow-2xl relative overflow-hidden group">
+         <div className="absolute top-0 left-0 w-full h-1 bg-blue-500/30 group-hover:bg-blue-500 transition-colors"></div>
+         <h3 className="text-slate-400 text-xs mb-6 uppercase tracking-widest flex items-center gap-2"><Send size={14} className="text-blue-500"/> 今日產能回報</h3>
+         
+         <div className="flex gap-4 mb-6">
+           <div className="flex-1">
+             <label className="text-[10px] text-slate-500 block mb-2 text-center uppercase tracking-widest">正件 (DEL)</label>
+             <input type="number" value={del} onChange={e=>setDel(e.target.value)} placeholder="0" className="w-full bg-black border border-white/10 rounded-2xl p-4 text-center text-white text-2xl outline-none focus:border-blue-500 transition-colors font-mono" />
+           </div>
+           <div className="flex-1">
+             <label className="text-[10px] text-slate-500 block mb-2 text-center uppercase tracking-widest">逆收 (PKP)</label>
+             <input type="number" value={pkp} onChange={e=>setPkp(e.target.value)} placeholder="0" className="w-full bg-black border border-white/10 rounded-2xl p-4 text-center text-white text-2xl outline-none focus:border-amber-500 transition-colors font-mono" />
+           </div>
+         </div>
+         <button onClick={handleSubmit} disabled={isSyncing} className="w-full py-5 bg-blue-600 hover:bg-blue-500 rounded-2xl text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-95 transition-all text-lg tracking-widest italic disabled:opacity-50">
+           {isSyncing ? 'TRANSMITTING...' : '提交數據至核心'}
+         </button>
+       </div>
+
+       {/* 統計區塊 */}
+       <div className="grid grid-cols-2 gap-4 mb-6">
+         <div className="bg-[#050505] p-6 rounded-[2rem] border border-white/5 text-center">
+           <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-widest">目前累積正件</p>
+           <p className="text-3xl text-blue-400 italic font-mono">{currentPartner.total_del || 0}</p>
+         </div>
+         <div className="bg-[#050505] p-6 rounded-[2rem] border border-white/5 text-center">
+           <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-widest">目前累積逆收</p>
+           <p className="text-3xl text-amber-400 italic font-mono">{currentPartner.total_pkp || 0}</p>
+         </div>
+       </div>
+
+       {/* 薪資狀態與異常報備提示 */}
+       {currentPartner.salary_status === 'pending_sign' && (
+         <button onClick={()=>setShowSalary(true)} className="w-full py-5 bg-emerald-600/20 border border-emerald-500 text-emerald-400 rounded-[2rem] animate-pulse font-black tracking-widest text-sm shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+           💰 薪資單已核發，請點擊檢視並簽收
+         </button>
+       )}
+       
+       {currentPartner.has_conflict && (
+         <div className="w-full py-4 bg-amber-900/30 border border-amber-500/50 text-amber-400 rounded-2xl text-center text-xs tracking-widest mt-4">
+           ⚠️ 系統已標記您的帳號異常，請靜候總部審核
+         </div>
+       )}
+
+       {showSalary && (
+         <SalarySignModal 
+           partner={currentPartner} 
+           onClose={()=>setShowSalary(false)} 
+           onAction={async (action, data) => {
+             if(action==='confirm') {
+               await updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id), {salary_status: 'signed', signature: data.sig});
+               showToast("✅ 已成功簽收"); setShowSalary(false);
+             } else {
+               await updateDoc(doc(db,'artifacts',appId,'public','data','partners',currentPartner.id), {salary_status: 'disputed', salary_dispute_reason: data.reason});
+               showToast("⚠️ 已送出異議至總部"); setShowSalary(false);
+             }
+           }} 
+         />
+       )}
+    </div>
+  );
+}
+
+// ==========================================
+// 🚀 核心包裹器 (AppWrapper)
+// ==========================================
 function AppWrapper() {
   const [u, setU] = useState(null); 
   const [aR, setAR] = useState('guest'); 
@@ -515,8 +709,9 @@ function AppWrapper() {
   const [spI, setSpI] = useState(null);
   const [gs, setGs] = useState(null); 
 
+  const cp = useMemo(() => ps.find(p => p.id === spI), [ps, spI]);
+
   useEffect(() => {
-    // 確保 auth 已經存在
     if(!auth) return;
     const unA = onAuthStateChanged(auth, async (user) => { 
       if(user) { 
@@ -536,12 +731,12 @@ function AppWrapper() {
     const unP = onSnapshot(collection(db,'artifacts',window.__app_id,'public','data','partners'), (s) => {
       setPs(s.docs.map(d=>({id:d.id,...d.data()})));
       if(!s.docs.find(d => d.data().phone === '0976017938')) {
-        setDoc(doc(db,'artifacts',window.__app_id,'public','data','partners','p_0976017938'), { id:'p_0976017938', name:'系統總裁', phone:'0976017938', pin:'8305319', status:'approved', total_del:0, total_pkp:0 });
+        setDoc(doc(db,'artifacts',window.__app_id,'public','data','partners','p_0976017938'), { id:'p_0976017938', name:'系統總裁', phone:'0976017938', pin:'8305319', status:'approved', total_del:0, total_pkp:0, priority_access: true });
       }
     });
     const unG = onSnapshot(doc(db,'artifacts',window.__app_id,'public','data','settings','global'), (d) => { if(d.exists()) setGs(d.data()); });
     return () => { unP(); unG(); };
-  }, [u]);
+  }, [u, db]);
 
   const writeGodLog = async (action, details) => { 
     if(!db) return;
@@ -551,39 +746,45 @@ function AppWrapper() {
   const handleLogin = (phone, pin) => {
     if (phone === "0976017938" && pin === "8305319") { 
       localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'super_admin' })); 
-      setAR('super_admin'); setL('admin'); setSpI(`p_${phone}`); showToast("👑 造物主降臨");
+      setAR('super_admin'); setL('admin'); setSpI(`p_${phone}`); showToast("👑 造物主降臨，最高權限解鎖");
     } else {
       const p = ps.find(x => x.phone === phone && x.pin === pin); 
       if (p && p.status === 'approved') { 
         if(p.liveness_failed) return showToast("🚫 帳號校驗失敗鎖定", true);
         localStorage.setItem('ggsoc_auth', JSON.stringify({ phone, role: 'driver' })); 
-        setAR('driver'); setSpI(p.id); setL('driver'); 
+        setAR('driver'); setSpI(p.id); setL('driver'); showToast(`✅ 實體連線成功: ${p.name}`);
       } else showToast("⚠️ 識別失敗或權限不足", true);
     }
   };
 
-  if (ld) return (<div className="h-screen flex flex-col items-center justify-center bg-black"><div className="loader mb-4"></div><p className="text-blue-500 text-[10px] tracking-[0.5em] animate-pulse uppercase mt-4">GGSOC_SYSTEM_IGNITING...</p></div>);
+  if (ld) return (<div className="h-screen flex flex-col items-center justify-center bg-black"><div className="loader mb-4"></div><p className="text-blue-500 text-[10px] tracking-[0.5em] animate-pulse uppercase mt-4 font-mono font-black">GGSOC_SYSTEM_IGNITING...</p></div>);
 
   return (
     <div className="min-h-screen text-slate-200">
       <div id="global-toast" className="fixed top-[-100px] left-1/2 -translate-x-1/2 px-10 py-6 rounded-full font-black z-[999999] opacity-0 pointer-events-none transition-all text-white"></div>
       
-      {l === 'gate' && <div className="h-screen flex items-center justify-center bg-black p-6 animate-zoom">
-        <div className="bg-[#050505] border border-white/5 p-10 rounded-[3rem] w-full max-w-sm text-center shadow-[0_0_50px_rgba(0,0,0,1)]">
-           <Bot size={48} className="text-blue-500 mx-auto mb-6" />
-           <h1 className="text-2xl italic font-black mb-8 tracking-tighter text-white">GGSOC_TERMINAL</h1>
-           <input id="login_phone" placeholder="PHONE" className="w-full bg-black p-4 rounded-2xl border border-white/5 mb-3 text-center text-sm outline-none focus:border-blue-500 font-mono" />
-           <input id="login_pin" type="password" placeholder="PIN" className="w-full bg-black p-4 rounded-2xl border border-white/5 mb-8 text-center text-sm outline-none focus:border-blue-500 font-mono" />
-           <button onClick={()=>handleLogin(document.getElementById('login_phone').value, document.getElementById('login_pin').value)} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black italic shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all">ESTABLISH_LINK</button>
-        </div>
-      </div>}
+      {/* 判斷並渲染對應模組 */}
+      {l === 'gate' && <Gate onLogin={handleLogin} />}
       
       {l === 'admin' && <AdminHub authRole={aR} partners={ps} onLogout={()=>{localStorage.removeItem('ggsoc_auth'); setL('gate');}} updateField={async (id, f, v) => { const ref = doc(db, 'artifacts', window.__app_id, 'public', 'data', 'partners', id); await updateDoc(ref, f === null ? v : { [f]: v }); }} db={db} appId={window.__app_id} writeGodLog={writeGodLog} globalSettings={gs} />}
+      
+      {l === 'driver' && cp && <DriverHub user={u} currentPartner={cp} onLogout={()=>{localStorage.removeItem('ggsoc_auth'); setL('gate');}} db={db} appId={window.__app_id} setLayer={setL} globalSettings={gs} />}
     </div>
   );
 }
 
-// ⚠️ 注意：不要在這裡重複呼叫 root.render，因為它已經在 startEngine 裡面被安全地呼叫了。
+// ==========================================
+// 🛡️ 錯誤攔截保護 (防止單一組件崩潰導致全站白屏)
+// ==========================================
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError(error) { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return <div className="min-h-screen bg-black text-white flex items-center justify-center font-black"><div className="bg-rose-950/20 border border-rose-500 p-8 rounded-[2rem] text-center"><h2 className="text-3xl text-rose-500 mb-4">🚨 顯示層發生嚴重異常</h2><button onClick={() => window.location.reload()} className="bg-rose-600 px-6 py-3 rounded-xl text-white">強制重新載入系統</button></div></div>;
+    return this.props.children;
+  }
+}
+
   </script>
 </body>
 </html>
