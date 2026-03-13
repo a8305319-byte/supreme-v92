@@ -78,6 +78,123 @@ const showToast = (msg, isError = false) => {
 };
 
 // ==========================================
+// 🧠 總裁專屬：Gemini AI 幕僚對話引擎
+// ==========================================
+function GeminiCopilotModal({ onClose, systemData, writeGodLog }) {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([
+    { role: 'model', text: '您好，總裁。我是您的專屬 Gemini 幕僚。我已讀取當前指揮中心的即時營運數據（包含產能、異常報備與黑名單），請隨時下達分析指令。' }
+  ]);
+  const [isTyping, setIsTyping] = useState(false);
+  const chatEndRef = useRef(null);
+  
+  // 自動捲動到最新訊息
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim() || isTyping) return;
+    const userText = input;
+    setInput("");
+    setMessages(prev => [...prev, { role: 'user', text: userText }]);
+    setIsTyping(true);
+
+    try {
+      const apiKey = localStorage.getItem('ggsoc_gemini_token');
+      if (!apiKey) {
+        setMessages(prev => [...prev, { role: 'model', text: '⚠️ 無法連結神經網路。請先至「系統工具箱」設定您的 Gemini API Key。' }]);
+        setIsTyping(false);
+        return;
+      }
+
+      // 將當前系統數據壓縮餵給 AI
+      const contextData = systemData.map(p => ({
+        name: p.name, 
+        del: Number(p.total_del) || 0, 
+        pkp: Number(p.total_pkp) || 0, 
+        conflict: p.has_conflict, 
+        blacklisted: p.is_blacklisted,
+        status: p.status
+      }));
+      
+      const systemPrompt = `你現在是物流營運系統的超級 AI 幕僚，說話風格簡潔、專業、帶有極客科技感，直接稱呼對方為總裁。這是當前的即時營運數據 JSON：${JSON.stringify(contextData)}。請根據這些真實數據精準回答總裁的問題。總裁問：`;
+
+      // 呼叫真實的 Gemini API
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + userText }] }] })
+      });
+
+      const data = await res.json();
+      
+      if (data.error) throw new Error(data.error.message);
+      
+      const reply = data.candidates[0].content.parts[0].text;
+      setMessages(prev => [...prev, { role: 'model', text: reply }]);
+      
+      if (writeGodLog) writeGodLog("🧠 諮詢 Gemini 幕僚", `指令: ${userText.substring(0, 15)}...`);
+    } catch (err) {
+      console.error(err);
+      setMessages(prev => [...prev, { role: 'model', text: `🚨 核心神經網路連線異常：${err.message}` }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[999999] flex justify-end animate-[fadeIn_0.3s]" onClick={onClose}>
+      <div className="bg-[#050505] border-l border-blue-500/30 w-full max-w-md h-full flex flex-col shadow-[0_0_50px_rgba(59,130,246,0.1)] relative" onClick={e=>e.stopPropagation()}>
+        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black">
+          <div className="flex items-center gap-3">
+            <Bot size={28} className="text-blue-500 animate-pulse drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+            <div>
+              <h3 className="text-white italic font-black tracking-widest">GEMINI COPILOT</h3>
+              <p className="text-[9px] text-blue-500 font-mono tracking-widest">NEURAL_LINK_ESTABLISHED</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-2"><X size={20}/></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed font-black ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-none shadow-[0_0_15px_rgba(37,99,235,0.3)]' : 'bg-slate-900 border border-white/5 text-slate-300 rounded-bl-none'}`}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="bg-slate-900 border border-white/5 p-4 rounded-2xl rounded-bl-none flex gap-2 items-center">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="p-4 bg-black border-t border-white/5">
+          <div className="flex gap-2">
+            <input 
+              value={input} 
+              onChange={e=>setInput(e.target.value)} 
+              onKeyPress={e => e.key === 'Enter' && handleSend()}
+              placeholder="輸入分析指令..." 
+              className="flex-1 bg-slate-900 border border-white/10 p-4 rounded-xl text-white text-sm outline-none focus:border-blue-500 transition-colors font-mono" 
+            />
+            <button onClick={handleSend} disabled={isTyping || !input.trim()} className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white p-4 rounded-xl transition-all active:scale-95 flex items-center justify-center">
+              <Send size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
 // 💬 對話框組件 (ChatModal)
 // ==========================================
 function ChatModal({ target, currentUserRole, onClose }) {
@@ -261,6 +378,10 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
   const [detailTarget, setDetailTarget] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showAiCopilot, setShowAiCopilot] = useState(false);
+  
+  // 🧠 Gemini 擴充狀態
+  const [showGemini, setShowGemini] = useState(false);
+  const [geminiToken, setGeminiToken] = useState(localStorage.getItem('ggsoc_gemini_token') || "");
 
   // 🛡️ 數據層：隱身過濾與黑名單攔截
   const filteredList = useMemo(() => {
@@ -342,6 +463,9 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
       {chatTarget && <ChatModal target={chatTarget} currentUserRole={authRole} onClose={()=>setChatTarget(null)} />}
       {detailTarget && <AdminDriverDetailModal partner={detailTarget} onClose={()=>setDetailTarget(null)} onUpdate={updateField} authRole={authRole} />}
       
+      {/* 🧠 渲染 Gemini AI 幕僚 */}
+      {showGemini && <GeminiCopilotModal onClose={()=>setShowGemini(false)} systemData={filteredList} writeGodLog={writeGodLog} />}
+      
       {/* 標題區：應用 Ghost Mode 隱身偽裝 */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-6">
         <div>
@@ -354,9 +478,15 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
             </span>
           </div>
         </div>
-        <div className="flex gap-2 w-full xl:w-auto">
+        <div className="flex gap-2 w-full xl:w-auto flex-wrap">
+          {/* 🧠 召喚 Gemini 大腦 (只有造物主可用) */}
           {authRole === 'super_admin' && (
-            <button onClick={()=>setShowAiCopilot(!showAiCopilot)} className={`flex-1 xl:flex-none border px-6 py-3 rounded-xl text-xs transition-all ${showAiCopilot ? 'bg-cyan-600/30 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'bg-slate-800 border-white/10 text-cyan-500'}`}>🤖 AI 戰情分析</button>
+            <button onClick={()=>setShowGemini(true)} className="flex-1 xl:flex-none bg-blue-900/20 border border-blue-500/30 px-6 py-3 rounded-xl text-xs font-black text-blue-400 hover:bg-blue-600 hover:text-white transition-all shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+              🧠 喚醒 Gemini 幕僚
+            </button>
+          )}
+          {authRole === 'super_admin' && (
+            <button onClick={()=>setShowAiCopilot(!showAiCopilot)} className={`flex-1 xl:flex-none border px-6 py-3 rounded-xl text-xs transition-all ${showAiCopilot ? 'bg-cyan-600/30 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'bg-slate-800 border-white/10 text-cyan-500 hover:text-white'}`}>🤖 AI 戰情分析</button>
           )}
           <button onClick={()=>setMT('tools')} className="flex-1 xl:flex-none bg-[#0a0a0a] border border-white/5 px-6 py-3 rounded-xl text-xs text-white hover:bg-slate-900 transition-all"><Settings size={16}/> 系統工具</button>
           <button onClick={onLogout} className="flex-1 xl:flex-none bg-rose-950/20 text-rose-500 px-6 py-3 rounded-xl text-xs border border-rose-500/10">安全退出</button>
@@ -472,11 +602,21 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
       {/* ⚙️ 上帝開關面板 (工具箱) */}
       {mT === 'tools' && (
         <div className="fixed inset-0 bg-black/98 z-[9999] flex items-center justify-center p-6 animate-zoom" onClick={()=>setMT(null)}>
-          <div className="bg-[#050505] border border-white/10 p-10 rounded-[3rem] max-w-md w-full relative" onClick={e=>e.stopPropagation()}>
+          <div className="bg-[#050505] border border-white/10 p-10 rounded-[3rem] max-w-md w-full relative h-[80vh] overflow-y-auto custom-scrollbar" onClick={e=>e.stopPropagation()}>
             <button onClick={()=>setMT(null)} className="absolute top-8 right-8 text-white"><X size={20}/></button>
             <p className="text-blue-500 text-center text-[10px] tracking-[0.4em] mb-10 italic font-black">GOD COMMAND PANEL</p>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* 🧠 神經網路 API 金鑰設定 */}
+              <div className="bg-blue-950/10 p-5 rounded-3xl border border-blue-500/30 shadow-inner">
+                <p className="text-[10px] text-blue-400 mb-3 uppercase font-black italic">🧠 Gemini AI 核心連線金鑰</p>
+                <div className="flex gap-2 mb-2">
+                  <input type="password" placeholder="貼上 Google Gemini API Key..." className="flex-1 bg-black p-3 rounded-xl text-xs text-white outline-none border border-white/5 focus:border-blue-500" value={geminiToken} onChange={e=>{setGeminiToken(e.target.value); localStorage.setItem('ggsoc_gemini_token', e.target.value);}} />
+                  <button onClick={()=>{showToast(geminiToken ? "✅ Gemini 神經網路已綁定" : "已清除金鑰");}} className="bg-blue-600 text-white px-4 py-3 rounded-xl text-[10px] font-black hover:bg-blue-500 transition-colors">寫入</button>
+                </div>
+                <p className="text-[8px] text-slate-500 leading-relaxed">綁定後，即可在主控台喚醒 Gemini 幕僚，進行自然語言營運分析。</p>
+              </div>
+
               {/* 開關：AI 自動駕駛 */}
               <div className={`p-5 rounded-3xl border transition-all ${globalSettings?.ai_auto_pilot ? 'bg-cyan-950/20 border-cyan-500/30' : 'bg-black border-white/5'}`}>
                 <div className="flex justify-between items-center mb-1">
