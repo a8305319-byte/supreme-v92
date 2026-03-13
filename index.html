@@ -176,20 +176,21 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLay
       if (typeof writeGodLog === 'function') {
         writeGodLog("系統開關變更", `核心欄位: ${field} | 變更為: ${nextValue}`);
       }
-      showToast(`✅ 系統參數 [${field}] 已同步寫入雲
+      showToast(`✅ 系統參數 [${field}] 已同步寫入雲端`);
     } catch (err) {
       console.error("Critical Toggle Error:", err);
-      showToast("❌ 數據同步失敗，請檢查權限", true);
+      showToast("❌ 雲端同步失敗，請檢查權限設定", true);
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // 🤖 AI 自動駕駛 (Auto-Pilot)：高強度邏輯檢驗
+  // 🤖 AI 自動駕駛 (Auto-Pilot)：高強度邏輯背景檢驗
   useEffect(() => {
     const runAutoPilot = async () => {
+      // 僅限 super_admin 開啟開關時執行
       if (globalSettings?.ai_auto_pilot === true && authRole === 'super_admin') {
-        // 嚴格過濾：必須同時滿足 (待審核 && 有產出 && 無衝突 && 非黑名單)
+        // 嚴格過濾：待審核 && (正件或逆收有產出) && 無報備衝突 && 非黑名單
         const candidates = filteredList.filter(p => 
           p.status === 'pending' && 
           ((Number(p.total_del) || 0) + (Number(p.total_pkp) || 0)) > 0 && 
@@ -198,18 +199,19 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLay
         );
 
         if (candidates.length > 0) {
+          // 批次執行 (為了不簡化，逐一處理以確保 updateField 邏輯被觸發)
           for (const p of candidates) {
             await updateField(p.id, 'status', 'approved');
           }
-          if (writeGodLog) writeGodLog("AI 自動駕駛執行", `核准司機數量: ${candidates.length}`);
-          showToast(`🤖 AI 已自動授權 ${candidates.length} 位合規司機`);
+          if (writeGodLog) writeGodLog("AI 自動駕駛決策", `自動核准了 ${candidates.length} 位具備實質產出之司機`);
+          showToast(`🤖 AI Copilot 已自動授權 ${candidates.length} 位合規司機`);
         }
       }
     };
     runAutoPilot();
   }, [filteredList, globalSettings?.ai_auto_pilot, authRole]);
 
-  // 搜尋與分頁過濾邏輯
+  // 🤖 智能搜尋與分頁過濾邏輯
   const displayList = useMemo(() => {
     const searchLow = (sq || "").toLowerCase();
     const list = filteredList.filter(p => 
@@ -219,53 +221,74 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLay
     
     if (adminTab === 'pending') return list.filter(p => p.status === 'pending');
     if (adminTab === 'intercept') return list.filter(p => p.salary_status === 'intercepted_by_boss');
-    return list.filter(p => p.status === 'approved' || p.status === 'frozen');
+    if (adminTab === 'frozen') return list.filter(p => p.status === 'frozen');
+    return list.filter(p => p.status === 'approved');
   }, [filteredList, adminTab, sq]);
 
   return (
     <div className="p-4 md:p-10 max-w-full mx-auto bg-black min-h-screen font-black animate-[fadeIn_0.5s] selection:bg-cyan-500/30">
       
-      {/* 頂部標題與 UI 偽裝檢查 */}
+      {/* 頂部標題：隱身模式檢查 */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 gap-8">
         <div>
           <h2 className="text-white text-5xl italic font-black uppercase tracking-tighter leading-none">
-            {globalSettings?.ghost_mode ? '數據終端監控' : '營運指揮中心'}
+            {globalSettings?.ghost_mode ? '數據終端監控 (Terminal)' : '營運指揮中心 (Hub)'}
           </h2>
           <div className="mt-3 flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : 'bg-emerald-500'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : 'bg-emerald-500 shadow-[0_0_10px_#10b981]'}`}></div>
             <span className="text-[10px] text-slate-500 tracking-[0.2em] font-mono">
-              {globalSettings?.ghost_mode ? '🔍 STATUS: MONITORING_ACTIVE' : '👑 AUTH: CREATOR_MODE'}
+              {globalSettings?.ghost_mode ? '🔍 STATUS: MONITORING_ACTIVE / ENCRYPTED' : '👑 AUTH: CREATOR_MODE / FULL_ACCESS'}
             </span>
           </div>
         </div>
+        
         <div className="flex flex-wrap gap-2 w-full xl:w-auto">
           {authRole === 'super_admin' && (
-            <button onClick={()=>setShowAiCopilot(!showAiCopilot)} className={`flex-1 xl:flex-none border px-8 py-4 rounded-2xl text-xs font-black transition-all ${showAiCopilot ? 'bg-cyan-600/20 border-cyan-400 text-cyan-400' : 'bg-[#0a0a0a] border-white/5 text-slate-500 hover:text-white'}`}>🤖 AI 戰情分析</button>
+            <button onClick={()=>setShowAiCopilot(!showAiCopilot)} className={`flex-1 xl:flex-none border px-8 py-4 rounded-2xl text-xs font-black transition-all ${showAiCopilot ? 'bg-cyan-600/20 border-cyan-400 text-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.2)]' : 'bg-[#0a0a0a] border-white/5 text-slate-500 hover:text-white'}`}>
+              🤖 AI 戰情分析
+            </button>
           )}
-          <button onClick={()=>setMT('tools')} className="flex-1 xl:flex-none bg-[#0a0a0a] border border-white/5 px-8 py-4 rounded-2xl text-xs text-white hover:bg-slate-900 transition-all">系統工具箱</button>
-          <button onClick={onLogout} className="flex-1 xl:flex-none bg-rose-950/20 text-rose-500 px-8 py-4 rounded-2xl text-xs border border-rose-500/10 active:scale-95">安全退出</button>
+          <button onClick={()=>setMT('tools')} className="flex-1 xl:flex-none bg-[#0a0a0a] border border-white/5 px-8 py-4 rounded-2xl text-xs text-white hover:bg-slate-900 transition-all">
+            <div className="flex items-center justify-center gap-2"><Settings size={14}/> 系統工具箱</div>
+          </button>
+          <button onClick={onLogout} className="flex-1 xl:flex-none bg-rose-950/20 text-rose-500 px-8 py-4 rounded-2xl text-xs border border-rose-500/10 hover:bg-rose-600 hover:text-white transition-all">安全退出</button>
         </div>
       </div>
 
-      {/* 司機列表：強化檢查與功能按鈕 */}
+      {/* 戰情切換頁籤 */}
+      <div className="flex flex-wrap gap-2 mb-8 bg-[#050505] p-2 rounded-3xl border border-white/5">
+        {['formal', 'pending', 'intercept', 'frozen'].map(tab => (
+          <button 
+            key={tab} 
+            onClick={() => setAdminTab(tab)}
+            className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${adminTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white/5'}`}
+          >
+            {tab === 'formal' ? '現役名單' : tab === 'pending' ? '待核入職' : tab === 'intercept' ? '攔截審核' : '凍結中'}
+          </button>
+        ))}
+      </div>
+
+      {/* 司機卡片列表：強化檢查版 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-32">
         {displayList.map(p => {
           const totalJobs = (Number(p.total_del) || 0) + (Number(p.total_pkp) || 0);
           return (
-            <div key={p.id} className={`p-6 rounded-[2rem] bg-[#050505] border ${p.is_blacklisted ? 'border-rose-900/30' : 'border-white/5'} relative group hover:border-white/20 transition-all duration-500`}>
-              {/* 頂部操作群組：嚴格校驗權限 */}
+            <div key={p.id} className={`p-6 rounded-[2rem] bg-[#050505] border ${p.is_blacklisted ? 'border-rose-900 shadow-[0_0_20px_rgba(225,29,72,0.1)]' : 'border-white/5'} relative group hover:border-white/20 transition-all duration-500`}>
+              
+              {/* 操作群組：嚴格校驗 */}
               <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 {authRole === 'super_admin' && (
                   <button 
+                    disabled={isSyncing}
                     onClick={async (e) => {
                       e.stopPropagation();
-                      const confirmMsg = p.is_blacklisted ? `是否將 ${p.name} 移出黑名單？` : `確定要將 ${p.name} 列入黑名單？(隱身模式下將不可見)`;
-                      if (window.confirm(confirmMsg)) {
-                        await updateField(p.id, 'is_blacklisted', !p.is_blacklisted);
-                        showToast(p.is_blacklisted ? "已解除標記" : "已標記黑名單");
+                      const nextBlackState = !p.is_blacklisted;
+                      if (window.confirm(`🌑 確定要${nextBlackState ? '標記' : '解除'}黑名單？`)) {
+                        await updateField(p.id, 'is_blacklisted', nextBlackState);
+                        writeGodLog("黑名單變動", `實體: ${p.name} | 狀態: ${nextBlackState}`);
                       }
                     }}
-                    className={`p-2 rounded-xl border transition-all ${p.is_blacklisted ? 'bg-rose-600 text-white border-rose-400' : 'bg-black text-slate-600 border-white/10 hover:text-rose-500'}`}
+                    className={`p-2 rounded-xl border transition-all ${p.is_blacklisted ? 'bg-rose-600 text-white border-rose-400 shadow-lg' : 'bg-black text-slate-600 border-white/10 hover:text-rose-500'}`}
                   >
                     <Skull size={16} />
                   </button>
@@ -274,25 +297,29 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLay
               </div>
 
               <div onClick={()=>setDetailTarget(p)} className="cursor-pointer">
-                <h4 className="text-2xl text-white italic font-black mb-1">{p.name || '未命名實體'}</h4>
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="text-2xl text-white italic font-black">{p.name || 'ANONYMOUS'}</h4>
+                  {p.priority_access && <Shield size={14} className="text-fuchsia-500" />}
+                </div>
                 <p className="text-[10px] text-slate-600 font-mono tracking-widest mb-6">{p.phone}</p>
                 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-black p-4 rounded-2xl border border-white/5 text-center">
-                    <p className="text-[8px] text-slate-500 uppercase font-black mb-1">正件</p>
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="bg-black p-4 rounded-2xl border border-white/5 text-center group-hover:border-blue-500/30 transition-colors">
+                    <p className="text-[8px] text-slate-500 uppercase font-black mb-1 tracking-tighter">DEL / 正件</p>
                     <p className="text-xl text-blue-500 font-mono italic">{p.total_del || 0}</p>
                   </div>
-                  <div className="bg-black p-4 rounded-2xl border border-white/5 text-center">
-                    <p className="text-[8px] text-slate-500 uppercase font-black mb-1">逆收</p>
+                  <div className="bg-black p-4 rounded-2xl border border-white/5 text-center group-hover:border-amber-500/30 transition-colors">
+                    <p className="text-[8px] text-slate-500 uppercase font-black mb-1 tracking-tighter">PKP / 逆收</p>
                     <p className="text-xl text-amber-500 font-mono italic">{p.total_pkp || 0}</p>
                   </div>
                 </div>
 
-                {/* 狀態標籤檢查 */}
+                {/* 多重標籤檢查邏輯 */}
                 <div className="flex flex-wrap gap-2">
-                  {p.is_blacklisted && <span className="bg-rose-600 text-white text-[8px] px-2 py-1 rounded-lg">BLACKLISTED</span>}
-                  {p.status === 'pending' && <span className="bg-orange-600 text-white text-[8px] px-2 py-1 rounded-lg">AWAITING_APPROVAL</span>}
-                  {totalJobs === 0 && p.status === 'approved' && <span className="border border-cyan-500/30 text-cyan-500 text-[8px] px-2 py-1 rounded-lg">ZERO_YIELD_RISK</span>}
+                  {p.is_blacklisted && <span className="bg-rose-600 text-white text-[8px] px-2 py-1 rounded-lg font-black italic">BLACKLISTED</span>}
+                  {p.has_conflict && <span className="bg-amber-600 text-white text-[8px] px-2 py-1 rounded-lg animate-pulse font-black italic">CONFLICT_ALERT</span>}
+                  {p.status === 'pending' && <span className="bg-orange-600 text-white text-[8px] px-2 py-1 rounded-lg font-black italic">PENDING_REVIEW</span>}
+                  {totalJobs === 0 && p.status === 'approved' && <span className="border border-cyan-500/50 text-cyan-500 text-[8px] px-2 py-1 rounded-lg font-black italic">ZERO_YIELD</span>}
                 </div>
               </div>
             </div>
@@ -300,42 +327,42 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLay
         })}
       </div>
 
-      {/* 工具箱 Modal：強化版開關介面 */}
+      {/* ⚙️ 系統工具箱 Modal：強化版開關介面 */}
       {mT === 'tools' && (
         <div className="fixed inset-0 bg-black/98 z-[9999] flex items-center justify-center p-6 animate-zoom" onClick={()=>setMT(null)}>
-          <div className="bg-[#050505] border border-white/10 p-10 rounded-[3rem] max-w-lg w-full relative shadow-2xl" onClick={e=>e.stopPropagation()}>
-            <button onClick={()=>setMT(null)} className="absolute top-8 right-8 text-slate-500 hover:text-white"><X size={24}/></button>
-            <h3 className="text-xs text-blue-500 tracking-[0.4em] font-black italic mb-10 text-center uppercase">System Master Toggles</h3>
+          <div className="bg-[#050505] border border-white/10 p-10 rounded-[3rem] max-w-lg w-full relative shadow-[0_0_50px_rgba(0,0,0,1)]" onClick={e=>e.stopPropagation()}>
+            <button onClick={()=>setMT(null)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
+            <h3 className="text-xs text-blue-500 tracking-[0.4em] font-black italic mb-10 text-center uppercase">System Master Command</h3>
             
             <div className="space-y-4">
-              {/* 控制項：AI 自動駕駛 */}
-              <div className={`p-6 rounded-3xl border transition-all ${globalSettings?.ai_auto_pilot ? 'bg-cyan-950/10 border-cyan-500/30' : 'bg-black border-white/5'}`}>
+              {/* 開關：AI 自動駕駛 */}
+              <div className={`p-6 rounded-3xl border transition-all duration-500 ${globalSettings?.ai_auto_pilot ? 'bg-cyan-950/10 border-cyan-500/40 shadow-[inner_0_0_20px_rgba(6,182,212,0.1)]' : 'bg-black border-white/5'}`}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-white font-black tracking-widest">AI_AUTO_PILOT</span>
                   <button 
                     disabled={isSyncing}
                     onClick={() => handleToggleSwitch('ai_auto_pilot', globalSettings?.ai_auto_pilot)} 
-                    className={`w-14 h-7 rounded-full p-1.5 transition-all ${globalSettings?.ai_auto_pilot ? 'bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]' : 'bg-slate-800'}`}
+                    className={`w-14 h-7 rounded-full p-1.5 transition-all duration-300 ${globalSettings?.ai_auto_pilot ? 'bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]' : 'bg-slate-800'}`}
                   >
-                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${globalSettings?.ai_auto_pilot ? 'translate-x-7' : 'translate-x-0'}`} />
+                    <div className={`w-4 h-4 bg-white rounded-full transition-transform duration-300 ${globalSettings?.ai_auto_pilot ? 'translate-x-7' : 'translate-x-0'}`} />
                   </button>
                 </div>
-                <p className="text-[9px] text-slate-500 italic">開啟後，系統將自動處理無爭議之行政核准流程。</p>
+                <p className="text-[9px] text-slate-500 italic leading-relaxed">開啟後，系統將自動授權具備實質產出、且無數據異常報備的新進實體。</p>
               </div>
 
-              {/* 控制項：總裁隱身模式 */}
-              <div className={`p-6 rounded-3xl border transition-all ${globalSettings?.ghost_mode ? 'bg-fuchsia-950/10 border-fuchsia-500/30' : 'bg-black border-white/5'}`}>
+              {/* 開關：總裁隱身模式 */}
+              <div className={`p-6 rounded-3xl border transition-all duration-500 ${globalSettings?.ghost_mode ? 'bg-fuchsia-950/10 border-fuchsia-500/40 shadow-[inner_0_0_20px_rgba(192,38,211,0.1)]' : 'bg-black border-white/5'}`}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-white font-black tracking-widest">GHOST_MODE_STEALTH</span>
                   <button 
                     disabled={isSyncing}
                     onClick={() => handleToggleSwitch('ghost_mode', globalSettings?.ghost_mode)} 
-                    className={`w-14 h-7 rounded-full p-1.5 transition-all ${globalSettings?.ghost_mode ? 'bg-fuchsia-600 shadow-[0_0_15px_rgba(192,38,211,0.5)]' : 'bg-slate-800'}`}
+                    className={`w-14 h-7 rounded-full p-1.5 transition-all duration-300 ${globalSettings?.ghost_mode ? 'bg-fuchsia-600 shadow-[0_0_15px_rgba(192,38,211,0.5)]' : 'bg-slate-800'}`}
                   >
-                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${globalSettings?.ghost_mode ? 'translate-x-7' : 'translate-x-0'}`} />
+                    <div className={`w-4 h-4 bg-white rounded-full transition-transform duration-300 ${globalSettings?.ghost_mode ? 'translate-x-7' : 'translate-x-0'}`} />
                   </button>
                 </div>
-                <p className="text-[9px] text-slate-500 italic">啟動深度隱身，偽裝終端標籤並隔離黑名單數據。</p>
+                <p className="text-[9px] text-slate-500 italic leading-relaxed">啟動深度隱身，移除敏感權限標籤，並在終端畫面中物理過濾黑名單數據。</p>
               </div>
             </div>
           </div>
