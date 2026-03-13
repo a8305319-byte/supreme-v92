@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GGSOC 萬事通指揮中心</title>
+  <title>GGSOC 萬事通服務中心</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    body { background: #000; color: #fff; font-family: sans-serif; font-weight: 900; -webkit-tap-highlight-color: transparent; }
-    .glass { background: rgba(15, 15, 15, 0.98); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
-    .btn-active:active { transform: scale(0.95); opacity: 0.8; }
-    .sig-canvas { background: #050505; border: 1px dashed #333; border-radius: 20px; touch-action: none; }
-    .chat-bubble { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 12px; margin-bottom: 10px; border-radius: 0 12px 12px 0; font-size: 13px; }
+    body { background: #050505; color: #fff; font-family: sans-serif; font-weight: 900; -webkit-tap-highlight-color: transparent; }
+    .glass { background: rgba(15, 15, 15, 0.98); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(25px); }
+    /* 隨扈客服風：親和但有底線 */
+    .chat-bubble-ai { background: #1e1e1e; border-radius: 0 24px 24px 24px; padding: 18px; margin-right: 40px; border: 1px solid #333; font-size: 14px; line-height: 1.6; }
+    .chat-bubble-user { background: #3b82f6; border-radius: 24px 24px 0 24px; padding: 15px; margin-left: 40px; font-size: 14px; text-align: right; }
+    .input-area { background: #111; border: 1px solid #222; border-radius: 20px; padding: 5px 15px; }
+    .btn-send { background: #3b82f6; width: 45px; height: 45px; border-radius: 15px; display: flex; items-center: center; justify-content: center; }
   </style>
 </head>
 <body>
@@ -23,116 +23,55 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    const config = {
-      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-      authDomain: "supreme-v92.firebaseapp.com",
-      projectId: "supreme-v92",
-      appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-    };
-    if (!firebase.apps.length) firebase.initializeApp(config);
-    const db = firebase.firestore();
-
     function App() {
-      const [view, setView] = useState('gate'); 
-      const [user, setUser] = useState(null);
-      const [partners, setPartners] = useState([]);
-      const [chatOpen, setChatOpen] = useState(false);
-      const [messages, setMessages] = useState([{role: 'bot', text: '您好，我是 GGSOC 萬事通。關於薪資、排班或系統問題，請隨時向我提問。'}]);
-      const canvasRef = useRef(null);
+      const [messages, setMessages] = useState([
+        {role: 'ai', text: '您好，我是萬事通服務中心。為了提供精準協助，請詳細說明您的問題，我將為您調閱系統紀錄。'}
+      ]);
+      const endRef = useRef(null);
 
-      useEffect(() => {
-        return db.collection('partners').onSnapshot(s => setPartners(s.docs.map(d => ({id:d.id, ...d.data()}))));
-      }, []);
-
-      const handleLogin = (ph, pin) => {
-        const found = partners.find(p => p.phone === ph && (p.pin || '8305319') === pin);
-        if (found) { setUser(found); setView('payroll'); }
-        else alert('身分驗證失敗');
-      };
-
-      const sendMessage = (text) => {
+      const handleSend = (text) => {
         if(!text) return;
         const newMsgs = [...messages, {role: 'user', text}];
         setMessages(newMsgs);
-        // 模擬 AI/後台回應
-        setTimeout(() => {
-          setMessages([...newMsgs, {role: 'bot', text: '收到您的回饋，總裁與行政人員將在核對後與您聯絡。'}]);
-        }, 800);
+        // 此處不設自動回覆，預留給總裁後台介入
+        document.getElementById('msg-input').value = '';
       };
 
-      if (view === 'gate') return (
-        <div className="h-screen flex items-center justify-center p-8 bg-black">
-          <div className="glass w-full max-w-sm p-12 rounded-[3.5rem] border-blue-500/20 border text-center shadow-2xl">
-            <h1 className="text-3xl font-black text-blue-600 mb-10 italic">GGSOC_PORTAL</h1>
-            <input id="u" placeholder="手機號碼" className="w-full mb-4 bg-[#111] p-4 rounded-xl text-center" />
-            <input id="p" type="password" placeholder="通行密碼" className="w-full mb-8 bg-[#111] p-4 rounded-xl text-center" />
-            <button onClick={() => handleLogin(document.getElementById('u').value, document.getElementById('p').value)} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active">進入中心</button>
-          </div>
-        </div>
-      );
+      useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
       return (
-        <div className="min-h-screen p-6 pb-24 relative overflow-x-hidden">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+        <div className="h-screen flex flex-col max-w-md mx-auto relative overflow-hidden">
+          {/* Header：真人客服感 */}
+          <div className="p-6 border-b border-white/5 flex items-center gap-4 bg-black/50">
+            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-blue-500/30">🤖</div>
             <div>
-              <h2 className="text-2xl font-black text-white italic">{user.name}</h2>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Payroll Verification</p>
-            </div>
-            <button onClick={() => setView('gate')} className="text-[10px] text-zinc-600 font-black">登出</button>
-          </div>
-
-          {/* 💰 薪資條調閱區 */}
-          <div className="space-y-6">
-            <div className="glass p-8 rounded-[2.5rem] border-blue-500/30 border shadow-[0_0_30px_rgba(59,130,246,0.1)]">
-              <h3 className="text-xl font-black text-blue-500 italic mb-6">本月應領薪資 (2026/03)</h3>
-              <div className="space-y-4 text-sm font-black">
-                <div className="flex justify-between border-b border-white/5 pb-2"><span>勞務總額</span><span>$38,450</span></div>
-                <div className="flex justify-between border-b border-white/5 pb-2 text-rose-500"><span>勞健保扣除</span><span>-$1,137</span></div>
-                <div className="flex justify-between border-b border-white/5 pb-2 text-orange-400"><span>二代健保 (2.11%)</span><span>-$811</span></div>
-                <div className="flex justify-between text-emerald-400 text-3xl pt-4 tracking-tighter"><span>實領淨額</span><span>$36,502</span></div>
-              </div>
-            </div>
-
-            {/* 決策按鈕 */}
-            <div className="grid grid-cols-2 gap-4">
-               <button onClick={()=>alert('請在下方完成簽署以確認領取')} className="bg-emerald-600/20 text-emerald-500 py-6 rounded-3xl font-black border border-emerald-500/30 btn-active">✔️ 沒意見</button>
-               <button onClick={()=>{setChatOpen(true); sendMessage('【薪資異議退回】我對本月薪資條有疑問，請求核對。');}} className="bg-rose-600/20 text-rose-500 py-6 rounded-3xl font-black border border-rose-500/30 btn-active">❌ 有意見退回</button>
-            </div>
-
-            {/* 簽名確認區 (沒意見時使用) */}
-            <div className="glass p-6 rounded-3xl border border-white/5">
-              <p className="text-[10px] text-zinc-500 mb-4 font-black uppercase tracking-widest">確認領取親筆簽署</p>
-              <canvas ref={canvasRef} width={300} height={150} className="sig-canvas w-full" onTouchStart={(e)=>{e.preventDefault(); const ctx=canvasRef.current.getContext('2d'); ctx.strokeStyle='#10b981'; ctx.lineWidth=3; ctx.beginPath();}} />
-              <button onClick={() => { alert('薪資確權成功！數據已加密存檔並返回首頁。'); setView('gate'); }} className="w-full mt-4 py-4 bg-emerald-600 rounded-xl font-black text-xs btn-active">完成領取確認</button>
+              <h1 className="text-lg font-black italic">萬事通服務中心</h1>
+              <p className="text-[10px] text-emerald-500 font-mono animate-pulse uppercase tracking-widest">● 在線為您服務</p>
             </div>
           </div>
 
-          {/* 🤖 萬事通對話窗口 (後台窗口) */}
-          <div className={`fixed bottom-0 left-0 right-0 glass rounded-t-[3rem] transition-all duration-500 ${chatOpen ? 'h-[70vh]' : 'h-0 opacity-0 overflow-hidden'} z-[99999]`}>
-            <div className="p-8 flex flex-col h-full">
-              <div className="flex justify-between items-center mb-6">
-                <h4 className="text-xl font-black text-blue-500 italic">萬事通 AI / 後台對話</h4>
-                <button onClick={()=>setChatOpen(false)} className="text-zinc-600 font-black">關閉</button>
+          {/* 對話流 */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={m.role === 'ai' ? 'chat-bubble-ai shadow-2xl' : 'chat-bubble-user shadow-lg'}>
+                  {m.text}
+                </div>
               </div>
-              <div className="flex-1 overflow-y-auto mb-4 space-y-4">
-                {messages.map((m, i) => (
-                  <div key={i} className={`flex ${m.role==='user'?'justify-end':'justify-start'}`}>
-                    <div className={`${m.role==='user'?'bg-blue-600 text-white':'bg-zinc-800 text-zinc-300'} p-4 rounded-2xl text-xs max-w-[80%] font-black shadow-lg`}>
-                      {m.text}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input id="chat-in" className="flex-1 bg-black border border-zinc-800 rounded-xl p-4 text-xs" placeholder="輸入訊息..." onKeyPress={(e)=>e.key==='Enter' && (sendMessage(e.target.value), e.target.value='')} />
-                <button onClick={()=>{const i=document.getElementById('chat-in'); sendMessage(i.value); i.value='';}} className="bg-blue-600 px-6 rounded-xl font-black text-xs btn-active">發送</button>
-              </div>
-            </div>
+            ))}
+            <div ref={endRef} />
           </div>
 
-          {/* 萬事通快速入口 */}
-          <button onClick={()=>setChatOpen(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center text-2xl btn-active z-[999]">🤖</button>
+          {/* 固定入口與輸入 */}
+          <div className="p-6 glass">
+            <div className="input-area flex items-center gap-3">
+              <input id="msg-input" className="flex-1 bg-transparent py-4 text-sm outline-none font-bold" placeholder="輸入訊息..." onKeyPress={(e)=>e.key==='Enter' && handleSend(e.target.value)} />
+              <button onClick={() => handleSend(document.getElementById('msg-input').value)} className="btn-send btn-active">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              </button>
+            </div>
+            <p className="text-[8px] text-zinc-700 mt-4 text-center font-mono">系統已啟動端對端加密 · 確保溝通隱私</p>
+          </div>
         </div>
       );
     }
