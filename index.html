@@ -196,7 +196,7 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLay
             </span>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 w-full xl:w
+        <div className="p-4 md:p-10 max-w-full mx-auto bg-black min-h-screen font-black animate-[fadeIn_0.5s]">
       {layer === 'gate' && <Gate onLogin={handleLogin} />}
       {layer === 'admin' && <AdminHub authRole={authRole} partners={partners} globalSettings={gs} appId={window.__app_id} onLogout={()=>setLayer('gate')} />}
       {layer === 'driver' && <DriverHub currentPartner={partners.find(p=>p.id===spI)} db={db} globalSettings={gs} onLogout={()=>setLayer('gate')} />}
