@@ -135,20 +135,80 @@ const LocalLogisticsAI = ({ data }) => {
 
       return (
         <div className="relative min-h-screen bg-[#020617]">
-          <LocalLogisticsAI data={ps} />
-          {l === 'gate' && <div className="h-screen flex flex-col items-center justify-center p-8">
-            <h1 className="text-5xl italic font-black mb-10">在地物流</h1>
-            <input id="lp" type="tel" placeholder="手機" className="w-full max-w-xs bg-slate-900 p-4 rounded-xl mb-4 border border-white/10" />
-            <input id="li" type="password" placeholder="PIN" className="w-full max-w-xs bg-slate-900 p-4 rounded-xl mb-6 border border-white/10" />
-            <button onClick={() => handleLogin(document.getElementById('lp').value, document.getElementById('li').value)} className="w-full max-w-xs bg-blue-600 py-4 rounded-xl font-bold">進入系統</button>
-          </div>}
-          {l === 'admin' && <div className="p-8"><h2 className="text-3xl italic text-amber-500">👑 營運總部</h2><div className="mt-8 grid gap-4">{ps.map(p => <div key={p.id} className="glass-panel p-4 rounded-2xl">{p.name} - {p.phone}</div>)}</div></div>}
-          {l === 'driver' && <div className="p-8 flex flex-col items-center"><h2 className="text-3xl italic">🚐 工作台</h2><p className="mt-10 text-slate-500 italic">系統運行中，請於下班前報帳</p></div>}
-        </div>
-      );
-    }
+         // 🤖 AI 總裁特助 (LINE 通訊強化版)
+const LocalLogisticsAI = ({ data }) => {
+  const [q, setQ] = useState("");
+  const [ans, setAns] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
 
-    createRoot(document.getElementById('root')).render(<ErrorBoundary><AppWrapper /></ErrorBoundary>);
-  </script>
-</body>
-</html>
+  // 📡 LINE 推播核心 (2026 官方 API 版)
+  const sendToLine = async (msg) => {
+    // 這裡幫你把 Token 裡的空格清掉了，確保傳送成功
+    const token = "pvenO2Qs5ctBSy0VseKzJ4HupI9P8yE+ZF+kmuyCpSZ/CN8gDUQQoBsmRqCGf2DAiq0e6nT+SVW2xdUaOWODSdDi4FTUUAxJXXinytkgBL4izkXfKUCmCVoUbYWUqM6pf0nRwUwjSaoPhUHKGKcW6wdB04t89/1O/w1cDnyilFU=";
+    const userId = "Ua003fab90fd84c067215e594cfd8e238";
+    
+    try {
+      await fetch('https://api.line.me/v2/bot/message/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          to: userId,
+          messages: [{ type: 'text', text: `📊 【GGSOC 營運戰報】\n\n${msg}` }]
+        })
+      });
+    } catch (e) { console.error("LINE 傳送失敗"); }
+  };
+
+  const handleAsk = async () => {
+    if (!q || loading) return;
+    setLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
+      setAns(res.response.text());
+    } catch (e) { setAns("連線失敗..."); }
+    setLoading(false);
+  };
+
+  const diagnostic = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: "你是在地物流的老闆特助。請根據數據回報：1.今日 COD 總額 2.異常名單 3.經營建議。語氣要精煉霸氣。"
+      });
+      const res = await model.generateContent(`數據：${JSON.stringify(data || [])}`);
+      const report = res.response.text();
+      setAns(report);
+      
+      // 🚀 關鍵動作：同步推播到老闆的 LINE
+      await sendToLine(report);
+      
+    } catch (e) { setAns("診斷模組異常..."); }
+    setLoading(false);
+  };
+
+  if (!show) return <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>;
+
+  return (
+    <div className="animate-zoom" style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-xs text-blue-400 font-bold">GGSOC AI 總助</span>
+        <button onClick={() => setShow(false)} className="text-slate-400">✕</button>
+      </div>
+      <input className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-white text-sm mb-2" value={q} onChange={e => setQ(e.target.value)} placeholder="輸入指令..." />
+      <div className="flex gap-2 mb-2">
+        <button onClick={handleAsk} className="flex-1 py-2 bg-blue-600 rounded-lg font-bold text-xs" disabled={loading}>問 AI</button>
+        <button onClick={diagnostic} className="flex-1 py-2 bg-emerald-600 rounded-lg font-bold text-xs" disabled={loading}>⚡診斷</button>
+      </div>
+      {ans && <div className="mt-3 text-[11px] bg-black/30 p-2 rounded-lg max-h-48 overflow-y-auto leading-relaxed border border-white/5 whitespace-pre-wrap font-mono">{ans}</div>}
+    </div>
+  );
+};
