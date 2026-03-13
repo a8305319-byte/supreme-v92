@@ -2,15 +2,33 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GGSOC 終極完全體 - 穩定版</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GGSOC 終極指揮中心</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script>
-    window.__app_id = 'ggsoc-trinity-master-v1';
-    window.firebaseConfig = {
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <style>
+    body { background-color: #000000; color: #e2e8f0; font-family: sans-serif; }
+    .glass-panel { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .loader { border: 4px solid rgba(255,255,255,0.05); border-left-color: #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // 1. 初始化 Firebase 引擎 (Supreme-v92 專案)
+    const firebaseConfig = {
       apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
       authDomain: "supreme-v92.firebaseapp.com",
       projectId: "supreme-v92",
@@ -18,21 +36,90 @@
       messagingSenderId: "485530156296",
       appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
     };
-  </script>
-  <style>
-    body { background-color: #000000; color: #e2e8f0; font-family: sans-serif; margin: 0; }
-    .loader { border: 4px solid rgba(255,255,255,0.1); border-left-color: #3b82f6; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
-</head>
-<body>
-  <div id="root">
-    <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-      <div class="loader"></div>
-      <p style="margin-top:20px; color:#3b82f6; letter-spacing:0.3em;">SYSTEM_READY_FOR_INJECTION...</p>
-    </div>
-  </div>
 
-  <script type="text/babel" id="ggsoc-logic"></script>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // 2. 輔助功能
+    const showToast = (msg) => { alert(msg); };
+
+    // 3. 核心大腦組件
+    function App() {
+      const [view, setView] = useState('gate');
+      const [partners, setPartners] = useState([]);
+      const [user, setUser] = useState(null);
+
+      useEffect(() => {
+        auth.signInAnonymously().catch(e => console.error(e));
+        auth.onAuthStateChanged(u => setUser(u));
+        
+        // 實時監聽 2026 營運數據
+        const unsub = db.collection('partners').onSnapshot(snap => {
+          setPartners(snap.docs.map(d => ({id: d.id, ...d.data()})));
+        });
+        return () => unsub();
+      }, []);
+
+      const handleLogin = (ph, pi) => {
+        if(ph === '0976017938' && pi === '8305319') {
+          setView('admin');
+        } else {
+          showToast('❌ 終端識別錯誤');
+        }
+      };
+
+      if (view === 'gate') {
+        return (
+          <div className="h-screen flex items-center justify-center p-6 bg-black">
+            <div className="glass-panel p-10 rounded-[2.5rem] w-full max-w-sm text-center shadow-2xl">
+              <h1 className="text-2xl font-black italic mb-2 tracking-tighter text-blue-500">GGSOC_TERMINAL</h1>
+              <p className="text-[10px] text-slate-500 mb-8 font-mono">2026_TRINITY_SYSTEM_v1</p>
+              <input id="ph" placeholder="PHONE" className="w-full bg-slate-900/50 p-4 rounded-xl mb-3 text-center border border-white/5 outline-none focus:border-blue-500 transition-all" />
+              <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900/50 p-4 rounded-xl mb-8 text-center border border-white/5 outline-none focus:border-blue-500 transition-all" />
+              <button onClick={() => handleLogin(document.getElementById('ph').value, document.getElementById('pi').value)} className="w-full py-4 bg-blue-600 rounded-xl font-black text-white hover:bg-blue-500 transition-all">ESTABLISH_LINK</button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-black p-4 md:p-10 animate-[fadeIn_0.5s]">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-black italic tracking-tighter uppercase">營運指揮中心</h2>
+            <button onClick={() => setView('gate')} className="text-rose-500 text-xs font-black uppercase border border-rose-500/20 px-4 py-2 rounded-xl">安全退出</button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {partners.filter(p => p.phone !== '0976017938').map(p => (
+              <div key={p.id} className="glass-panel p-6 rounded-3xl border border-white/5 relative group">
+                <h4 className="text-xl font-black italic mb-1">{p.name || '未名實體'}</h4>
+                <p className="text-[10px] text-slate-500 font-mono mb-4">{p.phone}</p>
+                <div className="flex justify-between items-end border-t border-white/5 pt-4">
+                   <div>
+                     <p className="text-[8px] text-slate-600 font-black">正件產能</p>
+                     <p className="text-xl text-blue-400 font-mono italic">{p.total_del || 0}</p>
+                   </div>
+                   <div className="text-right">
+                     <p className="text-[8px] text-slate-600 font-black">逆收產能</p>
+                     <p className="text-xl text-amber-400 font-mono italic">{p.total_pkp || 0}</p>
+                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {partners.length === 0 && (
+            <div className="text-center py-20">
+              <p className="text-slate-700 italic font-black text-xs">NO_ENTITY_DETECTED_IN_DATABASE</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
