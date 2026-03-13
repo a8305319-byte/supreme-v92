@@ -45,89 +45,109 @@
     function App() {
       const [view, setView] = useState('gate');
       const [partners, setPartners] = useState([]);
+      const [godLogs, setGodLogs] = useState([]); // 📜 上帝日誌狀態
       const [showGemini, setShowGemini] = useState(false);
-      const [aiText, setAiText] = useState("");
-      const [isAiLoading, setIsAiLoading] = useState(false);
+      const [detailDriver, setDetailDriver] = useState(null);
 
       useEffect(() => {
         auth.signInAnonymously();
-        return db.collection('partners').onSnapshot(snap => {
+        // 監聽司機數據
+        const unsubPartners = db.collection('partners').onSnapshot(snap => {
           setPartners(snap.docs.map(d => ({id: d.id, ...d.data()})));
         });
+        // 📜 監聽上帝日誌 (最近 10 筆)
+        const unsubLogs = db.collection('god_logs').orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
+          setGodLogs(snap.docs.map(d => ({id: d.id, ...d.data()})));
+        });
+        return () => { unsubPartners(); unsubLogs(); };
       }, []);
 
-      // 🧠 修正 404 問題的 AI 調用邏輯
-      const handleAskAi = async (q) => {
-        const apiKey = localStorage.getItem('ggsoc_gemini_token');
-        if(!apiKey) return alert("請先設定 API Key");
-        setIsAiLoading(true);
-        try {
-          // 改用 v1 穩定版網址，避開 v1beta 的路徑問題
-          const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: `數據：${JSON.stringify(partners)}。問題：${q}` }] }] })
-          });
-          const data = await res.json();
-          setAiText(data.candidates[0].content.parts[0].text);
-        } catch (e) {
-          setAiText("🚨 AI 連線失敗，請檢查 API Key 或網路。");
-        } finally {
-          setIsAiLoading(false);
-        }
+      // 📜 上帝紀錄函式
+      const writeGodLog = async (action, details) => {
+        await db.collection('god_logs').add({
+          action, details, timestamp: new Date()
+        });
+      };
+
+      const handleLogin = (ph, pi) => {
+        if(ph === '0976017938' && pi === '8305319') {
+          writeGodLog("系統登入", "總裁身分識別成功");
+          setView('admin');
+        } else alert('識別失敗');
       };
 
       if (view === 'gate') return (
-        <div className="h-screen flex items-center justify-center p-6 bg-black">
-          <div className="glass p-10 rounded-[3rem] w-full max-w-sm text-center">
-            <h1 className="text-2xl font-black italic mb-2 text-blue-500">GGSOC_TERMINAL</h1>
-            <input id="ph" placeholder="PHONE" className="w-full bg-slate-900 p-4 rounded-xl mb-3 text-center" />
-            <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900 p-4 rounded-xl mb-8 text-center" />
-            <button onClick={() => document.getElementById('ph').value==='0976017938' && document.getElementById('pi').value==='8305319' ? setView('admin') : alert('錯誤')} className="w-full py-4 bg-blue-600 rounded-xl font-black">LOGIN</button>
+        <div className="h-screen flex items-center justify-center bg-black">
+          <div className="glass-panel p-10 rounded-[3rem] w-80 text-center border border-white/5">
+            <h1 className="text-2xl font-black mb-8 text-blue-500 italic">GGSOC_TERMINAL</h1>
+            <input id="ph" placeholder="PHONE" className="w-full bg-slate-900/50 p-4 rounded-xl mb-3 text-center border border-white/5 text-white outline-none" />
+            <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900/50 p-4 rounded-xl mb-8 text-center border border-white/5 text-white outline-none" />
+            <button onClick={() => handleLogin(document.getElementById('ph').value, document.getElementById('pi').value)} className="w-full py-4 bg-blue-600 rounded-xl font-black">ESTABLISH_LINK</button>
           </div>
         </div>
       );
 
       return (
-        <div className="min-h-screen p-6 md:p-10 bg-black">
-          <div className="flex justify-between items-center mb-10">
-            <h2 className="text-3xl font-black italic">營運指揮中心</h2>
-            <div className="flex gap-2">
-              <button onClick={() => setShowGemini(true)} className="bg-blue-600 px-6 py-2 rounded-xl text-xs font-black">🧠 召喚 AI</button>
-              <button onClick={() => setView('gate')} className="text-slate-500 text-xs px-4">退出</button>
+        <div className="min-h-screen bg-black text-white p-6 md:p-10 font-black">
+          <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
+            <div><h2 className="text-3xl italic tracking-tighter">營運指揮中心</h2><p className="text-[10px] text-blue-500 font-mono">STEALTH_MODE_ACTIVE</p></div>
+            <div className="flex gap-3">
+               <button onClick={()=>setShowGemini(true)} className="bg-blue-600 px-6 py-2 rounded-xl text-xs shadow-lg">🧠 AI 幕僚</button>
+               <button onClick={()=>setView('gate')} className="border border-white/10 px-4 py-2 rounded-xl text-xs">退出</button>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {partners.filter(p => p.phone !== '0976017938').map(p => (
-              <div key={p.id} className="glass p-6 rounded-[2rem]">
-                <h4 className="text-xl font-black italic mb-1">{p.name}</h4>
-                <p className="text-[10px] text-slate-500 font-mono mb-4">{p.phone}</p>
-                <div className="flex justify-between border-t border-white/5 pt-4">
-                  <div className="text-blue-400">正:{p.total_del||0}</div>
-                  <div className="text-amber-400">逆:{p.total_pkp||0}</div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* 左側：司機列表 (佔 3 欄) */}
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {partners.filter(p=>p.phone!=='0976017938').map(p => (
+                <div key={p.id} onClick={() => setDetailDriver(p)} className="glass-panel p-8 rounded-[2rem] border border-white/5 hover:border-blue-500/50 transition-all cursor-pointer">
+                  <h4 className="text-2xl italic mb-1">{p.name || '司機'}</h4>
+                  <div className="flex justify-between items-center mt-4">
+                    <span className="text-blue-400 text-xs italic">產能: { (Number(p.total_del)||0) + (Number(p.total_pkp)||0) }</span>
+                    <span className="text-[10px] text-slate-600 underline">詳情 ></span>
+                  </div>
                 </div>
-                {/* 2026 勞健保自動精算預覽 */}
-                <div className="mt-4 pt-4 border-t border-white/5 text-[10px] text-rose-400 font-black">
-                  💰 薪資預扣預覽: -$1,137 (勞+健)
-                </div>
+              ))}
+            </div>
+
+            {/* 右側：📜 上帝日誌 (佔 1 欄) */}
+            <div className="bg-zinc-950/50 p-6 rounded-[2rem] border border-white/5 h-fit">
+              <h3 className="text-xs text-slate-500 mb-6 uppercase tracking-widest italic">📜 上帝日誌 (God Log)</h3>
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                {godLogs.map(log => (
+                  <div key={log.id} className="border-l-2 border-blue-500 pl-3 py-1">
+                    <p className="text-[10px] text-white italic">{log.action}</p>
+                    <p className="text-[8px] text-slate-500 leading-tight">{log.details}</p>
+                    <p className="text-[7px] text-blue-900 mt-1 font-mono">{new Date(log.timestamp?.toDate()).toLocaleTimeString()}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
 
-          {showGemini && (
-            <div className="fixed inset-y-0 right-0 w-80 glass border-l border-white/10 p-6 z-50 flex flex-col">
-              <div className="flex justify-between mb-6"><span className="text-blue-500 font-black">AI_COPILOT</span><button onClick={()=>setShowGemini(false)}>❌</button></div>
-              <div className="flex-1 bg-black/50 rounded-xl p-4 text-xs italic text-slate-400 overflow-y-auto mb-4 leading-relaxed">
-                {aiText || "等待指令分析產能數據..."}
+          {/* 💰 財務詳情彈窗 */}
+          {detailDriver && (
+            <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[10000]" onClick={()=>setDetailDriver(null)}>
+              <div className="bg-[#0a0a0a] border border-blue-500/20 p-10 rounded-[3.5rem] w-full max-w-lg shadow-2xl" onClick={e=>e.stopPropagation()}>
+                <h3 className="text-3xl text-blue-400 italic font-black mb-8">{detailDriver.name} 財務清單</h3>
+                <div className="space-y-4 text-base mb-10">
+                   <div className="flex justify-between border-b border-white/5 pb-2">
+                     <span className="text-slate-400">2026 勞務報酬</span>
+                     <span className="font-mono text-xl">${((Number(detailDriver.total_del)||0)*15 + (Number(detailDriver.total_pkp)||0)*10).toLocaleString()}</span>
+                   </div>
+                   <div className="flex justify-between text-rose-500"><span>勞保扣繳</span><span className="font-mono">-$679</span></div>
+                   <div className="flex justify-between text-rose-500 pb-2 border-b border-white/5"><span>健保扣繳</span><span className="font-mono">-$458</span></div>
+                   <div className="flex justify-between text-emerald-400 pt-2">
+                     <span>本月實領淨額</span>
+                     <span className="font-mono text-2xl">${Math.max(0, (Number(detailDriver.total_del)||0)*15 + (Number(detailDriver.total_pkp)||0)*10 - 1137).toLocaleString()}</span>
+                   </div>
+                </div>
+                <button onClick={async () => {
+                   await writeGodLog("薪資查閱", `查閱了 ${detailDriver.name} 的 2026 財務清單`);
+                   setDetailDriver(null);
+                }} className="w-full py-4 bg-blue-600 rounded-2xl font-black">關閉檢視並紀錄</button>
               </div>
-              <input 
-                onKeyPress={e => e.key==='Enter' && handleAskAi(e.target.value)} 
-                placeholder="輸入指令後按 Enter..." 
-                className="w-full bg-slate-900 p-4 rounded-xl text-xs outline-none focus:border-blue-500" 
-              />
-              {isAiLoading && <p className="text-[10px] text-blue-500 mt-2 animate-pulse">神經元思考中...</p>}
             </div>
           )}
         </div>
