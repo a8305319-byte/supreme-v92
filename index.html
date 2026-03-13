@@ -127,7 +127,7 @@ function GeminiCopilotModal({ onClose, systemData, writeGodLog }) {
       const systemPrompt = `你現在是物流營運系統的超級 AI 幕僚，說話風格簡潔、專業、帶有極客科技感，直接稱呼對方為總裁。這是當前的即時營運數據 JSON：${JSON.stringify(contextData)}。請根據這些真實數據精準回答總裁的問題。總裁問：`;
 
       // 呼叫真實的 Gemini API
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + userText }] }] })
