@@ -50,7 +50,6 @@
       const [partners, setPartners] = useState([]);
       const [showGemini, setShowGemini] = useState(false);
       const [detailDriver, setDetailDriver] = useState(null);
-      const [showAddModal, setShowAddModal] = useState(false); // 🆕 免試建檔開關
 
       useEffect(() => {
         auth.signInAnonymously();
@@ -65,7 +64,6 @@
         else alert('識別失敗');
       };
 
-      // 🆕 免試建檔功能
       const quickAdd = async () => {
         const name = prompt("輸入司機姓名:");
         const phone = prompt("輸入手機號碼:");
@@ -90,96 +88,21 @@
 
       return (
         <div className="min-h-screen bg-black text-white p-6 md:p-10 font-black">
-          {/* Top Bar */}
           <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
-            <div>
-              <h2 className="text-3xl italic tracking-tighter">營運指揮中心</h2>
-              <p className="text-[10px] text-blue-500 font-mono">2026_TRINITY_ACTIVE</p>
-            </div>
+            <div><h2 className="text-3xl italic tracking-tighter">營運指揮中心</h2><p className="text-[10px] text-blue-500 font-mono">2026_TRINITY_ACTIVE</p></div>
             <div className="flex gap-3">
-               <button onClick={quickAdd} className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-xs border border-white/10 transition-all">➕ 免試建檔</button>
-               <button onClick={()=>setShowGemini(true)} className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl text-xs shadow-lg shadow-blue-500/40">🧠 AI 幕僚</button>
+               <button onClick={quickAdd} className="bg-white/10 px-4 py-2 rounded-xl text-xs border border-white/10">➕ 免試建檔</button>
+               <button onClick={()=>setShowGemini(true)} className="bg-blue-600 px-6 py-2 rounded-xl text-xs shadow-lg">🧠 AI 幕僚</button>
             </div>
           </div>
 
-          {/* 司機網格 - 增加點擊區域判定 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {partners.filter(p=>p.phone!=='0976017938').map(p => (
-              <div key={p.id} 
-                   onClick={(e) => { e.stopPropagation(); setDetailDriver(p); }} 
-                   className="glass-panel p-8 rounded-[2.5rem] border border-white/5 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all cursor-pointer relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-100 transition-all">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                </div>
-                <h4 className="text-2xl italic mb-1">{p.name}</h4>
+              <div key={p.id} onClick={() => setDetailDriver(p)} className="glass-panel p-8 rounded-[2.5rem] border border-white/5 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all cursor-pointer relative group">
+                <h4 className="text-2xl italic mb-1">{p.name || '測試司機'}</h4>
                 <p className="text-xs text-slate-500 mb-6 font-mono">{p.phone}</p>
                 <div className="flex justify-between items-center">
-                  <div className="bg-black/40 px-4 py-2 rounded-full border border-white/5">
-                    <span className="text-blue-400 text-xs italic">產能: { (p.total_del||0) + (p.total_pkp||0) }</span>
-                  </div>
-                  <span className="text-[10px] text-slate-600 underline">點擊查閱財務 ></span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 💰 2026 財務核算 + 三位一體簽章彈窗 */}
-          {detailDriver && (
-            <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[10000]" onClick={()=>setDetailDriver(null)}>
-              <div className="bg-[#0a0a0a] border border-blue-500/20 p-10 rounded-[3.5rem] w-full max-w-lg shadow-2xl" onClick={e=>e.stopPropagation()}>
-                <div className="flex justify-between items-start mb-8">
-                  <h3 className="text-3xl text-blue-400 italic font-black">{detailDriver.name}</h3>
-                  <button className="bg-green-900/20 text-green-500 border border-green-500/30 px-4 py-1 rounded-full text-[10px]">已通過 3-WAY 簽章</button>
-                </div>
-                
-                <div className="space-y-4 text-base mb-10">
-                   <div className="flex justify-between border-b border-white/5 pb-2">
-                     <span className="text-slate-400">2026 勞務報酬</span>
-                     <span className="font-mono text-xl">${(detailDriver.total_del*15 + detailDriver.total_pkp*10).toLocaleString()}</span>
-                   </div>
-                   <div className="flex justify-between text-rose-500">
-                     <span>勞保扣繳 (29,500級距)</span>
-                     <span className="font-mono">-$679</span>
-                   </div>
-                   <div className="flex justify-between text-rose-500 pb-2 border-b border-white/5">
-                     <span>健保扣繳 (2.11%二代)</span>
-                     <span className="font-mono">-$458</span>
-                   </div>
-                   <div className="flex justify-between text-emerald-400 pt-2">
-                     <span>本月實領淨額</span>
-                     <span className="font-mono text-2xl">${(detailDriver.total_del*15 + detailDriver.total_pkp*10 - 1137).toLocaleString()}</span>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <button className="bg-white/5 hover:bg-white/10 py-4 rounded-2xl text-xs transition-all border border-white/5">📲 LINE 戰情發送</button>
-                  <button onClick={()=>setDetailDriver(null)} className="bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-xs font-black transition-all">確認關閉</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 🧠 AI 幕僚 (已修復點擊與輸入) */}
-          {showGemini && (
-            <div className="fixed inset-y-0 right-0 w-96 bg-[#050505] border-l border-blue-500/20 p-8 flex flex-col z-[10001] shadow-2xl animate-[slideIn_0.3s]">
-               <div className="flex justify-between items-center mb-8">
-                 <div className="flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div><span className="text-blue-500 font-black italic tracking-widest">GEMINI_AI</span></div>
-                 <button onClick={()=>setShowGemini(false)} className="text-slate-500 hover:text-white transition-all">CLOSE</button>
-               </div>
-               <div className="flex-1 overflow-y-auto mb-6 space-y-4">
-                 <div className="bg-slate-900/50 p-4 rounded-2xl rounded-tl-none border border-white/5 text-xs text-slate-400 leading-relaxed">
-                   總裁您好，2026 營運數據已同步。目前有 {partners.length} 名實體在線。
-                 </div>
-               </div>
-               <div className="relative">
-                 <input onKeyPress={(e)=>e.key==='Enter' && alert('AI 正在分析數據...')} placeholder="下達營運分析指令..." className="w-full bg-slate-900 border border-white/10 p-5 rounded-2xl text-sm outline-none focus:border-blue-500 transition-all font-mono" />
-                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-slate-600">ENTER</div>
-               </div>
-            </div>
-          )}
-        </div>
-      );
-    }
+                  <div className="bg-black/40 px-4 py-
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
