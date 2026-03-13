@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GGSOC 終極指揮中心 - 造物主潛行版</title>
+  <title>GGSOC 終極指揮中心 - 總裁免打版</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -19,17 +19,15 @@
     .glass-panel { background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(255, 255, 255, 0.05); }
     .custom-scrollbar::-webkit-scrollbar{width:4px;}
     .custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.3);border-radius:10px;}
-    @keyframes pulse-blue { 0%, 100% { opacity: 1; text-shadow: 0 0 10px #3b82f6; } 50% { opacity: 0.5; } }
-    .animate-god-link { animation: pulse-blue 2s infinite; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+    const { useState, useEffect } = React;
 
-    // 1. 初始化 Firebase 核心 (Supreme-v92)
     const firebaseConfig = {
       apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
       authDomain: "supreme-v92.firebaseapp.com",
@@ -43,63 +41,58 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-function App() {
-      // 1. ⚡ 權限直接點火：優先檢查本地印記
-      const [view, setView] = useState(localStorage.getItem('ggsoc_root_access') ? 'admin' : 'gate');
-      const [authRole, setAuthRole] = useState(localStorage.getItem('ggsoc_root_access') ? 'super_admin' : 'guest');
+    function App() {
+      // ⚡ 核心暴力邏輯：如果有印記，初始狀態就是 admin，完全跳過登入頁面
+      const isGod = localStorage.getItem('ggsoc_root_access') === 'super_admin_0976';
+      const [view, setView] = useState(isGod ? 'admin' : 'gate');
+      const [authRole, setAuthRole] = useState(isGod ? 'super_admin' : 'guest');
       
       const [partners, setPartners] = useState([]);
       const [godLogs, setGodLogs] = useState([]);
       const [detailDriver, setDetailDriver] = useState(null);
 
       useEffect(() => {
-        // 2. 🛡️ 雙重保險：如果已經有印記，確保狀態是 admin
-        if (localStorage.getItem('ggsoc_root_access') === 'super_admin_0976') {
-          setView('admin');
-          setAuthRole('super_admin');
-        }
-
         auth.signInAnonymously();
         db.collection('partners').onSnapshot(snap => setPartners(snap.docs.map(d => ({id: d.id, ...d.data()}))));
-        db.collection('god_logs').orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => setGodLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+        db.collection('god_logs').orderBy('timestamp', 'desc').limit(15).onSnapshot(snap => setGodLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))));
       }, []);
 
-      // 3. 🔑 登入一次，終身免打
-      const handleLogin = (ph, pi) => {
-        if(ph === '0976017938' && pi === '8305319') {
-          localStorage.setItem('ggsoc_root_access', 'super_admin_0976'); // 🔒 鎖死在瀏覽器
-          setAuthRole('super_admin'); 
-          setView('admin');
-          writeGodLog("👑 造物主歸位", "身分印記已永久鎖定");
-        } else alert('⚠️ 權限拒絕');
+      const writeGodLog = async (action, details) => {
+        await db.collection('god_logs').add({ action, details, timestamp: new Date() });
       };
 
-      // ... 其餘代碼不變 ...
+      const handleLogin = (ph, pi) => {
+        if(ph === '0976017938' && pi === '8305319') {
+          localStorage.setItem('ggsoc_root_access', 'super_admin_0976');
+          setAuthRole('super_admin');
+          setView('admin');
+          writeGodLog("👑 造物主歸位", "身分印記已永久鎖定於此設備");
+        } else alert('⚠️ 權限拒絕');
+      };
 
       const handleQuickAdd = async () => {
         const n = prompt("姓名:"); const p = prompt("手機:");
         if(n && p) {
-          await db.collection('partners').add({ name:n, phone:p, status:'approved', total_del:0, total_pkp:0, custom_del_price:15, custom_pkp_price:10 });
+          await db.collection('partners').add({ 
+            name:n, phone:p, status:'approved', total_del:0, total_pkp:0, 
+            custom_del_price:15, custom_pkp_price:10, created_at: new Date() 
+          });
           writeGodLog("免試建檔", `快速建立了新實體: ${n}`);
         }
       };
 
       if (view === 'gate') return (
         <div className="h-screen flex items-center justify-center bg-black p-6">
-          <div className="glass-panel p-10 rounded-[3rem] w-full max-w-sm text-center">
+          <div className="glass-panel p-10 rounded-[3rem] w-full max-w-sm text-center border border-white/5">
             <h1 className="text-2xl font-black italic mb-2 tracking-tighter text-blue-500">GGSOC_TERMINAL</h1>
-            <p className="text-[10px] text-slate-700 mb-10 font-mono tracking-widest">ENCRYPTED_GATEWAY</p>
-            
-            {localStorage.getItem('ggsoc_root_access') ? (
-              <button onClick={() => { setAuthRole('super_admin'); setView('admin'); }} className="w-full py-8 bg-blue-900/20 border border-blue-500/40 rounded-2xl font-black text-blue-400 animate-god-link active:scale-95 transition-all text-lg">恢復總裁印記</button>
-            ) : (
-              <div className="space-y-3">
-                <input id="ph" placeholder="PHONE" className="w-full bg-slate-900/50 p-4 rounded-xl text-center border border-white/5 text-white outline-none" />
-                <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900/50 p-4 rounded-xl text-center border border-white/5 text-white outline-none" />
-                <button onClick={() => handleLogin(document.getElementById('ph').value, document.getElementById('pi').value)} className="w-full py-4 bg-blue-600 rounded-xl font-black">LOGIN</button>
-              </div>
-            )}
-            <p className="mt-8 text-[8px] text-slate-800 uppercase tracking-tighter">Only authorized biological signatures allowed</p>
+            <p className="text-[10px] text-slate-700 mb-10 font-mono tracking-widest uppercase">Identity Verification Required</p>
+            <div className="space-y-4 text-left">
+              <label className="text-[8px] text-slate-500 uppercase ml-2">Phone</label>
+              <input id="ph" placeholder="09XXXXXXXX" className="w-full bg-slate-900/50 p-4 rounded-xl text-center border border-white/5 text-white outline-none focus:border-blue-500" />
+              <label className="text-[8px] text-slate-500 uppercase ml-2">Pin Code</label>
+              <input id="pi" type="password" placeholder="•••••••" className="w-full bg-slate-900/50 p-4 rounded-xl text-center border border-white/5 text-white outline-none focus:border-blue-500" />
+              <button onClick={() => handleLogin(document.getElementById('ph').value, document.getElementById('pi').value)} className="w-full py-4 bg-blue-600 rounded-xl font-black mt-4 shadow-lg shadow-blue-500/20 active:scale-95 transition-all uppercase tracking-widest text-sm">Establish Link</button>
+            </div>
           </div>
         </div>
       );
@@ -108,12 +101,12 @@ function App() {
         <div className="min-h-screen bg-black text-white p-6 md:p-10 font-black animate-[fadeIn_0.5s]">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 border-b border-white/5 pb-6">
             <div>
-              <h2 className="text-4xl italic tracking-tighter uppercase">造物主指揮部</h2>
-              <span className="text-[10px] px-3 py-1 rounded-full border border-blue-500/30 bg-blue-900/20 text-blue-400 mt-2 inline-block">GOD_MODE_ACTIVE</span>
+              <h2 className="text-4xl italic tracking-tighter uppercase font-black text-white">造物主指揮部</h2>
+              <span className="text-[10px] px-3 py-1 rounded-full border border-blue-500/30 bg-blue-900/20 text-blue-400 mt-2 inline-block font-mono">GOD_MODE_AUTHENTICATED</span>
             </div>
             <div className="flex gap-2">
-               <button onClick={handleQuickAdd} className="bg-zinc-900 hover:bg-zinc-800 px-6 py-3 rounded-2xl text-xs border border-white/10 transition-all">➕ 免試建檔</button>
-               <button onClick={() => {localStorage.removeItem('ggsoc_root_access'); setView('gate');}} className="bg-rose-950/20 text-rose-500 px-6 py-3 rounded-2xl text-xs border border-rose-500/10">徹底登出</button>
+               <button onClick={handleQuickAdd} className="bg-zinc-900 hover:bg-zinc-800 px-6 py-3 rounded-2xl text-xs border border-white/10 transition-all font-black uppercase">➕ 免試建檔</button>
+               <button onClick={() => {if(confirm('確定要抹除本地印記並登出？')){localStorage.removeItem('ggsoc_root_access'); setView('gate');}}} className="bg-rose-950/10 text-rose-900 hover:text-rose-500 px-4 py-3 rounded-2xl text-[8px] border border-rose-900/10 uppercase transition-all">Clear Access</button>
             </div>
           </div>
 
@@ -123,26 +116,29 @@ function App() {
                 <div key={p.id} onClick={() => setDetailDriver(p)} className="glass-panel p-8 rounded-[2.5rem] border border-white/5 hover:border-blue-500/50 hover:bg-blue-900/5 transition-all cursor-pointer relative group">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h4 className="text-2xl italic mb-1 uppercase tracking-tighter">{p.name || 'UNNAMED'}</h4>
+                      <h4 className="text-2xl italic mb-1 uppercase tracking-tighter text-white">{p.name || 'UNNAMED'}</h4>
                       <p className="text-[10px] text-slate-600 font-mono tracking-widest">{p.phone}</p>
                     </div>
-                    <button onClick={async (e)=>{ e.stopPropagation(); if(confirm(`抹除 ${p.name}？`)){ await db.collection('partners').doc(p.id).delete(); writeGodLog("抹除", p.name); } }} className="text-rose-900 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">抹除</button>
+                    <button onClick={async (e)=>{ e.stopPropagation(); if(confirm(`抹除 ${p.name}？`)){ await db.collection('partners').doc(p.id).delete(); writeGodLog("抹除實體", p.name); } }} className="text-rose-950 hover:text-rose-600 transition-colors opacity-0 group-hover:opacity-100 text-[10px] font-black uppercase">Delete</button>
                   </div>
-                  <div className="bg-blue-950/30 px-5 py-2 rounded-2xl border border-blue-500/20 w-fit">
-                    <span className="text-blue-400 text-sm italic font-mono">產能: {(Number(p.total_del)||0) + (Number(p.total_pkp)||0)}</span>
+                  <div className="flex justify-between items-center">
+                    <div className="bg-blue-950/20 px-5 py-2 rounded-2xl border border-blue-500/10 w-fit">
+                      <span className="text-blue-400 text-sm italic font-mono">產能: {(Number(p.total_del)||0) + (Number(p.total_pkp)||0)}</span>
+                    </div>
+                    <span className="text-[8px] text-slate-800 font-mono italic">DATA_SYNC_LATEST</span>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="bg-zinc-950/30 p-8 rounded-[3rem] border border-white/5 h-fit shadow-inner">
-              <h3 className="text-xs text-slate-600 mb-8 uppercase tracking-[0.3em] italic">📜 上帝日誌</h3>
-              <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="bg-zinc-950/20 p-8 rounded-[3rem] border border-white/5 h-fit shadow-inner">
+              <h3 className="text-xs text-slate-600 mb-8 uppercase tracking-[0.3em] italic font-black">📜 上帝日誌</h3>
+              <div className="space-y-6 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
                 {godLogs.map(log => (
-                  <div key={log.id} className="border-l-2 border-blue-900 pl-4 py-1">
+                  <div key={log.id} className="border-l-2 border-blue-900/50 pl-4 py-1">
                     <p className="text-xs text-slate-200 italic font-black">{log.action}</p>
-                    <p className="text-[8px] text-slate-500 leading-relaxed mt-1">{log.details}</p>
-                    <p className="text-[7px] text-zinc-800 mt-2 font-mono">{new Date(log.timestamp?.toDate()).toLocaleTimeString()}</p>
+                    <p className="text-[8px] text-slate-500 leading-relaxed mt-1 font-medium">{log.details}</p>
+                    <p className="text-[7px] text-zinc-800 mt-2 font-mono uppercase">{new Date(log.timestamp?.toDate()).toLocaleTimeString()}</p>
                   </div>
                 ))}
               </div>
@@ -151,22 +147,28 @@ function App() {
 
           {detailDriver && (
             <div className="fixed inset-0 bg-black/98 backdrop-blur-xl flex items-center justify-center p-4 z-[10000]" onClick={()=>setDetailDriver(null)}>
-              <div className="bg-[#050505] border border-blue-500/30 p-10 rounded-[3.5rem] w-full max-w-lg" onClick={e=>e.stopPropagation()}>
-                <h3 className="text-4xl text-white italic font-black uppercase tracking-tighter mb-10">{detailDriver.name}</h3>
+              <div className="bg-[#050505] border border-blue-500/20 p-10 rounded-[3.5rem] w-full max-w-lg shadow-2xl" onClick={e=>e.stopPropagation()}>
+                <h3 className="text-4xl text-white italic font-black uppercase tracking-tighter mb-10">{detailDriver.name} 財務裁決</h3>
                 <div className="space-y-6 mb-10">
-                   <div className="flex justify-between items-center bg-zinc-900/50 p-6 rounded-3xl border border-white/5">
-                     <span className="text-slate-500 text-sm italic">2026 實領淨額</span>
-                     <span className="font-mono text-4xl text-emerald-400 italic">${Math.max(0, (Number(detailDriver.total_del)||0)*(detailDriver.custom_del_price||15) + (Number(detailDriver.total_pkp)||0)*(detailDriver.custom_pkp_price||10) - 1137).toLocaleString()}</span>
+                   <div className="flex justify-between items-center bg-zinc-900/30 p-8 rounded-3xl border border-white/5 shadow-inner">
+                     <span className="text-slate-500 text-sm italic uppercase font-black">實領淨額</span>
+                     <span className="font-mono text-4xl text-emerald-400 italic font-black tracking-tighter">${Math.max(0, (Number(detailDriver.total_del)||0)*(detailDriver.custom_del_price||15) + (Number(detailDriver.total_pkp)||0)*(detailDriver.custom_pkp_price||10) - 1137).toLocaleString()}</span>
                    </div>
-                   <div className="p-6 bg-blue-950/10 rounded-3xl border border-blue-500/20">
-                    <p className="text-[9px] text-blue-500 mb-4 tracking-widest uppercase italic">⚖️ 數據覆寫權</p>
+                   <div className="p-6 bg-blue-950/10 rounded-3xl border border-blue-500/10">
+                    <p className="text-[9px] text-blue-500/50 mb-4 tracking-widest uppercase italic font-black">⚖️ 造物主數據覆寫</p>
                     <div className="flex gap-4">
-                      <div className="flex-1"><label className="text-[8px] text-slate-600 block mb-1 uppercase">正件單價</label><input type="number" defaultValue={detailDriver.custom_del_price||15} onBlur={async(e)=>await db.collection('partners').doc(detailDriver.id).update({custom_del_price: Number(e.target.value)})} className="w-full bg-black p-3 rounded-xl text-xs text-white border border-white/10" /></div>
-                      <div className="flex-1"><label className="text-[8px] text-slate-600 block mb-1 uppercase">逆收單價</label><input type="number" defaultValue={detailDriver.custom_pkp_price||10} onBlur={async(e)=>await db.collection('partners').doc(detailDriver.id).update({custom_pkp_price: Number(e.target.value)})} className="w-full bg-black p-3 rounded-xl text-xs text-white border border-white/10" /></div>
+                      <div className="flex-1">
+                        <label className="text-[8px] text-slate-700 block mb-1 uppercase">正件 $</label>
+                        <input type="number" defaultValue={detailDriver.custom_del_price||15} onBlur={async(e)=>await db.collection('partners').doc(detailDriver.id).update({custom_del_price: Number(e.target.value)})} className="w-full bg-black p-4 rounded-xl text-xs text-white border border-white/5 outline-none focus:border-blue-500 transition-all" />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[8px] text-slate-700 block mb-1 uppercase">逆收 $</label>
+                        <input type="number" defaultValue={detailDriver.custom_pkp_price||10} onBlur={async(e)=>await db.collection('partners').doc(detailDriver.id).update({custom_pkp_price: Number(e.target.value)})} className="w-full bg-black p-4 rounded-xl text-xs text-white border border-white/5 outline-none focus:border-blue-500 transition-all" />
+                      </div>
                     </div>
                   </div>
                 </div>
-                <button onClick={()=>{writeGodLog("查閱確權", detailDriver.name); setDetailDriver(null);}} className="w-full py-5 bg-blue-600 rounded-2xl font-black italic tracking-widest text-white">確認並存檔紀錄</button>
+                <button onClick={()=>{writeGodLog("查閱數據", detailDriver.name); setDetailDriver(null);}} className="w-full py-5 bg-blue-600 rounded-2xl font-black italic tracking-widest text-white hover:bg-blue-500 active:scale-95 transition-all uppercase shadow-lg shadow-blue-500/20">Confirm & Record</button>
               </div>
             </div>
           )}
