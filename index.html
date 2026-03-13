@@ -8,10 +8,18 @@
   <script>
     window.onerror = function(message, source, lineno, colno, error) { console.error("崩潰攔截:", message); return true; };
     window.__app_id = 'ggsoc-trinity-master-v1';
-    // 預設 Firebase 配置 (請替換為您的實際配置)
-    window.firebaseConfig = { apiKey: "AIza...", authDomain: "...", projectId: "...", storageBucket: "...", messagingSenderId: "...", appId: "..." };
+    
+    // 👇 這裡已經為您換上您專屬的 Supreme 核心金鑰 👇
+    window.firebaseConfig = {
+      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+      authDomain: "supreme-v92.firebaseapp.com",
+      projectId: "supreme-v92",
+      storageBucket: "supreme-v92.firebasestorage.app",
+      messagingSenderId: "485530156296",
+      appId: "1:485530156296:web:6728c0ee08b98dedd800bd",
+      measurementId: "G-JF36CHXE9Z"
+    };
   </script>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
