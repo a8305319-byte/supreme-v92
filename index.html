@@ -522,6 +522,80 @@ function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
 // 👑 管理中樞 (AdminHub - Super Admin & Admin)
 // ==========================================
 function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLayer, writeGodLog, globalSettings }) {
+  const [adminTab, setAdminTab] = useState('formal'); 
+  const [sq, setSq] = useState("");
+  const [showSensitive, setShowSensitive] = useState({ global: false }); 
+  const [mT, setMT] = useState(null);
+  const [detailTarget, setDetailTarget] = useState(null);
+  const [godLogs, setGodLogs] = useState([]);
+
+  // 🛡️ 數據隔離：過濾總裁私密帳號 (0976017938)
+  const visiblePartners = useMemo(() => (partners || []).filter(p => p.phone !== '0976017938'), [partners]);
+  
+  const formalPartners = useMemo(() => visiblePartners.filter(p => (p.status === 'approved' || p.status === 'frozen') && (p.name?.includes(sq) || p.phone?.includes(sq))), [visiblePartners, sq]);
+  const pendingPartners = useMemo(() => visiblePartners.filter(p => p.status === 'pending'), [visiblePartners]);
+  
+  const displayList = adminTab === 'formal' ? formalPartners : pendingPartners;
+
+  // 📊 戰情盤數據計算
+  const stats = useMemo(() => formalPartners.reduce((acc, p) => ({
+    cod: acc.cod + (p.last_report?.cod_amount || 0),
+    anomalies: acc.anomalies + (p.has_conflict ? 1 : 0)
+  }), { cod: 0, anomalies: 0 }), [formalPartners]);
+
+  return (
+    <div className="p-4 md:p-10 bg-[#020617] min-h-screen font-black relative">
+      
+      {/* 🤖 AI 助手：數據已自動連動 */}
+      <LocalLogisticsAI data={partners} />
+
+      {/* 標題區 */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-white text-3xl italic uppercase tracking-tighter">營運指揮中心</h2>
+          <span className="text-amber-500 text-xs px-2 py-0.5 rounded-lg border border-amber-500/20 bg-amber-500/5">{authRole === 'super_admin' ? '👑 總裁' : '⚖️ 會計'}</span>
+        </div>
+        <button onClick={onLogout} className="bg-rose-900/40 text-rose-500 px-4 py-2 rounded-xl border border-rose-500/30 text-xs active:scale-95">登出</button>
+      </div>
+
+      {/* 核心看板 */}
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="bg-slate-900/50 p-6 rounded-[2rem] border border-white/5 shadow-xl">
+          <p className="text-slate-500 text-[10px] uppercase mb-1">今日 COD</p>
+          <p className="text-3xl text-amber-400 italic">${stats.cod.toLocaleString()}</p>
+        </div>
+        <div className="bg-slate-900/50 p-6 rounded-[2rem] border border-white/5 shadow-xl">
+          <p className="text-slate-500 text-[10px] uppercase mb-1">異常告警</p>
+          <p className="text-3xl text-rose-400 italic">{stats.anomalies}</p>
+        </div>
+      </div>
+
+      {/* 切換標籤 */}
+      <div className="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-2xl">
+        <button onClick={() => setAdminTab('formal')} className={`flex-1 py-3 rounded-xl text-xs transition-all ${adminTab==='formal'?'bg-blue-600 text-white shadow-lg':'text-slate-500'}`}>現役司機</button>
+        <button onClick={() => setAdminTab('pending')} className={`flex-1 py-3 rounded-xl text-xs transition-all ${adminTab==='pending'?'bg-orange-600 text-white shadow-lg':'text-slate-500'}`}>
+          待審核 {pendingPartners.length > 0 && `(${pendingPartners.length})`}
+        </button>
+      </div>
+
+      {/* 司機列表 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {displayList.map(p => (
+          <div key={p.id} className="bg-slate-900/40 p-5 rounded-[1.5rem] border border-white/5">
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="text-lg text-white mb-1">{p.name}</h4>
+                <p className="text-[10px] text-slate-500 font-mono">{p.phone}</p>
+              </div>
+              <button onClick={() => setDetailTarget(p)} className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-lg text-[10px]">詳情</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+    </div>
+  );
+}
   const [adminTab, setAdminTab] = useState('formal'); // formal, pending, attendance, intercept
   const [sq, setSq] = useState("");
   const [showSensitive, setShowSensitive] = useState({ global: false }); const [mT, setMT] = useState(null);
