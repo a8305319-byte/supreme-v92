@@ -43,8 +43,11 @@
 
   <script type="text/babel" data-type="module">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const createRoot = ReactDOM.createRoot;
+
 // --- 2026 員工自付費用對照表 (精準對應圖片數據) ---
 const INSURANCE_TABLE_2026 = {
+  11100: { labor: 277, health: 458 },
   11100: { labor: 277, health: 458 },
   12540: { labor: 313, health: 458 },
   13500: { labor: 338, health: 458 },
