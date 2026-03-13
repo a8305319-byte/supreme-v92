@@ -99,12 +99,37 @@ const showToast = (msg, isError = false) => {
 const speak = (text) => { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(text); u.lang = 'zh-TW'; u.rate = 1.1; window.speechSynthesis.speak(u); } };
 const sendLineNotify = (token, msg) => { console.log("【LINE Notify API】:", msg); };
 
-const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92", storageBucket: "supreme-v92.firebasestorage.app", messagingSenderId: "485530156296", appId: "1:485530156296:web:6728c0ee08b98dedd800bd" };
-const app = initializeApp(firebaseConfig);
-const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
-const auth = getAuth(app);
-const functions = getFunctions(app);
-const callAI = httpsCallable(functions, 'ggsocAIEndpoint');
+// --- ⚙️ 系統核心動力連線 (修正非同步斷點) ---
+let app, db, auth, functions, callAI;
+
+async function startEngine() {
+  try {
+    // 確保所有 Firebase 組件載入完成
+    const firebaseApp = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const firebaseFirestore = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+    const firebaseAuth = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const firebaseFunctions = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
+
+    app = firebaseApp.initializeApp(firebaseConfig);
+    db = firebaseFirestore.initializeFirestore(app, { localCache: firebaseFirestore.persistentLocalCache({tabManager: firebaseFirestore.persistentMultipleTabManager()}) });
+    auth = firebaseAuth.getAuth(app);
+    functions = firebaseFunctions.getFunctions(app);
+    callAI = firebaseFunctions.httpsCallable(functions, 'ggsocAIEndpoint');
+
+    console.log("⚡ 核心能源已接通，啟動指揮中心...");
+    
+    // 能源接通後，才正式發動 React
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ErrorBoundary><AppWrapper /></ErrorBoundary>);
+    
+  } catch (err) {
+    console.error("❌ 指揮中心啟動崩潰:", err);
+    document.getElementById('root').innerHTML = `<div style="color:white; padding:20px;">系統連線失敗，請檢查網路。</div>`;
+  }
+}
+
+// 點火！
+startEngine();
 
 const Ico = (e) => ({size=24, className=""}) => <span style={{fontSize: size+'px', lineHeight: 1}} className={className}>{e}</span>;
 const Package=Ico('📦'), Settings=Ico('⚙️'), Message=Ico('💬'), Banknote=Ico('💵'), Bot=Ico('🤖'), Shield=Ico('🛡️'), HistoryLog=Ico('📜'), Bell=Ico('🔔'), Support=Ico('🆘'), Calendar=Ico('📅'), Send=Ico('✈️'), X=Ico('❌'), Camera=Ico('📷'), Check=Ico('✅'), Alert=Ico('🚨'), Receipt=Ico('🧾'), LogOut=Ico('🚪'), Pen=Ico('🖋️'), Search=Ico('🔍'), Radio=Ico('📻'), FileText=Ico('📄'), Download=Ico('📥'), Eye=Ico('👁️'), Target=Ico('🎯'), User=Ico('👤'), Star=Ico('⭐');
