@@ -1,792 +1,402 @@
 <!DOCTYPE html>
-
 <html lang="zh-TW">
-
 <head>
-
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
   <title>在地物流 - GGSOC 終極完全體</title>
-
   
-
   <script>
-
     window.onerror = function(message, source, lineno, colno, error) { console.error("崩潰攔截:", message); return true; };
-
     window.__app_id = 'ggsoc-trinity-master-v1';
-
   </script>
 
-
-
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
-
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
-
- <!-- 1. 觸發按鈕 -->
-<button id="native-btn" class="..."> 📸 立即拍照 </button>
-
-<!-- 2. 隱藏的原生相機呼叫器 (這行是喚醒手機相機的關鍵) -->
-<input type="file" id="native-camera-input" accept="image/*" capture="environment" class="hidden">
-
-<!-- 3. 拍攝結果展示 -->
-<img id="result-image" class="w-full hidden ..." alt="拍攝結果">
-
-<!-- 4. 用於處理圖片轉換與壓縮的隱藏 Canvas -->
-<canvas id="hidden-canvas" class="hidden"></canvas>
-
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    body { background-color: #020617; color: white; margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar{width:6px;}
+    .custom-scrollbar::-webkit-scrollbar-thumb{background-color:rgba(59,130,241,0.5);border-radius:20px;}
+    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .animate-zoom { animation: zoomIn 0.2s ease-out forwards; }
     .loading-container { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
     .loader { border: 4px solid rgba(255,255,255,0.1); border-left-color: #3b82f6; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; }
-
     @keyframes spin { to { transform: rotate(360deg); } }
-
     @keyframes progress { from { width: 100%; } to { width: 0%; } }
-
     .animate-progress { animation: progress 3s linear forwards; }
-
     .scan-line { width: 100%; height: 2px; background: #10b981; position: absolute; animation: scan 2s linear infinite; box-shadow: 0 0 10px #10b981; }
-
     @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-
     .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
-
     .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; }
-
     .marquee-content { display: inline-block; animation: marquee 20s linear infinite; }
-
     @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-
     
-
     /* 水印相機 Canvas 隱藏 */
-
     .watermark-canvas { display: none; }
-
   </style>
-
 </head>
-
 <body>
-
   <div id="root"></div>
 
-
-
   <script type="text/babel" data-type="module">
-
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
-
 const createRoot = ReactDOM.createRoot;
 
-
-
 // 🌟 Firebase Initialization (Offline First)
-
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-
-
 class ErrorBoundary extends React.Component {
-
   constructor(props) { super(props); this.state = { hasError: false }; }
-
   static getDerivedStateFromError(error) { return { hasError: true }; }
-
   render() {
-
     if (this.state.hasError) return <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-center font-black"><div className="bg-rose-900/20 p-8 rounded-[2rem] border border-rose-500/30 shadow-2xl"><h2 className="text-3xl text-rose-400 mb-4 animate-pulse">🛡️ 底層核心保護啟動</h2><button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-600 rounded-xl">🔄 重新連線</button></div></div>;
-
     return this.props.children;
-
   }
-
 }
-
-
 
 const safeStorage = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }, remove: (k) => { try { localStorage.removeItem(k); } catch(e) {} } };
 
-
-
 const showToast = (msg, isError = false) => {
-
   const t = document.getElementById('global-toast');
-
   if(t) {
-
     t.innerText = msg;
-
     t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black z-[999999] shadow-2xl transition-all duration-500 flex items-center text-sm md:text-lg text-center ${isError ? 'bg-rose-600 border-rose-400' : 'bg-emerald-600 border-emerald-400'} border text-white`;
-
     t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
-
     setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 3500);
-
   }
-
 };
 
-
-
 const speak = (text) => { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(text); u.lang = 'zh-TW'; u.rate = 1.1; window.speechSynthesis.speak(u); } };
-
 const sendLineNotify = (token, msg) => { console.log("【LINE Notify API】:", msg); };
 
-
-
 const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92", storageBucket: "supreme-v92.firebasestorage.app", messagingSenderId: "485530156296", appId: "1:485530156296:web:6728c0ee08b98dedd800bd" };
-
 const app = initializeApp(firebaseConfig);
-
 const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
-
 const auth = getAuth(app);
-
 const appId = 'ggsoc-trinity-master-v1';
 
-
-
 const Ico = (e) => ({size=24, className=""}) => <span style={{fontSize: size+'px', lineHeight: 1}} className={className}>{e}</span>;
-
 const Package=Ico('📦'), Settings=Ico('⚙️'), Message=Ico('💬'), Banknote=Ico('💵'), Bot=Ico('🤖'), Shield=Ico('🛡️'), HistoryLog=Ico('📜'), Bell=Ico('🔔'), Support=Ico('🆘'), Calendar=Ico('📅'), Send=Ico('✈️'), X=Ico('❌'), Camera=Ico('📷'), Check=Ico('✅'), Alert=Ico('🚨'), Receipt=Ico('🧾'), LogOut=Ico('🚪'), Pen=Ico('🖋️'), Search=Ico('🔍'), Radio=Ico('📻'), FileText=Ico('📄'), Download=Ico('📥'), Eye=Ico('👁️'), Target=Ico('🎯'), User=Ico('👤'), Star=Ico('⭐');
 
-
-
 // ==========================================
-
 // 🛡️ 三位一體數位簽章 (GPS + 時間 + 設備特徵)
-
 // ==========================================
-
 const SignaturePad = ({ onSign }) => {
-
   const canvasRef = useRef(null); const [isDrawing, setIsDrawing] = useState(false);
-
   const [geoInfo, setGeoInfo] = useState("獲取位置中...");
-
   const deviceId = useMemo(() => navigator.userAgent.replace(/[^a-zA-Z0-9]/g, '').slice(-10) + '-' + screen.width, []);
 
-
-
   useEffect(() => {
-
     if (navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => setGeoInfo(`GPS:${pos.coords.latitude.toFixed(4)},${pos.coords.longitude.toFixed(4)}`), () => setGeoInfo("GPS:未授權"));
-
     if(canvasRef.current){ const ctx = canvasRef.current.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap='round'; ctx.strokeStyle='#fff'; } 
-
   }, []);
-
-
 
   const getPos = (e) => { const rect = canvasRef.current.getBoundingClientRect(); const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY; return { x: cx - rect.left, y: cy - rect.top }; };
 
-
-
   const handleFinish = () => {
-
     setIsDrawing(false);
-
     if(canvasRef.current) {
-
       const ctx = canvasRef.current.getContext('2d'); ctx.font = "8px monospace"; ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-
       ctx.fillText(`${geoInfo} | ID:${deviceId} | ${new Date().toISOString()}`, 5, 145);
-
       onSign(canvasRef.current.toDataURL());
-
     }
-
   };
 
-
-
   return (
-
     <div className="w-full">
-
       <div className="bg-slate-950 border border-white/20 rounded-2xl overflow-hidden relative shadow-inner">
-
         <canvas ref={canvasRef} width={400} height={150} className="w-full h-[150px] touch-none cursor-crosshair" onMouseDown={(e)=>{setIsDrawing(true); const p=getPos(e); canvasRef.current.getContext('2d').beginPath(); canvasRef.current.getContext('2d').moveTo(p.x, p.y);}} onMouseMove={(e)=>{if(!isDrawing)return; const p=getPos(e); canvasRef.current.getContext('2d').lineTo(p.x, p.y); canvasRef.current.getContext('2d').stroke();}} onMouseUp={handleFinish} onTouchStart={(e)=>{setIsDrawing(true); const p=getPos(e); canvasRef.current.getContext('2d').beginPath(); canvasRef.current.getContext('2d').moveTo(p.x, p.y);}} onTouchMove={(e)=>{if(!isDrawing)return; const p=getPos(e); canvasRef.current.getContext('2d').lineTo(p.x, p.y); canvasRef.current.getContext('2d').stroke();}} onTouchEnd={handleFinish} />
-
         <div className="absolute bottom-1 left-2 text-[8px] text-slate-600 pointer-events-none">{geoInfo} | Dev:{deviceId}</div>
-
       </div>
-
       <button onClick={()=>{canvasRef.current.getContext('2d').clearRect(0,0,400,150); onSign(null);}} className="w-full py-2 text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1 hover:text-white transition-colors">清除重簽</button>
-
     </div>
-
   );
-
 };
 
-
-
 // ==========================================
-
 // 🚨 60秒物理活性突擊 (Liveness Check UI)
-
 // ==========================================
-
 function LivenessCheckModal({ partnerId, onVerify, db }) {
-
   const [timeLeft, setTimeLeft] = useState(60); const [photo, setPhoto] = useState(null);
 
-
-
   useEffect(() => {
-
     if (timeLeft <= 0) {
-
       updateDoc(doc(db,'artifacts',appId,'public','data','partners',partnerId), { status: 'frozen', pending_liveness_check: false, liveness_failed: true });
-
       showToast("🚨 安全校驗超時！帳號已強制鎖定。", true); sendLineNotify("", "🚨 [幽靈警報] 目標驗證失敗已鎖定。");
-
     }
-
     const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000); return () => clearInterval(timer);
-
   }, [timeLeft]);
-
-
 
   const handleCapture = (e) => { const file = e.target.files[0]; if (file) { setPhoto(URL.createObjectURL(file)); setTimeout(() => onVerify(true), 1500); } };
 
-
-
   return (
-
     <div className="fixed inset-0 bg-black/95 z-[999999] flex items-center justify-center p-4 backdrop-blur-xl font-black text-center">
-
       <div className="bg-rose-950/40 border-2 border-rose-500/50 p-8 rounded-[2.5rem] max-w-sm w-full shadow-[0_0_50px_rgba(225,29,72,0.4)] relative overflow-hidden">
-
         <div className="scan-line bg-rose-500 shadow-[0_0_15px_#f43f5e]"></div>
-
         <Alert size={48} className="text-rose-500 mx-auto mb-4 animate-bounce" />
-
         <h3 className="text-2xl text-rose-400 mb-2">系統安全校驗</h3>
-
         <p className="text-xs text-rose-200/80 mb-6 leading-relaxed">為防範帳號遭盜用或共用，請立即拍攝一張包含「現場環境」之實景照片以解除鎖定。</p>
-
         <div className="text-5xl text-white font-mono mb-8 tracking-widest">{timeLeft}s</div>
-
         <input type="file" accept="image/*" capture="environment" id="liveness_cam" className="hidden" onChange={handleCapture} />
-
         <label htmlFor="liveness_cam" className="w-full py-5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white text-lg uppercase tracking-widest cursor-pointer flex justify-center items-center shadow-lg active:scale-95 transition-all">{photo ? '分析中...' : '開啟相機認證'}</label>
-
       </div>
-
     </div>
-
   );
-
 }
 
-
-
 // ==========================================
-
 // 🤖 AI 鐵血面試官 (更新合約條文)
-
 // ==========================================
-
 function OnboardingModal({ onClose }) {
-
   const [step, setStep] = useState(1); const [sig, setSig] = useState(null); const [isScanning, setIsScanning] = useState(false);
-
   const startAITest = () => { setStep(2); setIsScanning(true); setTimeout(() => setIsScanning(false), 3500); };
-
   
-
   return (
-
     <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom" onClick={onClose}>
-
        <div className="bg-slate-900 border border-emerald-500/30 p-6 md:p-8 rounded-[2.5rem] max-w-md w-full shadow-2xl relative font-black h-[85vh] flex flex-col" onClick={e=>e.stopPropagation()}>
-
          <button onClick={onClose} className="absolute top-6 right-6 text-white p-2 bg-slate-800 rounded-full hover:bg-rose-500"><X size={20}/></button>
-
          <h3 className="text-2xl font-black text-emerald-400 mb-2 italic"><Bot size={28}/> AI 入職審查官</h3>
-
          <p className="text-xs text-slate-400 mb-6 border-b border-white/10 pb-4">壓力測試、建檔與線上簽約</p>
-
          <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
-
            {step === 1 && ( <div className="space-y-4 animate-[fadeIn_0.3s]"><div className="bg-slate-800/50 border border-white/10 p-5 rounded-xl text-slate-300 text-sm leading-relaxed"><p className="font-black mb-2 text-white text-lg">【第一階段：情境壓力測試】</p>即將啟動 10 題情境測驗（如：包裹遺失處理等）。系統將自動分析您的邏輯反應與情緒穩定度。</div><button onClick={startAITest} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white shadow-lg active:scale-95 tracking-widest mt-8 transition-all">啟動 AI 測試引擎</button></div> )}
-
            {step === 2 && ( <div className="space-y-4 animate-[fadeIn_0.3s]">
-
                {isScanning ? ( <div className="bg-black/50 border border-emerald-500/50 p-8 rounded-xl text-center relative overflow-hidden"><div className="scan-line"></div><Bot size={48} className="mx-auto text-emerald-400 mb-4 animate-bounce" /><p className="text-emerald-400 text-sm tracking-widest mb-2">神經網路運算中...</p><p className="text-[10px] text-slate-500">正在分析邏輯閥值與情緒抗壓性</p></div> ) : (
-
                  <div className="space-y-4 animate-zoom"><div className="bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-xl text-emerald-300 text-sm leading-relaxed text-center">✅ 測驗通過！(綜合評分: 88/100)<br/>請完成基本資料建檔。</div><input placeholder="真實姓名 (必填)" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-white/5 focus:border-emerald-500" /><input placeholder="身分證字號 (必填)" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-white/5 focus:border-emerald-500" /><input placeholder="申請註冊門號 (必填)" type="tel" className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-white/5 focus:border-emerald-500" /><button onClick={()=>setStep(3)} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white shadow-lg active:scale-95 text-lg mt-4 transition-all">下一步：線上簽署合約</button></div>
-
                )}
-
              </div> )}
-
            {step === 3 && ( <div className="space-y-4 animate-[fadeIn_0.3s]"><div className="bg-slate-800 p-4 rounded-xl h-48 overflow-y-auto text-xs text-slate-300 leading-relaxed border border-white/10"><p className="text-white font-black mb-2 text-sm">【勞務承攬合約書】</p>定作人：在地物流有限公司<br/><br/>第一條 (自主權)：甲方擁有配送路線規劃自主權，乙方僅針對「送達結果」驗收，不干涉執行過程。<br/>第二條 (報酬)：報酬以系統顯示為準，乙方保有調整單價之權利。件數以廠商（委託方）報表為最終準據。<br/>第三條 (車輛)：罰單、停車費及人為損壞由司機負擔；定期保養由公司負責（方案 C）。<br/>第四條 (安全)：執行期間之交通事故或人身傷害由甲方自行負責，與乙方無涉。<br/><br/>※ 紀律罰則：貨物遺失毀損 100% 原價賠償；虛假報帳當日報酬歸零；法規類自動扣除二代健保補充保費。</div><div className="mt-4"><p className="text-[10px] text-blue-400 mb-2">請於下方簽名同意：</p><SignaturePad onSign={setSig} /></div><button disabled={!sig} onClick={()=>{showToast("✅ 合約存證 PDF 已生成，帳號進入審核佇列"); onClose();}} className="w-full py-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-xl text-white shadow-lg active:scale-95 text-lg mt-4 transition-all">同意並送出審查</button></div> )}
-
          </div>
-
        </div>
-
     </div>
-
   );
-
 }
 
-
-
 // ==========================================
-
 // 🥊 萬事通離線衝突太極拳 (Offline Conflict)
-
 // ==========================================
-
 function ConflictModal({ localData, serverData, onResolve }) {
-
   const [reason, setReason] = useState("");
-
   return (
-
     <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 animate-zoom font-black">
-
       <div className="bg-slate-900 border-2 border-amber-500/50 p-6 md:p-8 rounded-[2.5rem] max-w-md w-full shadow-[0_0_30px_rgba(245,158,11,0.2)] relative">
-
         <h3 className="text-2xl text-amber-400 mb-2 flex items-center gap-2"><Bot size={28}/> 萬事通資料保護</h3>
-
         <p className="text-xs text-slate-400 mb-6 leading-relaxed">系統偵測到您的離線回報數據與營運總部的即時紀錄存在落差。為保護您的對帳權益，底層演算法已暫停自動覆蓋。</p>
-
         <div className="flex gap-4 mb-6">
-
           <div className="flex-1 bg-black/50 p-4 rounded-xl border border-white/5 text-center"><p className="text-[10px] text-slate-500 mb-1">您的離線提交</p><p className="text-xl text-white">{localData.del} 正 / {localData.pkp} 逆</p></div>
-
           <div className="flex-1 bg-amber-950/30 p-4 rounded-xl border border-amber-500/30 text-center"><p className="text-[10px] text-amber-400 mb-1">總部核實紀錄</p><p className="text-xl text-amber-200">{serverData.del} 正 / {serverData.pkp} 逆</p></div>
-
         </div>
-
         <div className="space-y-3">
-
           <button onClick={() => onResolve('accept_server')} className="w-full py-4 bg-slate-800 border border-white/10 hover:bg-slate-700 rounded-xl text-sm transition-all active:scale-95">放棄離線數據 (以總部為準)</button>
-
           <div className="pt-4 border-t border-white/10"><p className="text-[10px] text-blue-400 mb-2">或向 AI 報備異常以申請保留：</p><input placeholder="輸入理由 (例：警衛不讓進，被退回)..." className="w-full bg-black/50 p-4 rounded-xl text-white text-sm outline-none border border-white/5 mb-3 focus:border-blue-500" value={reason} onChange={e=>setReason(e.target.value)} /><button onClick={() => { if(!reason) return showToast("請填寫理由", true); onResolve('report_conflict', reason); }} className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl text-white text-sm transition-all shadow-lg active:scale-95">送出異常報備 (亮黃燈處理)</button></div>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }
 
-
-
 // ==========================================
-
 // 🧊 薪資凍結快照檢視 (Salary Sign)
-
 // ==========================================
-
 function SalarySignModal({ partner, onClose, onAction }) {
-
   const [sig, setSig] = useState(null); const [dispute, setDispute] = useState(false); const [reason, setReason] = useState("");
-
   if(!partner) return null; const record = partner.salary_record || { net: 0, snapshot: {} };
-
   return (
-
     <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom font-black" onClick={onClose}>
-
       <div className="bg-slate-900 border border-emerald-500/30 p-6 rounded-[2.5rem] max-w-md w-full shadow-2xl relative" onClick={e=>e.stopPropagation()}>
-
         <button onClick={onClose} className="absolute top-6 right-6 text-white p-2 hover:text-rose-400"><X size={20}/></button>
-
         <h3 className="text-2xl text-emerald-400 mb-4 flex items-center gap-2"><Banknote size={28}/> 薪資凍結快照</h3>
-
         
-
         <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5 mb-4 text-xs space-y-2">
-
            <div className="flex justify-between text-slate-400"><span>正件計價</span><span>{record.snapshot?.del_count || 0} 件 x ${record.snapshot?.del_price || 15}</span></div>
-
            <div className="flex justify-between text-slate-400"><span>逆收計價</span><span>{record.snapshot?.pkp_count || 0} 件 x ${record.snapshot?.pkp_price || 10}</span></div>
-
            {record.snapshot?.bonus > 0 && <div className="flex justify-between text-blue-400 border-t border-white/5 pt-2"><span>激勵獎金</span><span>+${record.snapshot.bonus}</span></div>}
-
            {record.snapshot?.deductions > 0 && <div className="flex justify-between text-rose-400 border-t border-white/5 pt-2"><span>扣款/理賠</span><span>-${record.snapshot.deductions}</span></div>}
-
         </div>
-
         <div className="bg-black/50 p-6 rounded-2xl border border-emerald-500/30 mb-6 text-center shadow-inner"><p className="text-xs text-slate-500 mb-1">本期實得淨額</p><p className="text-4xl text-emerald-400 italic">${(record.net || 0).toLocaleString()}</p></div>
-
         
-
         {!dispute ? (
-
           <div className="space-y-4">
-
              <p className="text-[10px] text-center text-slate-500">※ 此快照已具備法律效力，確權後即撥款</p>
-
              <SignaturePad onSign={setSig} />
-
              <div className="flex gap-2">
-
                <button onClick={()=>setDispute(true)} className="w-1/3 py-4 bg-rose-900/40 text-rose-400 rounded-xl border border-rose-500/30 text-sm">異議退回</button>
-
                <button onClick={()=>onAction('confirm', {sig})} disabled={!sig} className="w-2/3 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl disabled:opacity-30 active:scale-95 transition-all">確認無誤並簽收 (領訖)</button>
-
              </div>
-
           </div>
-
         ) : (
-
           <div className="space-y-3 animate-zoom">
-
             <input placeholder="輸入異議理由 (例如：少算一天)..." className="w-full bg-slate-800 p-4 rounded-xl text-white text-sm outline-none border border-rose-500/50" value={reason} onChange={e=>setReason(e.target.value)} />
-
             <div className="flex gap-2">
-
               <button onClick={()=>setDispute(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-xl text-sm">取消</button>
-
               <button onClick={()=>{ if(!reason)return showToast("需填寫理由",true); onAction('dispute', {reason}); }} className="flex-1 py-4 bg-rose-600 text-white rounded-xl text-sm active:scale-95">送出異議</button>
-
             </div>
-
           </div>
-
         )}
-
       </div>
-
     </div>
-
   );
-
 }
 
-
-
 // ==========================================
-
 // 🎭 AI 語氣濾鏡與影子接管對話框
-
 // ==========================================
-
 function ChatModal({ target, currentUserRole, onClose }) {
-
   const [input, setInput] = useState(""); const [msgs, setMsgs] = useState([]);
-
   const [isTranslating, setIsTranslating] = useState(false); const [isShadowMode, setIsShadowMode] = useState(false);
-
   const isPrivileged = target?.priority_access === true; 
-
-
 
   if (currentUserRole === 'admin' && isPrivileged) return (<div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4" onClick={onClose}><div className="bg-slate-900 border border-slate-700 p-8 rounded-[2.5rem] w-full max-w-sm text-center" onClick={e=>e.stopPropagation()}><button onClick={onClose} className="absolute top-4 right-4 p-2"><X size={16}/></button><Shield size={48} className="text-slate-600 mx-auto mb-4" /><p className="text-slate-400 text-sm italic tracking-widest">[ 內部特權通道，已交由系統底層處理 ]</p></div></div>);
 
-
-
   useEffect(() => { setMsgs([{ id: 1, sender: isPrivileged ? 'hq' : 'ai', text: isPrivileged ? '【內部特權通道開啟】請直說。' : '您好！系統正進行底層校驗。' }]); }, [isPrivileged]);
 
-
-
   const handleSend = () => {
-
     if(!input.trim()) return;
-
     
-
     if (currentUserRole === 'admin') {
-
        setIsTranslating(true);
-
        setTimeout(() => { setIsTranslating(false); setMsgs(prev => [...prev, { id: Date.now(), sender: 'hq', text: `[AI 轉化規章語氣]：系統偵測資料需覆核，請依規範執行。(原始：${input})` }]); setInput(""); }, 1500);
-
        return;
-
     }
-
-
 
     setMsgs(prev => [...prev, { id: Date.now(), sender: 'me', text: input }]); setInput("");
 
-
-
     if (currentUserRole === 'super_admin') {
-
        if (isShadowMode) { setIsTranslating(true); setTimeout(() => { setIsTranslating(false); setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'ai', text: `[GGSOC-Bot] ${input} (已模擬 AI 回覆)` }]); }, Math.random() * 1000 + 800); } 
-
        else { setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'hq', text: input }]); }
-
        return;
-
     }
 
-
-
     if (isPrivileged) setTimeout(() => { setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'hq', text: '收到，直達總裁窗口，無 AI 介入。' }]); }, 300);
-
     else setTimeout(() => { setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'ai', text: '已掛載高階核算模組複核，請稍候。' }]); }, 1800);
-
   };
 
-
-
   return (
-
     <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 animate-zoom font-black" onClick={onClose}>
-
        <div className={`bg-slate-900 border ${isPrivileged ? 'border-fuchsia-500/30' : 'border-blue-500/30'} w-full max-w-md h-[80vh] rounded-[2.5rem] flex flex-col overflow-hidden`} onClick={e=>e.stopPropagation()}>
-
          <div className="p-4 bg-slate-800 flex justify-between items-center z-10"><div className="flex items-center gap-2"><Support size={24} className={isPrivileged?'text-fuchsia-400':'text-blue-400'}/> <h3 className={`text-white italic ${isPrivileged ? 'text-fuchsia-300' : ''}`}>{isPrivileged ? '特權直連' : `客服中心`}</h3></div><button onClick={onClose} className="p-2"><X size={16}/></button></div>
-
          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#020617]">
-
            {msgs.map(m => (<div key={m.id} className={`flex ${m.sender==='me'?'justify-end':'justify-start'} animate-[fadeInUp_0.3s]`}><div className={`p-3 rounded-2xl text-sm max-w-[85%] leading-relaxed ${m.sender==='me'?'bg-blue-600 text-white rounded-tr-none': m.sender==='hq' ? (isPrivileged ? 'bg-fuchsia-900/60 text-fuchsia-100 rounded-tl-none border border-fuchsia-500/30' : 'bg-amber-600 text-white rounded-tl-none') : 'bg-slate-800 text-slate-200 rounded-tl-none border border-white/5'}`}>{m.sender==='hq'&&<span className="text-[9px] block mb-1 text-amber-200">{isPrivileged?'👑 總部':'👑 營運處'}</span>}{m.sender==='ai'&&<span className="text-[9px] block mb-1 text-slate-400">🤖 AI 助理</span>}{m.text}</div></div>))}
-
            {isTranslating && <div className="flex justify-end"><div className="p-3 rounded-2xl text-xs bg-slate-800 text-amber-400 border border-amber-500/30 flex items-center gap-2"><div className="loader w-3 h-3 border-2 border-amber-400"></div> 🤖 運算轉化中...</div></div>}
-
          </div>
-
          <div className="p-4 bg-slate-800 flex flex-col gap-2">
-
            {currentUserRole === 'super_admin' && !isPrivileged && ( <label className="flex items-center gap-2 text-[10px] text-fuchsia-400 cursor-pointer mb-1"><input type="checkbox" checked={isShadowMode} onChange={e=>setIsShadowMode(e.target.checked)} className="accent-fuchsia-600" /> 🤖 啟用影子接管 (披上 AI 外衣)</label> )}
-
            <div className="flex gap-2"><input className="flex-1 bg-slate-900 rounded-xl px-4 py-3 outline-none text-white text-sm focus:border-blue-500 border border-transparent" placeholder={currentUserRole==='admin' ? "白話指令由 AI 自動修飾..." : "輸入訊息..."} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} disabled={isTranslating} /><button onClick={handleSend} disabled={isTranslating} className={`${isPrivileged ? 'bg-fuchsia-600' : 'bg-blue-600'} px-5 py-3 rounded-xl text-white disabled:opacity-50 active:scale-95 shadow-lg`}><Send size={20}/></button></div>
-
          </div>
-
        </div>
-
     </div>
-
   )
-
 }
 
-
-
 // ==========================================
-
 // 🧑‍💼 管理/會計專屬：數據錄入與初審面板
-
 // ==========================================
-
 function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
-
   const [deductionAmount, setDeductionAmount] = useState(partner.current_deduction || 0);
-
   const [deductionReason, setDeductionReason] = useState(partner.deduction_reason || "");
-
   const [bonusAmount, setBonusAmount] = useState(partner.current_bonus || 0);
-
   const [isTaskDone, setIsTaskDone] = useState(partner.task_5000_done || false);
-
   const [tab, setTab] = useState('audit'); // audit, finance, files
 
-
-
   const handleSaveFinance = () => {
-
     let finalBonus = Number(bonusAmount);
-
     if (isTaskDone && finalBonus < 5000) finalBonus += 5000;
-
     onUpdate(partner.id, {
-
       current_deduction: Number(deductionAmount),
-
       deduction_reason: deductionReason,
-
       current_bonus: finalBonus,
-
       task_5000_done: isTaskDone
-
     });
-
     showToast("✅ 獎懲數據已同步至結算草稿");
-
   };
 
-
-
   return (
-
     <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-zoom font-black" onClick={onClose}>
-
       <div className="bg-slate-900 border border-blue-500/30 p-6 rounded-[2rem] w-full max-w-lg h-[80vh] flex flex-col relative shadow-2xl" onClick={e=>e.stopPropagation()}>
-
         <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-slate-800 rounded-full hover:bg-rose-500 text-white"><X size={16}/></button>
-
         <div className="mb-4 border-b border-white/10 pb-4">
-
           <h3 className="text-2xl text-blue-400 italic mb-1 flex items-center gap-2"><User size={24}/> {partner.name} <span className="text-xs text-slate-500 not-italic font-mono">{partner.phone}</span></h3>
-
           <p className="text-[10px] text-slate-400">目前累積正件：{partner.total_del} / 逆收：{partner.total_pkp}</p>
-
         </div>
-
         
-
         <div className="flex gap-2 mb-4">
-
           <button onClick={()=>setTab('audit')} className={`flex-1 py-2 rounded-lg text-xs transition-all ${tab==='audit'?'bg-blue-600 text-white':'bg-slate-800 text-slate-400'}`}>每日報帳審核</button>
-
           <button onClick={()=>setTab('finance')} className={`flex-1 py-2 rounded-lg text-xs transition-all ${tab==='finance'?'bg-amber-600 text-white':'bg-slate-800 text-slate-400'}`}>扣款與獎金錄入</button>
-
           <button onClick={()=>setTab('files')} className={`flex-1 py-2 rounded-lg text-xs transition-all ${tab==='files'?'bg-indigo-600 text-white':'bg-slate-800 text-slate-400'}`}>檔案調閱</button>
-
         </div>
-
-
 
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-
           {tab === 'audit' && (
-
             <div className="space-y-4">
-
               <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
-
                 <p className="text-sm text-white mb-2">最新回傳照片 (包含水印防偽)</p>
-
                 {partner.last_photo ? (
-
                   <img src={partner.last_photo} alt="Receipt" className="w-full rounded-lg border border-white/10" />
-
                 ) : (
-
                   <div className="h-32 bg-black/50 rounded-lg flex items-center justify-center text-slate-600 text-xs">今日無照片回傳</div>
-
                 )}
-
               </div>
-
               <button onClick={()=>{ onUpdate(partner.id, { has_conflict: true, conflict_reason: "會計標記異常：單據不符" }); showToast("已標記為異常列管"); }} className="w-full py-3 bg-rose-900/40 text-rose-400 rounded-xl border border-rose-500/30 text-sm active:scale-95">🚨 標記為異常 (退回說明)</button>
-
             </div>
-
           )}
-
-
 
           {tab === 'finance' && (
-
             <div className="space-y-5">
-
               <div className="bg-rose-950/20 p-4 rounded-xl border border-rose-500/30">
-
                 <p className="text-xs text-rose-400 mb-2 flex items-center gap-1"><Alert size={14}/> 手動扣款輸入 (罰單/貨損)</p>
-
                 <div className="flex gap-2 mb-2">
-
                   <span className="bg-black/50 p-3 rounded-lg text-slate-400">$</span>
-
                   <input type="number" placeholder="金額" className="flex-1 bg-black/50 p-3 rounded-lg text-white outline-none focus:border-rose-500 border border-transparent" value={deductionAmount} onChange={e=>setDeductionAmount(e.target.value)} />
-
                 </div>
-
                 <input placeholder="輸入扣款事由..." className="w-full bg-black/50 p-3 rounded-lg text-white text-xs outline-none focus:border-rose-500 border border-transparent" value={deductionReason} onChange={e=>setDeductionReason(e.target.value)} />
-
               </div>
-
               
-
               <div className="bg-amber-950/20 p-4 rounded-xl border border-amber-500/30">
-
                 <p className="text-xs text-amber-400 mb-3 flex items-center gap-1"><Star size={14}/> 激勵獎金設定</p>
-
                 <label className="flex items-center gap-3 bg-black/50 p-3 rounded-lg mb-3 cursor-pointer border border-white/5">
-
                   <input type="checkbox" className="accent-amber-500 w-5 h-5" checked={isTaskDone} onChange={e=>setIsTaskDone(e.target.checked)} />
-
                   <span className="text-sm text-amber-100">達成 5,000 元品質任務</span>
-
                 </label>
-
                 <div className="flex gap-2">
-
                   <span className="bg-black/50 p-3 rounded-lg text-slate-400 text-xs flex items-center">其他加給 $</span>
-
                   <input type="number" placeholder="金額" className="flex-1 bg-black/50 p-3 rounded-lg text-white outline-none focus:border-amber-500 border border-transparent text-sm" value={bonusAmount} onChange={e=>setBonusAmount(e.target.value)} />
-
                 </div>
-
               </div>
-
               
-
               <button onClick={handleSaveFinance} className="w-full py-4 bg-amber-600 text-white rounded-xl text-sm shadow-lg active:scale-95 transition-all">💾 儲存結算草稿</button>
-
             </div>
-
           )}
-
-
 
           {tab === 'files' && (
-
             <div className="space-y-4">
-
               <div className="bg-slate-800 p-4 rounded-xl border border-white/5">
-
                 <p className="text-xs text-slate-400 mb-1">基本資料</p>
-
                 <p className="text-sm text-white">身分證字號：A123456789 (已驗證)</p>
-
                 <p className="text-sm text-white">聯絡電話：{partner.phone}</p>
-
               </div>
-
               <div className="bg-slate-800 p-4 rounded-xl border border-white/5 flex justify-between items-center">
-
                 <div>
-
                   <p className="text-xs text-slate-400 mb-1">合約狀態</p>
-
                   <p className="text-sm text-emerald-400 flex items-center gap-1"><Check size={14}/> 已簽署《勞務承攬合約書》</p>
-
                 </div>
-
                 <button className="p-2 bg-slate-700 text-white rounded-lg"><FileText size={16}/></button>
-
               </div>
-
               <div className="bg-slate-800 p-4 rounded-xl border border-white/5">
-
                 <p className="text-xs text-slate-400 mb-1">當前單價設定 (僅限查閱)</p>
-
                 <p className="text-sm text-white">正件：${partner.custom_del_price || 15} / 逆收：${partner.custom_pkp_price || 10}</p>
-
               </div>
-
             </div>
-
           )}
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }
+
 
 
 
