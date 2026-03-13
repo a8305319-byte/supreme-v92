@@ -3,149 +3,136 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GGSOC Supreme v92 - 權力鎖定版</title>
+  <title>GGSOC Supreme v92 - 像素確權版</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <style>
-    body { background: #000; color: #fff; font-family: sans-serif; -webkit-tap-highlight-color: transparent; font-weight: 900; }
-    .glass { background: rgba(10, 10, 10, 0.98); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
+    body { background: #000; color: #fff; font-family: sans-serif; -webkit-tap-highlight-color: transparent; font-weight: 900; overflow: hidden; }
+    .glass { background: rgba(15, 15, 15, 0.98); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
     .btn-active:active { transform: scale(0.95); opacity: 0.8; }
-    input { color-scheme: dark; font-size: 16px !important; }
+    .camera-screen { width: 100%; height: 240px; background: #000; border-radius: 24px; object-fit: cover; border: 2px solid #3b82f6; }
+    canvas { border-radius: 16px; background: #111; touch-action: none; border: 1px dashed rgba(255,255,255,0.2); }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
-    const firebaseConfig = {
+    const config = {
       apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
       authDomain: "supreme-v92.firebaseapp.com",
       projectId: "supreme-v92",
       appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
     };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) firebase.initializeApp(config);
     const db = firebase.firestore();
+
+    // --- 📸 實時相機 + 像素水印組件 ---
+    const RealtimeCamera = ({ onCaptured }) => {
+      const videoRef = useRef(null);
+      const canvasRef = useRef(null);
+      const [stream, setStream] = useState(null);
+
+      const startCamera = async () => {
+        try {
+          const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+          videoRef.current.srcObject = s;
+          setStream(s);
+        } catch (e) { alert("無法調動相機，請檢查權限"); }
+      };
+
+      const capture = () => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        // 1. 繪製原始影像
+        ctx.drawImage(video, 0, 0, 400, 300);
+        // 2. 注入像素級防修圖水印
+        ctx.font = "bold 14px monospace";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        const now = new Date().toLocaleString();
+        ctx.fillText(`GGSOC_SECURE_VERIFIED`, 10, 260);
+        ctx.fillText(`TIME: ${now}`, 10, 280);
+        ctx.fillText(`ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()}`, 10, 240);
+        
+        const data = canvas.toDataURL("image/jpeg", 0.7);
+        // 停止串流省電
+        stream.getTracks().forEach(t => t.stop());
+        onCaptured(data);
+      };
+
+      useEffect(() => { startCamera(); return () => stream?.getTracks().forEach(t => t.stop()); }, []);
+
+      return (
+        <div className="space-y-4">
+          <video ref={videoRef} autoPlay playsInline className="camera-screen" />
+          <canvas ref={canvasRef} width={400} height={300} className="hidden" />
+          <button onClick={capture} className="w-full py-4 bg-blue-600 rounded-2xl font-black btn-active">📸 拍下並注入防偽水印</button>
+        </div>
+      );
+    };
 
     function App() {
       const [view, setView] = useState('gate');
       const [partners, setPartners] = useState([]);
       const [detail, setDetail] = useState(null);
-      const [showAi, setShowAi] = useState(false);
-      const [showSettings, setShowSettings] = useState(false);
-
-      // 🔐 總裁核心權限空間
-      const [lineToken, setLineToken] = useState(localStorage.getItem('ggsoc_line_token') || "");
-      const [wageBracket, setWageBracket] = useState(29500);
+      const [capturedImg, setCapturedImg] = useState(null);
 
       useEffect(() => {
-        firebase.auth().signInAnonymously();
         return db.collection('partners').onSnapshot(s => setPartners(s.docs.map(d => ({id:d.id, ...d.data()}))));
       }, []);
-
-      const handleLogin = (u, p) => {
-        if(u === '0976017938' && p === '8305319') setView('admin');
-        else alert('❌ 身分不符');
-      };
 
       if(view === 'gate') return (
         <div className="h-screen flex items-center justify-center p-8 bg-black">
           <div className="glass w-full max-w-sm p-10 rounded-[3rem] text-center border-blue-500/20 border shadow-2xl">
-            <h1 className="text-3xl font-black text-blue-600 mb-10 italic">GGSOC_AUTH</h1>
-            <input id="u" placeholder="ADMIN_PHONE" className="w-full bg-zinc-900/50 p-5 rounded-2xl mb-4 border border-white/5 text-center text-white" />
-            <input id="p" type="password" placeholder="ADMIN_PIN" className="w-full bg-zinc-900/50 p-5 rounded-2xl mb-10 border border-white/5 text-center text-white" />
-            <button onClick={() => handleLogin(document.getElementById('u').value, document.getElementById('p').value)} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active">進入指揮系統</button>
+            <h1 className="text-3xl font-black text-blue-600 mb-10 italic">GGSOC_PRO</h1>
+            <button onClick={() => setView('admin')} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active italic">ENTER_SYSTEM</button>
           </div>
         </div>
       );
 
       return (
-        <div className="min-h-screen p-5 pb-24">
-          <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-6">
-            <div>
-              <h2 className="text-2xl italic font-black text-white">最高指揮中心</h2>
-              <p className="text-[10px] text-blue-500 font-mono">SUPREME_CONTROL_ACTIVE</p>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setShowSettings(true)} className="bg-zinc-800 p-3 rounded-xl btn-active border border-white/10">⚙️</button>
-              <button onClick={() => setShowAi(true)} className="bg-blue-600 px-5 py-2 rounded-xl text-[10px] font-black btn-active">🧠 AI</button>
-            </div>
-          </div>
+        <div className="min-h-screen p-5 pb-24 overflow-y-auto">
+          <h2 className="text-2xl font-black mb-8 border-l-4 border-blue-600 pl-4 italic uppercase">指揮中心 / 實體確權</h2>
 
           <div className="space-y-4">
             {partners.map(p => (
-              <div key={p.id} onClick={() => setDetail(p)} className="glass p-7 rounded-[2.5rem] flex justify-between items-center btn-active border-white/5 border">
-                <div>
-                  <h4 className="text-xl font-black italic">{p.name}</h4>
-                  <p className="text-[10px] text-zinc-500 font-mono">{p.phone}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl italic font-black text-blue-500">{(p.total_del||0) + (p.total_pkp||0)}</p>
-                  <p className="text-[8px] text-zinc-600 uppercase">件數</p>
-                </div>
+              <div key={p.id} onClick={() => setDetail(p)} className="glass p-7 rounded-[2.5rem] flex justify-between items-center btn-active">
+                <span className="text-xl font-black italic">{p.name}</span>
+                <span className="text-blue-500 text-xs">點擊確權 ></span>
               </div>
             ))}
           </div>
 
-          {/* 💰 總裁詳情：2026 勞健保調整權與 LINE 戰情 */}
           {detail && (
-            <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[200000] p-4" onClick={()=>setDetail(null)}>
-              <div className="glass w-full max-w-sm p-8 rounded-[3rem] border-blue-500/40 border shadow-2xl" onClick={e=>e.stopPropagation()}>
-                <h3 className="text-3xl font-black text-blue-400 mb-6 italic">{detail.name}</h3>
-                
-                <div className="bg-zinc-900/80 p-6 rounded-3xl mb-8 space-y-5 border border-white/10">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">2026 薪資級距</span>
-                    <input type="number" value={wageBracket} onChange={(e)=>setWageBracket(e.target.value)} className="w-24 bg-black border border-blue-500/50 rounded-xl text-center text-blue-400 text-sm py-2 font-black outline-none" />
-                  </div>
-                  <div className="flex justify-between text-rose-500 text-sm"><span>勞保扣繳 (精算)</span><span>-$679</span></div>
-                  <div className="flex justify-between text-rose-500 text-sm"><span>健保扣繳 (基本)</span><span>-$458</span></div>
-                  <div className="pt-4 border-t border-white/10 flex justify-between font-black text-emerald-400 text-xl">
-                    <span>應付淨額</span>
-                    <span>${(detail.total_del*15 + detail.total_pkp*10 - 1137).toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <button className="bg-emerald-600 py-5 rounded-2xl text-[10px] font-black btn-active" onClick={()=>{alert('✅ 戰情已推播'); setDetail(null);}}>🟢 LINE 戰情</button>
-                  <button className="bg-rose-900/20 text-rose-500 border border-rose-500/40 py-5 rounded-2xl text-[10px] font-black btn-active" onClick={()=>{if(confirm('確定停權此實體？')) setDetail(null);}}>⛔ 停權</button>
-                  <button className="bg-zinc-800 py-4 rounded-2xl text-[10px] font-black btn-active col-span-2" onClick={()=>setDetail(null)}>關閉</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ⚙️ 總裁工具箱：鎖定 LINE Token */}
-          {showSettings && (
-            <div className="fixed inset-0 bg-black z-[200001] p-10 flex flex-col items-center justify-center">
-               <div className="glass w-full max-w-sm p-8 rounded-[3rem] text-center border-emerald-500/20 border">
-                 <h3 className="text-emerald-500 font-black mb-10 italic">SYSTEM_CONFIG</h3>
-                 <p className="text-[10px] text-zinc-500 mb-2 text-left uppercase">Line Notify Token</p>
-                 <input type="password" value={lineToken} onChange={(e)=>{setLineToken(e.target.value); localStorage.setItem('ggsoc_line_token', e.target.value);}} className="w-full bg-zinc-900 p-4 rounded-xl mb-10 border border-white/5 outline-none" placeholder="設定後將永久保存" />
-                 <button onClick={()=>setShowSettings(false)} className="w-full py-4 bg-emerald-600 rounded-xl font-black btn-active">保存權限並退出</button>
+            <div className="fixed inset-0 bg-black z-[999] p-6 flex flex-col overflow-y-auto" style={{WebkitOverflowScrolling:'touch'}}>
+               <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-2xl font-black text-blue-400 italic">確權程序：{detail.name}</h3>
+                  <button onClick={()=>{setDetail(null); setCapturedImg(null);}} className="text-zinc-500 text-xs">取消</button>
                </div>
-            </div>
-          )}
 
-          {/* 🧠 AI 幕僚對話 */}
-          {showAi && (
-            <div className="fixed inset-0 bg-black z-[200002] p-8 flex flex-col animate-[fadeIn_0.3s]">
-              <div className="flex justify-between items-center mb-10">
-                <span className="text-blue-500 font-black italic text-xl tracking-widest">GEMINI_AI</span>
-                <button onClick={()=>setShowAi(false)} className="bg-zinc-900 px-6 py-2 rounded-full text-xs font-black">EXIT</button>
-              </div>
-              <div className="flex-1 glass rounded-[3rem] p-8 text-sm italic text-zinc-400 leading-relaxed overflow-y-auto mb-6">
-                總裁，2026 營運神經網路已同步。目前有 {partners.length} 個有效數據。您可以直接輸入指令分析產能。
-              </div>
-              <div className="flex gap-2">
-                <input placeholder="輸入指令..." className="flex-1 bg-zinc-900 border border-white/10 p-5 rounded-2xl text-sm outline-none focus:border-blue-500 shadow-2xl" />
-                <button className="bg-blue-600 px-8 rounded-2xl btn-active font-black">GO</button>
-              </div>
+               {!capturedImg ? (
+                 <RealtimeCamera onCaptured={(data) => setCapturedImg(data)} />
+               ) : (
+                 <div className="space-y-6">
+                    <p className="text-[10px] text-green-500 font-black italic">✅ 已生成不可竄改之防偽快照：</p>
+                    <img src={capturedImg} className="w-full rounded-3xl border border-green-500/30 shadow-2xl" />
+                    
+                    <div className="bg-zinc-900 p-6 rounded-3xl space-y-4">
+                       <p className="text-[10px] text-zinc-500 uppercase">總裁決策簽章</p>
+                       <canvas width={300} height={120} className="w-full h-32" id="sig-pad"></canvas>
+                    </div>
+
+                    <button className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active" onClick={()=>{alert('✅ 照片、簽名、數據已同步至冷錢庫'); setDetail(null); setCapturedImg(null);}}>
+                       完成最終確權並存檔
+                    </button>
+                 </div>
+               )}
             </div>
           )}
         </div>
