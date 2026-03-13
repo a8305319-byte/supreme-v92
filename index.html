@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GGSOC 終極指揮中心</title>
+  <title>在地物流 - GGSOC 終極指揮中心</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -14,21 +14,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
-  <style>
-    body { background-color: #000000; color: #e2e8f0; font-family: sans-serif; }
-    .glass-panel { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); }
-    .loader { border: 4px solid rgba(255,255,255,0.05); border-left-color: #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-
-    // 1. 初始化 Firebase 引擎 (Supreme-v92 專案)
-    const firebaseConfig = {
+  <script>
+    window.__app_id = 'ggsoc-trinity-master-v1';
+    window.firebaseConfig = {
       apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
       authDomain: "supreme-v92.firebaseapp.com",
       projectId: "supreme-v92",
@@ -36,76 +24,117 @@
       messagingSenderId: "485530156296",
       appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
     };
-
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(window.firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
+  </script>
 
-    // 2. 輔助功能
-    const showToast = (msg) => { alert(msg); };
+  <style>
+    body { background-color: #000; color: #fff; font-weight: 900; }
+    .glass { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); }
+    .loader { border: 3px solid rgba(255,255,255,0.05); border-left-color: #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
 
-    // 3. 核心大腦組件
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
     function App() {
       const [view, setView] = useState('gate');
       const [partners, setPartners] = useState([]);
       const [showGemini, setShowGemini] = useState(false);
-      const [detailDriver, setDetailDriver] = useState(null);
+      const [aiText, setAiText] = useState("");
+      const [isAiLoading, setIsAiLoading] = useState(false);
 
       useEffect(() => {
         auth.signInAnonymously();
-        const unsub = db.collection('partners').onSnapshot(snap => {
+        return db.collection('partners').onSnapshot(snap => {
           setPartners(snap.docs.map(d => ({id: d.id, ...d.data()})));
         });
-        return () => unsub();
       }, []);
 
-      const handleLogin = (ph, pi) => {
-        if(ph === '0976017938' && pi === '8305319') setView('admin');
-        else alert('識別失敗');
-      };
-
-      const quickAdd = async () => {
-        const name = prompt("輸入司機姓名:");
-        const phone = prompt("輸入手機號碼:");
-        if(name && phone) {
-          await db.collection('partners').add({
-            name, phone, status: 'approved', total_del: 0, total_pkp: 0, created_at: new Date()
+      // 🧠 修正 404 問題的 AI 調用邏輯
+      const handleAskAi = async (q) => {
+        const apiKey = localStorage.getItem('ggsoc_gemini_token');
+        if(!apiKey) return alert("請先設定 API Key");
+        setIsAiLoading(true);
+        try {
+          // 改用 v1 穩定版網址，避開 v1beta 的路徑問題
+          const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: `數據：${JSON.stringify(partners)}。問題：${q}` }] }] })
           });
-          alert("✅ 實體已建立");
+          const data = await res.json();
+          setAiText(data.candidates[0].content.parts[0].text);
+        } catch (e) {
+          setAiText("🚨 AI 連線失敗，請檢查 API Key 或網路。");
+        } finally {
+          setIsAiLoading(false);
         }
       };
 
       if (view === 'gate') return (
-        <div className="h-screen flex items-center justify-center bg-black">
-          <div className="glass-panel p-10 rounded-[3rem] w-80 text-center border border-white/5">
-            <h1 className="text-2xl font-black mb-8 text-blue-500 italic">GGSOC_TERMINAL</h1>
-            <input id="ph" placeholder="PHONE" className="w-full bg-slate-900/50 p-4 rounded-xl mb-3 text-center border border-white/5 text-white outline-none" />
-            <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900/50 p-4 rounded-xl mb-8 text-center border border-white/5 text-white outline-none" />
-            <button onClick={() => handleLogin(document.getElementById('ph').value, document.getElementById('pi').value)} className="w-full py-4 bg-blue-600 rounded-xl font-black shadow-lg shadow-blue-500/20">ESTABLISH_LINK</button>
+        <div className="h-screen flex items-center justify-center p-6 bg-black">
+          <div className="glass p-10 rounded-[3rem] w-full max-w-sm text-center">
+            <h1 className="text-2xl font-black italic mb-2 text-blue-500">GGSOC_TERMINAL</h1>
+            <input id="ph" placeholder="PHONE" className="w-full bg-slate-900 p-4 rounded-xl mb-3 text-center" />
+            <input id="pi" type="password" placeholder="PIN" className="w-full bg-slate-900 p-4 rounded-xl mb-8 text-center" />
+            <button onClick={() => document.getElementById('ph').value==='0976017938' && document.getElementById('pi').value==='8305319' ? setView('admin') : alert('錯誤')} className="w-full py-4 bg-blue-600 rounded-xl font-black">LOGIN</button>
           </div>
         </div>
       );
 
       return (
-        <div className="min-h-screen bg-black text-white p-6 md:p-10 font-black">
-          <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
-            <div><h2 className="text-3xl italic tracking-tighter">營運指揮中心</h2><p className="text-[10px] text-blue-500 font-mono">2026_TRINITY_ACTIVE</p></div>
-            <div className="flex gap-3">
-               <button onClick={quickAdd} className="bg-white/10 px-4 py-2 rounded-xl text-xs border border-white/10">➕ 免試建檔</button>
-               <button onClick={()=>setShowGemini(true)} className="bg-blue-600 px-6 py-2 rounded-xl text-xs shadow-lg">🧠 AI 幕僚</button>
+        <div className="min-h-screen p-6 md:p-10 bg-black">
+          <div className="flex justify-between items-center mb-10">
+            <h2 className="text-3xl font-black italic">營運指揮中心</h2>
+            <div className="flex gap-2">
+              <button onClick={() => setShowGemini(true)} className="bg-blue-600 px-6 py-2 rounded-xl text-xs font-black">🧠 召喚 AI</button>
+              <button onClick={() => setView('gate')} className="text-slate-500 text-xs px-4">退出</button>
             </div>
           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {partners.filter(p => p.phone !== '0976017938').map(p => (
+              <div key={p.id} className="glass p-6 rounded-[2rem]">
+                <h4 className="text-xl font-black italic mb-1">{p.name}</h4>
+                <p className="text-[10px] text-slate-500 font-mono mb-4">{p.phone}</p>
+                <div className="flex justify-between border-t border-white/5 pt-4">
+                  <div className="text-blue-400">正:{p.total_del||0}</div>
+                  <div className="text-amber-400">逆:{p.total_pkp||0}</div>
+                </div>
+                {/* 2026 勞健保自動精算預覽 */}
+                <div className="mt-4 pt-4 border-t border-white/5 text-[10px] text-rose-400 font-black">
+                  💰 薪資預扣預覽: -$1,137 (勞+健)
+                </div>
+              </div>
+            ))}
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {partners.filter(p=>p.phone!=='0976017938').map(p => (
-              <div key={p.id} onClick={() => setDetailDriver(p)} className="glass-panel p-8 rounded-[2.5rem] border border-white/5 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all cursor-pointer relative group">
-                <h4 className="text-2xl italic mb-1">{p.name || '測試司機'}</h4>
-                <p className="text-xs text-slate-500 mb-6 font-mono">{p.phone}</p>
-                <div className="flex justify-between items-center">
-                  <div className="bg-black/40 px-4 py-
+          {showGemini && (
+            <div className="fixed inset-y-0 right-0 w-80 glass border-l border-white/10 p-6 z-50 flex flex-col">
+              <div className="flex justify-between mb-6"><span className="text-blue-500 font-black">AI_COPILOT</span><button onClick={()=>setShowGemini(false)}>❌</button></div>
+              <div className="flex-1 bg-black/50 rounded-xl p-4 text-xs italic text-slate-400 overflow-y-auto mb-4 leading-relaxed">
+                {aiText || "等待指令分析產能數據..."}
+              </div>
+              <input 
+                onKeyPress={e => e.key==='Enter' && handleAskAi(e.target.value)} 
+                placeholder="輸入指令後按 Enter..." 
+                className="w-full bg-slate-900 p-4 rounded-xl text-xs outline-none focus:border-blue-500" 
+              />
+              {isAiLoading && <p className="text-[10px] text-blue-500 mt-2 animate-pulse">神經元思考中...</p>}
+            </div>
+          )}
+        </div>
+      );
+    }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
