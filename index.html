@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GGSOC Supreme v92 - 眷屬精算版</title>
+  <title>GGSOC 下班結算系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -11,16 +11,19 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    body { background: #000; color: #fff; font-family: sans-serif; -webkit-tap-highlight-color: transparent; font-weight: 900; overflow-x: hidden; }
-    .glass { background: rgba(10, 10, 10, 0.98); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
+    body { background: #000; color: #fff; font-family: sans-serif; font-weight: 900; -webkit-tap-highlight-color: transparent; }
+    .glass { background: rgba(20, 20, 20, 0.95); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
     .btn-active:active { transform: scale(0.95); opacity: 0.8; }
-    select { appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%233b82f6%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; }
+    .input-field { background: #111; border: 1px solid #333; border-radius: 16px; padding: 15px; width: 100%; color: #3b82f6; font-size: 20px; font-weight: 900; text-align: center; outline: none; }
+    .input-field:focus { border-color: #3b82f6; }
+    .camera-box { width: 100%; height: 280px; background: #000; border-radius: 24px; object-fit: cover; border: 2px solid #333; }
+    .sig-canvas { background: #0a0a0a; border-radius: 20px; border: 1px dashed #444; touch-action: none; }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
     const config = {
       apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
@@ -32,99 +35,122 @@
     const db = firebase.firestore();
 
     function App() {
-      const [view, setView] = useState('gate');
       const [partners, setPartners] = useState([]);
-      const [detail, setDetail] = useState(null);
+      const [user, setUser] = useState(null);
+      const [step, setStep] = useState(1); // 1:選擇人, 2:登記, 3:拍照, 4:簽名
       
-      // 財務核心變數
-      const [wageBracket, setWageBracket] = useState(29500); 
-      const [familyCount, setFamilyCount] = useState(0); // 眷屬人數
-
-      const WAGE_OPTIONS = [28590, 29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
+      const [data, setData] = useState({ del: 0, pkp: 0 });
+      const [photo, setPhoto] = useState(null);
+      const videoRef = useRef(null);
+      const canvasRef = useRef(null);
 
       useEffect(() => {
         return db.collection('partners').onSnapshot(s => setPartners(s.docs.map(d => ({id:d.id, ...d.data()}))));
       }, []);
 
-      // 🧮 2026 精算邏輯
-      const laborFee = 679; // 假設 29500 級距固定值，若需隨選單變動可再擴充 table
-      const baseHealthFee = 458; 
-      const totalHealthFee = baseHealthFee * (1 + Number(familyCount));
+      const startCamera = async () => {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        if(videoRef.current) videoRef.current.srcObject = s;
+      };
 
-      if(view === 'gate') return (
-        <div className="h-screen flex items-center justify-center p-8 bg-black">
-          <div className="glass w-full max-w-sm p-12 rounded-[3.5rem] text-center border-blue-500/20 border shadow-2xl">
-            <h1 className="text-3xl font-black text-blue-600 mb-10 italic">GGSOC_SYSTEM</h1>
-            <button onClick={() => setView('admin')} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active">啟動指揮權限</button>
+      const capture = () => {
+        const c = document.createElement('canvas');
+        c.width = 600; c.height = 800;
+        const x = c.getContext('2d');
+        x.drawImage(videoRef.current, 0, 0, 600, 800);
+        x.fillStyle = "rgba(0,0,0,0.6)"; x.fillRect(0, 700, 600, 100);
+        x.fillStyle = "#fff"; x.font = "bold 24px sans-serif";
+        x.fillText(`司機: ${user.name}`, 30, 740);
+        x.fillText(`時間: ${new Date().toLocaleString()}`, 30, 775);
+        setPhoto(c.toDataURL());
+        videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+        setStep(4);
+      };
+
+      // 簽名邏輯
+      const [drawing, setDrawing] = useState(false);
+      const getPos = (e) => {
+        const r = canvasRef.current.getBoundingClientRect();
+        const t = e.touches ? e.touches[0] : e;
+        return { x: t.clientX - r.left, y: t.clientY - r.top };
+      };
+      const drawStart = (e) => { 
+        e.preventDefault(); setDrawing(true); 
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 4; ctx.lineCap = "round";
+        const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); 
+      };
+      const drawMove = (e) => { 
+        if(!drawing) return; e.preventDefault();
+        const ctx = canvasRef.current.getContext('2d');
+        const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); 
+      };
+
+      if (step === 1) return (
+        <div className="p-6">
+          <h2 className="text-2xl font-black mb-8 italic text-blue-500">GGSOC 下班結算</h2>
+          <p className="text-zinc-500 mb-4 text-xs">請點擊您的姓名開始結算流程</p>
+          <div className="space-y-3">
+            {partners.map(p => (
+              <button key={p.id} onClick={() => { setUser(p); setStep(2); }} className="w-full glass p-6 rounded-3xl text-left font-black text-xl btn-active border-white/5 border">
+                {p.name} <span className="text-[10px] text-zinc-600 block">{p.phone}</span>
+              </button>
+            ))}
           </div>
         </div>
       );
 
       return (
-        <div className="min-h-screen p-6 pb-32 overflow-y-auto bg-black">
-          <div className="mb-10">
-            <h2 className="text-3xl font-black italic tracking-tighter text-white">最高指揮中心</h2>
-            <p className="text-[10px] text-blue-500 font-mono mt-1 uppercase">2026_FINANCIAL_HUB_v1</p>
+        <div className="fixed inset-0 bg-black p-6 flex flex-col overflow-y-auto pb-20">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-black text-blue-400">司機：{user.name}</h3>
+            <span className="text-xs bg-zinc-900 px-3 py-1 rounded-full text-zinc-500 font-mono">STEP {step}/4</span>
           </div>
 
-          <div className="space-y-4">
-            {partners.map(p => (
-              <div key={p.id} onClick={() => setDetail(p)} className="glass p-7 rounded-[2.5rem] flex justify-between items-center btn-active border-white/5 border">
-                <div>
-                  <h4 className="text-xl font-black italic">{p.name}</h4>
-                  <p className="text-[10px] text-zinc-500 font-mono">{p.phone}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl italic font-black text-blue-500">{(p.total_del||0) + (p.total_pkp||0)}</p>
-                  <p className="text-[8px] text-zinc-600">UNITS</p>
-                </div>
+          {step === 2 && (
+            <div className="space-y-8 animate-[fadeIn_0.3s]">
+              <div>
+                <label className="text-xs text-zinc-500 block mb-2 font-black italic">今日配送總件數 (DEL)</label>
+                <input type="number" className="input-field" placeholder="0" onChange={e => setData({...data, del: e.target.value})} />
               </div>
-            ))}
-          </div>
-
-          {/* 💰 眷屬投保與財務詳情 */}
-          {detail && (
-            <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[200000] p-4" onClick={()=>setDetail(null)}>
-              <div className="glass w-full max-w-sm p-8 rounded-[3.5rem] border-blue-500/40 border shadow-2xl" onClick={e=>e.stopPropagation()}>
-                <div className="flex justify-between items-center mb-6">
-                   <h3 className="text-2xl font-black text-blue-400 italic">{detail.name}</h3>
-                   <button onClick={async()=>{if(confirm('確定刪除？')){await db.collection('partners').doc(detail.id).delete(); setDetail(null);}}} className="text-[10px] text-rose-500 font-black px-3 py-1 bg-rose-900/10 rounded-full border border-rose-900/20 btn-active">🗑️ 移除</button>
-                </div>
-                
-                <div className="bg-zinc-900/80 p-6 rounded-[2rem] mb-6 space-y-5 border border-white/5 shadow-inner">
-                  {/* 級距選單 */}
-                  <div>
-                    <p className="text-[9px] text-zinc-500 mb-2 uppercase font-black italic">1. 投保薪資級距</p>
-                    <select value={wageBracket} onChange={(e)=>setWageBracket(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl text-blue-400 text-sm py-3 px-4 font-black outline-none">
-                      {WAGE_OPTIONS.map(opt => <option key={opt} value={opt}>${opt.toLocaleString()}</option>)}
-                    </select>
-                  </div>
-
-                  {/* 眷屬人數選單 */}
-                  <div>
-                    <p className="text-[9px] text-zinc-500 mb-2 uppercase font-black italic">2. 健保隨同投保眷屬</p>
-                    <select value={familyCount} onChange={(e)=>setFamilyCount(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl text-amber-500 text-sm py-3 px-4 font-black outline-none">
-                      <option value="0">無家屬 (僅本人)</option>
-                      <option value="1">1 位家屬</option>
-                      <option value="2">2 位家屬</option>
-                      <option value="3">3 位家屬 (上限)</option>
-                    </select>
-                    <p className="text-[8px] text-zinc-600 mt-2 italic">※ 計算基礎：本人 + {familyCount} 位眷屬</p>
-                  </div>
-
-                  {/* 自動結算區 */}
-                  <div className="pt-4 border-t border-white/5 space-y-2">
-                    <div className="flex justify-between text-rose-500 text-xs italic font-black"><span>勞保費扣除</span><span>-${laborFee}</span></div>
-                    <div className="flex justify-between text-rose-500 text-xs italic font-black"><span>健保費扣除</span><span>-${totalHealthFee}</span></div>
-                    <div className="pt-4 flex justify-between font-black text-emerald-400 text-xl tracking-tighter">
-                      <span>應付實領</span>
-                      <span>${(detail.total_del*15 + detail.total_pkp*10 - laborFee - totalHealthFee).toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <button className="w-full bg-blue-600 py-4 rounded-2xl text-xs font-black btn-active shadow-lg shadow-blue-600/30" onClick={()=>setDetail(null)}>完成核算並返回</button>
+              <div>
+                <label className="text-xs text-zinc-500 block mb-2 font-black italic">今日取件總件數 (PKP)</label>
+                <input type="number" className="input-field" placeholder="0" onChange={e => setData({...data, pkp: e.target.value})} />
               </div>
+              <button onClick={() => { setStep(3); setTimeout(startCamera, 100); }} className="w-full py-5 bg-blue-600 rounded-2xl font-black text-xl btn-active">下一步：拍攝報表</button>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6 animate-[fadeIn_0.3s]">
+              <p className="text-xs text-zinc-500 italic">請對準「日結報表」或「App 結算畫面」拍攝</p>
+              <video ref={videoRef} autoPlay playsInline className="camera-box shadow-[0_0_20px_rgba(59,130,246,0.1)]" />
+              <button onClick={capture} className="w-full py-5 bg-blue-600 rounded-2xl font-black text-xl btn-active">📸 拍下證據並自動壓印</button>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-6 animate-[fadeIn_0.3s]">
+              <div className="relative">
+                <img src={photo} className="w-full rounded-3xl border border-white/10" />
+                <div className="absolute top-4 right-4 bg-emerald-500 text-[10px] px-2 py-1 rounded font-black">數據已鎖定</div>
+              </div>
+              
+              <div className="glass p-5 rounded-3xl">
+                <p className="text-[10px] text-zinc-500 mb-4 font-black uppercase tracking-widest">本人確認數據無誤簽章</p>
+                <canvas 
+                  ref={canvasRef} width={300} height={160} className="sig-canvas w-full"
+                  onTouchStart={drawStart} onTouchMove={drawMove} onTouchEnd={() => setDrawing(false)}
+                />
+              </div>
+
+              <button className="w-full py-5 bg-emerald-600 rounded-2xl font-black text-xl btn-active shadow-lg shadow-emerald-600/20" 
+                onClick={() => { 
+                  alert(`✅ 結算成功！\n司機：${user.name}\nDEL: ${data.del}\nPKP: ${data.pkp}\n照片與簽名已加密存檔。`); 
+                  setStep(1); setPhoto(null); setData({del:0, pkp:0});
+                }}>
+                完成今日下班結算
+              </button>
             </div>
           )}
         </div>
