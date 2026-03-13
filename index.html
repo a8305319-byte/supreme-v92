@@ -41,9 +41,34 @@
 <body>
   <div id="root"></div>
 
-  <script type="text/babel" data-type="module">
-const { useState, useEffect, useRef, useMemo, useCallback } = React;
+ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const createRoot = ReactDOM.createRoot;
+
+// 🤖 這裡是 AI 總裁特助的定義 (貼在這裡最安全)
+const LocalLogisticsAI = ({ data }) => {
+  const [q, setQ] = useState(""); const [ans, setAns] = useState(""); const [loading, setLoading] = useState(false);
+  const ask = async () => {
+    if(!q) return; setLoading(true);
+    try {
+      const { GoogleGenerativeAI } = await import("https://esm.run/@google/generative-ai");
+      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const res = await model.generateContent(`你是在地物流 AI 特助。老闆很懶，請根據數據給出精簡建議。數據: ${JSON.stringify(data)}\n指令: ${q}`);
+      setAns(res.response.text());
+    } catch (e) { setAns("AI 連線失敗..."); }
+    setLoading(false);
+  };
+  return (
+    <div style={{ position: 'fixed', bottom: '120px', right: '20px', zIndex: 999999, background: '#0f172a', border: '2px solid #3b82f6', padding: '15px', borderRadius: '24px', width: '280px', boxShadow: '0 0 40px rgba(0,0,0,0.8)' }}>
+      <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
+        <span style={{color:'#3b82f6', fontSize:'11px', fontWeight:'900'}}>🤖 GGSOC AI 助理</span>
+      </div>
+      <input style={{width:'100%', background:'#020617', color:'#fff', padding:'10px', borderRadius:'12px', fontSize:'13px', border:'1px solid #1e293b', outline:'none'}} value={q} onChange={e=>setQ(e.target.value)} placeholder="分析數據或指令..." />
+      <button onClick={ask} style={{width:'100%', background:'#3b82f6', color:'#fff', marginTop:'10px', padding:'10px', borderRadius:'12px', fontWeight:'900'}}>{loading ? "運算中..." : "問 AI"}</button>
+      {ans && <div style={{marginTop:'10px', fontSize:'11px', color:'#cbd5e1', maxHeight:'120px', overflowY:'auto', borderTop:'1px solid #1e293b', paddingTop:'8px'}}>{ans}</div>}
+    </div>
+  );
+};
 
 // 🌟 Firebase Initialization (Offline First)
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
