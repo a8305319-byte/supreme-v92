@@ -312,7 +312,90 @@ const app = initializeApp(firebaseConfig);
 const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
 const auth = getAuth(app);
 const appId = 'ggsoc-trinity-master-v1';
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const createRoot = ReactDOM.createRoot;
+
+// 🤖 [AI 總裁特助] - 唯一正確定義
+const LocalLogisticsAI = ({ data }) => {
+  const [q, setQ] = useState("");
+  const [ans, setAns] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
+
+  const ask = async () => {
+    if (!q || loading) return;
+    setLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
+      setAns(res.response.text());
+    } catch (e) { setAns("連線失敗..."); }
+    setLoading(false);
+  };
+
+  const btnS = { position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' };
+  const boxS = { position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.6)', fontFamily: 'sans-serif' };
+
+  if (!show) return <button onClick={() => setShow(true)} style={btnS}>🤖</button>;
+
+  return (
+    <div style={boxS}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+        <span style={{ fontSize: '12px', color: '#60a5fa', fontWeight: 'bold' }}>GGSOC AI 助理</span>
+        <button onClick={() => setShow(false)} style={{background:'none', border:'none', color:'#94a3b8'}}>✕</button>
+      </div>
+      <input style={{ width: '100%', background: '#0f172a', border: '1px solid #334155', padding: '10px', borderRadius: '8px', color: '#fff', marginBottom: '10px', fontSize: '14px', boxSizing: 'border-box' }} value={q} onChange={e => setQ(e.target.value)} placeholder="分析數據..." />
+      <button onClick={ask} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }} disabled={loading}>{loading ? "..." : "問 AI"}</button>
+      {ans && <div style={{ marginTop: '10px', fontSize: '12px', background: '#0f172a', padding: '10px', borderRadius: '8px', maxHeight: '120px', overflowY: 'auto', lineHeight: '1.5', border: '1px solid #1e293b' }}>{ans}</div>}
+    </div>
+  );
+};
+
+// 🌟 [Firebase 初始化] - 唯一正確定義
+const firebaseConfig = { 
+  apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
+  authDomain: "supreme-v92.firebaseapp.com", 
+  projectId: "supreme-v92", 
+  storageBucket: "supreme-v92.firebasestorage.app", 
+  messagingSenderId: "485530156296", 
+  appId: "1:485530156296:web:6728c0ee08b98dedd800bd" 
+};
+
+const app = initializeApp(firebaseConfig);
+const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
+const auth = getAuth(app);
+const appId = 'ggsoc-trinity-master-v1';
+
+// 🛡️ [系統工具]
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError(error) { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-center font-black"><div className="bg-rose-900/20 p-8 rounded-[2rem] border border-rose-500/30 shadow-2xl"><h2 className="text-3xl text-rose-400 mb-4 animate-pulse">🛡️ 底層核心保護啟動</h2><button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-600 rounded-xl">🔄 重新連線</button></div></div>;
+    return this.props.children;
+  }
+}
+
+const safeStorage = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }, remove: (k) => { try { localStorage.removeItem(k); } catch(e) {} } };
+
+const showToast = (msg, isError = false) => {
+  const t = document.getElementById('global-toast');
+  if(t) {
+    t.innerText = msg;
+    t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black z-[999999] shadow-2xl transition-all duration-500 flex items-center text-sm md:text-lg text-center ${isError ? 'bg-rose-600 border-rose-400' : 'bg-emerald-600 border-emerald-400'} border text-white`;
+    t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
+    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 3500);
+  }
+};
+
+const speak = (text) => { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(text); u.lang = 'zh-TW'; u.rate = 1.1; window.speechSynthesis.speak(u); } };
+const sendLineNotify = (token, msg) => { console.log("【LINE Notify API】:", msg); };
 const Ico = (e) => ({size=24, className=""}) => <span style={{fontSize: size+'px', lineHeight: 1}} className={className}>{e}</span>;
 const Package=Ico('📦'), Settings=Ico('⚙️'), Message=Ico('💬'), Banknote=Ico('💵'), Bot=Ico('🤖'), Shield=Ico('🛡️'), HistoryLog=Ico('📜'), Bell=Ico('🔔'), Support=Ico('🆘'), Calendar=Ico('📅'), Send=Ico('✈️'), X=Ico('❌'), Camera=Ico('📷'), Check=Ico('✅'), Alert=Ico('🚨'), Receipt=Ico('🧾'), LogOut=Ico('🚪'), Pen=Ico('🖋️'), Search=Ico('🔍'), Radio=Ico('📻'), FileText=Ico('📄'), Download=Ico('📥'), Eye=Ico('👁️'), Target=Ico('🎯'), User=Ico('👤'), Star=Ico('⭐');
 
