@@ -43,36 +43,38 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    function App() {
-      const [view, setView] = useState('gate');
+function App() {
+      // 1. ⚡ 權限直接點火：優先檢查本地印記
+      const [view, setView] = useState(localStorage.getItem('ggsoc_root_access') ? 'admin' : 'gate');
+      const [authRole, setAuthRole] = useState(localStorage.getItem('ggsoc_root_access') ? 'super_admin' : 'guest');
+      
       const [partners, setPartners] = useState([]);
       const [godLogs, setGodLogs] = useState([]);
-      const [authRole, setAuthRole] = useState('guest');
       const [detailDriver, setDetailDriver] = useState(null);
 
-      // 📜 上帝紀錄功能
-      const writeGodLog = async (action, details) => {
-        await db.collection('god_logs').add({ action, details, timestamp: new Date() });
-      };
-
-      // 🧠 自動偵測總裁印記 (免輸入登入)
       useEffect(() => {
-        const savedAuth = localStorage.getItem('ggsoc_root_access');
-        if (savedAuth === 'super_admin_0976') {
-          setAuthRole('super_admin'); setView('admin');
+        // 2. 🛡️ 雙重保險：如果已經有印記，確保狀態是 admin
+        if (localStorage.getItem('ggsoc_root_access') === 'super_admin_0976') {
+          setView('admin');
+          setAuthRole('super_admin');
         }
+
         auth.signInAnonymously();
         db.collection('partners').onSnapshot(snap => setPartners(snap.docs.map(d => ({id: d.id, ...d.data()}))));
         db.collection('god_logs').orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => setGodLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))));
       }, []);
 
+      // 3. 🔑 登入一次，終身免打
       const handleLogin = (ph, pi) => {
         if(ph === '0976017938' && pi === '8305319') {
-          localStorage.setItem('ggsoc_root_access', 'super_admin_0976');
-          setAuthRole('super_admin'); setView('admin');
-          writeGodLog("👑 造物主降臨", "手動識別成功");
+          localStorage.setItem('ggsoc_root_access', 'super_admin_0976'); // 🔒 鎖死在瀏覽器
+          setAuthRole('super_admin'); 
+          setView('admin');
+          writeGodLog("👑 造物主歸位", "身分印記已永久鎖定");
         } else alert('⚠️ 權限拒絕');
       };
+
+      // ... 其餘代碼不變 ...
 
       const handleQuickAdd = async () => {
         const n = prompt("姓名:"); const p = prompt("手機:");
