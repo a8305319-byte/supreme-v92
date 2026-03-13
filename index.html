@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const createRoot = ReactDOM.createRoot;
 
-// 🤖 GGSOC AI 總裁特助 (漂浮球版)
+// --- AI 總裁特助 (手機寬鬆排版版) ---
 const LocalLogisticsAI = ({ data }) => {
   const [q, setQ] = useState("");
   const [ans, setAns] = useState("");
@@ -13,41 +14,39 @@ const LocalLogisticsAI = ({ data }) => {
     if (!q || loading) return;
     setLoading(true);
     try {
-      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const res = await model.generateContent(`你是在地物流 AI 特助。數據：${JSON.stringify(data)}\n指令：${q}`);
+      const gAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const mdl = gAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const pmt = `你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`;
+      const res = await mdl.generateContent(pmt);
       setAns(res.response.text());
-    } catch (e) { setAns("連線逾時，請再試一次。"); }
+    } catch (e) { setAns("連線逾時..."); }
     setLoading(false);
   };
 
   if (!show) return (
-    <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '85px', left: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '55px', height: '55px', borderRadius: '50%', border: '3px solid #fff', fontSize: '28px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🤖</button>
+    <button 
+      onClick={() => setShow(true)} 
+      style={{ position:'fixed', bottom:'80px', left:'20px', zIndex:99999, background:'#3b82f6', color:'#fff', width:'50px', height:'50px', borderRadius:'50%', fontSize:'24px', border:'2px solid white' }}
+    >🤖</button>
   );
 
   return (
-    <div style={{ position: 'fixed', bottom: '85px', left: '20px', zIndex: 99999, width: '300px', background: '#0f172a', border: '1px solid #3b82f6', borderRadius: '24px', padding: '20px', color: '#fff', boxShadow: '0 10px 50px rgba(0,0,0,0.9)', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
-        <span style={{ fontSize: '14px', color: '#60a5fa', fontWeight: 'bold', letterSpacing: '1px' }}>AI 營運特助</span>
-        <button onClick={() => setShow(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '24px', padding: '5px' }}>✕</button>
+    <div style={{ position:'fixed', bottom:'80px', left:'20px', zIndex:99999, width:'280px', background:'#0f172a', border:'1px solid #3b82f6', borderRadius:'20px', padding:'15px', color:'#fff', boxShadow:'0 10px 40px #000' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'10px' }}>
+        <span style={{ fontSize:'12px', color:'#60a5fa' }}>AI 助理</span>
+        <button onClick={() => setShow(false)} style={{ color:'#fff', background:'none', border:'none' }}>✕</button>
       </div>
       <input 
-        style={{ width: '100%', background: '#1e293b', border: '1px solid #334155', padding: '12px', borderRadius: '12px', color: '#fff', marginBottom: '12px', fontSize: '16px', outline: 'none' }} 
+        style={{ width:'100%', background:'#1e293b', border:'1px solid #334155', padding:'10px', borderRadius:'10px', color:'#fff', marginBottom:'10px', fontSize:'16px' }} 
         value={q} 
         onChange={e => setQ(e.target.value)} 
-        placeholder="請輸入指令..." 
+        placeholder="輸入指令..." 
       />
       <button 
         onClick={ask} 
-        style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '16px' }}
-      >
-        {loading ? "運算中..." : "傳送"}
-      </button>
-      {ans && (
-        <div style={{ marginTop: '15px', fontSize: '14px', background: '#000', padding: '15px', borderRadius: '12px', maxHeight: '180px', overflowY: 'auto', border: '1px solid #1e293b', lineHeight: '1.6', color: '#cbd5e1' }}>
-          {ans}
-        </div>
-      )}
+        style={{ width:'100%', background:'#3b82f6', color:'#fff', border:'none', padding:'10px', borderRadius:'10px' }}
+      >{loading ? "..." : "問 AI"}</button>
+      {ans && <div style={{ marginTop:'10px', fontSize:'12px', background:'#000', padding:'10px', borderRadius:'10px', maxHeight:'120px', overflowY:'auto' }}>{ans}</div>}
     </div>
   );
 };
