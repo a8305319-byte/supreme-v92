@@ -1,63 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GGSOC 急救版</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body class="bg-slate-950 text-white">
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
-    const createRoot = ReactDOM.createRoot;
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const createRoot = ReactDOM.createRoot;
 
-    // --- [ 這裡不變，保證能動 ] ---
-    function AppWrapper() {
-      const [l, setL] = useState('gate');
-      const [ps, setPs] = useState([
-        { id: '1', name: '測試司機', phone: '0900000000', last_report: { cod_amount: 20000 } }
-      ]);
+// 🤖 GGSOC AI 總裁特助 (漂浮球版)
+const LocalLogisticsAI = ({ data }) => {
+  const [q, setQ] = useState("");
+  const [ans, setAns] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
 
-      const handleLogin = (p, i) => {
-        if (p === "0976017938" && i === "8305319") setL('admin');
-        else alert("密碼錯誤");
-      };
+  const ask = async () => {
+    if (!q || loading) return;
+    setLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const res = await model.generateContent(`你是在地物流 AI 特助。數據：${JSON.stringify(data)}\n指令：${q}`);
+      setAns(res.response.text());
+    } catch (e) { setAns("連線逾時，請再試一次。"); }
+    setLoading(false);
+  };
 
-      // 📡 異常雷達：找出超過 15,000 的人
-      const anomalies = ps.filter(p => p.last_report?.cod_amount > 15000);
+  if (!show) return (
+    <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '85px', left: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '55px', height: '55px', borderRadius: '50%', border: '3px solid #fff', fontSize: '28px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🤖</button>
+  );
 
-      return (
-        <div className="p-6 font-sans">
-          {l === 'gate' ? (
-            <div className="flex flex-col items-center justify-center h-screen">
-              <h1 className="text-4xl mb-8">在地物流</h1>
-              <input id="p" placeholder="門號" className="bg-slate-800 p-4 rounded mb-2 text-center" />
-              <input id="i" type="password" placeholder="PIN" className="bg-slate-800 p-4 rounded mb-4 text-center" />
-              <button onClick={() => handleLogin(document.getElementById('p').value, document.getElementById('i').value)} className="bg-blue-600 px-10 py-4 rounded">進入</button>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-2xl mb-4">營運指揮中心</h2>
-              <p className="text-rose-500 mb-6">🚨 異常預警：{anomalies.length} 位風險司機</p>
-              <div className="grid gap-4">
-                {ps.map(p => (
-                  <div key={p.id} className="bg-slate-900 p-4 rounded border border-white/10">
-                    <p className="text-xl">{p.name}</p>
-                    <p className="text-xs text-slate-500">{p.phone}</p>
-                    {p.last_report.cod_amount > 15000 && <span className="text-rose-500 text-[10px]">⚠️ 金額異常: {p.last_report.cod_amount}</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+  return (
+    <div style={{ position: 'fixed', bottom: '85px', left: '20px', zIndex: 99999, width: '300px', background: '#0f172a', border: '1px solid #3b82f6', borderRadius: '24px', padding: '20px', color: '#fff', boxShadow: '0 10px 50px rgba(0,0,0,0.9)', fontFamily: 'sans-serif' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
+        <span style={{ fontSize: '14px', color: '#60a5fa', fontWeight: 'bold', letterSpacing: '1px' }}>AI 營運特助</span>
+        <button onClick={() => setShow(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '24px', padding: '5px' }}>✕</button>
+      </div>
+      <input 
+        style={{ width: '100%', background: '#1e293b', border: '1px solid #334155', padding: '12px', borderRadius: '12px', color: '#fff', marginBottom: '12px', fontSize: '16px', outline: 'none' }} 
+        value={q} 
+        onChange={e => setQ(e.target.value)} 
+        placeholder="請輸入指令..." 
+      />
+      <button 
+        onClick={ask} 
+        style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '16px' }}
+      >
+        {loading ? "運算中..." : "傳送"}
+      </button>
+      {ans && (
+        <div style={{ marginTop: '15px', fontSize: '14px', background: '#000', padding: '15px', borderRadius: '12px', maxHeight: '180px', overflowY: 'auto', border: '1px solid #1e293b', lineHeight: '1.6', color: '#cbd5e1' }}>
+          {ans}
         </div>
-      );
-    }
-
-    createRoot(document.getElementById('root')).render(<AppWrapper />);
-  </script>
-</body>
+      )}
+    </div>
+  );
+};
