@@ -265,7 +265,24 @@ const LocalLogisticsAI = ({ data }) => {
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+// 🌟 Firebase Initialization (已幫老闆補回)
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
+const firebaseConfig = { 
+  apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
+  authDomain: "supreme-v92.firebaseapp.com", 
+  projectId: "supreme-v92", 
+  storageBucket: "supreme-v92.firebasestorage.app", 
+  messagingSenderId: "485530156296", 
+  appId: "1:485530156296:web:6728c0ee08b98dedd800bd" 
+};
+
+const app = initializeApp(firebaseConfig);
+const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
+const auth = getAuth(app);
+const appId = 'ggsoc-trinity-master-v1';
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false }; }
   static getDerivedStateFromError(error) { return { hasError: true }; }
