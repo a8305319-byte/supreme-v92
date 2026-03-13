@@ -1,143 +1,219 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GGSOC 2026 數位作業系統</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        body { background-color: #f1f5f9; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
-        .work-card { border-radius: 12px; border: 1px solid #e2e8f0; background: white; transition: all 0.2s; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .btn-work { background: #0f172a; color: white; border-radius: 8px; font-weight: 700; transition: all 0.2s; }
-        .btn-work:active { transform: scale(0.98); }
-        .btn-work:disabled { background: #94a3b8; cursor: not-allowed; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>在地物流 - 自動化結算系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { background-color: #f8fafc; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; }
+    .btn-primary { background-color: #0f172a; color: white; transition: all 0.2s; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { background-color: #cbd5e1; color: #64748b; cursor: not-allowed; transform: none; }
+    .progress-bar { height: 4px; background: #2563eb; width: 0%; transition: width 0.5s ease; }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const { useState } = React;
-        const App = () => {
-            const [step, setStep] = useState('login'); 
-            const [hasInterviewed, setHasInterviewed] = useState(false);
-            const [user, setUser] = useState({ phone: '', id: '' });
+  <div id="root"></div>
 
-            if (step === 'login') return (
-                <div className="min-h-screen flex items-center justify-center p-6">
-                    <div className="w-full max-w-sm bg-white p-8 work-card shadow-2xl">
-                        <div className="mb-8 border-l-4 border-slate-900 pl-4">
-                            <h1 className="text-xl font-black text-slate-900 uppercase">GGSOC 2026</h1>
-                            <p className="text-slate-400 text-[10px] font-bold tracking-widest">系統作業登入</p>
-                        </div>
-                        <div className="space-y-4">
-                            <input onChange={e => setUser({...user, phone: e.target.value})} placeholder="手機號碼" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-lg font-bold outline-none focus:border-slate-900" />
-                            <input onChange={e => setUser({...user, id: e.target.value})} placeholder="工號 / 身分證末四碼" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-lg font-bold outline-none focus:border-slate-900" />
-                            <button onClick={() => user.phone && user.id ? setStep('dashboard') : null} className="w-full btn-work py-4 mt-4 shadow-lg">進入工作系統</button>
-                        </div>
-                    </div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const App = () => {
+      const [view, setView] = useState('login'); // login, loading, dashboard, document, payout, success
+      const [loadingText, setLoadingText] = useState('');
+      const [tasks, setTasks] = useState({ termsAccepted: false, payoutSigned: false });
+      const [user, setUser] = useState({ phone: '', id: '' });
+      
+      // 自動化算帳引擎資料 (模擬從資料庫撈取)
+      const payrollData = {
+        baseGross: 10000,
+        healthInsuranceRate: 0.0211,
+      };
+      
+      // 自動計算
+      const healthDeduction = Math.ceil(payrollData.baseGross * payrollData.healthInsuranceRate);
+      const netPayout = payrollData.baseGross - healthDeduction;
+
+      // 模擬系統處理 (不秒回機制)
+      const triggerLoading = (text, nextView, delay = 1500) => {
+        setLoadingText(text);
+        setView('loading');
+        setTimeout(() => setView(nextView), delay);
+      };
+
+      const handleLogin = () => {
+        if (!user.phone || !user.id) return alert("請輸入完整識別資訊");
+        triggerLoading('驗證身分與調閱帳務資料...', 'dashboard');
+      };
+
+      if (view === 'login') return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="card max-w-sm w-full p-8">
+            <div className="mb-8">
+              <h1 className="text-xl font-bold text-slate-900">在地物流結算系統</h1>
+              <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Partner Portal</p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">手機號碼</label>
+                <input type="text" placeholder="09XX-XXX-XXX" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-slate-900" onChange={e => setUser({...user, phone: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">身分驗證 (工號 / 末四碼)</label>
+                <input type="password" placeholder="****" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-slate-900" onChange={e => setUser({...user, id: e.target.value})} />
+              </div>
+              <button onClick={handleLogin} className="w-full btn-primary font-bold py-3 rounded-lg mt-2">安全登入</button>
+            </div>
+          </div>
+        </div>
+      );
+
+      if (view === 'loading') return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+          <div className="w-64 bg-slate-200 rounded-full overflow-hidden h-1 mb-4">
+            <div className="progress-bar animate-[pulse_1s_ease-in-out_infinite]" style={{width: '100%'}}></div>
+          </div>
+          <p className="text-xs font-semibold text-slate-500 tracking-widest">{loadingText}</p>
+        </div>
+      );
+
+      if (view === 'dashboard') return (
+        <div className="min-h-screen p-4 md:p-8 max-w-lg mx-auto">
+          <header className="mb-8 flex justify-between items-end border-b border-slate-200 pb-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">系統作業看板</h2>
+              <p className="text-xs text-slate-500 mt-1">請依序完成本期待辦事項</p>
+            </div>
+            <div className="text-right text-xs font-medium text-slate-600">
+              {user.phone}
+            </div>
+          </header>
+
+          <div className="space-y-4">
+            {/* 任務 A：法規查核 */}
+            <div className="card p-6 flex justify-between items-center">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-2 h-2 rounded-full ${tasks.termsAccepted ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                  <h3 className="font-bold text-slate-800 text-sm">行政法規與明細確認</h3>
                 </div>
-            );
+                <p className="text-xs text-slate-500">2026 承攬扣繳作業規範</p>
+              </div>
+              <button 
+                onClick={() => setView('document')}
+                disabled={tasks.termsAccepted}
+                className={`px-5 py-2 rounded-lg text-xs font-bold ${tasks.termsAccepted ? 'bg-slate-100 text-slate-400' : 'btn-primary'}`}
+              >
+                {tasks.termsAccepted ? '已完成' : '前往執行'}
+              </button>
+            </div>
 
-            if (step === 'dashboard') return (
-                <div className="min-h-screen bg-slate-50 p-6">
-                    <div className="max-w-md mx-auto">
-                        <header className="mb-8 flex justify-between items-center">
-                            <div>
-                                <h2 className="text-xl font-black text-slate-900 italic">系統作業看板</h2>
-                                <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Task Dashboard</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs font-bold text-slate-900">{user.phone}</p>
-                                <p className="text-[10px] text-slate-400">ID: {user.id}</p>
-                            </div>
-                        </header>
-
-                        <div className="space-y-4">
-                            {/* 任務一：行政核對 (原面試功能) */}
-                            <div className="work-card p-6 flex justify-between items-center">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className={`status-dot ${hasInterviewed ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                                        <h3 className="font-bold text-slate-800">行政作業核對</h3>
-                                    </div>
-                                    <p className="text-xs text-slate-400">法規告知與身分確認</p>
-                                </div>
-                                <button 
-                                    onClick={() => setStep('interview')} 
-                                    disabled={hasInterviewed}
-                                    className={`px-4 py-2 text-xs font-bold rounded-lg ${hasInterviewed ? 'bg-slate-100 text-slate-400' : 'bg-slate-900 text-white'}`}
-                                >
-                                    {hasInterviewed ? '已完成' : '去執行'}
-                                </button>
-                            </div>
-
-                            {/* 任務二：薪資結算領取 */}
-                            <div className={`work-card p-6 flex justify-between items-center ${!hasInterviewed ? 'opacity-50' : ''}`}>
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="status-dot bg-slate-300"></div>
-                                        <h3 className="font-bold text-slate-800">薪資結算發放</h3>
-                                    </div>
-                                    <p className="text-xs text-slate-400">本期應領：$9,789</p>
-                                </div>
-                                <button 
-                                    onClick={() => hasInterviewed ? setStep('payout') : alert('請先完成行政核對')} 
-                                    className="bg-slate-900 text-white px-4 py-2 text-xs font-bold rounded-lg"
-                                >
-                                    去領錢
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            {/* 任務 B：自動化解鎖領錢 */}
+            <div className={`card p-6 flex justify-between items-center transition-opacity ${!tasks.termsAccepted ? 'opacity-40' : 'opacity-100'}`}>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-2 h-2 rounded-full ${tasks.payoutSigned ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                  <h3 className="font-bold text-slate-800 text-sm">薪資結算與數位簽收</h3>
                 </div>
-            );
+                <p className="text-xs text-slate-500">本期應撥金額：${netPayout.toLocaleString()}</p>
+              </div>
+              <button 
+                onClick={() => tasks.termsAccepted ? triggerLoading('系統結算中...', 'payout', 1000) : null}
+                disabled={!tasks.termsAccepted || tasks.payoutSigned}
+                className={`px-5 py-2 rounded-lg text-xs font-bold ${tasks.payoutSigned ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 hover:bg-emerald-700 text-white transition-colors'}`}
+              >
+                {tasks.payoutSigned ? '已簽收' : '前往領款'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
 
-            if (step === 'interview') return (
-                <div className="min-h-screen bg-slate-50 p-6 flex items-center">
-                    <div className="w-full max-w-md mx-auto bg-white work-card p-8 shadow-xl">
-                        <h3 className="text-lg font-black text-slate-900 mb-6">行政作業核對 (作業編號: INT-2026)</h3>
-                        <div className="space-y-6 text-sm text-slate-600 font-medium">
-                            <p className="border-l-2 border-slate-200 pl-4">1. 依 2026 法規，系統將自動扣繳 2.11% 二代健保費。</p>
-                            <p className="border-l-2 border-slate-200 pl-4">2. 領錢時需進行數位簽名，簽名即視為認可對帳單金額。</p>
-                            <p className="border-l-2 border-slate-200 pl-4">3. 為確保撥款順利，需配合系統進行影像採集紀錄。</p>
-                        </div>
-                        <button onClick={() => {setHasInterviewed(true); setStep('dashboard');}} className="w-full btn-work py-4 mt-10">我已瞭解並同意上述作業規範</button>
-                    </div>
-                </div>
-            );
+      if (view === 'document') return (
+        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
+          <div className="card max-w-sm w-full p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">行政法規與明細確認</h3>
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-3 mb-6 font-medium leading-relaxed">
+              <p>1. 依現行法規，系統將自動代扣 <span className="text-rose-600 font-bold">2.11% 二代健保費</span>。</p>
+              <p>2. 執行數位簽名即視同認可結算金額，並確認雙方之勞務承攬關係。</p>
+              <p>3. 系統將於簽名時自動紀錄存證資訊以保障雙方權益。</p>
+            </div>
+            <button 
+              onClick={() => {
+                setTasks({...tasks, termsAccepted: true});
+                triggerLoading('資料建檔中...', 'dashboard', 1200);
+              }} 
+              className="w-full btn-primary py-3 rounded-lg text-sm font-bold"
+            >
+              同意並返回看板
+            </button>
+          </div>
+        </div>
+      );
 
-            if (step === 'payout') return (
-                <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center justify-center">
-                    <div className="w-full max-w-md bg-white work-card p-8 shadow-xl">
-                        <div className="text-center mb-8">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">確認撥款金額</p>
-                            <h2 className="text-5xl font-black text-slate-900 mt-2">$9,789</h2>
-                            <p className="text-[10px] text-red-500 font-bold mt-2">已自動扣除 2.11% 行政規費</p>
-                        </div>
-                        <div className="w-full h-32 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center mb-8">
-                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">在此簽名確認 (Digital Signature)</span>
-                        </div>
-                        <button onClick={() => setStep('done')} className="w-full btn-work py-4 shadow-xl">簽署並領取</button>
-                    </div>
-                </div>
-            );
+      if (view === 'payout') return (
+        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
+          <div className="card max-w-sm w-full p-6">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">本期自動結算報表</h3>
+            
+            <div className="space-y-3 mb-6 border-b border-slate-100 pb-6">
+              <div className="flex justify-between text-sm font-medium text-slate-600">
+                <span>勞務報酬總額</span>
+                <span>${payrollData.baseGross.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm font-medium text-rose-500">
+                <span>自動代扣健保 (2.11%)</span>
+                <span>-${healthDeduction.toLocaleString()}</span>
+              </div>
+            </div>
 
-            return (
-                <div className="min-h-screen flex items-center justify-center bg-slate-50 p-10">
-                    <div className="text-center bg-white p-12 work-card shadow-xl max-w-xs">
-                        <div className="text-5xl mb-6">✅</div>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight">作業完成</h2>
-                        <p className="text-slate-500 text-xs mt-4 font-bold">款項已發放至您的帳戶。<br/>系統已封存本次作業紀錄。</p>
-                        <button onClick={() => window.location.reload()} className="mt-8 text-slate-400 text-[10px] font-bold border-b border-slate-200">返回看板</button>
-                    </div>
-                </div>
-            );
-        };
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-    </script>
+            <div className="mb-8">
+              <p className="text-xs text-slate-500 font-medium mb-1">實領撥款淨額</p>
+              <h2 className="text-4xl font-black text-slate-900">${netPayout.toLocaleString()}</h2>
+            </div>
+
+            <div className="w-full h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center mb-6 text-slate-300 text-xs font-bold">
+              [ 數位簽名區域 ]
+            </div>
+
+            <button 
+              onClick={() => triggerLoading('驗證簽章與傳輸款項...', 'success', 2000)} 
+              className="w-full btn-primary py-4 rounded-lg text-sm font-bold"
+            >
+              確認無誤並簽收
+            </button>
+            <p className="text-center text-[10px] text-slate-400 mt-4 font-mono">
+              Net = Gross - ⌈Gross × 2.11%⌉
+            </p>
+          </div>
+        </div>
+      );
+
+      if (view === 'success') return (
+        <div className="min-h-screen flex items-center justify-center p-4 text-center">
+          <div className="card p-8 max-w-xs w-full">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">✓</div>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">作業完成</h2>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              您的款項已排入撥款流程<br/>簽收紀錄與系統存證已自動歸檔
+            </p>
+            <button onClick={() => window.location.reload()} className="mt-6 text-xs font-bold text-slate-400 hover:text-slate-600">
+              返回登入頁
+            </button>
+          </div>
+        </div>
+      );
+
+      return null;
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
