@@ -297,57 +297,55 @@ function ChatModal({ target, currentUserRole, onClose }) {
 
     setMsgs(prev => [...prev, { id: Date.now(), sender: 'me', text: input }]); setInput("");
 
-    // 總裁視角：影子接管
-    if (currentUserRole === 'super_admin') {
-       if (isShadowMode) { setIsTranslating(true); setTimeout(() => { setIsTranslating(false); setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'ai', text: `[GGSOC-Bot] ${input} (已模擬 AI 回覆)` }]); }, Math.random() * 1000 + 800); } 
-       else { setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'hq', text: input }]); }
-       return;
-    }
-
-    // 司機視角：預設自動回覆
-    if (isPrivileged) setTimeout(() => { setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'hq', text: '收到，直達總裁窗口，無 AI 介入。' }]); }, 300);
-    else setTimeout(() => { setMsgs(prev => [...prev, { id: Date.now()+1, sender: 'ai', text: '已掛載高階核算模組複核，請稍候。' }]); }, 1800);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 animate-zoom font-black" onClick={onClose}>
-       <div className={`bg-slate-900 border ${isPrivileged ? 'border-fuchsia-500/30' : 'border-blue-500/30'} w-full max-w-md h-[80vh] rounded-[2.5rem] flex flex-col overflow-hidden`} onClick={e=>e.stopPropagation()}>
-         <div className="p-4 bg-slate-800 flex justify-between items-center z-10"><div className="flex items-center gap-2"><Support size={24} className={isPrivileged?'text-fuchsia-400':'text-blue-400'}/> <h3 className={`text-white italic ${isPrivileged ? 'text-fuchsia-300' : ''}`}>{isPrivileged ? '特權直連' : `客服中心`}</h3></div><button onClick={onClose} className="p-2"><X size={16}/></button></div>
-         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#020617]">
-           {msgs.map(m => (<div key={m.id} className={`flex ${m.sender==='me'?'justify-end':'justify-start'} animate-[fadeInUp_0.3s]`}><div className={`p-3 rounded-2xl text-sm max-w-[85%] leading-relaxed ${m.sender==='me'?'bg-blue-600 text-white rounded-tr-none': m.sender==='hq' ? (isPrivileged ? 'bg-fuchsia-900/60 text-fuchsia-100 rounded-tl-none border border-fuchsia-500/30' : 'bg-amber-600 text-white rounded-tl-none') : 'bg-slate-800 text-slate-200 rounded-tl-none border border-white/5'}`}>{m.sender==='hq'&&<span className="text-[9px] block mb-1 text-amber-200">{isPrivileged?'👑 總部':'👑 營運處'}</span>}{m.sender==='ai'&&<span className="text-[9px] block mb-1 text-slate-400">🤖 AI 助理</span>}{m.text}</div></div>))}
-           {isTranslating && <div className="flex justify-end"><div className="p-3 rounded-2xl text-xs bg-slate-800 text-amber-400 border border-amber-500/30 flex items-center gap-2"><div className="loader w-3 h-3 border-2 border-amber-400"></div> 🤖 AI 底層轉譯中...</div></div>}
-         </div>
-         <div className="p-4 bg-slate-800 flex flex-col gap-2">
-           {currentUserRole === 'super_admin' && !isPrivileged && ( <label className="flex items-center gap-2 text-[10px] text-fuchsia-400 cursor-pointer mb-1"><input type="checkbox" checked={isShadowMode} onChange={e=>setIsShadowMode(e.target.checked)} className="accent-fuchsia-600" /> 🤖 啟用影子接管 (披上 AI 外衣)</label> )}
-           <div className="flex gap-2"><input className="flex-1 bg-slate-900 rounded-xl px-4 py-3 outline-none text-white text-sm focus:border-blue-500 border border-transparent" placeholder={currentUserRole==='admin' ? "輸入白話文，AI 將自動包裝為生硬規章..." : "輸入訊息..."} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSend()} disabled={isTranslating} /><button onClick={handleSend} disabled={isTranslating} className={`${isPrivileged ? 'bg-fuchsia-600' : 'bg-blue-600'} px-5 py-3 rounded-xl text-white disabled:opacity-50 active:scale-95 shadow-lg`}><Send size={20}/></button></div>
-         </div>
-       </div>
+   {tab === 'finance' && (
+  <div className="space-y-4 animate-zoom">
+    {/* 2026 勞健保自動精算區 */}
+    <div className="bg-blue-950/20 p-4 rounded-xl border border-blue-500/30 shadow-inner">
+      <p className="text-[10px] text-blue-400 mb-2 italic">🛡️ 2026 社會成本自動核算</p>
+      <select 
+        className="w-full bg-black/50 p-3 rounded-lg text-white mb-3 text-xs outline-none border border-white/5 focus:border-blue-500"
+        value={insuranceBracket} 
+        onChange={e => setInsuranceBracket(e.target.value)}
+      >
+        <option value="0">--- 請選擇投保薪資級距 ---</option>
+        {Object.keys(INSURANCE_TABLE_2026).map(b => (
+          <option key={b} value={b}>分級：${b} (勞:${INSURANCE_TABLE_2026[b].labor} / 健:${INSURANCE_TABLE_2026[b].health})</option>
+        ))}
+      </select>
+      <div className="flex gap-4 items-center px-1">
+        <label className="flex items-center gap-2 text-[10px] text-slate-300 cursor-pointer">
+          <input type="checkbox" checked={enableSecGen} onChange={e=>setEnableSecGen(e.target.checked)} className="accent-blue-500" /> 扣二代健保(2.11%)
+        </label>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-slate-300">眷屬數:</span>
+          <input type="number" className="w-12 bg-black/50 rounded p-1 text-center text-xs" value={dependents} onChange={e=>setDependents(e.target.value)} />
+        </div>
+      </div>
     </div>
-  )
-}
 
-// ==========================================
-// 🧑‍💼 管理/會計專屬：數據錄入與初審面板
-// ==========================================
-function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
-  // --- 狀態定義 ---
-  const [deductionAmount, setDeductionAmount] = useState(partner.current_deduction || 0);
-  const [deductionReason, setDeductionReason] = useState(partner.deduction_reason || "");
-  const [bonusAmount, setBonusAmount] = useState(partner.current_bonus || 0);
-  const [isTaskDone, setIsTaskDone] = useState(partner.task_5000_done || false);
-  const [tab, setTab] = useState('audit');
-  
-  // --- 2026 新增核算欄位 ---
-  const [insuranceBracket, setInsuranceBracket] = useState(partner.insurance_bracket || 0);
-  const [enableSecGen, setEnableSecGen] = useState(partner.enable_sec_gen || false);
-  const [dependents, setDependents] = useState(partner.dependents || 0);
+    {/* 獎懲與加給 */}
+    <div className="bg-rose-950/20 p-4 rounded-xl border border-rose-500/30">
+      <p className="text-[10px] text-rose-400 mb-2 italic">🚨 違規扣款錄入</p>
+      <div className="flex gap-2">
+        <input type="number" placeholder="金額" className="flex-1 bg-black/50 p-3 rounded-lg text-white text-sm" value={deductionAmount} onChange={e=>setDeductionAmount(e.target.value)} />
+        <input placeholder="扣款理由..." className="flex-[2] bg-black/50 p-3 rounded-lg text-white text-xs" value={deductionReason} onChange={e=>setDeductionReason(e.target.value)} />
+      </div>
+    </div>
 
-  // --- 核心邏輯：2026 財務自動精算 ---
-  const handleSaveFinance = () => {
-    // 1. 基礎收入與獎金
-    const baseIncome = (partner.total_del * (partner.custom_del_price || 15)) + (partner.total_pkp * (partner.custom_pkp_price || 10));
-    let finalBonus = Number(bonusAmount);
-    if (isTaskDone && finalBonus < 5000) finalBonus += 5000;
+    <div className="bg-amber-950/20 p-4 rounded-xl border border-amber-500/30">
+      <p className="text-[10px] text-amber-400 mb-3 italic">⭐ 獎金加給設定</p>
+      <label className="flex items-center gap-3 bg-black/50 p-4 rounded-xl mb-3 cursor-pointer border border-white/5">
+        <input type="checkbox" className="w-5 h-5 accent-amber-500" checked={isTaskDone} onChange={e=>setIsTaskDone(e.target.checked)} />
+        <span className="text-sm text-amber-100 italic">5,000 元品質達成獎金</span>
+      </label>
+      <input type="number" placeholder="其他額外獎金金額..." className="w-full bg-black/50 p-3 rounded-lg text-white text-sm" value={bonusAmount} onChange={e=>setBonusAmount(e.target.value)} />
+    </div>
+
+    <button onClick={handleSaveFinance} className="w-full py-5 bg-amber-600 hover:bg-amber-500 text-white rounded-2xl font-black italic shadow-lg active:scale-95 transition-all text-lg">
+      💾 執行神諭：數據覆寫並儲存
+    </button>
+  </div>
+)}
     
     // 2. 自動查表：勞健保自付額
     const entry = INSURANCE_TABLE_2026[insuranceBracket] || { labor: 0, health: 0 };
