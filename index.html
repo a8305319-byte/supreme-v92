@@ -948,7 +948,24 @@ function AppWrapper() {
   );
 }
 
-try { createRoot(document.getElementById('root')).render(<ErrorBoundary><AppWrapper /></ErrorBoundary>); } catch (err) {}
+// --- [GGSOC 終極啟動器：強制掛載 AI] ---
+const GlobalSystem = () => {
+  // 從 AppWrapper 拿到 ps (所有數據)
+  return (
+    <ErrorBoundary>
+      <AppWrapper /> 
+      {/* 🚀 AI 助手會飄在手機畫面右下角，數據直接接通 ps */}
+      <LocalLogisticsAI data={window.__ps_data || []} />
+    </ErrorBoundary>
+  );
+};
+
+try {
+  const root = createRoot(document.getElementById('root'));
+  root.render(<GlobalSystem />);
+} catch (err) {
+  console.error("啟動失敗:", err);
+}
   </script>
 </body>
 </html>
