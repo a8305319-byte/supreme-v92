@@ -1,4 +1,37 @@
-<!DOCTYPE html>
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const createRoot = ReactDOM.createRoot;
+
+// 🤖 AI 總裁特助組件 (修正後的完整版)
+const LocalLogisticsAI = ({ data }) => {
+  const [q, setQ] = useState("");
+  const [ans, setAns] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
+
+  const ask = async () => {
+    if (!q) return;
+    setLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const res = await model.generateContent(`你是在地物流 AI 特助。老闆很懶，請精簡建議。數據：${JSON.stringify(data)}\n指令：${q}`);
+      setAns(res.response.text());
+    } catch (e) { setAns("連線失敗..."); }
+    setLoading(false);
+  };
+
+  if(!show) return <button onClick={()=>setShow(true)} style={{position:'fixed', bottom:'100px', right:'20px', zIndex:99999, background:'#3b82f6', color:'#fff', padding:'10px', borderRadius:'50%'}}>🤖</button>;
+
+  return (
+    <div style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><span style={{fontSize:'12px', color:'#60a5fa'}}>GGSOC AI 助理</span><button onClick={()=>setShow(false)}>✕</button></div>
+      <input style={{ width: '100%', background: '#0f172a', border: '1px solid #334155', padding: '8px', borderRadius: '8px', color: '#fff', marginBottom: '10px', fontSize:'14px' }} value={q} onChange={e => setQ(e.target.value)} placeholder="分析數據或指令..." />
+      <button onClick={ask} style={{ width: '100%', background: '#3b82f6', padding: '8px', borderRadius: '8px', fontSize:'14px' }} disabled={loading}>{loading ? "運算中..." : "問 AI"}</button>
+      {ans && <div style={{ marginTop: '10px', fontSize: '12px', background: '#0f172a', padding: '10px', borderRadius: '8px', maxHeight: '150px', overflowY: 'auto' }}>{ans}</div>}
+    </div>
+  );
+};
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
