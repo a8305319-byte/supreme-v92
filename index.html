@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const createRoot = ReactDOM.createRoot;
 
-// --- AI 總裁特助 (手機寬鬆排版版) ---
+// 🤖 GGSOC AI 總裁特助 (手機寬鬆排版)
 const LocalLogisticsAI = ({ data }) => {
   const [q, setQ] = useState("");
   const [ans, setAns] = useState("");
@@ -16,18 +16,14 @@ const LocalLogisticsAI = ({ data }) => {
     try {
       const gAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
       const mdl = gAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const pmt = `你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`;
-      const res = await mdl.generateContent(pmt);
+      const res = await mdl.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
       setAns(res.response.text());
     } catch (e) { setAns("連線逾時..."); }
     setLoading(false);
   };
 
   if (!show) return (
-    <button 
-      onClick={() => setShow(true)} 
-      style={{ position:'fixed', bottom:'80px', left:'20px', zIndex:99999, background:'#3b82f6', color:'#fff', width:'50px', height:'50px', borderRadius:'50%', fontSize:'24px', border:'2px solid white' }}
-    >🤖</button>
+    <button onClick={() => setShow(true)} style={{ position:'fixed', bottom:'80px', left:'20px', zIndex:99999, background:'#3b82f6', color:'#fff', width:'50px', height:'50px', borderRadius:'50%', fontSize:'24px', border:'2px solid white' }}>🤖</button>
   );
 
   return (
@@ -42,10 +38,7 @@ const LocalLogisticsAI = ({ data }) => {
         onChange={e => setQ(e.target.value)} 
         placeholder="輸入指令..." 
       />
-      <button 
-        onClick={ask} 
-        style={{ width:'100%', background:'#3b82f6', color:'#fff', border:'none', padding:'10px', borderRadius:'10px' }}
-      >{loading ? "..." : "問 AI"}</button>
+      <button onClick={ask} style={{ width:'100%', background:'#3b82f6', color:'#fff', border:'none', padding:'10px', borderRadius:'10px' }}>{loading ? "..." : "問 AI"}</button>
       {ans && <div style={{ marginTop:'10px', fontSize:'12px', background:'#000', padding:'10px', borderRadius:'10px', maxHeight:'120px', overflowY:'auto' }}>{ans}</div>}
     </div>
   );
