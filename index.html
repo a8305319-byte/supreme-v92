@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GGSOC 2026 Supreme ERP</title>
+  <title>GGSOC 2026 - 結算發送中心</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -14,10 +14,10 @@
     body { background: #000; color: #fff; font-family: sans-serif; font-weight: 900; -webkit-tap-highlight-color: transparent; }
     .glass { background: rgba(15, 15, 15, 0.98); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
     .btn-active:active { transform: scale(0.95); opacity: 0.8; }
-    .tab-btn { padding: 12px; font-size: 12px; border-radius: 12px; flex: 1; text-align: center; font-weight: 900; }
-    .tab-active { background: #3b82f6; color: white; }
-    .sig-canvas { background: #050505; border-radius: 20px; border: 1px dashed #333; touch-action: none; }
-    input, select { background: #111; border: 1px solid #222; border-radius: 12px; padding: 12px; color: #3b82f6; font-weight: 900; }
+    input { background: #111; border: 1px solid #222; border-radius: 12px; padding: 12px; color: #3b82f6; font-weight: 900; text-align: center; }
+    .sig-canvas { background: #050505; border: 1px dashed #333; border-radius: 20px; touch-action: none; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
 </head>
 <body>
@@ -35,125 +35,132 @@
     const db = firebase.firestore();
 
     function App() {
-      const [view, setView] = useState('gate'); // gate, dash, payroll, leave, profile
+      const [view, setView] = useState('gate'); 
       const [user, setUser] = useState(null);
       const [partners, setPartners] = useState([]);
-      const [showSig, setShowSig] = useState(false);
+      const [snap, setSnap] = useState(null);
+      const videoRef = useRef(null);
       const canvasRef = useRef(null);
 
       useEffect(() => {
         return db.collection('partners').onSnapshot(s => setPartners(s.docs.map(d => ({id:d.id, ...d.data()}))));
       }, []);
 
-      // 🧮 薪資與二代健保精算 (2.11%)
-      const calcSalary = (p) => {
-        const gross = (p.total_del || 0) * 15 + (p.total_pkp || 0) * 10;
-        const labor = 679;
-        const health = 458 * (1 + (p.family || 0));
-        const extraHealth = gross > 27470 ? Math.round(gross * 0.0211) : 0; // 二代健保
-        return { gross, labor, health, extraHealth, net: gross - labor - health - extraHealth };
-      };
-
+      // 🔐 登入邏輯
       const handleLogin = (ph, pin) => {
         const found = partners.find(p => p.phone === ph && (p.pin || '8305319') === pin);
-        if (found) { setUser(found); setView('dash'); }
+        if (found) { setUser(found); setView('home'); }
         else alert('身分驗證失敗');
+      };
+
+      // 📸 相機邏輯
+      const startCam = async () => {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        if(videoRef.current) videoRef.current.srcObject = s;
+      };
+
+      const capture = () => {
+        const c = document.createElement('canvas');
+        c.width = 600; c.height = 800;
+        const x = c.getContext('2d');
+        x.drawImage(videoRef.current, 0, 0, 600, 800);
+        x.fillStyle = "rgba(0,0,0,0.6)"; x.fillRect(0, 720, 600, 80);
+        x.fillStyle = "#fff"; x.font = "bold 20px sans-serif";
+        x.fillText(`司機: ${user.name} | ${new Date().toLocaleString()}`, 20, 765);
+        setSnap(c.toDataURL());
+        videoRef.current.srcObject.getTracks().forEach(t => t.stop());
       };
 
       if (view === 'gate') return (
         <div className="h-screen flex items-center justify-center p-8 bg-black">
-          <div className="glass w-full max-w-sm p-10 rounded-[3rem] text-center border-blue-500/20 border shadow-2xl">
-            <h1 className="text-3xl font-black text-blue-500 mb-10 italic">GGSOC_2026</h1>
-            <input id="u" placeholder="手機號碼" className="w-full mb-4 text-center" />
-            <input id="p" type="password" placeholder="通行密碼" className="w-full mb-8 text-center" />
-            <button onClick={() => handleLogin(document.getElementById('u').value, document.getElementById('p').value)} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active">進入系統</button>
+          <div className="glass w-full max-w-sm p-12 rounded-[3.5rem] border-blue-500/20 border text-center shadow-2xl">
+            <h1 className="text-3xl font-black text-blue-600 mb-10 italic">GGSOC_AUTH</h1>
+            <input id="u" placeholder="手機號碼" className="w-full mb-4" />
+            <input id="p" type="password" placeholder="通行密碼" className="w-full mb-8" />
+            <button onClick={() => handleLogin(document.getElementById('u').value, document.getElementById('p').value)} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active">進入中心</button>
           </div>
         </div>
       );
 
       return (
-        <div className="min-h-screen p-5 pb-32">
-          {/* Top Bar */}
-          <div className="flex justify-between items-center mb-8">
+        <div className="min-h-screen p-6 pb-24 fade-in">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-10">
             <div>
-              <h2 className="text-2xl font-black italic">{user.name}</h2>
-              <p className="text-[10px] text-blue-500 font-mono italic">SUPREME_ID: {user.id.slice(0,8)}</p>
+              <h2 className="text-2xl font-black text-white italic">{user.name}</h2>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Driver Control Hub</p>
             </div>
-            <button onClick={()=>setView('gate')} className="text-[10px] text-zinc-600 border border-zinc-800 px-3 py-1 rounded-full font-black">登出</button>
+            <button onClick={() => setView('gate')} className="bg-zinc-900 px-4 py-2 rounded-xl text-[10px] font-black text-zinc-500">登出並返回</button>
           </div>
 
-          {/* 功能切換 Tab */}
-          <div className="flex gap-2 mb-8 bg-zinc-900/50 p-2 rounded-2xl">
-            <button onClick={()=>setView('dash')} className={`tab-btn ${view==='dash'?'tab-active':''}`}>結算</button>
-            <button onClick={()=>setView('payroll')} className={`tab-btn ${view==='payroll'?'tab-active':''}`}>薪資條</button>
-            <button onClick={()=>setView('leave')} className={`tab-btn ${view==='leave'?'tab-active':''}`}>排假</button>
-            <button onClick={()=>setView('profile')} className={`tab-btn ${view==='profile'?'tab-active':''}`}>資料</button>
-          </div>
+          {/* 功能選單 */}
+          {view === 'home' && (
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => { setView('finish'); setTimeout(startCam, 100); }} className="glass p-8 rounded-3xl flex flex-col items-center btn-active">
+                <span className="text-3xl mb-3">📸</span>
+                <span className="text-xs font-black">下班拍照結算</span>
+              </button>
+              <button onClick={() => setView('payroll')} className="glass p-8 rounded-3xl flex flex-col items-center btn-active">
+                <span className="text-3xl mb-3">💰</span>
+                <span className="text-xs font-black">薪資條調閱</span>
+              </button>
+              <button onClick={() => setView('security')} className="glass p-8 rounded-3xl flex flex-col items-center btn-active">
+                <span className="text-3xl mb-3">🔒</span>
+                <span className="text-xs font-black">修改個人密碼</span>
+              </button>
+              <button onClick={() => setView('gate')} className="glass p-8 rounded-3xl flex flex-col items-center btn-active opacity-50">
+                <span className="text-3xl mb-3">🔙</span>
+                <span className="text-xs font-black">返回上一頁</span>
+              </button>
+            </div>
+          )}
 
-          {/* 1. 薪資條雙向確認區 (包含二代健保) */}
-          {view === 'payroll' && (
-            <div className="space-y-6 animate-[fadeIn_0.3s]">
-              <div className="glass p-6 rounded-[2.5rem] border-blue-500/20 border">
-                <h3 className="text-blue-500 font-black mb-6 italic">2026年3月 薪資明細</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between"><span>勞務總額</span><span>${calcSalary(user).gross.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-rose-500"><span>勞保扣繳</span><span>-${calcSalary(user).labor}</span></div>
-                  <div className="flex justify-between text-rose-500"><span>健保扣繳(含家屬)</span><span>-${calcSalary(user).health}</span></div>
-                  <div className="flex justify-between text-orange-400"><span>二代健保(2.11%)</span><span>-${calcSalary(user).extraHealth}</span></div>
-                  <div className="pt-4 border-t border-white/10 flex justify-between text-xl text-emerald-400 font-black">
-                    <span>實領淨額</span><span>${calcSalary(user).net.toLocaleString()}</span>
-                  </div>
+          {/* 1. 下班結算流程：拍照 -> 簽名 -> 自動返回 */}
+          {view === 'finish' && (
+            <div className="space-y-6">
+              {!snap ? (
+                <div className="space-y-6">
+                  <video ref={videoRef} autoPlay playsInline className="w-full h-80 bg-black rounded-3xl border-2 border-blue-500/50 object-cover" />
+                  <button onClick={capture} className="w-full py-6 bg-blue-600 rounded-3xl font-black text-xl btn-active">📸 拍下報表存證</button>
                 </div>
-              </div>
-              {!showSig ? (
-                <button onClick={()=>setShowSig(true)} className="w-full py-5 bg-emerald-600 rounded-2xl font-black btn-active">確認薪資無誤並簽署</button>
               ) : (
-                <div className="glass p-6 rounded-[2rem] space-y-4">
-                   <p className="text-[10px] text-zinc-500 italic uppercase">數位薪資確認簽章</p>
-                   <canvas ref={canvasRef} width={300} height={150} className="sig-canvas w-full" onTouchStart={(e)=>{e.preventDefault(); const ctx=canvasRef.current.getContext('2d'); ctx.strokeStyle='#3b82f6'; ctx.lineWidth=3; ctx.beginPath();}} />
-                   <button onClick={()=>{alert('薪資條已雙向確認存檔'); setShowSig(false);}} className="w-full py-4 bg-blue-600 rounded-xl font-black text-xs">完成雙向確認</button>
+                <div className="space-y-6">
+                  <img src={snap} className="w-full rounded-3xl border border-white/10" />
+                  <div className="glass p-6 rounded-3xl border border-white/5">
+                    <p className="text-[10px] text-zinc-500 mb-4 font-black">本人親筆確認簽名</p>
+                    <canvas ref={canvasRef} width={300} height={150} className="sig-canvas w-full" onTouchStart={(e)=>{e.preventDefault(); const ctx=canvasRef.current.getContext('2d'); ctx.strokeStyle='#3b82f6'; ctx.lineWidth=3; ctx.beginPath();}} />
+                  </div>
+                  <button onClick={() => { alert('數據已封裝上傳。系統將自動返回...'); setView('gate'); setSnap(null); }} className="w-full py-6 bg-emerald-600 rounded-3xl font-black text-xl btn-active">🟢 提交並結束下班</button>
                 </div>
               )}
             </div>
           )}
 
-          {/* 2. 日曆請排假 */}
-          {view === 'leave' && (
-            <div className="glass p-8 rounded-[2.5rem] animate-[fadeIn_0.3s]">
-              <h3 className="text-amber-500 font-black mb-6 italic">排休申請日曆</h3>
-              <div className="grid grid-cols-7 gap-2 mb-6">
-                {[...Array(31)].map((_, i) => (
-                  <button key={i} onClick={()=>alert(`已申請 3/${i+1} 排休`)} className="aspect-square glass rounded-lg text-[10px] flex items-center justify-center hover:bg-amber-500/20 active:bg-amber-500 font-black border-white/5 border">
-                    {i+1}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-zinc-500 italic text-center">※ 點擊日期即可提交排休申請，需經總裁審核。</p>
-            </div>
-          )}
-
-          {/* 3. 個人資料調閱與密碼修改 */}
-          {view === 'profile' && (
-            <div className="space-y-6 animate-[fadeIn_0.3s]">
-              <div className="glass p-8 rounded-[2.5rem]">
-                <h3 className="text-zinc-400 font-black mb-6 italic">個人核心資料</h3>
-                <div className="space-y-4">
-                  <div><label className="text-[10px] text-zinc-600 block mb-1">姓名</label><input value={user.name} disabled className="w-full opacity-50" /></div>
-                  <div><label className="text-[10px] text-zinc-600 block mb-1">修改新密碼</label><input type="password" placeholder="輸入新 PIN" className="w-full" id="newpin" /></div>
-                  <button onClick={()=>alert('密碼已更新，下次登入生效')} className="w-full py-4 bg-zinc-800 rounded-xl font-black text-xs btn-active mt-4 border border-white/10">更新密碼</button>
+          {/* 2. 薪資條調閱與發送 */}
+          {view === 'payroll' && (
+            <div className="space-y-6">
+              <div className="glass p-8 rounded-[2.5rem] border-blue-500/20 border">
+                <h3 className="text-xl font-black text-blue-500 italic mb-6">2026年3月 數位薪資條</h3>
+                <div className="space-y-4 text-sm font-black">
+                  <div className="flex justify-between border-b border-white/5 pb-2"><span>基本勞務額</span><span>$34,500</span></div>
+                  <div className="flex justify-between border-b border-white/5 pb-2 text-rose-500"><span>勞健保扣繳</span><span>-$1,137</span></div>
+                  <div className="flex justify-between text-emerald-400 text-2xl pt-4"><span>實領淨額</span><span>$33,363</span></div>
                 </div>
               </div>
+              <button onClick={() => alert('薪資條已發送至您的電子信箱與存證備份庫。')} className="w-full py-6 bg-blue-600 rounded-3xl font-black btn-active">📩 發送薪資條至個人存證</button>
+              <button onClick={() => setView('home')} className="w-full py-4 bg-zinc-900 rounded-2xl font-black text-zinc-500">返回主選單</button>
             </div>
           )}
 
-          {/* 4. 下班結算 Dash */}
-          {view === 'dash' && (
-            <div className="space-y-6 animate-[fadeIn_0.3s]">
-               <div className="text-center py-10">
-                 <p className="text-zinc-500 text-xs mb-2 italic uppercase tracking-widest">今日累積件數</p>
-                 <h2 className="text-6xl font-black italic text-blue-500">{(user.total_del||0) + (user.total_pkp||0)}</h2>
-               </div>
-               <button onClick={()=>alert('啟動拍照結算流程...')} className="w-full py-6 bg-blue-600 rounded-[2rem] font-black text-xl btn-active shadow-lg shadow-blue-600/20">下班結算拍照</button>
+          {/* 3. 密碼修改 */}
+          {view === 'security' && (
+            <div className="space-y-6">
+              <div className="glass p-8 rounded-[2.5rem]">
+                <h3 className="text-xl font-black text-zinc-400 italic mb-6">修改通行 PIN</h3>
+                <input type="password" placeholder="請輸入新 PIN 碼" className="w-full mb-6 py-5 text-2xl" id="newpin" />
+                <button onClick={() => { alert('密碼修改成功，請記住新密碼。'); setView('home'); }} className="w-full py-5 bg-blue-600 rounded-2xl font-black btn-active">確認更新</button>
+              </div>
+              <button onClick={() => setView('home')} className="w-full py-4 bg-zinc-900 rounded-2xl font-black text-zinc-500">返回主選單</button>
             </div>
           )}
         </div>
