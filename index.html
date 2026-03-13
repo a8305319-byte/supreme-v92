@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GGSOC 行政核心 2026</title>
+  <title>GGSOC 行政指揮中心 2026</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    body { background: #000; color: #fff; font-family: sans-serif; font-weight: 900; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
-    .glass { background: rgba(10, 10, 10, 0.98); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(25px); }
-    .sig-canvas { background: #050505; border: 1px dashed #333; border-radius: 24px; touch-action: none; }
-    .camera-live { width: 100%; height: 300px; background: #000; border-radius: 30px; object-fit: cover; border: 1px solid #d4af37; }
-    input, select { background: #111; border: 1px solid #222; border-radius: 16px; padding: 15px; color: #d4af37; font-weight: 900; width: 100%; outline: none; }
-    .btn-active:active { transform: scale(0.95); opacity: 0.8; }
-    .status-badge { background: #d4af37; color: #000; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: bold; }
-    /* 模仿真人客服的打字動畫 */
-    .typing::after { content: '...'; animation: blink 1s infinite; }
-    @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+    body { background: #000; color: #fff; font-family: sans-serif; font-weight: 900; -webkit-tap-highlight-color: transparent; }
+    .glass { background: rgba(12, 12, 12, 0.98); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(30px); }
+    .accounting-gold { border-left: 4px solid #d4af37; background: linear-gradient(90deg, rgba(212,175,55,0.05) 0%, #000 100%); }
+    .sig-canvas { background: #050505; border: 2px dashed #222; border-radius: 24px; touch-action: none; }
+    .camera-live { width: 100%; height: 280px; background: #000; border-radius: 30px; object-fit: cover; border: 1px solid #333; }
+    .btn-active:active { transform: scale(0.96); opacity: 0.8; }
+    .status-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    input { background: #111; border: 1px solid #222; border-radius: 14px; padding: 12px; color: #d4af37; text-align: center; font-weight: 900; width: 100%; outline: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 </head>
 <body>
@@ -26,137 +26,166 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // --- 🖋️ 確權簽名板組件 ---
-    const SignaturePad = ({ onSave }) => {
-      const canvasRef = useRef(null);
-      const [drawing, setDrawing] = useState(false);
-      const [ctx, setCtx] = useState(null);
-
-      useEffect(() => {
-        const c = canvasRef.current;
-        const x = c.getContext("2d");
-        x.strokeStyle = "#d4af37"; x.lineWidth = 4; x.lineCap = "round";
-        setCtx(x);
-      }, []);
-
-      const getPos = (e) => {
-        const r = canvasRef.current.getBoundingClientRect();
-        const t = e.touches ? e.touches[0] : e;
-        return { x: t.clientX - r.left, y: t.clientY - r.top };
-      };
-
-      return <canvas ref={canvasRef} width={320} height={180} className="sig-canvas w-full" 
-        onTouchStart={(e)=>{e.preventDefault(); setDrawing(true); const p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);}}
-        onTouchMove={(e)=>{e.preventDefault(); if(!drawing) return; const p=getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();}}
-        onTouchEnd={()=>{setDrawing(false); onSave(canvasRef.current.toDataURL());}}
-      />;
+    // --- 🎭 萬事通隨扈身分引擎 ---
+    const generateAgent = () => {
+      const surnames = ['隨', '影', '莫', '沈', '商', '核心', '系統'];
+      const roles = ['專員', '助理', '管理員', '調度員'];
+      const id = Math.floor(800 + Math.random() * 199);
+      const name = surnames[Math.floor(Math.random() * surnames.length)] + roles[Math.floor(Math.random() * roles.length)];
+      return { id, name, icon: id % 2 === 0 ? '👨‍💼' : '👩‍💼' };
     };
 
     function App() {
-      const [view, setView] = useState('gate');
+      const [view, setView] = useState('login'); // login, dash, payroll, vault, chat
       const [user, setUser] = useState(null);
-      const [agent, setAgent] = useState({ id: '801', name: '系統預選', icon: '🤖' });
+      const [agent, setAgent] = useState(generateAgent());
       const [snap, setSnap] = useState(null);
       const videoRef = useRef(null);
+      const canvasRef = useRef(null);
 
-      // --- 🎭 AI 自主換身分邏輯 ---
-      const rotateAgent = () => {
-        const surnames = ['陳', '林', '黃', '張', '李', '趙', '吳', '劉'];
-        const roles = ['專員', '小姐', '先生', '助理'];
-        const icons = ['👩‍💼', '👨‍💼', '👧', '👨'];
-        const rIdx = Math.floor(Math.random() * surnames.length);
-        const iIdx = Math.floor(Math.random() * icons.length);
-        setAgent({
-          id: Math.floor(800 + Math.random() * 200).toString(),
-          name: surnames[rIdx] + roles[Math.floor(Math.random() * roles.length)],
-          icon: icons[iIdx]
-        });
+      // --- 💰 2026 財務精算邏輯 ---
+      const calculateNet = (gross) => {
+        const labor = 679; // 2026 預估勞保
+        const health = 458; // 2026 預估健保
+        const g2Extra = gross > 27470 ? Math.ceil(gross * 0.0211) : 0; // 二代健保
+        return gross - labor - health - g2Extra;
       };
-
-      useEffect(() => { rotateAgent(); }, []);
 
       const startCam = async () => {
         const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         if(videoRef.current) videoRef.current.srcObject = s;
       };
 
-      const captureReport = () => {
+      const capture = () => {
         const c = document.createElement('canvas');
         c.width = 600; c.height = 800;
         const ctx = c.getContext('2d');
         ctx.drawImage(videoRef.current, 0, 0, 600, 800);
-        // 壓印 2026 行政水印
-        ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 720, 600, 80);
-        ctx.fillStyle = "#d4af37"; ctx.font = "bold 22px sans-serif";
-        ctx.fillText(`行政確權編號: ${agent.id} | 時間: ${new Date().toLocaleString()}`, 30, 765);
+        ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 720, 600, 80);
+        ctx.fillStyle = "#d4af37"; ctx.font = "bold 20px monospace";
+        ctx.fillText(`VERIFIED BY: ${agent.id} | ${new Date().toLocaleString()}`, 30, 765);
         setSnap(c.toDataURL());
         videoRef.current.srcObject.getTracks().forEach(t => t.stop());
       };
 
-      if (view === 'gate') return (
+      if (view === 'login') return (
         <div className="h-screen flex items-center justify-center p-8 bg-black">
-          <div className="glass w-full max-w-sm p-12 rounded-[4rem] border-zinc-800 border text-center shadow-[0_0_50px_rgba(212,175,55,0.05)]">
-            <h1 className="text-3xl font-black text-zinc-500 mb-10 italic tracking-widest">GGSOC_2026</h1>
-            <input id="ph" placeholder="手機號碼" className="mb-4 text-center" />
-            <button onClick={() => {setUser({name: '存證司機'}); setView('main');}} className="w-full py-5 bg-zinc-900 rounded-3xl font-black text-zinc-400 btn-active border border-white/5">進入存證系統</button>
+          <div className="glass w-full max-w-sm p-12 rounded-[4rem] text-center border-zinc-900 border">
+            <h1 className="text-3xl font-black text-zinc-600 mb-10 italic tracking-widest">GGSOC_2026</h1>
+            <input id="u" placeholder="聯絡手機" className="mb-4" />
+            <input id="p" type="password" placeholder="通行代碼" className="mb-8" />
+            <button onClick={() => {setUser({name:'測試司機'}); setView('dash');}} className="w-full py-5 bg-zinc-900 rounded-2xl font-black text-zinc-500 border border-white/5 btn-active">進入中心</button>
           </div>
         </div>
       );
 
       return (
-        <div className="min-h-screen p-6 pb-32 max-w-md mx-auto">
-          {/* Header：會計部權威 */}
-          <div className="flex justify-between items-end mb-10">
+        <div className="min-h-screen p-6 pb-24 max-w-md mx-auto relative no-scrollbar">
+          {/* 🏛️ Header：會計部最高威權 */}
+          <div className="flex justify-between items-end mb-8">
             <div>
-              <h2 className="text-2xl font-black italic tracking-tighter text-zinc-400">會計部_行政中樞</h2>
-              <p className="text-[10px] text-amber-700 font-mono tracking-widest">STATUS: SYSTEM_COMMAND_ACTIVE</p>
+              <h2 className="text-xl font-black italic tracking-tighter text-zinc-400">GGSOC_會計部</h2>
+              <p className="text-[9px] text-amber-700 font-mono tracking-widest status-pulse">● FINANCE_AUTHORITY_ACTIVE</p>
             </div>
-            <div className="status-badge">核准權：會計處</div>
+            <button onClick={() => setView('chat')} className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-xl btn-active border border-white/5">{agent.icon}</button>
           </div>
 
-          {/* 萬事通 AI 自主身分顯示區 */}
-          <div className="glass p-8 rounded-[3rem] border-amber-600/10 border mb-8 flex items-center gap-5 relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl italic">{agent.icon}</div>
-             <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center text-3xl shadow-inner">{agent.icon}</div>
-             <div>
-               <h4 className="text-lg font-black text-amber-600 italic">萬事通_{agent.name}</h4>
-               <p className="text-[10px] text-zinc-600 font-mono uppercase">客服編號: {agent.id}</p>
-             </div>
+          {/* 導覽分頁 */}
+          <div className="flex gap-2 mb-8 bg-zinc-900/50 p-2 rounded-2xl border border-white/5">
+            {['dash','payroll','vault'].map(t => (
+              <button key={t} onClick={()=>setView(t)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest ${view===t?'bg-amber-600 text-black':'text-zinc-600'}`}>{t}</button>
+            ))}
           </div>
 
-          {/* 核心功能：拍照結算確權 */}
-          <div className="space-y-6">
-            {!snap ? (
-              <div className="space-y-6">
-                <div className="relative">
-                  <video ref={videoRef} autoPlay playsInline className="camera-live" />
-                  <div className="absolute top-4 left-4 bg-black/50 text-[8px] px-2 py-1 rounded text-zinc-500">LIVE_FEED</div>
+          {/* 1. 下班結算確權 (拍照 + 簽名) */}
+          {view === 'dash' && (
+            <div className="space-y-6">
+              {!snap ? (
+                <div className="space-y-6">
+                  <div className="accounting-gold p-6 rounded-r-3xl">
+                    <h3 className="text-sm font-black text-amber-500 mb-2 italic">STEP 1: 實體報表確權</h3>
+                    <p className="text-[10px] text-zinc-500">請對準今日結算單據，由系統萬事通自動存證。</p>
+                  </div>
+                  <video ref={videoRef} autoPlay playsInline className="camera-live shadow-2xl" />
+                  <button onClick={()=>{startCam(); setTimeout(capture, 1500);}} className="w-full py-6 bg-zinc-900 border border-amber-600/30 rounded-[2.5rem] font-black text-amber-600 btn-active italic">📸 啟動行政拍照存證</button>
                 </div>
-                <button onClick={()=>{startCam(); setTimeout(captureReport, 1000);}} className="w-full py-6 bg-zinc-900 rounded-[2.5rem] font-black text-amber-600 border border-amber-600/20 btn-active shadow-xl shadow-amber-900/10">📸 執行行政拍照確權</button>
-              </div>
-            ) : (
-              <div className="space-y-6 animate-[fadeIn_0.5s]">
-                <img src={snap} className="w-full rounded-[2.5rem] border border-zinc-800" />
-                <div className="glass p-7 rounded-[2.5rem]">
-                  <p className="text-[10px] text-zinc-600 mb-4 font-black italic uppercase">本人領取薪資與報表無誤簽章</p>
-                  <SignaturePad onSave={()=>{}} />
+              ) : (
+                <div className="space-y-6 animate-[fadeIn_0.5s]">
+                  <img src={snap} className="w-full rounded-[2.5rem] border border-zinc-800" />
+                  <div className="glass p-7 rounded-[2.5rem] border-white/5 border">
+                    <p className="text-[10px] text-zinc-500 mb-4 font-black italic uppercase">STEP 2: 本人數據確認簽章</p>
+                    <canvas ref={canvasRef} width={320} height={160} className="sig-canvas w-full" 
+                      onTouchStart={(e)=>{e.preventDefault(); const x=canvasRef.current.getContext('2d'); x.strokeStyle='#d4af37'; x.lineWidth=3; x.beginPath();}}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button onClick={()=>{alert('數據已加密送往會計部金庫。'); setSnap(null); setView('vault');}} className="bg-emerald-900/20 text-emerald-500 py-6 rounded-3xl font-black border border-emerald-500/20 btn-active">🟢 完成結算</button>
+                    <button onClick={()=>setSnap(null)} className="bg-zinc-900 py-6 rounded-3xl font-black text-zinc-500 btn-active">重拍</button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <button onClick={()=>{alert('確權數據已封裝上傳會計部總帳。'); setView('gate'); setSnap(null);}} className="bg-emerald-900/20 text-emerald-500 py-6 rounded-3xl font-black btn-active border border-emerald-500/20">🟢 完成確權</button>
-                  <button onClick={()=>setSnap(null)} className="bg-zinc-900 py-6 rounded-3xl font-black text-zinc-500 btn-active">重拍</button>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
-          {/* 薪資精算公式顯示 (LaTeX 標註) */}
-          <div className="mt-10 p-6 border-t border-zinc-900">
-             <p className="text-[9px] text-zinc-700 font-mono leading-relaxed italic">
-               * 薪資計算依循 2026 公式：<br/>
-               $$Net = (Gross - Labor - Health) - \text{G2Health}(2.11\%)$$
-               會計部保留最終數據校正權。
-             </p>
-          </div>
+          {/* 2. 薪資條調閱 (不簡化版) */}
+          {view === 'payroll' && (
+            <div className="space-y-6 animate-[fadeIn_0.3s]">
+               <div className="glass p-8 rounded-[3rem] border-amber-600/10 border">
+                 <h3 className="text-xl font-black text-amber-500 mb-6 italic">2026/03 薪資明細</h3>
+                 <div className="space-y-4 text-xs font-bold text-zinc-500">
+                    <div className="flex justify-between"><span>勞務總額 (Gross)</span><span className="text-white">$38,500</span></div>
+                    <div className="flex justify-between text-rose-500"><span>勞保/健保扣除</span><span>-$1,137</span></div>
+                    <div className="flex justify-between text-orange-400"><span>二代健保 (2.11%)</span><span>-$812</span></div>
+                    <div className="pt-4 border-t border-white/5 flex justify-between text-2xl text-emerald-400 font-black italic tracking-tighter">
+                      <span>實領淨額</span><span>$36,551</span>
+                    </div>
+                 </div>
+               </div>
+               <p className="text-[9px] text-zinc-700 italic px-4">
+                 根據 2026 財務準則：$$Net = (Gross - Labor - Health) - \lceil Gross \times 2.11\% \rceil$$
+               </p>
+               <button className="w-full py-5 bg-emerald-600 rounded-2xl font-black btn-active shadow-lg shadow-emerald-900/20">✔️ 確認薪資發放無誤</button>
+            </div>
+          )}
+
+          {/* 3. 個人資料保存金庫 */}
+          {view === 'vault' && (
+            <div className="space-y-4 animate-[fadeIn_0.3s]">
+               <h3 className="text-sm font-black text-zinc-500 italic mb-4">DEEP_ARCHIVE: 歷史存證</h3>
+               {[1, 2].map(i => (
+                 <div key={i} className="glass p-6 rounded-3xl border-white/5 border flex justify-between items-center">
+                    <div><p className="text-xs font-black">2026-03-{10+i} 確權檔</p><p className="text-[9px] text-zinc-700 font-mono">HASH: 7a8b...f2e1</p></div>
+                    <span className="text-[9px] bg-zinc-900 px-2 py-1 rounded text-blue-500">已鎖定</span>
+                 </div>
+               ))}
+               <p className="text-[8px] text-zinc-800 text-center mt-10 tracking-[0.3em] font-mono">ENCRYPTED EVIDENCE VAULT</p>
+            </div>
+          )}
+
+          {/* 4. 萬事通服務中心 (隨扈對話) */}
+          {view === 'chat' && (
+            <div className="fixed inset-0 bg-black z-[9999] p-6 flex flex-col">
+               <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
+                 <div className="flex items-center gap-3">
+                    <span className="text-2xl">{agent.icon}</span>
+                    <div>
+                      <h4 className="text-sm font-black text-blue-500">萬事通_{agent.name}</h4>
+                      <p className="text-[9px] text-zinc-600">行政中心編號: {agent.id}</p>
+                    </div>
+                 </div>
+                 <button onClick={()=>setView('dash')} className="text-zinc-600 text-[10px] font-black">EXIT</button>
+               </div>
+               <div className="flex-1 overflow-y-auto space-y-4 mb-6">
+                 <div className="bg-zinc-900 p-5 rounded-r-3xl rounded-tl-3xl text-xs text-zinc-400 border border-white/5 shadow-xl">
+                   您好，我是行政編號 {agent.id} 的 {agent.name}。會計部已交派我處理您的請求。請詳述問題，系統將自動同步至財務總帳。
+                 </div>
+               </div>
+               <div className="flex gap-2 p-2 bg-zinc-900 rounded-2xl">
+                 <input className="flex-1 bg-transparent p-3 text-xs outline-none" placeholder="輸入傳令或回報..." />
+                 <button onClick={()=>alert('已轉呈會計部核定。')} className="bg-blue-600 px-6 rounded-xl font-black text-xs btn-active italic">發送</button>
+               </div>
+            </div>
+          )}
         </div>
       );
     }
