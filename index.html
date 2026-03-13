@@ -1,238 +1,144 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GGSOC 行政指揮中心 2026</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    body { background: #000; color: #fff; font-family: sans-serif; font-weight: 900; -webkit-tap-highlight-color: transparent; }
-    .glass { background: rgba(12, 12, 12, 0.98); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(30px); }
-    .accounting-gold { border-left: 4px solid #d4af37; background: linear-gradient(90deg, rgba(212,175,55,0.05) 0%, #000 100%); }
-    .sig-canvas { background: #050505; border: 2px dashed #222; border-radius: 24px; touch-action: none; }
-    .camera-live { width: 100%; height: 280px; background: #000; border-radius: 30px; object-fit: cover; border: 1px solid #333; }
-    .btn-active:active { transform: scale(0.96); opacity: 0.8; }
-    .status-pulse { animation: pulse 2s infinite; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-    input { background: #111; border: 1px solid #222; border-radius: 14px; padding: 12px; color: #d4af37; text-align: center; font-weight: 900; width: 100%; outline: none; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    /* AI 對話與分析動畫 */
-    .typing::after { content: '...'; animation: blink 1s infinite; }
-    @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GGSOC 2026 夥伴通行證</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { background-color: #050505; color: #d4d4d8; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; font-weight: 500; }
+        .glass { background: rgba(20, 20, 20, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .rounded-heavy { border-radius: 2.5rem; }
+        .typing-dot { width: 5px; height: 5px; background: #60a5fa; border-radius: 50%; animation: blink 1.4s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        .signature-pad { background-image: radial-gradient(#1a1a1a 1px, transparent 1px); background-size: 20px 20px; }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    <div id="root"></div>
 
-    // --- 🎭 萬事通隨扈身分引擎 ---
-    const generateAgent = () => {
-      const surnames = ['隨', '影', '莫', '沈', '商', '核心', '系統'];
-      const roles = ['專員', '助理', '管理員', '調度員'];
-      const id = Math.floor(800 + Math.random() * 199);
-      const name = surnames[Math.floor(Math.random() * surnames.length)] + roles[Math.floor(Math.random() * roles.length)];
-      return { id, name, icon: id % 2 === 0 ? '👨‍💼' : '👩‍💼' };
-    };
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-    function App() {
-      const [view, setView] = useState('login'); // login, dash, payroll, vault, chat
-      const [user, setUser] = useState(null);
-      const [agent, setAgent] = useState(generateAgent());
-      const [snap, setSnap] = useState(null);
-      const videoRef = useRef(null);
-      const canvasRef = useRef(null);
-      // --- 🤖 AI 影像審核狀態 ---
-      const [aiReviewStatus, setAiReviewStatus] = useState(null); // null, reviewing, passed, failed
+        const App = () => {
+            const [step, setStep] = useState('gate'); // gate, chat, sign, done
+            const [name, setName] = useState('');
+            const [isTyping, setIsTyping] = useState(false);
+            const [messages, setMessages] = useState([]);
+            const scrollRef = useRef(null);
 
-      // --- 💰 2026 財務精算邏輯 ---
-      const calculateNet = (gross) => {
-        const labor = 679; // 2026 預估勞保
-        const health = 458; // 2026 預估健保
-        const g2Extra = gross > 27470 ? Math.ceil(gross * 0.0211) : 0; // 二代健保
-        return gross - labor - health - g2Extra;
-      };
+            // 老陳的對話腳本：不專業、哈拉感、不秒回
+            const chatScript = [
+                { text: `嘿！${name || '大哥'}你好啊，我是老陳。剛看到你電話了，我先幫你記著喔。這時間還在忙喔？辛苦了捏。`, delay: 2500 },
+                { text: "對了，現在 2026 年了，政府那個二代健保 2.11% 扣得真兇。以後領錢電腦會自動幫你扣掉，這東西大家都覺得囉唆，但現在規矩就是這樣。大哥你應該能體諒吧？反正領錢順、跑車平安最重要。", delay: 4500, isQuestion: true },
+                { text: "還有喔，如果有時候照片拍糊了，我叫你重傳一張，那也是為了怕會計那邊看不清不發薪水。你會體諒老陳一下吧？大家求個順嘛。", delay: 3500, isQuestion: true },
+                { text: "沒問題啦，看你講話這麼投緣。我把這次算好的錢放在下一頁，你有空再去對一下數字，順手簽個名領錢啦！不急啦，你休息時再弄就好。", delay: 3000 }
+            ];
 
-      const startCam = async () => {
-        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if(videoRef.current) videoRef.current.srcObject = s;
-      };
+            const handleStart = () => {
+                if (!name) return alert("大哥，名字填一下啦！");
+                setStep('chat');
+                runChat(0);
+            };
 
-      const capture = () => {
-        const c = document.createElement('canvas');
-        c.width = 600; c.height = 800;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(videoRef.current, 0, 0, 600, 800);
-        ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 720, 600, 80);
-        ctx.fillStyle = "#d4af37"; ctx.font = "bold 20px monospace";
-        ctx.fillText(`VERIFIED BY: ${agent.id} | ${new Date().toLocaleString()}`, 30, 765);
-        setSnap(c.toDataURL());
-        videoRef.current.srcObject.getTracks().forEach(t => t.stop());
-        // --- 🤖 拍照後自動啟動 AI 模擬審核 ---
-        setAiReviewStatus('reviewing');
-        setTimeout(() => {
-          setAiReviewStatus('passed');
-        }, 2500); // 模擬 2.5 秒審核
-      };
+            const runChat = (index) => {
+                if (index >= chatScript.length) {
+                    setTimeout(() => setStep('sign'), 2500);
+                    return;
+                }
+                setIsTyping(true);
+                setTimeout(() => {
+                    setIsTyping(false);
+                    setMessages(prev => [...prev, chatScript[index]]);
+                    if (!chatScript[index].isQuestion) {
+                        runChat(index + 1);
+                    }
+                }, chatScript[index].delay);
+            };
 
-      if (view === 'login') return (
-        <div className="h-screen flex items-center justify-center p-8 bg-black">
-          <div className="glass w-full max-w-sm p-12 rounded-[4rem] text-center border-zinc-900 border shadow-[0_0_50px_rgba(212,175,55,0.05)]">
-            <h1 className="text-3xl font-black text-zinc-600 mb-10 italic tracking-widest">GGSOC_2026</h1>
-            <input id="u" placeholder="聯絡手機" className="mb-4" />
-            <input id="p" type="password" placeholder="通行代碼" className="mb-8" />
-            <button onClick={() => {setUser({name:'測試司機'}); setView('dash');}} className="w-full py-5 bg-zinc-900 rounded-2xl font-black text-zinc-500 border border-white/5 btn-active">進入中心</button>
-          </div>
-        </div>
-      );
+            useEffect(() => {
+                scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages, isTyping]);
 
-      return (
-        <div className="min-h-screen p-6 pb-24 max-w-md mx-auto relative no-scrollbar">
-          {/*Header：會計部最高威權 */}
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h2 className="text-xl font-black italic tracking-tighter text-zinc-400">GGSOC_會計部</h2>
-              <p className="text-[9px] text-amber-700 font-mono tracking-widest status-pulse">● FINANCE_AUTHORITY_ACTIVE</p>
-            </div>
-            <button onClick={() => setView('chat')} className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-xl btn-active border border-white/5">{agent.icon}</button>
-          </div>
-
-          {/*導覽分頁 */}
-          <div className="flex gap-2 mb-8 bg-zinc-900/50 p-2 rounded-2xl border border-white/5">
-            {['dash','payroll','vault'].map(t => (
-              <button key={t} onClick={()=>setView(t)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest ${view===t?'bg-amber-600 text-black':'text-zinc-600'}`}>{t}</button>
-            ))}
-          </div>
-
-          {/* 1. 下班結算確權 (含 AI 影像審核 + 簽名) */}
-          {view === 'dash' && (
-            <div className="space-y-6 relative">
-              {!snap ? (
-                <div className="space-y-6">
-                  <div className="accounting-gold p-6 rounded-r-3xl">
-                    <h3 className="text-sm font-black text-amber-500 mb-2 italic">STEP 1: 實體報表確權</h3>
-                    <p className="text-[10px] text-zinc-500">請對準今日結算單據，拍照後將由 **核心 AI ** 執行首要審核。</p>
-                  </div>
-                  <video ref={videoRef} autoPlay playsInline className="camera-live shadow-2xl" />
-                  <button onClick={()=>{startCam(); setTimeout(capture, 1500);}} className="w-full py-6 bg-zinc-900 border border-amber-600/30 rounded-[2.5rem] font-black text-amber-600 btn-active italic">📸 啟動行政拍照存證 (含 AI 審核)</button>
-                </div>
-              ) : (
-                <div className="space-y-6 animate-[fadeIn_0.5s] relative">
-                  <img src={snap} className="w-full rounded-[2.5rem] border border-zinc-800" />
-                  
-                  {/* --- 🤖 AI 審核狀態與對話泡泡 (重型 UI) --- */}
-                  <div className="glass p-6 rounded-[2.5rem] border border-white/5 shadow-inner">
-                      {aiReviewStatus === 'reviewing' && (
-                        <div className="flex gap-3 items-start animate-[fadeIn_0.3s]">
-                          <span className="text-xl">{agent.icon}</span>
-                          <div>
-                            <p className="text-[10px] font-black text-blue-500 italic">萬事通_{agent.name} (AI 分析中)</p>
-                            <p className="text-xs text-zinc-400 mt-1 typing">核心 AI 正在對影像執行 360 度核對與數位指紋嵌入...</p>
-                          </div>
+            if (step === 'gate') return (
+                <div className="h-screen flex items-center justify-center p-6 bg-[#050505]">
+                    <div className="w-full max-w-sm glass p-10 border-zinc-800 shadow-2xl">
+                        <h2 className="text-zinc-600 text-[10px] tracking-[0.5em] font-black mb-12 uppercase">GGSOC_2026_GATE</h2>
+                        <div className="space-y-6">
+                            <input value={name} onChange={e => setName(e.target.value)} placeholder="您的大名" className="w-full bg-zinc-900/50 border-none p-5 rounded-2xl text-white placeholder-zinc-700 outline-none focus:ring-1 focus:ring-zinc-700 transition-all" />
+                            <input placeholder="聯絡電話" className="w-full bg-zinc-900/50 border-none p-5 rounded-2xl text-white placeholder-zinc-700 outline-none focus:ring-1 focus:ring-zinc-700 transition-all" />
+                            <button onClick={handleStart} className="w-full bg-white text-black font-black py-5 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:scale-[1.02] active:scale-[0.98] transition-all">開始接單</button>
                         </div>
-                      )}
-                      {aiReviewStatus === 'passed' && (
-                        <div className="flex gap-3 items-start animate-[fadeIn_0.3s]">
-                          <span className="text-xl">✅</span>
-                          <div>
-                            <p className="text-[10px] font-black text-emerald-500 italic">GGSOC AI 審核通過</p>
-                            <p className="text-xs text-zinc-400 mt-1">影像清晰，無偽造跡象。行政編號 {agent.id} 已完成指紋嵌入。請完成下方確認簽名。</p>
-                          </div>
-                        </div>
-                      )}
-                  </div>
-
-                  {/*確權簽名 (含模擬審核阻塞邏輯) */}
-                  <div className={`glass p-7 rounded-[2.5rem] border-white/5 border ${aiReviewStatus !== 'passed' ? 'opacity-30' : ''}`}>
-                    <p className="text-[10px] text-zinc-500 mb-4 font-black italic uppercase">STEP 2: 本人數據確認簽章 (AI 審核通過後解鎖)</p>
-                    <canvas ref={canvasRef} width={320} height={160} className="sig-canvas w-full" 
-                      onTouchStart={(e)=>{if(aiReviewStatus !== 'passed') return; e.preventDefault(); const x=canvasRef.current.getContext('2d'); x.strokeStyle='#d4af37'; x.lineWidth=3; x.beginPath();}}
-                      // touchAction property should be applied on the component/element to prevent scrolling while drawing
-                      style={{touchAction: 'none'}}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <button 
-                      onClick={()=>{if(aiReviewStatus !== 'passed') return; alert('確權數據已加密送往會計部金庫。'); setSnap(null); setAiReviewStatus(null); setView('vault');}} 
-                      className={`bg-emerald-900/20 text-emerald-500 py-6 rounded-3xl font-black btn-active border border-emerald-500/20 ${aiReviewStatus !== 'passed' ? 'opacity-30' : ''}`}
-                      disabled={aiReviewStatus !== 'passed'}
-                    >🟢 完成確權</button>
-                    <button onClick={()=>{setSnap(null); setAiReviewStatus(null);}} className="bg-zinc-900 py-6 rounded-3xl font-black text-zinc-500 btn-active">重拍</button>
-                  </div>
+                    </div>
                 </div>
-              )}
-            </div>
-          )}
+            );
 
-          {/* 2. 薪資條調閱 (不簡化版) */}
-          {view === 'payroll' && (
-            <div className="space-y-6 animate-[fadeIn_0.3s]">
-               <div className="glass p-8 rounded-[3rem] border-amber-600/10 border">
-                 <h3 className="text-xl font-black text-amber-500 mb-6 italic">2026/03 薪資明細</h3>
-                 <div className="space-y-4 text-xs font-bold text-zinc-500">
-                    <div className="flex justify-between"><span>勞務總額 (Gross)</span><span className="text-white">$38,500</span></div>
-                    <div className="flex justify-between text-rose-500"><span>勞保/健保扣除</span><span>-$1,137</span></div>
-                    <div className="flex justify-between text-orange-400"><span>二代健保 (2.11%)</span><span>-$812</span></div>
-                    <div className="pt-4 border-t border-white/5 flex justify-between text-2xl text-emerald-400 font-black italic tracking-tighter">
-                      <span>實領淨額</span><span>$36,551</span>
+            if (step === 'chat') return (
+                <div className="h-screen flex flex-col p-6 bg-[#050505]">
+                    <div className="flex-1 overflow-y-auto space-y-6 pb-20">
+                        {messages.map((m, i) => (
+                            <div key={i} className={`flex flex-col ${m.fromUser ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-2 duration-500`}>
+                                <span className="text-[10px] text-zinc-600 mb-2 ml-2 uppercase tracking-tighter">{m.fromUser ? '你' : '老陳 (812)'}</span>
+                                <div className={`${m.fromUser ? 'bg-white text-black rounded-tr-none' : 'bg-zinc-900 text-zinc-200 rounded-tl-none border border-white/5'} p-5 rounded-3xl text-sm leading-relaxed shadow-lg`}>
+                                    {m.text}
+                                </div>
+                                {m.isQuestion && (
+                                    <div className="mt-4 flex gap-3">
+                                        <button onClick={() => { setMessages(prev => [...prev, {text: "沒問題啦，老陳你處理就好", fromUser: true}]); runChat(messages.length + 1); }} className="bg-zinc-800 border border-zinc-700 text-zinc-300 px-5 py-2.5 rounded-full text-xs hover:bg-zinc-700">沒問題</button>
+                                        <button onClick={() => { setMessages(prev => [...prev, {text: "知道，電腦算好就好", fromUser: true}]); runChat(messages.length + 1); }} className="bg-zinc-800 border border-zinc-700 text-zinc-300 px-5 py-2.5 rounded-full text-xs hover:bg-zinc-700">知道了</button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        {isTyping && (
+                            <div className="flex items-center gap-1.5 p-5 bg-zinc-900/30 rounded-3xl w-20">
+                                <div className="typing-dot" style={{animationDelay: '0s'}}></div>
+                                <div className="typing-dot" style={{animationDelay: '0.2s'}}></div>
+                                <div className="typing-dot" style={{animationDelay: '0.4s'}}></div>
+                            </div>
+                        )}
+                        <div ref={scrollRef} />
                     </div>
-                 </div>
-               </div>
-               <p className="text-[9px] text-zinc-700 italic px-4">
-                 根據 2026 財務準則：$$Net = (Gross - Labor - Health) - \lceil Gross \times 2.11\% \rceil$$
-               </p>
-               <button className="w-full py-5 bg-emerald-600 rounded-2xl font-black btn-active shadow-lg shadow-emerald-900/20">✔️ 確認薪資發放無誤</button>
-            </div>
-          )}
+                </div>
+            );
 
-          {/* 3. 個人資料保存金庫 */}
-          {view === 'vault' && (
-            <div className="space-y-4 animate-[fadeIn_0.3s]">
-               <h3 className="text-sm font-black text-zinc-500 italic mb-4">DEEP_ARCHIVE: 歷史存證</h3>
-               {[1, 2].map(i => (
-                 <div key={i} className="glass p-6 rounded-3xl border-white/5 border flex justify-between items-center">
-                    <div><p className="text-xs font-black">2026-03-{10+i} 確權檔</p><p className="text-[9px] text-zinc-700 font-mono">HASH: 7a8b...f2e1</p></div>
-                    <span className="text-[9px] bg-zinc-900 px-2 py-1 rounded text-blue-500">已鎖定</span>
-                 </div>
-               ))}
-               <p className="text-[8px] text-zinc-800 text-center mt-10 tracking-[0.3em] font-mono">ENCRYPTED EVIDENCE VAULT</p>
-            </div>
-          )}
+            if (step === 'sign') return (
+                <div className="h-screen flex items-center justify-center p-6 bg-[#050505]">
+                    <div className="w-full max-w-sm rounded-heavy glass p-10 text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+                        <span className="text-zinc-600 font-black italic tracking-widest text-[10px] uppercase">夥伴領錢確認</span>
+                        <div className="my-10 space-y-2">
+                            <p className="text-zinc-500 text-xs">本次實領總額</p>
+                            <p className="text-5xl font-black text-white">$9,789</p>
+                            <p className="text-[10px] text-zinc-600 mt-2 italic">已由電腦自動處理 2.11% 政府規費</p>
+                        </div>
+                        <div className="w-full h-48 signature-pad rounded-3xl border border-zinc-800/50 flex items-center justify-center text-zinc-700 text-xs mb-8 shadow-inner">
+                            [ 大哥，有空順手劃個名 ]
+                        </div>
+                        <button onClick={() => setStep('done')} className="w-full bg-white text-black font-black py-5 rounded-full shadow-2xl active:scale-95 transition-all">確認入帳</button>
+                        <p className="mt-6 text-[9px] text-zinc-800 font-mono tracking-tighter">
+                            $$Net = (Gross - Labor - Health) - \lceil Gross \times 2.11\% \rceil$$
+                        </p>
+                    </div>
+                </div>
+            );
 
-          {/* 4. 萬事通服務中心 (隨扈對話) */}
-          {view === 'chat' && (
-            <div className="fixed inset-0 bg-black z-[9999] p-6 flex flex-col no-scrollbar overflow-y-auto">
-               <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
-                 <div className="flex items-center gap-3">
-                    <span className="text-2xl">{agent.icon}</span>
-                    <div>
-                      <h4 className="text-sm font-black text-blue-500">萬事通_{agent.name}</h4>
-                      <p className="text-[9px] text-zinc-600">行政中心編號: {agent.id}</p>
+            return (
+                <div className="h-screen flex items-center justify-center p-10 text-center bg-[#050505]">
+                    <div className="animate-in zoom-in duration-700">
+                        <div className="text-7xl mb-8">☕</div>
+                        <h2 className="text-2xl font-black text-white">謝啦，大哥！</h2>
+                        <p className="text-zinc-500 text-sm mt-4 leading-relaxed">錢發下去了，這幾天再去刷本子就好。<br/>辛苦了，開車小心喔！</p>
+                        <button onClick={() => window.location.reload()} className="mt-12 text-zinc-700 text-[10px] uppercase tracking-widest border-b border-zinc-800 pb-1">返回門戶</button>
                     </div>
-                 </div>
-                 <button onClick={()=>setView('dash')} className="text-zinc-600 text-[10px] font-black">EXIT</button>
-               </div>
-               <div className="flex-1 overflow-y-auto space-y-4 mb-6 chat-content">
-                 <div className="flex justify-start">
-                    <div className="bg-zinc-900 p-5 rounded-r-3xl rounded-tl-3xl text-xs text-zinc-400 border border-white/5 shadow-xl max-w-[80%]">
-                        您好，我是行政編號 {agent.id} 的 {agent.name}。會計部已交派我處理您的請求。請詳述問題，系統將自動同步至財務總帳。
-                    </div>
-                 </div>
-               </div>
-               <div className="flex gap-2 p-2 bg-zinc-900 rounded-2xl mt-auto">
-                 <input className="flex-1 bg-transparent p-3 text-xs outline-none" placeholder="輸入傳令或回報..." />
-                 <button onClick={()=>alert('已轉呈會計部核定。')} className="bg-blue-600 px-6 rounded-xl font-black text-xs btn-active italic">發送</button>
-               </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
 </body>
 </html>
