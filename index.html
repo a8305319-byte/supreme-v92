@@ -810,11 +810,31 @@ function AppWrapper() {
   );
 }
 
-// 🚀 最終發動
+// ==========================================
+// 🚀 最終發動引擎 (確保所有組件名稱正確連線)
+// ==========================================
+
+// 🛡️ 錯誤攔截器：防止任何細微錯誤導致黑屏
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError(error) { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return <div className="h-screen bg-rose-950 flex items-center justify-center font-black text-white">🚨 核心引擎異常，請重新整頁</div>;
+    return this.props.children;
+  }
+}
+
 try {
-  createRoot(document.getElementById('root')).render(<ErrorBoundary><AppWrapper /></ErrorBoundary>);
+  const container = document.getElementById('root');
+  const root = ReactDOM.createRoot(container);
+  root.render(
+    <ErrorBoundary>
+      <AppWrapper />
+    </ErrorBoundary>
+  );
+  console.log("⚡ GGSOC 核心引擎已正式點火！");
 } catch (err) {
-  console.error("底層引擎啟動失敗:", err);
+  console.error("❌ 底層引擎啟動崩潰:", err);
 }
 </script>
 </body>
