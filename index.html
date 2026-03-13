@@ -44,43 +44,61 @@
     const auth = getAuth(app);
     const appId = 'ggsoc-trinity-master-v1';
 
-    // 🤖 AI 總裁特助組件
-    const LocalLogisticsAI = ({ data }) => {
-      const [q, setQ] = useState("");
-      const [ans, setAns] = useState("");
-      const [loading, setLoading] = useState(false);
-      const [show, setShow] = useState(false);
+   // 🤖 AI 總裁特助組件 (雙模組完全體)
+const LocalLogisticsAI = ({ data }) => {
+  const [q, setQ] = useState("");
+  const [ans, setAns] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
 
-      const diagnostic = async () => {
-  setLoading(true);
-  try {
-    const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      systemInstruction: "你是在地物流的老闆特助。請分析數據並回報：1. 今日 COD 總金額。2. 異常司機名單與原因。3. 表現最穩定的前三名。請用條列式，語氣要精煉、霸氣，像是在跟總裁匯報。"
-    });
-    // 這裡我多幫你加了一個安全檢查，防止 data 是空的
-    const res = await model.generateContent(`目前全體司機數據快照：${JSON.stringify(data || [])}`);
-    setAns(res.response.text());
-  } catch (e) {
-    setAns("報告總裁：AI 能量不足，請檢查連線或金鑰。");
-  }
-  setLoading(false);
+  // 模式 1：針對你的提問回答 (原本的 askAI)
+  const handleAsk = async () => {
+    if (!q || loading) return;
+    setLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
+      setAns(res.response.text());
+    } catch (e) { setAns("報告總裁：連線異常。"); }
+    setLoading(false);
+  };
+
+  // 模式 2：主動戰情診斷 (一鍵分析)
+  const diagnostic = async () => {
+    setLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: "你是在地物流的老闆特助。請根據數據回報：1.今日 COD 總額 2.異常名單 3.經營建議。語氣要精煉霸氣。"
+      });
+      const res = await model.generateContent(`數據：${JSON.stringify(data || [])}`);
+      setAns(res.response.text());
+    } catch (e) { setAns("診斷模組異常。"); }
+    setLoading(false);
+  };
+
+  if (!show) return <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>;
+
+  return (
+    <div className="animate-zoom" style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-xs text-blue-400 font-bold">GGSOC AI 總助</span>
+        <button onClick={() => setShow(false)} className="text-slate-400">✕</button>
+      </div>
+      
+      <input className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-white text-sm mb-2" value={q} onChange={e => setQ(e.target.value)} placeholder="輸入特定指令..." />
+      
+      <div className="flex gap-2 mb-2">
+        <button onClick={handleAsk} className="flex-1 py-2 bg-blue-600 rounded-lg font-bold text-xs" disabled={loading}>問 AI</button>
+        <button onClick={diagnostic} className="flex-1 py-2 bg-emerald-600 rounded-lg font-bold text-xs" disabled={loading}>⚡診斷</button>
+      </div>
+
+      {ans && <div className="mt-3 text-[11px] bg-black/30 p-2 rounded-lg max-h-48 overflow-y-auto leading-relaxed border border-white/5 whitespace-pre-wrap">{ans}</div>}
+    </div>
+  );
 };
-      if (!show) return <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>;
-
-      return (
-        <div className="animate-zoom" style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-xs text-blue-400 font-bold">GGSOC AI 助理</span>
-            <button onClick={() => setShow(false)} className="text-slate-400">✕</button>
-          </div>
-          <input className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-white text-sm mb-2" value={q} onChange={e => setQ(e.target.value)} placeholder="分析數據..." />
-          <button onClick={askAI} className="w-full py-2 bg-blue-600 rounded-lg font-bold text-sm" disabled={loading}>{loading ? "..." : "問 AI"}</button>
-          {ans && <div className="mt-3 text-[11px] bg-black/30 p-2 rounded-lg max-h-32 overflow-y-auto leading-relaxed border border-white/5">{ans}</div>}
-        </div>
-      );
-    };
 
     // 🛡️ 錯誤攔截器
     class ErrorBoundary extends React.Component {
