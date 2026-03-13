@@ -78,7 +78,7 @@ const showToast = (msg, isError = false) => {
 };
 
 // ==========================================
-// 💬 修護補齊：對話框組件 (ChatModal)
+// 💬 對話框組件 (ChatModal)
 // ==========================================
 function ChatModal({ target, currentUserRole, onClose }) {
   if (!target) return null;
@@ -95,7 +95,7 @@ function ChatModal({ target, currentUserRole, onClose }) {
 }
 
 // ==========================================
-// 📊 修護補齊：財務與審核詳情組件 (包含 2026 勞健保新制)
+// 📊 財務與審核詳情組件 (包含 2026 勞健保新制)
 // ==========================================
 function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
   const [tab, setTab] = useState('finance');
@@ -251,7 +251,7 @@ function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
 }
 
 // ==========================================
-// 👑 營運指揮中心 (2026 終極強化校驗版)
+// 👑 營運指揮中心 (AdminHub)
 // ==========================================
 function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeGodLog, globalSettings }) {
   const [adminTab, setAdminTab] = useState('formal'); 
@@ -262,7 +262,7 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
   const [isSyncing, setIsSyncing] = useState(false);
   const [showAiCopilot, setShowAiCopilot] = useState(false);
 
-  // 🛡️ 數據層：隱身過濾與黑名單攔截 (強化校驗)
+  // 🛡️ 數據層：隱身過濾與黑名單攔截
   const filteredList = useMemo(() => {
     if (!partners) return [];
     let list = partners.filter(p => p.phone !== '0976017938');
@@ -271,6 +271,28 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
     }
     return list;
   }, [partners, globalSettings?.ghost_mode]);
+
+  // 🤖 智慧 AI 戰情分析與風險預測模型
+  const aiInsights = useMemo(() => {
+    if (!filteredList || !filteredList.length) {
+      return { topDriver: null, conflictCount: 0, zeroYield: [], riskList: [] };
+    }
+    const active = filteredList.filter(p => p.status === 'approved');
+    const top = active.reduce((p, c) => {
+      const pScore = (Number(p.total_del)||0) + (Number(p.total_pkp)||0);
+      const cScore = (Number(c.total_del)||0) + (Number(c.total_pkp)||0);
+      return pScore > cScore ? p : c;
+    }, active[0] || null);
+    
+    const zero = active.filter(x => ((Number(x.total_del)||0) + (Number(x.total_pkp)||0)) === 0);
+    const conflicts = filteredList.filter(x => x.has_conflict);
+    const riskList = active.filter(x => 
+      x.salary_status === 'disputed' || 
+      (x.has_conflict && ((Number(x.total_del)||0) + (Number(x.total_pkp)||0) < 10))
+    );
+
+    return { topDriver: top, conflictCount: conflicts.length, zeroYield: zero, riskList };
+  }, [filteredList]);
 
   // 🤖 核心控制：全域開關同步
   const handleToggleSwitch = async (field, currentValue) => {
@@ -288,7 +310,7 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
     }
   };
 
-  // 🤖 AI 自動駕駛 (Auto-Pilot) 邏輯補齊
+  // 🤖 AI 自動駕駛 (Auto-Pilot)
   useEffect(() => {
     if (globalSettings?.ai_auto_pilot && authRole === 'super_admin') {
       const autoTask = async () => {
@@ -333,10 +355,56 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
           </div>
         </div>
         <div className="flex gap-2 w-full xl:w-auto">
-          <button onClick={()=>setMT('tools')} className="flex-1 xl:flex-none bg-[#0a0a0a] border border-white/5 px-6 py-3 rounded-xl text-xs text-white hover:bg-slate-900 transition-all"><Settings size={16}/> 系統工具箱</button>
+          {authRole === 'super_admin' && (
+            <button onClick={()=>setShowAiCopilot(!showAiCopilot)} className={`flex-1 xl:flex-none border px-6 py-3 rounded-xl text-xs transition-all ${showAiCopilot ? 'bg-cyan-600/30 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'bg-slate-800 border-white/10 text-cyan-500'}`}>🤖 AI 戰情分析</button>
+          )}
+          <button onClick={()=>setMT('tools')} className="flex-1 xl:flex-none bg-[#0a0a0a] border border-white/5 px-6 py-3 rounded-xl text-xs text-white hover:bg-slate-900 transition-all"><Settings size={16}/> 系統工具</button>
           <button onClick={onLogout} className="flex-1 xl:flex-none bg-rose-950/20 text-rose-500 px-6 py-3 rounded-xl text-xs border border-rose-500/10">安全退出</button>
         </div>
       </div>
+
+      {/* 🤖 智慧 AI 戰情分析面板 (OLED 純黑科技版) */}
+      {showAiCopilot && (
+        <div className="glass-panel p-6 md:p-8 rounded-[2.5rem] mb-6 border border-cyan-500/30 bg-cyan-950/10 shadow-[0_0_40px_rgba(6,182,212,0.1)] animate-zoom relative overflow-hidden">
+          <div className="scan-line bg-cyan-500/50 shadow-[0_0_15px_#06b6d4]"></div>
+          
+          <div className="flex justify-between items-start mb-8 relative z-10 border-b border-cyan-500/20 pb-4">
+            <div className="flex items-center gap-4">
+              <Bot size={36} className="text-cyan-400 animate-pulse drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+              <div>
+                <h3 className="text-xl text-cyan-300 font-black tracking-[0.2em] italic uppercase">AI Copilot / 核心分析引擎</h3>
+                <p className="text-[10px] text-slate-400 font-mono mt-1">NEURAL_NETWORK_ACTIVE // 實時數據深度掃描中...</p>
+              </div>
+            </div>
+            <button onClick={() => setShowAiCopilot(false)} className="text-cyan-500 hover:text-white transition-colors bg-cyan-950/30 p-2 rounded-full border border-cyan-500/30"><X size={16}/></button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative z-10">
+            <div className="bg-[#050505] p-6 rounded-3xl border border-white/5 relative overflow-hidden group hover:border-blue-500/30 transition-colors">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-bl-full -z-10 group-hover:bg-blue-500/20 transition-colors"></div>
+              <p className="text-[10px] text-blue-500 mb-3 uppercase font-black tracking-widest flex items-center gap-2"><Star size={12}/> 最佳效能實體</p>
+              <p className="text-3xl text-white italic font-black mb-1">{aiInsights.topDriver ? aiInsights.topDriver.name : 'NO_DATA'}</p>
+              <p className="text-[10px] text-slate-500 font-mono tracking-widest">
+                貢獻總件數: <span className="text-blue-400">{aiInsights.topDriver ? (Number(aiInsights.topDriver.total_del||0) + Number(aiInsights.topDriver.total_pkp||0)) : 0}</span> 件
+              </p>
+            </div>
+
+            <div className="bg-[#050505] p-6 rounded-3xl border border-white/5 relative overflow-hidden group hover:border-amber-500/30 transition-colors">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full -z-10 group-hover:bg-amber-500/20 transition-colors"></div>
+              <p className="text-[10px] text-amber-500 mb-3 uppercase font-black tracking-widest flex items-center gap-2"><Alert size={12}/> 系統異常警示</p>
+              <p className="text-3xl text-white italic font-black mb-1">{aiInsights.conflictCount} <span className="text-sm text-slate-600 not-italic font-mono">CASES</span></p>
+              <p className="text-[10px] text-slate-500 font-mono tracking-widest">未排除之衝突報備與攔截</p>
+            </div>
+
+            <div className="bg-[#050505] p-6 rounded-3xl border border-rose-500/20 relative overflow-hidden group hover:border-rose-500/50 shadow-[inset_0_0_20px_rgba(225,29,72,0.05)] transition-colors">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-bl-full -z-10 group-hover:bg-rose-500/20 transition-colors"></div>
+              <p className="text-[10px] text-rose-500 mb-3 uppercase font-black tracking-widest flex items-center gap-2"><Skull size={12}/> AI 高風險預測</p>
+              <p className="text-3xl text-rose-400 italic font-black mb-1">{aiInsights.riskList.length} <span className="text-sm text-rose-900 not-italic font-mono">TARGETS</span></p>
+              <p className="text-[10px] text-slate-500 font-mono tracking-widest">產出極低且具備潛在流失/造假風險</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 戰情頁籤與搜尋 */}
       <div className="glass-panel p-5 rounded-[2.5rem] mb-6 space-y-4">
