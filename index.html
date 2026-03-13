@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GGSOC 2026 夥伴行政中心</title>
+    <title>GGSOC 2026 夥伴領錢區</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { background-color: #f1f5f9; color: #1e293b; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
-        .card-shadow { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03); }
+        body { background-color: #f8fafc; color: #334155; font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+        .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04); }
         .typing-dot { width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; animation: blink 1.4s infinite; }
         @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-        .rounded-super { border-radius: 2rem; }
+        .rounded-super { border-radius: 1.5rem; }
     </style>
 </head>
 <body>
@@ -29,22 +29,23 @@
             const [messages, setMessages] = useState([]);
             const scrollRef = useRef(null);
 
+            // 台灣在地語氣腳本
             const chatScript = [
-                { text: `大哥好！我是老陳。看到您加入系統了，我先幫您登記一下。`, delay: 2000 },
-                { text: "現在政府規定的二代健保 2.11%，電腦結算時會自動代繳，這點要請您留意一下。電腦算好大家都省事，您應該能理解吧？", delay: 4000, isQuestion: true },
-                { text: "另外，有時候照片拍得比較模糊，我會請您補一張，這也是為了讓會計部審核快一點，錢才領得順。可以體諒一下吧？", delay: 3500, isQuestion: true },
-                { text: "沒問題！我看您的資料都對了。我把這單的金額放在下一頁，您有空對一下數字，沒問題順手簽個名就好。辛苦了！", delay: 3000 }
+                { text: `大哥你好！我是老陳啦。剛看到你進來了，我先幫你登記一下喔。這陣子跑車辛苦了！`, delay: 2000 },
+                { text: "現在政府規定那個二代健保 2.11%，電腦算帳的時候會直接扣掉，這點要請你多包涵啦。大家求個方便，電腦算一算你也省心，對吧？", delay: 4500, isQuestion: true },
+                { text: "還有喔，有時候拍照拍得比較糊，我會叫你重傳一張，這是為了讓會計那邊快一點發錢，不然大家等錢入帳也很煩。再請你配合一下嘿？", delay: 3500, isQuestion: true },
+                { text: "好啦！我看數字都沒問題。我把這次領的錢放在下一頁，你有空對一下看對不對，對的話順手劃個名就好。不急，休息再弄！", delay: 3000 }
             ];
 
             const handleStart = () => {
-                if (!name) return alert("請輸入您的大名");
+                if (!name) return alert("大哥，名字填一下啦！");
                 setStep('chat');
                 runChat(0);
             };
 
             const runChat = (index) => {
                 if (index >= chatScript.length) {
-                    setTimeout(() => setStep('sign'), 2000);
+                    setTimeout(() => setStep('sign'), 2500);
                     return;
                 }
                 setIsTyping(true);
@@ -63,40 +64,45 @@
 
             if (step === 'gate') return (
                 <div className="min-h-screen flex items-center justify-center p-6">
-                    <div className="w-full max-w-sm bg-white p-10 rounded-super card-shadow border border-slate-100">
-                        <div className="mb-10 text-center">
-                            <div className="text-3xl mb-2">🏢</div>
-                            <h2 className="text-slate-800 text-lg font-bold tracking-tight">夥伴行政服務</h2>
-                            <p className="text-slate-400 text-xs mt-1">GGSOC 2026 OFFICIAL</p>
+                    <div className="w-full max-w-sm bg-white p-8 rounded-super card-shadow">
+                        <div className="mb-8 text-center">
+                            <h2 className="text-slate-900 text-xl font-bold italic tracking-tight">GGSOC 2026 領錢中心</h2>
+                            <p className="text-slate-400 text-[10px] mt-1 tracking-widest uppercase">Driver Service Portal</p>
                         </div>
                         <div className="space-y-4">
-                            <input value={name} onChange={e => setName(e.target.value)} placeholder="您的大名" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                            <input placeholder="聯絡電話" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                            <button onClick={handleStart} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 active:scale-95 transition-all mt-4">進入系統</button>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-500 ml-1">怎麼稱呼</label>
+                                <input value={name} onChange={e => setName(e.target.value)} placeholder="例：王小明" className="w-full bg-slate-50 border border-slate-100 p-4 rounded-xl text-slate-800 outline-none focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-500 ml-1">手機號碼</label>
+                                <input placeholder="09XX-XXX-XXX" className="w-full bg-slate-50 border border-slate-100 p-4 rounded-xl text-slate-800 outline-none focus:border-blue-500 transition-all" />
+                            </div>
+                            <button onClick={handleStart} className="w-full bg-blue-600 text-white font-bold py-4 rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all mt-6">進入系統領錢</button>
                         </div>
                     </div>
                 </div>
             );
 
             if (step === 'chat') return (
-                <div className="min-h-screen flex flex-col p-6 bg-slate-50">
-                    <div className="flex-1 overflow-y-auto space-y-4 pb-20">
+                <div className="min-h-screen flex flex-col p-4 bg-slate-50">
+                    <div className="flex-1 overflow-y-auto space-y-4 pb-20 pt-4">
                         {messages.map((m, i) => (
                             <div key={i} className={`flex flex-col ${m.fromUser ? 'items-end' : 'items-start'}`}>
-                                {!m.fromUser && <span className="text-[10px] text-slate-400 mb-1 ml-2 font-bold uppercase">系統管理員 - 老陳</span>}
-                                <div className={`${m.fromUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-700 rounded-tl-none border border-slate-200'} p-4 rounded-2xl text-sm leading-relaxed shadow-sm`}>
+                                {!m.fromUser && <span className="text-[10px] text-slate-400 mb-1 ml-2 font-bold">後台小編 - 老陳</span>}
+                                <div className={`${m.fromUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-700 rounded-tl-none shadow-sm'} p-4 rounded-2xl text-[15px] leading-relaxed max-w-[85%]`}>
                                     {m.text}
                                 </div>
                                 {m.isQuestion && (
                                     <div className="mt-3 flex gap-2">
-                                        <button onClick={() => { setMessages(prev => [...prev, {text: "沒問題，辛苦了", fromUser: true}]); runChat(messages.length + 1); }} className="bg-white border border-slate-200 text-blue-600 px-4 py-2 rounded-full text-xs font-bold hover:bg-slate-50 shadow-sm">沒問題</button>
-                                        <button onClick={() => { setMessages(prev => [...prev, {text: "好的，了解規矩", fromUser: true}]); runChat(messages.length + 1); }} className="bg-white border border-slate-200 text-blue-600 px-4 py-2 rounded-full text-xs font-bold hover:bg-slate-50 shadow-sm">了解</button>
+                                        <button onClick={() => { setMessages(prev => [...prev, {text: "沒問題，辛苦了", fromUser: true}]); runChat(messages.length + 1); }} className="bg-white border border-slate-200 text-blue-600 px-5 py-2.5 rounded-full text-xs font-bold shadow-sm">沒問題啦</button>
+                                        <button onClick={() => { setMessages(prev => [...prev, {text: "好的，知道規矩", fromUser: true}]); runChat(messages.length + 1); }} className="bg-white border border-slate-200 text-blue-600 px-5 py-2.5 rounded-full text-xs font-bold shadow-sm">OK 了解</button>
                                     </div>
                                 )}
                             </div>
                         ))}
                         {isTyping && (
-                            <div className="flex items-center gap-1.5 p-4 bg-white rounded-2xl w-16 shadow-sm border border-slate-100">
+                            <div className="flex items-center gap-1.5 p-4 bg-white rounded-2xl w-16 shadow-sm border border-slate-50">
                                 <div className="typing-dot" style={{animationDelay: '0s'}}></div>
                                 <div className="typing-dot" style={{animationDelay: '0.2s'}}></div>
                                 <div className="typing-dot" style={{animationDelay: '0.4s'}}></div>
@@ -109,27 +115,27 @@
 
             if (step === 'sign') return (
                 <div className="min-h-screen flex items-center justify-center p-6">
-                    <div className="w-full max-w-sm bg-white rounded-super p-10 text-center card-shadow border border-slate-100">
-                        <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold text-[10px] uppercase">當次結算報表</span>
+                    <div className="w-full max-w-sm bg-white rounded-3xl p-8 text-center card-shadow">
+                        <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold text-[10px]">這次領的錢</span>
                         <div className="my-8">
-                            <p className="text-slate-400 text-xs">本次實領總額</p>
-                            <p className="text-4xl font-black text-slate-900 mt-1">$9,789</p>
-                            <p className="text-[10px] text-slate-400 mt-2">含電腦自動扣除之行政規費 (2.11%)</p>
+                            <p className="text-slate-400 text-xs">實拿總額</p>
+                            <p className="text-5xl font-black text-slate-900 mt-2">$9,789</p>
+                            <p className="text-[10px] text-slate-400 mt-3 font-medium">電腦已經幫你扣好 2.11% 健保了</p>
                         </div>
-                        <div className="w-full h-40 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 text-xs mb-6 font-medium">
-                            [ 請在此處簽名確認 ]
+                        <div className="w-full h-40 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100 flex items-center justify-center text-slate-300 text-sm font-bold mb-6 italic">
+                            [ 大哥，有空順手劃個名 ]
                         </div>
-                        <button onClick={() => setStep('done')} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all">確認領取</button>
+                        <button onClick={() => setStep('done')} className="w-full bg-blue-600 text-white font-bold py-4 rounded-full shadow-lg active:scale-95 transition-all">確認領錢</button>
                     </div>
                 </div>
             );
 
             return (
                 <div className="min-h-screen flex items-center justify-center p-10 text-center">
-                    <div>
-                        <div className="text-6xl mb-6">✅</div>
-                        <h2 className="text-xl font-bold text-slate-800">登錄完成！</h2>
-                        <p className="text-slate-500 text-sm mt-2 leading-relaxed">感謝您的配合，<br/>錢已排入發放流程，祝您順心！</p>
+                    <div className="animate-in zoom-in duration-500">
+                        <div className="text-6xl mb-6">🤝</div>
+                        <h2 className="text-xl font-bold text-slate-800">搞定！謝啦大哥</h2>
+                        <p className="text-slate-500 text-sm mt-3 leading-relaxed">錢已經發下去了，<br/>這幾天再去刷本子就好。辛苦啦！</p>
                         <button onClick={() => window.location.reload()} className="mt-10 text-slate-400 text-xs font-bold underline underline-offset-4">回首頁</button>
                     </div>
                 </div>
