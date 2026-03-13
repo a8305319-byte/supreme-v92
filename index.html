@@ -28,23 +28,17 @@
 
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
 
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+ <!-- 1. 觸發按鈕 -->
+<button id="native-btn" class="..."> 📸 立即拍照 </button>
 
-  
+<!-- 2. 隱藏的原生相機呼叫器 (這行是喚醒手機相機的關鍵) -->
+<input type="file" id="native-camera-input" accept="image/*" capture="environment" class="hidden">
 
-  <style>
+<!-- 3. 拍攝結果展示 -->
+<img id="result-image" class="w-full hidden ..." alt="拍攝結果">
 
-    body { background-color: #020617; color: white; margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-
-    .custom-scrollbar::-webkit-scrollbar{width:6px;}
-
-    .custom-scrollbar::-webkit-scrollbar-thumb{background-color:rgba(59,130,241,0.5);border-radius:20px;}
-
-    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-
-    @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-
-    .animate-zoom { animation: zoomIn 0.2s ease-out forwards; }
+<!-- 4. 用於處理圖片轉換與壓縮的隱藏 Canvas -->
+<canvas id="hidden-canvas" class="hidden"></canvas>
 
     .loading-container { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
