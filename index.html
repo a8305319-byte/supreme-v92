@@ -38,16 +38,24 @@
   <script type="text/babel" data-type="module">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-// --- 2026 員工自付費用對照表 (精準對應 2026 法規) ---
+// --- 2026 員工自付費用對照表 (精準對應 2026 法規基本工資 29,500) ---
 const INSURANCE_TABLE_2026 = {
-  11100: { labor: 277, health: 458 },
-  28590: { labor: 715, health: 458 },
-  // ... 其他級距保留
+  29500: { labor: 679, health: 458 }, // 2026 基本工資起扣點
+  30300: { labor: 697, health: 470 },
+  31800: { labor: 731, health: 493 },
+  33300: { labor: 766, health: 517 },
+  34800: { labor: 800, health: 540 },
+  36300: { labor: 835, health: 563 },
+  38200: { labor: 879, health: 593 },
+  40100: { labor: 922, health: 622 },
+  42000: { labor: 966, health: 652 },
+  43900: { labor: 1010, health: 681 },
+  45800: { labor: 1053, health: 711 } // 勞保最高級距
 };
 
 // --- 核心組件：圖標引擎 ---
 const Ico = (e) => ({size=24, className=""}) => <span style={{fontSize: size+'px', lineHeight: 1}} className={className}>{e}</span>;
-const Package=Ico('📦'), Settings=Ico('⚙️'), Message=Ico('💬'), Banknote=Ico('💵'), Bot=Ico('🤖'), Shield=Ico('🛡️'), HistoryLog=Ico('📜'), Bell=Ico('🔔'), Support=Ico('🆘'), Calendar=Ico('📅'), Send=Ico('✈️'), X=Ico('❌'), Camera=Ico('📷'), Check=Ico('✅'), Alert=Ico('🚨'), Receipt=Ico('🧾'), LogOut=Ico('🚪'), Pen=Ico('🖋️'), Search=Ico('🔍'), Radio=Ico('📻'), FileText=Ico('📄'), Download=Ico('📥'), Eye=Ico('👁️'), Target=Ico('🎯'), User=Ico('👤'), Star=Ico('⭐'), Skull=Ico('💀');
+const Package=Ico('📦'), Settings=Ico('⚙️'), Message=Ico('💬'), Banknote=Ico('💵'), Bot=Ico('🤖'), Shield=Ico('🛡️'), HistoryLog=Ico('📜'), Bell=Ico('🔔'), Support=Ico('🆘'), Calendar=Ico('📅'), Send=Ico('✈️'), X=Ico('❌'), Camera=Ico('📷'), Check=Ico('✅'), Alert=Ico('🚨'), Receipt=Ico('🧾'), LogOut=Ico('🚪'), Pen=Ico('🖋️'), Search=Ico('🔍'), Radio=Ico('📻'), FileText=Ico('📄'), Download=Ico('📥'), Eye=Ico('👁️'), Target=Ico('🎯'), User=Ico('👤'), Star=Ico('⭐'), Skull=Ico('💀'), Heart=Ico('❤️');
 
 // --- 載入 Firebase 模組 ---
 const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
@@ -58,6 +66,189 @@ const { getAuth, signInAnonymously, onAuthStateChanged } = await import('https:/
 const app = initializeApp(window.firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+// --- 輔助函式：顯示提示 ---
+const showToast = (msg, isError = false) => {
+  const t = document.getElementById('global-toast');
+  if(!t) return;
+  t.innerText = msg;
+  t.className = `fixed top-10 left-1/2 -translate-x-1/2 px-10 py-5 rounded-full font-black z-[999999] shadow-2xl transition-all duration-500 ${isError ? 'bg-rose-600' : 'bg-blue-600'} text-white text-sm md:text-lg`;
+  t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
+  setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 3000);
+};
+
+// ==========================================
+// 💬 修護補齊：對話框組件 (ChatModal)
+// ==========================================
+function ChatModal({ target, currentUserRole, onClose }) {
+  if (!target) return null;
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 animate-zoom" onClick={onClose}>
+      <div className="bg-[#050505] border border-blue-500/30 p-6 rounded-[2rem] w-full max-w-sm text-center shadow-[0_0_30px_rgba(59,130,246,0.1)] relative" onClick={e=>e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white"><X size={16}/></button>
+        <Message size={48} className="text-blue-500 mx-auto mb-4" />
+        <h3 className="text-xl text-white italic font-black mb-2">通訊模組載入中...</h3>
+        <p className="text-xs text-slate-500">正在與實體 {target.name} ({target.phone}) 建立加密連線</p>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 📊 修護補齊：財務與審核詳情組件 (包含 2026 勞健保新制)
+// ==========================================
+function AdminDriverDetailModal({ partner, onClose, onUpdate, authRole }) {
+  const [tab, setTab] = useState('finance');
+  
+  // 財務狀態 (向下相容)
+  const [insuranceBracket, setInsuranceBracket] = useState(partner.insurance_bracket || "0");
+  const [dependents, setDependents] = useState(partner.dependents || 0);
+  const [enableSecGen, setEnableSecGen] = useState(partner.enable_sec_gen || false);
+  const [deductionAmount, setDeductionAmount] = useState(partner.current_deduction || "");
+  const [deductionReason, setDeductionReason] = useState(partner.deduction_reason || "");
+  const [bonusAmount, setBonusAmount] = useState(partner.current_bonus || "");
+  const [isTaskDone, setIsTaskDone] = useState(partner.task_5000_done || false);
+
+  const handleSaveFinance = () => {
+    // 2026 勞健保精算邏輯
+    const entry = INSURANCE_TABLE_2026[insuranceBracket] || { labor: 0, health: 0 };
+    const laborFee = entry.labor;
+    // 健保費 = 單人保費 * (1 + 眷屬人數)
+    const healthFee = Math.round(entry.health * (1 + Number(dependents)));
+    
+    // 獎金與基本盤計算
+    const finalBonus = Number(bonusAmount) + (isTaskDone ? 5000 : 0);
+    const baseIncome = (Number(partner.total_del)||0) * (partner.custom_del_price||15) + (Number(partner.total_pkp)||0) * (partner.custom_pkp_price||10);
+    
+    // 二代健保計算 (20,000 門檻, 費率 2.11%)
+    const totalForSecGen = baseIncome + finalBonus;
+    const secGenFee = enableSecGen && totalForSecGen >= 20000 ? Math.round(totalForSecGen * 0.0211) : 0;
+
+    const payload = {
+      current_deduction: Number(deductionAmount),
+      deduction_reason: deductionReason,
+      current_bonus: finalBonus,
+      task_5000_done: isTaskDone,
+      insurance_bracket: Number(insuranceBracket),
+      enable_sec_gen: enableSecGen,
+      dependents: Number(dependents),
+      labor_fee: laborFee,
+      health_fee: healthFee,
+      sec_gen_fee: secGenFee
+    };
+
+    if (authRole === 'super_admin') {
+      payload.salary_status = 'pending_sign';
+      showToast("⚡ 神諭降臨：財務結算已強制覆寫並放行");
+    } else {
+      showToast("✅ 2026 財務核算數據已存入草稿");
+    }
+    onUpdate(partner.id, null, payload);
+  };
+
+  if (!partner) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 animate-zoom" onClick={onClose}>
+      <div className="bg-[#050505] border border-blue-500/30 p-6 rounded-[2rem] w-full max-w-lg h-[85vh] flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,1)]" onClick={e=>e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-black rounded-full text-slate-500 hover:text-rose-500 transition-colors"><X size={20}/></button>
+        
+        {/* 頭部資訊 */}
+        <div className="mb-4 border-b border-white/5 pb-4">
+          <h3 className="text-2xl text-blue-500 italic font-black mb-1 flex items-center gap-2"><User size={24}/> {partner.name}</h3>
+          <p className="text-xs text-slate-500 font-mono tracking-widest">{partner.phone} | 正件 {partner.total_del||0} | 逆收 {partner.total_pkp||0}</p>
+        </div>
+        
+        {/* 頁籤切換 */}
+        <div className="flex gap-2 mb-6 bg-black p-2 rounded-2xl border border-white/5">
+          <button onClick={()=>setTab('finance')} className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${tab==='finance'?'bg-blue-600 text-white shadow-lg':'text-slate-500 hover:bg-white/5'}`}>財務核算</button>
+          <button onClick={()=>setTab('audit')} className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${tab==='audit'?'bg-amber-600 text-white shadow-lg':'text-slate-500 hover:bg-white/5'}`}>異常審核</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
+          {tab === 'finance' && (
+            <div className="space-y-6 animate-[fadeIn_0.3s]">
+              
+              {/* 🛡️ 2026 勞健保與二代健保模組 */}
+              <div className="bg-blue-950/10 p-5 rounded-3xl border border-blue-500/30 shadow-[inner_0_0_20px_rgba(59,130,246,0.05)]">
+                <p className="text-[11px] text-blue-400 mb-4 font-black tracking-widest flex items-center gap-2">
+                  <Shield size={14}/> 2026 社會成本與眷屬核算
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] text-slate-500 mb-2 block uppercase tracking-widest">投保級距 (2026 基本工資 29,500)</label>
+                    <select className="w-full bg-black border border-white/10 p-4 rounded-xl text-white text-sm outline-none focus:border-blue-500 transition-all font-mono" value={insuranceBracket} onChange={e=>setInsuranceBracket(e.target.value)}>
+                      <option value="0">--- 職業工會自理 / 未投保 ---</option>
+                      {Object.keys(INSURANCE_TABLE_2026).map(b => (
+                        <option key={b} value={b}>分級：${Number(b).toLocaleString()} (勞:${INSURANCE_TABLE_2026[b].labor} 健:${INSURANCE_TABLE_2026[b].health})</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* 健保眷屬與二代健保 */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-black p-4 rounded-xl border border-white/5">
+                      <label className="text-[10px] text-slate-500 mb-2 block uppercase">健保依附眷屬</label>
+                      <div className="flex items-center gap-3">
+                        <User size={16} className="text-blue-500" />
+                        <input type="number" min="0" max="9" className="w-full bg-transparent text-white text-xl font-black outline-none" value={dependents} onChange={e=>setDependents(e.target.value)} />
+                        <span className="text-xs text-slate-600">人</span>
+                      </div>
+                      <p className="text-[8px] text-blue-500/70 mt-2 font-black italic">※ 計費人數：{1 + Number(dependents || 0)} 人</p>
+                    </div>
+
+                    <div className="bg-black p-4 rounded-xl border border-white/5 flex flex-col justify-center">
+                      <label className="flex items-center gap-3 cursor-pointer group mb-1">
+                        <input type="checkbox" checked={enableSecGen} onChange={e=>setEnableSecGen(e.target.checked)} className="w-5 h-5 accent-blue-500" />
+                        <span className="text-xs text-slate-300 font-black group-hover:text-white transition-colors">代扣二代健保</span>
+                      </label>
+                      <p className="text-[9px] text-slate-500 pl-8 leading-relaxed">費率 2.11%<br/>達 20,000 門檻啟動</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 獎懲模組 */}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="bg-rose-950/10 p-5 rounded-3xl border border-rose-500/30">
+                  <p className="text-[10px] text-rose-500 mb-3 font-black tracking-widest uppercase">扣款與理賠錄入</p>
+                  <div className="flex gap-2">
+                    <input type="number" placeholder="金額" className="flex-1 bg-black p-4 rounded-xl text-white text-sm outline-none border border-white/5" value={deductionAmount} onChange={e=>setDeductionAmount(e.target.value)} />
+                    <input placeholder="事由..." className="flex-[2] bg-black p-4 rounded-xl text-white text-sm outline-none border border-white/5" value={deductionReason} onChange={e=>setDeductionReason(e.target.value)} />
+                  </div>
+                </div>
+                
+                <div className="bg-amber-950/10 p-5 rounded-3xl border border-amber-500/30">
+                  <p className="text-[10px] text-amber-500 mb-3 font-black tracking-widest uppercase">加給與獎金</p>
+                  <label className="flex items-center gap-3 bg-black p-4 rounded-xl mb-3 cursor-pointer border border-white/5 hover:border-amber-500/30 transition-all">
+                    <input type="checkbox" className="w-5 h-5 accent-amber-500" checked={isTaskDone} onChange={e=>setIsTaskDone(e.target.checked)} />
+                    <span className="text-sm text-amber-100 font-black italic">5,000 元品質達成獎金</span>
+                  </label>
+                  <input type="number" placeholder="額外激勵獎金..." className="w-full bg-black p-4 rounded-xl text-white text-sm outline-none border border-white/5" value={bonusAmount} onChange={e=>setBonusAmount(e.target.value)} />
+                </div>
+              </div>
+              
+              <button onClick={handleSaveFinance} className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black italic shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-95 transition-all tracking-widest text-lg">
+                💾 執行財務核算寫入
+              </button>
+            </div>
+          )}
+
+          {tab === 'audit' && (
+            <div className="space-y-4 animate-[fadeIn_0.3s]">
+              <div className="bg-black p-5 rounded-3xl border border-white/5 text-center">
+                <Alert size={48} className="text-amber-500 mx-auto mb-4" />
+                <h4 className="text-white font-black mb-2">爭議與異常審核</h4>
+                <p className="text-xs text-slate-500 mb-6">檢視實體的異常回報或強制標記異常。</p>
+                <button onClick={()=>{ onUpdate(partner.id, null, { has_conflict: true, conflict_reason: "營運總部標記異常：需複核" }); showToast("已標記異常"); }} className="w-full py-4 bg-amber-900/30 text-amber-500 rounded-xl border border-amber-500/30 text-sm font-black hover:bg-amber-600 hover:text-white transition-all">🚨 強制標記為異常狀態</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ==========================================
 // 👑 營運指揮中心 (2026 終極強化校驗版)
@@ -74,9 +265,7 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
   // 🛡️ 數據層：隱身過濾與黑名單攔截 (強化校驗)
   const filteredList = useMemo(() => {
     if (!partners) return [];
-    // 排除造物主本人
     let list = partners.filter(p => p.phone !== '0976017938');
-    // 隱身模式連動：物理過濾黑名單
     if (globalSettings?.ghost_mode) {
       list = list.filter(p => p.is_blacklisted !== true);
     }
@@ -249,16 +438,6 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, writeG
   );
 }
 
-// --- 輔助函式：顯示提示 ---
-const showToast = (msg, isError = false) => {
-  const t = document.getElementById('global-toast');
-  if(!t) return;
-  t.innerText = msg;
-  t.className = `fixed top-10 left-1/2 -translate-x-1/2 px-10 py-5 rounded-full font-black z-[999999] shadow-2xl transition-all duration-500 ${isError ? 'bg-rose-600' : 'bg-blue-600'} text-white text-sm md:text-lg`;
-  t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
-  setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -20px)'; }, 3000);
-};
-
 // ==========================================
 // 🚀 核心啟動引擎 (AppWrapper)
 // ==========================================
@@ -321,7 +500,7 @@ function AppWrapper() {
   if (ld) return (
     <div className="h-screen flex flex-col items-center justify-center bg-black">
       <div className="loader mb-4"></div>
-      <p className="text-blue-500 text-[10px] tracking-[0.5em] animate-pulse uppercase">GGSOC_SYSTEM_IGNITING...</p>
+      <p className="text-blue-500 text-[10px] tracking-[0.5em] animate-pulse uppercase mt-4">GGSOC_SYSTEM_IGNITING...</p>
     </div>
   );
 
@@ -329,13 +508,14 @@ function AppWrapper() {
     <div className="min-h-screen text-slate-200">
       <div id="global-toast" className="fixed top-[-100px] left-1/2 -translate-x-1/2 px-10 py-6 rounded-full font-black z-[999999] opacity-0 pointer-events-none transition-all text-white"></div>
       
-      {l === 'gate' && <div className="h-screen flex items-center justify-center bg-black p-6">
-        <div className="bg-[#050505] border border-white/5 p-10 rounded-[3rem] w-full max-w-sm text-center shadow-2xl">
-           <Bot size={48} className="text-blue-500 mx-auto mb-6" />
-           <h1 className="text-2xl italic font-black mb-8 tracking-tighter">GGSOC_TERMINAL</h1>
-           <input id="login_phone" placeholder="PHONE" className="w-full bg-black p-4 rounded-2xl border border-white/5 mb-3 text-center text-sm outline-none focus:border-blue-500 transition-all" />
-           <input id="login_pin" type="password" placeholder="PIN" className="w-full bg-black p-4 rounded-2xl border border-white/5 mb-8 text-center text-sm outline-none focus:border-blue-500 transition-all" />
-           <button onClick={()=>handleLogin(document.getElementById('login_phone').value, document.getElementById('login_pin').value)} className="w-full py-4 bg-blue-600 rounded-2xl font-black italic shadow-lg active:scale-95 transition-all">ESTABLISH_LINK</button>
+      {/* 門禁系統 */}
+      {l === 'gate' && <div className="h-screen flex items-center justify-center bg-black p-6 animate-zoom">
+        <div className="bg-[#050505] border border-white/5 p-10 rounded-[3rem] w-full max-w-sm text-center shadow-[0_0_50px_rgba(0,0,0,1)]">
+           <Bot size={48} className="text-blue-500 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+           <h1 className="text-2xl italic font-black mb-8 tracking-tighter text-white">GGSOC_TERMINAL</h1>
+           <input id="login_phone" placeholder="PHONE" className="w-full bg-black p-4 rounded-2xl border border-white/5 mb-3 text-center text-sm outline-none focus:border-blue-500 transition-all font-mono" />
+           <input id="login_pin" type="password" placeholder="PIN" className="w-full bg-black p-4 rounded-2xl border border-white/5 mb-8 text-center text-sm outline-none focus:border-blue-500 transition-all font-mono" />
+           <button onClick={()=>handleLogin(document.getElementById('login_phone').value, document.getElementById('login_pin').value)} className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-black italic shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all text-white">ESTABLISH_LINK</button>
         </div>
       </div>}
       
@@ -354,7 +534,7 @@ function AppWrapper() {
   );
 }
 
-// 啟動
+// 啟動引擎
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<AppWrapper />);
 </script>
