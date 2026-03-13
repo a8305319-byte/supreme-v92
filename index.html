@@ -80,130 +80,71 @@
       );
 
       return (
-        <div style={{ position: 'fixed', bottom: '90px', right: '20px', zIndex: 99999, width: '300px', background: '#0f172a', border: '1px solid #3b82f6', borderRadius: '24px', padding: '15px', color: '#fff', boxShadow: '0 10px 50px rgba(0,0,0,0.8)', fontFamily: 'sans-serif' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: '#60a5fa', fontWeight: 'black' }}>GGSOC 戰情 AI</span>
-            <button onClick={() => setShow(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px' }}>✕</button>
-          </div>
-          <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-            <button onClick={diagnostic} disabled={loading} style={{ flex: 1, background: '#1e293b', color: '#60a5fa', border: '1px solid #3b82f6', padding: '8px', borderRadius: '10px', fontSize: '12px' }}>📊 一鍵診斷</button>
-          </div>
-          <div style={{ display: 'flex', gap: '5px' }}>
-            <input style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', padding: '10px', borderRadius: '10px', color: '#fff', fontSize: '14px' }} value={q} onChange={e => setQ(e.target.value)} placeholder="下達進階指令..." />
-            <button onClick={handleAsk} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px 15px', borderRadius: '10px' }}>{loading ? "..." : "送出"}</button>
-          </div>
-          {ans && <div style={{ marginTop: '12px', fontSize: '13px', background: '#000', padding: '12px', borderRadius: '12px', maxHeight: '180px', overflowY: 'auto', border: '1px solid #1e293b', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{ans}</div>}
+        <div className="relative min-h-screen bg-[#020617] text-white font-black overflow-x-hidden">
+          {/* 1. 門禁頁面 (Gate) */}
+          {l === 'gate' && (
+            <div className="flex flex-col items-center justify-center h-screen p-10 animate-[fadeIn_0.5s]">
+              <div className="mb-12 text-center">
+                <h1 className="text-[3.5rem] italic tracking-tighter mb-2">在地物流</h1>
+                <div className="text-[10px] tracking-[0.3em] text-blue-500 border border-blue-500/30 px-4 py-1 rounded-full bg-blue-900/10">SUPREME HQ V1.0</div>
+              </div>
+              
+              <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-white/10 w-full max-w-sm shadow-2xl backdrop-blur-md">
+                <input id="p" type="tel" placeholder="手機門號" className="w-full bg-black/60 border border-white/10 p-5 rounded-2xl mb-4 text-center text-lg outline-none focus:border-blue-500 transition-all font-mono" maxLength={10} />
+                <input id="i" type="password" placeholder="PIN 碼" className="w-full bg-black/60 border border-white/10 p-5 rounded-2xl mb-10 text-center text-lg outline-none focus:border-blue-500 transition-all" />
+                <button onClick={() => handleLogin(document.getElementById('p').value, document.getElementById('i').value)} className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl font-black text-xl shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-95 transition-all">啟動核心</button>
+              </div>
+            </div>
+          )}
+
+          {/* 2. 總裁視角 (AdminHub) */}
+          {l === 'admin' && (
+            <div className="p-6 md:p-14 animate-[fadeInUp_0.4s]">
+              <div className="flex justify-between items-end mb-10">
+                <div>
+                  <h2 className="text-4xl italic tracking-tighter uppercase mb-1">營運指揮中心</h2>
+                  <span className="text-[10px] px-3 py-1 rounded-full bg-amber-900/30 text-amber-500 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]">👑 總裁統帥模式</span>
+                </div>
+                <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="text-[10px] text-rose-500 border border-rose-500/30 px-4 py-2 rounded-xl active:bg-rose-900/20">安全登出</button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {ps.map(p => (
+                  <div key={p.id} className="bg-slate-900/80 p-6 rounded-[2rem] border border-white/5 shadow-xl hover:border-blue-500/30 transition-all">
+                    <p className="text-2xl text-blue-400 italic mb-1">{p.name}</p>
+                    <p className="text-xs text-slate-500 font-mono tracking-widest">{p.phone}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* 🤖 總裁 AI 特助：餵食全公司數據 (ps) */}
+              <LocalLogisticsAI data={ps} />
+            </div>
+          )}
+
+          {/* 3. 司機視角 (DriverHub) */}
+          {l === 'driver' && (
+            <div className="p-6 flex flex-col items-center justify-center min-h-screen animate-[fadeIn_0.5s]">
+              <h2 className="text-3xl italic mb-8 tracking-tighter">前線工作站</h2>
+              <div className="bg-slate-900/50 p-12 rounded-[3rem] border border-white/10 text-center shadow-2xl backdrop-blur-md w-full max-w-sm">
+                <div className="loader mx-auto mb-8 w-12 h-12 border-4 border-blue-500/20 border-l-blue-500 rounded-full animate-spin"></div>
+                <p className="text-blue-400 text-sm italic tracking-[0.2em] mb-2 animate-pulse">數據加密鏈路中...</p>
+                <p className="text-slate-600 text-[10px]">GGSOC PROTOCOL ACTIVE</p>
+              </div>
+              
+              {/* 🤖 司機 AI 特助：只餵食該司機自己的數據 */}
+              <LocalLogisticsAI data={ps.find(x => x.phone === (u?.phoneNumber || ''))} />
+            </div>
+          )}
         </div>
       );
-    };
-    class ErrorBoundary extends React.Component {
-      constructor(props) { super(props); this.state = { hasError: false }; }
-      static getDerivedStateFromError() { return { hasError: true }; }
-      render() {
-        if (this.state.hasError) return <div className="h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-10 text-center"><h2 className="text-2xl text-rose-500 mb-4">🛡️ 核心保護啟動</h2><button onClick={() => window.location.reload()} className="bg-rose-600 px-6 py-3 rounded-xl">重啟系統</button></div>;
-        return this.props.children;
-      }
-    }
+    } // AppWrapper 結束
 
-    // 🚐 司機端與管理端邏輯 (精簡版)
-    function AppWrapper() {
-      const [u, setU] = useState(null);
-      const [l, setL] = useState('gate');
-      const [ps, setPs] = useState([]);
-      const [role, setRole] = useState('guest');
-
-      useEffect(() => {
-        onAuthStateChanged(auth, (user) => { if(user) setU(user); });
-        onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'partners'), (s) => {
-          setPs(s.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
-      }, []);
-
-      const handleLogin = (phone, pin) => {
-        if (phone === "0976017938" && pin === "8305319") { setRole('super_admin'); setL('admin'); }
-        else {
-          const p = ps.find(x => x.phone === phone && x.pin === pin);
-          if (p) { setRole('driver'); setL('driver'); }
-          else alert("登入失敗");
-        }
-      };
-
-      return (
-        <div className="relative min-h-screen bg-[#020617]">
-         // 🤖 AI 總裁特助 (LINE 通訊強化版)
-const LocalLogisticsAI = ({ data }) => {
-  const [q, setQ] = useState("");
-  const [ans, setAns] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [show, setShow] = useState(false);
-
-  // 📡 LINE 推播核心 (2026 官方 API 版)
-  const sendToLine = async (msg) => {
-    // 這裡幫你把 Token 裡的空格清掉了，確保傳送成功
-    const token = "pvenO2Qs5ctBSy0VseKzJ4HupI9P8yE+ZF+kmuyCpSZ/CN8gDUQQoBsmRqCGf2DAiq0e6nT+SVW2xdUaOWODSdDi4FTUUAxJXXinytkgBL4izkXfKUCmCVoUbYWUqM6pf0nRwUwjSaoPhUHKGKcW6wdB04t89/1O/w1cDnyilFU=";
-    const userId = "Ua003fab90fd84c067215e594cfd8e238";
-    
+    // 🚀 最終啟動點：把所有東西渲染到 root 上
     try {
-      await fetch('https://api.line.me/v2/bot/message/push', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          to: userId,
-          messages: [{ type: 'text', text: `📊 【GGSOC 營運戰報】\n\n${msg}` }]
-        })
-      });
-    } catch (e) { console.error("LINE 傳送失敗"); }
-  };
-
-  const handleAsk = async () => {
-    if (!q || loading) return;
-    setLoading(true);
-    try {
-      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
-      setAns(res.response.text());
-    } catch (e) { setAns("連線失敗..."); }
-    setLoading(false);
-  };
-
-  const diagnostic = async () => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: "你是在地物流的老闆特助。請根據數據回報：1.今日 COD 總額 2.異常名單 3.經營建議。語氣要精煉霸氣。"
-      });
-      const res = await model.generateContent(`數據：${JSON.stringify(data || [])}`);
-      const report = res.response.text();
-      setAns(report);
-      
-      // 🚀 關鍵動作：同步推播到老闆的 LINE
-      await sendToLine(report);
-      
-    } catch (e) { setAns("診斷模組異常..."); }
-    setLoading(false);
-  };
-
-  if (!show) return <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '50px', height: '50px', borderRadius: '50%', border: 'none', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>;
-
-  return (
-    <div className="animate-zoom" style={{ position: 'fixed', bottom: '100px', right: '20px', zIndex: 99999, width: '280px', background: '#1e293b', border: '1px solid #3b82f6', borderRadius: '20px', padding: '15px', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-xs text-blue-400 font-bold">GGSOC AI 總助</span>
-        <button onClick={() => setShow(false)} className="text-slate-400">✕</button>
-      </div>
-      <input className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-white text-sm mb-2" value={q} onChange={e => setQ(e.target.value)} placeholder="輸入指令..." />
-      <div className="flex gap-2 mb-2">
-        <button onClick={handleAsk} className="flex-1 py-2 bg-blue-600 rounded-lg font-bold text-xs" disabled={loading}>問 AI</button>
-        <button onClick={diagnostic} className="flex-1 py-2 bg-emerald-600 rounded-lg font-bold text-xs" disabled={loading}>⚡診斷</button>
-      </div>
-      {ans && <div className="mt-3 text-[11px] bg-black/30 p-2 rounded-lg max-h-48 overflow-y-auto leading-relaxed border border-white/5 whitespace-pre-wrap font-mono">{ans}</div>}
-    </div>
-  );
-};
+      createRoot(document.getElementById('root')).render(
+        <ErrorBoundary>
+          <AppWrapper />
+        </ErrorBoundary>
+      );
+    } catch (err) { console.error("系統啟動失敗:", err); }
