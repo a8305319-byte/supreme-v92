@@ -603,134 +603,92 @@ function AdminHub({ authRole, partners, onLogout, updateField, db, appId, setLay
       )}
 
       {/* ⚙️ 內部工具箱 Modal */}
-      {mT === 'tools' && (
-        <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 animate-zoom" onClick={()=>setMT(null)}>
-          <div className="bg-slate-900 border border-white/10 p-6 rounded-[2.5rem] max-w-lg w-full max-h-[90vh] overflow-y-auto custom-scrollbar relative" onClick={e=>e.stopPropagation()}>
-            <button onClick={()=>setMT(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-rose-500"><X size={16}/></button>
-            <h3 className="text-xl text-blue-400 mb-6 text-center italic uppercase tracking-widest">內部系統管理</h3>
-            <div className="space-y-4">
-              
-              <div className="bg-blue-950/20 p-4 rounded-xl border border-blue-500/30 shadow-inner">
-                 <p className="text-[10px] text-blue-400 mb-2">📢 全域影子政策與語錄廣播</p>
-                 <textarea placeholder="輸入要全域廣播的文字..." className="w-full bg-black/50 p-3 rounded-lg text-xs text-white outline-none border border-white/5 focus:border-blue-500 mb-2" rows="2" value={ann} onChange={e=>setAnn(e.target.value)} />
-                 <button onClick={async()=>{ await setDoc(doc(db,'artifacts',appId,'public','data','settings','global'), {announcement: ann}, {merge:true}); showToast("✅ 公告已強制推送"); }} className="w-full bg-blue-600 text-white py-2 rounded-lg text-xs">發布公告</button>
+      {/* ⚡ 造物主專屬：全能修改與免試建檔 */}
+              <div className="bg-fuchsia-950/20 p-5 rounded-xl border border-fuchsia-500/30">
+                <p className="text-[11px] text-fuchsia-400 mb-3 text-center tracking-widest">🛡️ 核心成員預先授權 (免試建檔)</p>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input placeholder="姓名" className="flex-1 bg-slate-800 p-3 rounded-lg text-xs" value={expressData.name} onChange={e=>setExpressData({...expressData, name: e.target.value})} />
+                    <input placeholder="手機" className="flex-1 bg-slate-800 p-3 rounded-lg text-xs" value={expressData.phone} onChange={e=>setExpressData({...expressData, phone: e.target.value})} maxLength={10} />
+                  </div>
+                  <input placeholder="身分證字號" className="w-full bg-slate-800 p-3 rounded-lg text-xs" value={expressData.id_number} onChange={e=>setExpressData({...expressData, id_number: e.target.value})} />
+                  <label className="flex items-center gap-2 text-[10px] text-fuchsia-300 cursor-pointer">
+                    <input type="checkbox" checked={expressData.priority_access} onChange={e=>setExpressData({...expressData, priority_access: e.target.checked})} /> 開啟內部特權通道 (隱身對話)
+                  </label>
+                  <button onClick={handleExpressAdd} className="w-full py-4 bg-fuchsia-600 rounded-lg text-white text-xs shadow-lg active:scale-95">寫入上帝名單</button>
+                </div>
               </div>
 
+              {/* 上帝日誌：觀測會計的一舉一動 */}
               {authRole === 'super_admin' && (
-                <div className="bg-[#00c300]/10 p-4 rounded-xl border border-[#00c300]/30 shadow-inner">
-                   <p className="text-[10px] text-[#00c300] mb-2 flex items-center gap-1"><Bell size={12}/> LINE Notify 上帝戰情網</p>
-                   <div className="flex gap-2"><input type="password" placeholder="貼上 LINE Token..." className="flex-1 bg-black/50 p-3 rounded-lg text-xs outline-none border border-white/5" value={lineToken} onChange={e=>setLineToken(e.target.value)} /><button onClick={()=>showToast("✅ 已發送模擬戰情日報至 LINE")} className="bg-[#00c3
+                <div className="bg-slate-950 p-4 rounded-xl border border-white/5">
+                  <p className="text-[10px] text-slate-500 mb-3 flex items-center gap-1"><HistoryLog size={12}/> 上帝日誌 (God Log)</p>
+                  <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {godLogs.map(log => (
+                      <div key={log.id} className="text-[9px] border-b border-white/5 pb-1">
+                        <span className="text-blue-400">[{new Date(log.timestamp).toLocaleTimeString()}]</span> <span className="text-amber-500">{log.action}:</span> <span className="text-slate-300">{log.details}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
+// ==========================================
+// 🚀 核心包裹器 (AppWrapper) - 最終連線邏輯
+// ==========================================
 function AppWrapper() {
-
-  const [u,setU]=useState(null); const [aR,setAR]=useState('guest'); const [ps,setPs]=useState([]); const [l,setL]=useState('gate'); const [ld,setLd]=useState(true); const [spI,setSpI]=useState(null);
-
+  const [u, setU] = useState(null); 
+  const [aR, setAR] = useState('guest'); 
+  const [ps, setPs] = useState([]); 
+  const [l, setL] = useState('gate'); 
+  const [ld, setLd] = useState(true); 
+  const [spI, setSpI] = useState(null);
   const [gs, setGs] = useState(null); 
-
-
 
   const cp = useMemo(() => ps.find(p => p.id === spI), [ps, spI]);
 
-
-
-  useEffect(()=>{
-
-    const unA = onAuthStateChanged(auth, async (user)=>{ 
-
-      if(user){ setU(user); const s = safeStorage.get('ggsoc_auth') || {}; if(s.phone){ setAR(s.role); setSpI(`p_${s.phone}`); setL(s.role==='driver'?'driver':'admin'); } } else signInAnonymously(auth);
-
-      setTimeout(()=>setLd(false), 600);
-
+  useEffect(() => {
+    const unA = onAuthStateChanged(auth, async (user) => { 
+      if(user) { 
+        setU(user); 
+        const s = safeStorage.get('ggsoc_auth') || {}; 
+        if(s.phone) { setAR(s.role); setSpI(`p_${s.phone}`); setL(s.role==='driver'?'driver':'admin'); } 
+      } else signInAnonymously(auth);
+      setTimeout(() => setLd(false), 600);
     });
-
     return () => unA();
+  }, []);
 
-  },[]);
-
-
-
-  useEffect(()=>{
-
+  useEffect(() => {
     if(!u) return;
-
-    const unP = onSnapshot(collection(db,'artifacts',appId,'public','data','partners'),(s)=>{
-
-      const data = s.docs.map(d=>({id:d.id,...d.data()})); setPs(data);
-
-      if(data.length === 0) setDoc(doc(db,'artifacts',appId,'public','data','partners','p_0976017938'), { id:'p_0976017938', name:'系統總裁', phone:'0976017938', pin:'8305319', status:'approved', total_del:0, total_pkp:0 });
-
+    const unP = onSnapshot(collection(db,'artifacts',window.__app_id,'public','data','partners'), (s) => {
+      const data = s.docs.map(d=>({id:d.id,...d.data()})); 
+      setPs(data);
+      // 自動初始化總裁帳號 (如果被刪除)
+      if(!data.find(x => x.phone === '0976017938')) {
+         setDoc(doc(db,'artifacts',window.__app_id,'public','data','partners','p_0976017938'), { 
+           id:'p_0976017938', name:'系統總裁', phone:'0976017938', pin:'8305319', status:'approved', total_del:0, total_pkp:0 
+         });
+      }
     });
+    const unG = onSnapshot(doc(db,'artifacts',window.__app_id,'public','data','settings','global'), (d) => { if(d.exists()) setGs(d.data()); });
+    return () => { unP(); unG(); };
+  }, [u]);
 
-    const unG = onSnapshot(doc(db,'artifacts',appId,'public','data','settings','global'), (d)=>{ if(d.exists()) setGs(d.data()); });
-
-    return()=>{unP(); unG();};
-
-  },[u]);
-
-
-
-  const writeGodLog = async (action, details) => { if (aR !== 'super_admin') await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'god_log'), { action, details, timestamp: Date.now(), actor: 'Admin' }); };
-
-
-
-  const handleLogin = (phone,pin,rem)=>{
-
-    if(phone==="0976017938"&&pin==="8305319"){ safeStorage.set('ggsoc_auth',{phone,role:'super_admin'}); setAR('super_admin');setL('admin');setSpI(`p_${phone}`); }
-
-    else if(phone==="0988128172"&&pin==="0172"){ safeStorage.set('ggsoc_auth',{phone,role:'admin'}); setAR('admin');setL('admin'); }
-
-    else{
-
-      const p=ps.find(x=>x.phone===phone&&x.pin===pin); 
-
-      if(p && p.status==='approved'){ 
-
-        if(p.liveness_failed) return showToast("🚫 帳號異常鎖定，請聯繫總裁", true);
-
-        safeStorage.set('ggsoc_auth',{phone,role:'driver'}); setAR('driver');setSpI(p.id);setL('driver'); 
-
-      } 
-
-      else if(p && p.status==='pending') showToast("⏳ 您的資料正在系統審核中",true);
-
-      else showToast("⚠️ 權限不足或密碼錯誤",true);
-
-    }
-
+  const writeGodLog = async (action, details) => { 
+    await addDoc(collection(db, 'artifacts', window.__app_id, 'public', 'data', 'god_log'), { action, details, timestamp: Date.now() }); 
   };
 
-
-
-  if(ld) return <div className="loading-container bg-[#020617] font-black"><div className="loader"></div><p className="mt-4 text-blue-500 text-xs tracking-widest animate-pulse">GGSOC SECURING...</p></div>;
-
-
-
-  return (
-
-    <div className="min-h-screen text-slate-200 font-black">
-
-      <div id="global-toast" className="fixed top-[-100px] left-1/2 -translate-x-1/2 px-10 py-6 rounded-full font-black z-[999999] opacity-0 pointer-events-none text-xl shadow-2xl transition-all text-white"></div>
-
-      
-
-      {l==='gate' && <Gate onLogin={handleLogin} />}
-
-      {l==='admin' && <AdminHub authRole={aR} partners={ps} onLogout={()=>{safeStorage.remove('ggsoc_auth');setAR('guest');setL('gate');}} updateField={async(id,f,v)=>{if(f===null) await updateDoc(doc(db,'artifacts',appId,'public','data','partners',id),v); else await updateDoc(doc(db,'artifacts',appId,'public','data','partners',id),{[f]:v}); writeGodLog("資料修改", `更新了 ${id} 的數據`);}} db={db} appId={appId} setLayer={setL} writeGodLog={writeGodLog} globalSettings={gs} />}
-
-      {l==='driver' && <DriverHub user={u} currentPartner={cp} onLogout={()=>{safeStorage.remove('ggsoc_auth');setAR('guest');setL('gate');}} updateField={null} authRole={aR} db={db} appId={appId} setLayer={setL} globalSettings={gs} />}
-
-    </div>
-
-  );
-
-}
-
-
-
-try { createRoot(document.getElementById('root')).render(<ErrorBoundary><AppWrapper /></ErrorBoundary>); } catch (err) {}
-
-  </script>
-
-</body>
-
-</html>
+  const handleLogin = (phone, pin) => {
+    if(phone === "0976017938" && pin === "8305319"){ 
+      safeStorage.set('ggsoc_auth', {phone, role:'super_admin'}); 
+      setAR('super_admin'); setL('admin'); setSpI(`p_${phone}`); 
+    } else if(phone === "0988128172" && pin === "0172"){ 
+      safe
