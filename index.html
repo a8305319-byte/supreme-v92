@@ -747,8 +747,75 @@ function AppWrapper() {
   };
 
   const handleLogin = (phone, pin) => {
-    if(phone === "0976017938" && pin === "8305319"){ 
-      safeStorage.set('ggsoc_auth', {phone, role:'super_admin'}); 
+    if (phone === "0976017938" && pin === "8305319") { 
+      safeStorage.set('ggsoc_auth', { phone, role: 'super_admin' }); 
       setAR('super_admin'); setL('admin'); setSpI(`p_${phone}`); 
-    } else if(phone === "0988128172" && pin === "0172"){ 
-      safe
+      showToast("👑 造物主降臨，權限已全數解鎖");
+    } else if (phone === "0988128172" && pin === "0172") { 
+      safeStorage.set('ggsoc_auth', { phone, role: 'admin' }); 
+      setAR('admin'); setL('admin'); 
+      showToast("💼 營運總部連線成功");
+    } else {
+      const p = ps.find(x => x.phone === phone && x.pin === pin); 
+      if (p && p.status === 'approved') { 
+        if (p.liveness_failed) return showToast("🚫 帳號校驗失敗鎖定", true);
+        safeStorage.set('ggsoc_auth', { phone, role: 'driver' }); 
+        setAR('driver'); setSpI(p.id); setL('driver'); 
+      } else if (p && p.status === 'pending') {
+        showToast("⏳ 資料審核中，請靜候總部授權", true);
+      } else {
+        showToast("⚠️ 密碼錯誤或無此權限", true);
+      }
+    }
+  };
+
+  if (ld) return (
+    <div className="h-screen flex flex-col items-center justify-center bg-[#020617] font-black">
+      <div className="loader mb-4"></div>
+      <p className="text-blue-500 text-xs tracking-widest animate-pulse">GGSOC SECURING...</p>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen text-slate-200 font-black">
+      {/* 吐司通知容器 */}
+      <div id="global-toast" className="fixed top-[-100px] left-1/2 -translate-x-1/2 px-10 py-6 rounded-full font-black z-[999999] opacity-0 pointer-events-none text-xl shadow-2xl transition-all text-white"></div>
+      
+      {/* 視窗層級控制 */}
+      {l === 'gate' && <Gate onLogin={handleLogin} />}
+      
+      {l === 'admin' && (
+        <AdminHub 
+          authRole={aR} 
+          partners={ps} 
+          onLogout={() => { safeStorage.remove('ggsoc_auth'); setAR('guest'); setL('gate'); }} 
+          updateField={async (id, f, v) => {
+            const ref = doc(db, 'artifacts', window.__app_id, 'public', 'data', 'partners', id);
+            if (f === null) await updateDoc(ref, v); else await updateDoc(ref, { [f]: v });
+            writeGodLog("數據修改", `對實體 ${id} 進行了資料覆寫`);
+          }} 
+          db={db} appId={window.__app_id} setLayer={setL} writeGodLog={writeGodLog} globalSettings={gs} 
+        />
+      )}
+
+      {l === 'driver' && cp && (
+        <DriverHub 
+          user={u} 
+          currentPartner={cp} 
+          onLogout={() => { safeStorage.remove('ggsoc_auth'); setAR('guest'); setL('gate'); }} 
+          db={db} appId={window.__app_id} setLayer={setL} globalSettings={gs} 
+        />
+      )}
+    </div>
+  );
+}
+
+// 🚀 最終發動
+try {
+  createRoot(document.getElementById('root')).render(<ErrorBoundary><AppWrapper /></ErrorBoundary>);
+} catch (err) {
+  console.error("底層引擎啟動失敗:", err);
+}
+</script>
+</body>
+</html>
