@@ -21,8 +21,7 @@
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-  // 🚀 核心大腦匯入
-    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+ import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, updateDoc, onSnapshot, collection, addDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -30,7 +29,7 @@
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
     const createRoot = ReactDOM.createRoot;
 
-    // 🌟 Firebase 配置 (唯一版)
+    // 🌟 Firebase 配置
     const firebaseConfig = { 
       apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
       authDomain: "supreme-v92.firebaseapp.com", 
@@ -44,7 +43,7 @@
     const auth = getAuth(app);
     const appId = 'ggsoc-trinity-master-v1';
 
-    // 🤖 AI 總裁特助 (雙模組完全體：診斷 + 問答)
+    // 🤖 [第一段] AI 總裁特助組件 (獨立存在，不准塞進別人肚子裡)
     const LocalLogisticsAI = ({ data }) => {
       const [q, setQ] = useState("");
       const [ans, setAns] = useState("");
@@ -54,124 +53,122 @@
       const genAI = new GoogleGenerativeAI("AIzaSyC1gz8HGm75lp_tR55UGDuETDuU8dAKMLo");
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-      // 模式 1：針對提問回答
       const handleAsk = async () => {
         if (!q || loading) return;
         setLoading(true);
         try {
-          const res = await model.generateContent(`你是物流特助。數據：${JSON.stringify(data)}\n指令：${q}`);
+          const res = await model.generateContent(`你是在地物流 AI 特助。數據：${JSON.stringify(data)}\n指令：${q}`);
           setAns(res.response.text());
-        } catch (e) { setAns("報告總裁：連線異常。"); }
+        } catch (e) { setAns("連線異常..."); }
         setLoading(false);
       };
-// 🛡️ [核心保護：保險絲] 
-class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false }; }
-  static getDerivedStateFromError() { return { hasError: true }; }
-  render() {
-    if (this.state.hasError) return (
-      <div className="h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-10 text-center font-black">
-        <div className="bg-rose-900/20 p-8 rounded-[2rem] border border-rose-500/30 shadow-2xl">
-          <h2 className="text-3xl text-rose-500 mb-4 animate-pulse">🛡️ 底層核心保護啟動</h2>
-          <p className="text-slate-400 text-xs mb-8">偵測到代碼衝突，已暫停運行以保護數據安全性。</p>
-          <button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-600 rounded-xl text-white">🔄 重新連線</button>
-        </div>
-      </div>
-    );
-    return this.props.children;
-  }
-}
 
-// 🚀 [啟動馬達：渲染 App]
-try {
-  createRoot(document.getElementById('root')).render(
-    <ErrorBoundary>
-      <AppWrapper />
-    </ErrorBoundary>
-  );
-} catch (err) {
-  console.error("系統啟動失敗:", err);
-}
-      // 模式 2：主動戰情診斷
       const diagnostic = async () => {
         setLoading(true);
         try {
-          const res = await model.generateContent(`請根據這份數據快照進行「戰情診斷」。找出異常司機、財務風險或營運漏洞：${JSON.stringify(data)}`);
+          const res = await model.generateContent(`請根據這份數據快照進行戰情診斷，抓出潛在風險：${JSON.stringify(data)}`);
           setAns(res.response.text());
-        } catch (e) { setAns("診斷模組異常。"); }
+        } catch (e) { setAns("診斷模組異常..."); }
         setLoading(false);
       };
 
-      if (!show) return (
-        <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '90px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '55px', height: '55px', borderRadius: '50%', border: '2px solid #fff', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>
+      if (!show) return <button onClick={() => setShow(true)} style={{ position: 'fixed', bottom: '90px', right: '20px', zIndex: 99999, background: '#3b82f6', color: '#fff', width: '55px', height: '55px', borderRadius: '50%', border: '2px solid #fff', fontSize: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>🤖</button>;
+
+      return (
+        <div style={{ position: 'fixed', bottom: '90px', right: '20px', zIndex: 99999, width: '300px', background: '#0f172a', border: '1px solid #3b82f6', borderRadius: '24px', padding: '15px', color: '#fff', boxShadow: '0 10px 50px rgba(0,0,0,0.8)', fontFamily: 'sans-serif' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: '#60a5fa', fontWeight: 'bold' }}>GGSOC 戰情 AI</span>
+            <button onClick={() => setShow(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px' }}>✕</button>
+          </div>
+          <button onClick={diagnostic} disabled={loading} style={{ width: '100%', background: '#1e293b', color: '#60a5fa', border: '1px solid #3b82f6', padding: '8px', borderRadius: '10px', fontSize: '12px', marginBottom: '10px' }}>📊 一鍵戰情診斷</button>
+          <div style={{ display: 'flex', gap: '5px' }}>
+            <input style={{ flex: 1, background: '#1e293b', border: '1px solid #334155', padding: '10px', borderRadius: '10px', color: '#fff', fontSize: '14px' }} value={q} onChange={e => setQ(e.target.value)} placeholder="下達指令..." />
+            <button onClick={handleAsk} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px', borderRadius: '10px' }}>{loading ? "..." : "送"}</button>
+          </div>
+          {ans && <div style={{ marginTop: '12px', fontSize: '12px', background: '#000', padding: '12px', borderRadius: '12px', maxHeight: '150px', overflowY: 'auto', border: '1px solid #1e293b', lineHeight: '1.6' }}>{ans}</div>}
+        </div>
       );
+    };
+
+    // 🛡️ [第二段] 保險絲
+    class ErrorBoundary extends React.Component {
+      constructor(props) { super(props); this.state = { hasError: false }; }
+      static getDerivedStateFromError() { return { hasError: true }; }
+      render() {
+        if (this.state.hasError) return <div className="h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-10 text-center"><h2 className="text-2xl text-rose-500 mb-4">🛡️ 核心保護啟動</h2><button onClick={() => window.location.reload()} className="bg-rose-600 px-6 py-3 rounded-xl">重新啟動</button></div>;
+        return this.props.children;
+      }
+    }
+
+    // 🚀 [第三段] 主系統路由
+    function AppWrapper() {
+      const [u, setU] = useState(null);
+      const [l, setL] = useState('gate');
+      const [ps, setPs] = useState([]);
+      const [role, setRole] = useState('guest');
+
+      useEffect(() => {
+        onAuthStateChanged(auth, (user) => { if(user) setU(user); });
+        onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'partners'), (s) => {
+          setPs(s.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+      }, []);
+
+      const handleLogin = (phone, pin) => {
+        if (phone === "0976017938" && pin === "8305319") { setRole('super_admin'); setL('admin'); }
+        else {
+          const p = ps.find(x => x.phone === phone && x.pin === pin);
+          if (p) { setRole('driver'); setL('driver'); }
+          else alert("登入失敗");
+        }
+      };
 
       return (
         <div className="relative min-h-screen bg-[#020617] text-white font-black overflow-x-hidden">
-          {/* 1. 門禁頁面 (Gate) */}
           {l === 'gate' && (
-            <div className="flex flex-col items-center justify-center h-screen p-10 animate-[fadeIn_0.5s]">
-              <div className="mb-12 text-center">
-                <h1 className="text-[3.5rem] italic tracking-tighter mb-2">在地物流</h1>
-                <div className="text-[10px] tracking-[0.3em] text-blue-500 border border-blue-500/30 px-4 py-1 rounded-full bg-blue-900/10">SUPREME HQ V1.0</div>
-              </div>
-              
-              <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-white/10 w-full max-w-sm shadow-2xl backdrop-blur-md">
-                <input id="p" type="tel" placeholder="手機門號" className="w-full bg-black/60 border border-white/10 p-5 rounded-2xl mb-4 text-center text-lg outline-none focus:border-blue-500 transition-all font-mono" maxLength={10} />
-                <input id="i" type="password" placeholder="PIN 碼" className="w-full bg-black/60 border border-white/10 p-5 rounded-2xl mb-10 text-center text-lg outline-none focus:border-blue-500 transition-all" />
-                <button onClick={() => handleLogin(document.getElementById('p').value, document.getElementById('i').value)} className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl font-black text-xl shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-95 transition-all">啟動核心</button>
+            <div className="flex flex-col items-center justify-center h-screen p-10">
+              <h1 className="text-[3.5rem] italic mb-10">在地物流</h1>
+              <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-white/10 w-full max-w-sm">
+                <input id="p" type="tel" placeholder="手機門號" className="w-full bg-black/60 p-5 rounded-2xl mb-4 text-center text-lg outline-none" maxLength={10} />
+                <input id="i" type="password" placeholder="PIN 碼" className="w-full bg-black/60 p-5 rounded-2xl mb-10 text-center text-lg outline-none" />
+                <button onClick={() => handleLogin(document.getElementById('p').value, document.getElementById('i').value)} className="w-full py-5 bg-blue-600 rounded-2xl text-xl">啟動核心</button>
               </div>
             </div>
           )}
 
-          {/* 2. 總裁視角 (AdminHub) */}
           {l === 'admin' && (
-            <div className="p-6 md:p-14 animate-[fadeInUp_0.4s]">
-              <div className="flex justify-between items-end mb-10">
-                <div>
-                  <h2 className="text-4xl italic tracking-tighter uppercase mb-1">營運指揮中心</h2>
-                  <span className="text-[10px] px-3 py-1 rounded-full bg-amber-900/30 text-amber-500 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]">👑 總裁統帥模式</span>
-                </div>
-                <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="text-[10px] text-rose-500 border border-rose-500/30 px-4 py-2 rounded-xl active:bg-rose-900/20">安全登出</button>
-              </div>
-
+            <div className="p-6 md:p-14">
+              <h2 className="text-4xl italic mb-10">營運指揮中心</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {ps.map(p => (
-                  <div key={p.id} className="bg-slate-900/80 p-6 rounded-[2rem] border border-white/5 shadow-xl hover:border-blue-500/30 transition-all">
+                  <div key={p.id} className="bg-slate-900 p-6 rounded-[2rem] border border-white/5">
                     <p className="text-2xl text-blue-400 italic mb-1">{p.name}</p>
-                    <p className="text-xs text-slate-500 font-mono tracking-widest">{p.phone}</p>
+                    <p className="text-xs text-slate-500">{p.phone}</p>
                   </div>
                 ))}
               </div>
-
-              {/* 🤖 總裁 AI 特助：餵食全公司數據 (ps) */}
               <LocalLogisticsAI data={ps} />
             </div>
           )}
 
-          {/* 3. 司機視角 (DriverHub) */}
           {l === 'driver' && (
-            <div className="p-6 flex flex-col items-center justify-center min-h-screen animate-[fadeIn_0.5s]">
-              <h2 className="text-3xl italic mb-8 tracking-tighter">前線工作站</h2>
-              <div className="bg-slate-900/50 p-12 rounded-[3rem] border border-white/10 text-center shadow-2xl backdrop-blur-md w-full max-w-sm">
+            <div className="p-6 flex flex-col items-center justify-center min-h-screen">
+              <h2 className="text-3xl italic mb-8">前線工作站</h2>
+              <div className="bg-slate-900/50 p-12 rounded-[3rem] border border-white/10 text-center w-full max-w-sm">
                 <div className="loader mx-auto mb-8 w-12 h-12 border-4 border-blue-500/20 border-l-blue-500 rounded-full animate-spin"></div>
-                <p className="text-blue-400 text-sm italic tracking-[0.2em] mb-2 animate-pulse">數據加密鏈路中...</p>
-                <p className="text-slate-600 text-[10px]">GGSOC PROTOCOL ACTIVE</p>
+                <p className="text-blue-400 text-sm italic tracking-widest animate-pulse">數據加密連線中...</p>
               </div>
-              
-              {/* 🤖 司機 AI 特助：只餵食該司機自己的數據 */}
               <LocalLogisticsAI data={ps.find(x => x.phone === (u?.phoneNumber || ''))} />
             </div>
           )}
         </div>
       );
-    } // AppWrapper 結束
+    }
 
-    // 🚀 最終啟動點：把所有東西渲染到 root 上
     try {
       createRoot(document.getElementById('root')).render(
         <ErrorBoundary>
           <AppWrapper />
         </ErrorBoundary>
       );
-    } catch (err) { console.error("系統啟動失敗:", err); }
+    } catch (err) { console.error(err); }
