@@ -1,124 +1,83 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>在地物流｜行動政務系統</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    body { background: #000; color: #cbd5e1; font-family: system-ui, sans-serif; overflow-x: hidden; }
-    .霓虹框 { border: 1px solid #00ff4133; background: rgba(0, 20, 0, 0.6); backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(0, 255, 65, 0.05); }
-    .炫酷按鈕 { border: 1px solid #00ff41; color: #00ff41; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; }
-    .炫酷按鈕:hover { background: #00ff41; color: #000; box-shadow: 0 0 20px #00ff41; }
-    .隱藏滑桿 { accent-color: #00ff41; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
+import time
+import random
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+class GodSystemAI:
+    def __init__(self):
+        # 狀態機：0=面試, 1=入職後
+        self.state = 0 
+        self.driver_name = "大哥"
+        # 隨機分配入職後的角色
+        self.support_roles = [
+            {"name": "阿翔", "style": "大哥感", "tone": "台式口吻"},
+            {"name": "小潔", "style": "行政感", "tone": "溫柔專業"}
+        ]
+        self.assigned_role = random.choice(self.support_roles)
 
-    const App = () => {
-      const [階段, 設定階段] = useState('首頁');
-      const [敲擊數, 設定敲擊] = useState(0);
-      const [核定獎金, 設定獎金] = useState(5000); 
-      const [罰則裁量, 設定罰則] = useState(500);
+    def human_delay(self, text):
+        """模擬真人打字延遲，不秒回"""
+        wait = len(text) * 0.05 + random.uniform(1.0, 2.0)
+        time.sleep(wait)
 
-      // 🤫 影子入口邏輯
-      const 觸發後門 = () => {
-        const 新次數 = 敲擊數 + 1;
-        設定敲擊(新次數);
-        if (新次數 >= 7) {
-          設定階段('指揮中心');
-          設定敲擊(0);
-        }
-        setTimeout(() => 設定敲擊(0), 2000); // 2秒重置
-      };
+    def process_input(self, user_text):
+        # 簡單的台語關鍵字識別邏輯
+        is_taiwanese = any(word in user_text for word in ["好勢", "會使", "無代誌", "食飽", "可以啦"])
+        
+        if self.state == 0:
+            return self.interview_mode(user_text, is_taiwanese)
+        else:
+            return self.support_mode(user_text, is_taiwanese)
 
-      return (
-        <div className="min-h-screen p-6 flex flex-col items-center justify-center">
-          
-          {/* --- 司機登入首頁 --- */}
-          {階段 === '首頁' && (
-            <div className="w-full max-w-sm space-y-10 text-center">
-              <div>
-                <h1 onClick={觸發後門} className="text-5xl font-black italic tracking-tighter text-white select-none">
-                  在地物流
-                </h1>
-                <p className="text-[10px] text-[#00ff41] tracking-[0.5em] mt-2 opacity-70">內部行政政務入口</p>
-              </div>
+    def interview_mode(self, user_text, is_taiwanese):
+        """面試引路人模式：專業、引導、非考官"""
+        self.human_delay("正在處理面試回覆...")
+        
+        # 模擬面試題目邏輯
+        if "準備好了" in user_text or "好勢" in user_text:
+            response = "收到，專業。第一題：如果配送時客戶沒接電話，現場又不能違停，你會怎麼處理？"
+        elif "拍照" in user_text or "回報" in user_text:
+            response = "好的，這個邏輯很清楚，我們記錄下來了。面試到此結束，請稍候，系統正在核對資料..."
+            self.state = 1 # 自動轉入職狀態
+        else:
+            response = "了解，大哥你照經驗說就好，我這邊都會記錄。"
+            
+        return f"【AI 面試引路人】: {response}"
 
-              <div className="霓虹框 p-8 rounded-3xl space-y-4">
-                <input placeholder="人員代碼" className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-[#00ff41] transition-all" />
-                <button onClick={() => 設定階段('任務頁')} className="w-full py-4 炫酷按鈕 rounded-2xl font-bold">進入系統</button>
-              </div>
-            </div>
-          )}
+    def support_mode(self, user_text, is_taiwanese):
+        """司機端客服模式：擬人、隨機人設、不廢話"""
+        role_name = self.assigned_role['name']
+        self.human_delay(user_text)
 
-          {/* --- 下班數據封存頁 --- */}
-          {階段 === '任務頁' && (
-            <div className="w-full max-w-sm 霓虹框 p-8 rounded-3xl space-y-6 animate-in">
-              <h2 className="text-xl font-black italic text-[#00ff41]">勤務結束數據封存</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[10px] mb-2 text-slate-400">1. 廠商系統數據截圖</p>
-                  <div className="border border-dashed border-[#00ff4155] p-6 rounded-xl text-xs text-center opacity-50">點擊上傳截圖凭證</div>
-                </div>
+        # 根據角色風格生成回覆
+        if self.assigned_role['name'] == "阿翔":
+            prefix = "嘿呀，" if not is_taiwanese else "好勢啦，"
+            responses = [
+                f"{prefix}恭喜喔！資料過件了。我是阿翔，以後後台我負責，多照顧啦！",
+                f"{prefix}大哥，我看你資料入庫了，那個薪資條記得橫著螢幕簽名一下嘿。",
+                f"{prefix}沒事啦，以後有問題直接敲我，我都在。"
+            ]
+        else: # 小潔
+            prefix = "大哥～"
+            responses = [
+                f"{prefix}恭喜你入職唷！我是小潔，以後有對帳問題都可以找我呀。",
+                f"{prefix}幫你確認好入職流程了，再麻煩幫我補個簽名唷，謝謝辛苦了！"
+            ]
 
-                <div className="p-4 bg-white/5 rounded-xl space-y-3">
-                  <p className="text-[10px] text-slate-400">2. 單據存證 (背面含金額/日期/簽名)</p>
-                  <label className="flex items-center gap-2 text-[11px]"><input type="checkbox" className="accent-[#00ff41]" /> 已確認金額與日期正確</label>
-                  <label className="flex items-center gap-2 text-[11px]"><input type="checkbox" className="accent-[#00ff41]" /> 承攬人已親筆簽名</label>
-                  <div className="border border-dashed border-[#00ff4155] p-6 rounded-xl text-xs text-center opacity-50">上傳單據影像</div>
-                </div>
-              </div>
+        return f"【{role_name}】: {random.choice(responses)}"
 
-              <p className="text-[9px] text-slate-500 italic">
-                萬事通提醒：依合約第二條 [cite: 1]，報酬結算皆以廠商正式報表為準 。
-              </p>
+# --- 模擬運行 ---
+sys = GodSystemAI()
 
-              <button onClick={() => 設定階段('首頁')} className="w-full py-4 炫酷按鈕 rounded-2xl font-bold">執行數據同步並登出</button>
-            </div>
-          )}
+print(">>> 系統啟動：進入面試模式")
+print("【AI 面試引路人】: 大哥你好，歡迎來面試。準備好我們就開始？")
 
-          {/* --- 🤫 影子指揮中心 (司機看不到) --- */}
-          {階段 === '指揮中心' && (
-            <div className="w-full max-w-sm 霓虹框 border-emerald-500 p-8 rounded-3xl space-y-8 animate-in">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-black italic text-emerald-400 uppercase">影子指揮中心</h2>
-                <button onClick={() => 設定階段('首頁')} className="text-[10px] opacity-30">退出</button>
-              </div>
+# 模擬對話流程
+actions = [
+    "好勢，隨時可以開始。",
+    "我會先拍照，然後回報後台處理。",
+    "阿翔哥多照顧！"
+]
 
-              <div className="space-y-6 text-sm">
-                <div className="space-y-4">
-                  <div className="flex justify-between font-mono"><span className="text-slate-400">特約車隊長津貼</span><span className="text-emerald-400">${核定獎金}</span></div>
-                  <input type="range" min="5000" max="8000" step="500" value={核定獎金} onChange={(e)=>設定獎金(e.target.value)} className="w-full 隱藏滑桿" />
-                  <div className="flex justify-between text-[9px] opacity-30"><span>最低 $5,000 [cite: 3]</span><span>最高 $8,000 [cite: 4]</span></div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t border-white/5">
-                  <div className="flex justify-between font-mono"><span className="text-rose-400">虛假妥投罰則裁量</span><span className="text-rose-400">${罰則裁量}</span></div>
-                  <input type="range" min="500" max="2000" step="100" value={罰則裁量} onChange={(e)=>設定罰則(e.target.value)} className="w-full 隱藏滑桿" />
-                  <div className="flex justify-between text-[9px] opacity-30"><span>最低 $500 </span><span>最高 $2,000 </span></div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/20 text-[10px] text-emerald-500 leading-relaxed">
-                ※ 調整說明：此處設定將直接影響司機端戰報之「核定金額」，司機無法看見調節區間。
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
+for action in actions:
+    print(f"\n司機回覆: {action}")
+    result = sys.process_input(action)
+    print(result)</html>
