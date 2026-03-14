@@ -45,6 +45,7 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+            scroll-behavior: smooth; /* 啟動平滑捲動 */
         }
 
         .message {
@@ -55,9 +56,14 @@
             line-height: 1.4;
             position: relative;
             word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
         }
 
-        /* 司機端（使用者）：綠色泡泡 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .message.user {
             align-self: flex-end;
             background-color: #4CAF50;
@@ -65,7 +71,6 @@
             border-bottom-right-radius: 5px;
         }
 
-        /* AI 端（客服/面試）：白色泡泡 */
         .message.ai {
             align-self: flex-start;
             background-color: #e9ecef;
@@ -88,6 +93,10 @@
             outline: none;
         }
 
+        #user-input:disabled {
+            background-color: #eee;
+        }
+
         #send-btn {
             background-color: #4CAF50;
             color: white;
@@ -99,12 +108,17 @@
             font-weight: bold;
         }
 
+        #send-btn:disabled {
+            background-color: #ccc;
+        }
+
         #typing-indicator {
             font-style: italic;
             color: #888;
             margin-left: 10px;
             margin-bottom: 10px;
             display: none;
+            font-size: 0.9em;
         }
     </style>
 </head>
@@ -112,79 +126,4 @@
 
 <div id="chat-container">
     <div id="chat-header">在地物流：AI 引路人</div>
-    <div id="chat-messages">
-        </div>
-    <div id="typing-indicator">對方正在輸入...</div>
-    <div id="chat-input-area">
-        <input type="text" id="user-input" placeholder="請輸入您的回覆...">
-        <button id="send-btn">發送</button>
-    </div>
-</div>
-
-<script>
-    /* JavaScript：核心對話邏輯引擎 */
-    const messagesContainer = document.getElementById('chat-messages');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const header = document.getElementById('chat-header');
-    const typingIndicator = document.getElementById('typing-indicator');
-
-    let state = 0; // 0: 面試, 1: 入職後
-    const role = { name: "阿翔哥", prefix: "嘿呀" }; // 固定人設
-
-    // 核心需求：擬人化不對稱延遲算法
-    function simulateTyping(text, callback) {
-        typingIndicator.style.display = 'block';
-        // 延遲 = (字數 * 100ms) + 隨機偏移 (0.5s - 1.5s)
-        const delay = text.length * 100 + Math.random() * 1000 + 500;
-        setTimeout(() => {
-            typingIndicator.style.display = 'none';
-            callback();
-        }, delay);
-    }
-
-    function addMessage(text, sender) {
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', sender);
-        messageDiv.textContent = text;
-        messagesContainer.appendChild(messageDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight; // 自動捲動到底部
-    }
-
-    function handleUserInput() {
-        const text = userInput.value.trim();
-        if (text === "") return;
-
-        addMessage(text, 'user'); // 顯示司機輸入
-        userInput.value = ""; // 清空輸入框
-
-        // 簡單的關鍵字識別：偵測台語關鍵字
-        const isTaiwanese = /好勢|會使|無代誌|食飽|可以啦/.test(text);
-
-        if (state === 0) {
-            handleInterview(text, isTaiwanese);
-        } else {
-            handleSupport(text, isTaiwanese);
-        }
-    }
-
-    // 面試引路人邏輯 (專業、專業、非考官)
-    function handleInterview(text, isTaiwanese) {
-        let response;
-        if (text.includes("準備好了") || text.includes("好勢")) {
-            response = "收到，專業。第一題：如果配送時客戶沒接電話，現場又不能違停，你會怎麼處理？";
-        } else if (text.includes("拍照") || text.includes("回報")) {
-            response = "好的，這個處理邏輯很清楚，我們記錄下來了。面試到此結束，請稍候，系統正在核對資料...";
-            state = 1; // 自動轉換入職狀態
-            setTimeout(() => { header.textContent = `客服專員 - ${role.name}`; }, 1000); // 延遲更換 Header
-        } else {
-            response = "了解，大哥你照經驗說就好，我這邊都會記錄。";
-        }
-        
-        simulateTyping(response, () => { addMessage(response, 'ai'); });
-    }
-
-    // 司機端客服邏輯 (擬人、隨機、不廢話)
-    function handleSupport(text, isTaiwanese) {
-        let response;
-        const prefix = is
+    <div id
