@@ -1,83 +1,190 @@
-import time
-import random
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在地物流：上帝系統體驗版</title>
+    <style>
+        /* CSS：打造極簡、去頭貼化、通訊軟體風 */
+        body {
+            font-family: "Microsoft JhengHei", "Apple LiGothic", sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
-class GodSystemAI:
-    def __init__(self):
-        # 狀態機：0=面試, 1=入職後
-        self.state = 0 
-        self.driver_name = "大哥"
-        # 隨機分配入職後的角色
-        self.support_roles = [
-            {"name": "阿翔", "style": "大哥感", "tone": "台式口吻"},
-            {"name": "小潔", "style": "行政感", "tone": "溫柔專業"}
-        ]
-        self.assigned_role = random.choice(self.support_roles)
+        #chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 90vh;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-    def human_delay(self, text):
-        """模擬真人打字延遲，不秒回"""
-        wait = len(text) * 0.05 + random.uniform(1.0, 2.0)
-        time.sleep(wait)
+        #chat-header {
+            background-color: #ffffff;
+            color: #333;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
 
-    def process_input(self, user_text):
-        # 簡單的台語關鍵字識別邏輯
-        is_taiwanese = any(word in user_text for word in ["好勢", "會使", "無代誌", "食飽", "可以啦"])
+        #chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            line-height: 1.4;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        /* 司機端（使用者）：綠色泡泡 */
+        .message.user {
+            align-self: flex-end;
+            background-color: #4CAF50;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        /* AI 端（客服/面試）：白色泡泡 */
+        .message.ai {
+            align-self: flex-start;
+            background-color: #e9ecef;
+            color: #333;
+            border-bottom-left-radius: 5px;
+        }
+
+        #chat-input-area {
+            padding: 10px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            background-color: #f9f9f9;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        #send-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            margin-left: 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #typing-indicator {
+            font-style: italic;
+            color: #888;
+            margin-left: 10px;
+            margin-bottom: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="chat-header">在地物流：AI 引路人</div>
+    <div id="chat-messages">
+        </div>
+    <div id="typing-indicator">對方正在輸入...</div>
+    <div id="chat-input-area">
+        <input type="text" id="user-input" placeholder="請輸入您的回覆...">
+        <button id="send-btn">發送</button>
+    </div>
+</div>
+
+<script>
+    /* JavaScript：核心對話邏輯引擎 */
+    const messagesContainer = document.getElementById('chat-messages');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const header = document.getElementById('chat-header');
+    const typingIndicator = document.getElementById('typing-indicator');
+
+    let state = 0; // 0: 面試, 1: 入職後
+    const role = { name: "阿翔哥", prefix: "嘿呀" }; // 固定人設
+
+    // 核心需求：擬人化不對稱延遲算法
+    function simulateTyping(text, callback) {
+        typingIndicator.style.display = 'block';
+        // 延遲 = (字數 * 100ms) + 隨機偏移 (0.5s - 1.5s)
+        const delay = text.length * 100 + Math.random() * 1000 + 500;
+        setTimeout(() => {
+            typingIndicator.style.display = 'none';
+            callback();
+        }, delay);
+    }
+
+    function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', sender);
+        messageDiv.textContent = text;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight; // 自動捲動到底部
+    }
+
+    function handleUserInput() {
+        const text = userInput.value.trim();
+        if (text === "") return;
+
+        addMessage(text, 'user'); // 顯示司機輸入
+        userInput.value = ""; // 清空輸入框
+
+        // 簡單的關鍵字識別：偵測台語關鍵字
+        const isTaiwanese = /好勢|會使|無代誌|食飽|可以啦/.test(text);
+
+        if (state === 0) {
+            handleInterview(text, isTaiwanese);
+        } else {
+            handleSupport(text, isTaiwanese);
+        }
+    }
+
+    // 面試引路人邏輯 (專業、專業、非考官)
+    function handleInterview(text, isTaiwanese) {
+        let response;
+        if (text.includes("準備好了") || text.includes("好勢")) {
+            response = "收到，專業。第一題：如果配送時客戶沒接電話，現場又不能違停，你會怎麼處理？";
+        } else if (text.includes("拍照") || text.includes("回報")) {
+            response = "好的，這個處理邏輯很清楚，我們記錄下來了。面試到此結束，請稍候，系統正在核對資料...";
+            state = 1; // 自動轉換入職狀態
+            setTimeout(() => { header.textContent = `客服專員 - ${role.name}`; }, 1000); // 延遲更換 Header
+        } else {
+            response = "了解，大哥你照經驗說就好，我這邊都會記錄。";
+        }
         
-        if self.state == 0:
-            return self.interview_mode(user_text, is_taiwanese)
-        else:
-            return self.support_mode(user_text, is_taiwanese)
+        simulateTyping(response, () => { addMessage(response, 'ai'); });
+    }
 
-    def interview_mode(self, user_text, is_taiwanese):
-        """面試引路人模式：專業、引導、非考官"""
-        self.human_delay("正在處理面試回覆...")
-        
-        # 模擬面試題目邏輯
-        if "準備好了" in user_text or "好勢" in user_text:
-            response = "收到，專業。第一題：如果配送時客戶沒接電話，現場又不能違停，你會怎麼處理？"
-        elif "拍照" in user_text or "回報" in user_text:
-            response = "好的，這個邏輯很清楚，我們記錄下來了。面試到此結束，請稍候，系統正在核對資料..."
-            self.state = 1 # 自動轉入職狀態
-        else:
-            response = "了解，大哥你照經驗說就好，我這邊都會記錄。"
-            
-        return f"【AI 面試引路人】: {response}"
-
-    def support_mode(self, user_text, is_taiwanese):
-        """司機端客服模式：擬人、隨機人設、不廢話"""
-        role_name = self.assigned_role['name']
-        self.human_delay(user_text)
-
-        # 根據角色風格生成回覆
-        if self.assigned_role['name'] == "阿翔":
-            prefix = "嘿呀，" if not is_taiwanese else "好勢啦，"
-            responses = [
-                f"{prefix}恭喜喔！資料過件了。我是阿翔，以後後台我負責，多照顧啦！",
-                f"{prefix}大哥，我看你資料入庫了，那個薪資條記得橫著螢幕簽名一下嘿。",
-                f"{prefix}沒事啦，以後有問題直接敲我，我都在。"
-            ]
-        else: # 小潔
-            prefix = "大哥～"
-            responses = [
-                f"{prefix}恭喜你入職唷！我是小潔，以後有對帳問題都可以找我呀。",
-                f"{prefix}幫你確認好入職流程了，再麻煩幫我補個簽名唷，謝謝辛苦了！"
-            ]
-
-        return f"【{role_name}】: {random.choice(responses)}"
-
-# --- 模擬運行 ---
-sys = GodSystemAI()
-
-print(">>> 系統啟動：進入面試模式")
-print("【AI 面試引路人】: 大哥你好，歡迎來面試。準備好我們就開始？")
-
-# 模擬對話流程
-actions = [
-    "好勢，隨時可以開始。",
-    "我會先拍照，然後回報後台處理。",
-    "阿翔哥多照顧！"
-]
-
-for action in actions:
-    print(f"\n司機回覆: {action}")
-    result = sys.process_input(action)
-    print(result)</html>
+    // 司機端客服邏輯 (擬人、隨機、不廢話)
+    function handleSupport(text, isTaiwanese) {
+        let response;
+        const prefix = is
