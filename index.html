@@ -3,135 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>在地物流：上帝系統體驗版</title>
+    <title>在地物流 - 上帝系統體驗版</title>
     <style>
-        body {
-            font-family: "Microsoft JhengHei", sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        #chat-container {
-            width: 100%;
-            max-width: 600px;
-            height: 90vh;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        #chat-header {
-            background-color: #ffffff;
-            padding: 15px;
-            font-weight: bold;
-            text-align: center;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        #chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            scroll-behavior: smooth;
-        }
-        .message {
-            margin-bottom: 15px;
-            max-width: 80%;
-            padding: 10px 15px;
-            border-radius: 15px;
-            word-wrap: break-word;
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .message.user { align-self: flex-end; background-color: #4CAF50; color: white; border-bottom-right-radius: 5px; }
-        .message.ai { align-self: flex-start; background-color: #e9ecef; color: #333; border-bottom-left-radius: 5px; }
-        #chat-input-area { padding: 10px; border-top: 1px solid #e0e0e0; display: flex; background-color: #f9f9f9; }
-        #user-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
-        #send-btn { background-color: #4CAF50; color: white; border: none; padding: 0 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; }
-        #typing-indicator { font-style: italic; color: #888; padding: 5px 20px; display: none; font-size: 0.8em; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { width: 90%; max-width: 400px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        h2 { color: #333; margin-bottom: 10px; }
+        p { color: #666; font-size: 14px; line-height: 1.6; }
+        .btn { background-color: #007bff; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 50px; cursor: pointer; transition: 0.3s; margin-top: 20px; width: 100%; font-weight: bold; }
+        .btn:active { transform: scale(0.95); background-color: #0056b3; }
+        .status { margin-top: 15px; font-size: 13px; color: #ff5722; font-weight: bold; min-height: 20px; }
+        .hidden { display: none; }
+        .success-icon { font-size: 50px; color: #4caf50; }
     </style>
 </head>
 <body>
 
-<div id="chat-container">
-    <div id="chat-header">在地物流：AI 引路人</div>
-    <div id="chat-messages"></div>
-    <div id="typing-indicator">對方正在輸入...</div>
-    <div id="chat-input-area">
-        <input type="text" id="user-input" placeholder="請輸入您的回覆..." autocomplete="off">
-        <button id="send-btn">發送</button>
+<div class="card" id="app">
+    <div id="interview-stage">
+        <h2>🚚 面試引路人</h2>
+        <p>歡迎來到在地物流。點擊下方按鈕開始語音面試，請照跑車經驗回答即可（支援台語）。</p>
+        <button class="btn" onclick="startInterview()">🎙️ 開始語音面試</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <div id="success-stage" class="hidden">
+        <div class="success-icon">✅</div>
+        <h2>數據同步成功</h2>
+        <p id="assigned-text"></p>
+        <p style="background: #eee; padding: 10px; border-radius: 10px;">上帝端日誌：已執行 SHA-256 存證</p>
+        <button class="btn" style="background:#333;" onclick="location.reload()">重新體驗</button>
     </div>
 </div>
 
 <script>
-    const messagesContainer = document.getElementById('chat-messages');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const header = document.getElementById('chat-header');
-    const typingIndicator = document.getElementById('typing-indicator');
+    // 角色隨機池
+    const roles = [
+        { name: "阿翔", msg: "嘿呀！大哥恭喜喔，我是後台的阿翔。以後跑車有問題直接敲我就好，多照顧啦！" },
+        { name: "小潔", msg: "大哥～恭喜你入職唷！我是小潔，以後有對帳問題都可以找我呀。" }
+    ];
 
-    let state = 0; 
-    let isAiTyping = false;
-
-    function addMessage(text, sender) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}`;
-        messageDiv.textContent = text;
-        messagesContainer.appendChild(messageDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // 初始化語音辨識
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-TW';
+        recognition.interimResults = false;
     }
 
-    function simulateAiResponse(text) {
-        isAiTyping = true;
-        typingIndicator.style.display = 'block';
-        const delay = text.length * 50 + 800;
-        
-        setTimeout(() => {
-            typingIndicator.style.display = 'none';
-            addMessage(text, 'ai');
-            isAiTyping = false;
-        }, delay);
+    // AI 說話 (TTS)
+    function speak(text, callback) {
+        const synth = window.speechSynthesis;
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'zh-TW';
+        utter.rate = 0.95;
+        utter.onend = callback;
+        synth.speak(utter);
     }
 
-    function handleUserInput() {
-        const text = userInput.value.trim();
-        if (text === "" || isAiTyping) return;
+    // 流程一：開始面試
+    function startInterview() {
+        const status = document.getElementById('status');
+        status.innerText = "正在初始化面試環境...";
 
-        addMessage(text, 'user');
-        userInput.value = "";
-
-        // 簡單邏輯分支
-        if (state === 0) {
-            if (text.includes("準備") || text.includes("好")) {
-                simulateAiResponse("收到！第一題：如果客戶沒接電話，現場又不能違停，你會怎麼處理？");
-                state = 1;
+        // AI 提問
+        speak("大哥你好，我是在地物流引導員。第一題：配送時客戶沒接電話，你會怎麼處理？", () => {
+            status.innerText = "🔴 正在聽你說話 (請回答)...";
+            if (recognition) {
+                recognition.start();
             } else {
-                simulateAiResponse("沒關係，大哥你準備好了跟我說一聲「準備好了」就好。");
+                alert("瀏覽器不支援語音辨識，請使用 Chrome 測試。");
             }
-        } else if (state === 1) {
-            simulateAiResponse("了解，回報並依照規定處理是正確的。面試結束，我正在幫你核對資料...");
-            setTimeout(() => { header.textContent = "客服專員 - 阿翔哥"; }, 2000);
-            state = 2;
-        } else {
-            simulateAiResponse("大哥辛苦了，以後有問題直接找我阿翔！");
-        }
+        });
     }
 
-    sendBtn.onclick = handleUserInput;
-    userInput.onkeypress = (e) => { if (e.key === 'Enter') handleUserInput(); };
+    // 流程二：辨識結果處理
+    if (recognition) {
+        recognition.onresult = (event) => {
+            const result = event.results[0][0].transcript;
+            document.getElementById('status').innerText = "你說了：" + result;
 
-    // 初始開場
-    window.onload = () => {
+            // 判斷關鍵字 (含台語感辨識)
+            if (result.includes("拍照") || result.includes("回報") || result.includes("好勢") || result.includes("打電話")) {
+                speak("收到，專業。這個邏輯很清楚。正在執行數據同步並存證...", () => {
+                    goToSuccess();
+                });
+            } else {
+                speak("了解，大哥照經驗說就好。剛才這段我先記錄下來。");
+            }
+        };
+
+        recognition.onerror = () => {
+            document.getElementById('status').innerText = "辨識失敗，請再點一次按鈕試試。";
+        };
+    }
+
+    // 流程三：進入入職成功頁面
+    function goToSuccess() {
+        document.getElementById('interview-stage').classList.add('hidden');
+        document.getElementById('success-stage').classList.remove('hidden');
+        
+        // 隨機分配影子行政
+        const role = roles[Math.floor(Math.random() * roles.length)];
+        document.getElementById('assigned-text').innerText = role.msg;
+        
+        // 自動播放影子行政迎接語
         setTimeout(() => {
-            addMessage("大哥你好，我是面試引導員。準備好了我們就開始囉？", "ai");
+            speak(role.msg);
         }, 500);
-    };
+    }
 </script>
+
 </body>
 </html>
