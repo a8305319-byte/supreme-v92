@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>在地物流：上帝系統體驗版</title>
     <style>
-        /* CSS：打造極簡、去頭貼化、通訊軟體風 */
         body {
-            font-family: "Microsoft JhengHei", "Apple LiGothic", sans-serif;
+            font-family: "Microsoft JhengHei", sans-serif;
             background-color: #f0f2f5;
             margin: 0;
-            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
         }
-
         #chat-container {
             width: 100%;
             max-width: 600px;
@@ -28,102 +25,113 @@
             flex-direction: column;
             overflow: hidden;
         }
-
         #chat-header {
             background-color: #ffffff;
-            color: #333;
             padding: 15px;
-            font-size: 1.2em;
             font-weight: bold;
             text-align: center;
             border-bottom: 1px solid #e0e0e0;
         }
-
         #chat-messages {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            scroll-behavior: smooth; /* 啟動平滑捲動 */
+            scroll-behavior: smooth;
         }
-
         .message {
             margin-bottom: 15px;
             max-width: 80%;
             padding: 10px 15px;
             border-radius: 15px;
-            line-height: 1.4;
-            position: relative;
             word-wrap: break-word;
             animation: fadeIn 0.3s ease;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.user {
-            align-self: flex-end;
-            background-color: #4CAF50;
-            color: white;
-            border-bottom-right-radius: 5px;
-        }
-
-        .message.ai {
-            align-self: flex-start;
-            background-color: #e9ecef;
-            color: #333;
-            border-bottom-left-radius: 5px;
-        }
-
-        #chat-input-area {
-            padding: 10px;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            background-color: #f9f9f9;
-        }
-
-        #user-input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            outline: none;
-        }
-
-        #user-input:disabled {
-            background-color: #eee;
-        }
-
-        #send-btn {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 0 20px;
-            margin-left: 10px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #send-btn:disabled {
-            background-color: #ccc;
-        }
-
-        #typing-indicator {
-            font-style: italic;
-            color: #888;
-            margin-left: 10px;
-            margin-bottom: 10px;
-            display: none;
-            font-size: 0.9em;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message.user { align-self: flex-end; background-color: #4CAF50; color: white; border-bottom-right-radius: 5px; }
+        .message.ai { align-self: flex-start; background-color: #e9ecef; color: #333; border-bottom-left-radius: 5px; }
+        #chat-input-area { padding: 10px; border-top: 1px solid #e0e0e0; display: flex; background-color: #f9f9f9; }
+        #user-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
+        #send-btn { background-color: #4CAF50; color: white; border: none; padding: 0 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; }
+        #typing-indicator { font-style: italic; color: #888; padding: 5px 20px; display: none; font-size: 0.8em; }
     </style>
 </head>
 <body>
 
 <div id="chat-container">
     <div id="chat-header">在地物流：AI 引路人</div>
-    <div id
+    <div id="chat-messages"></div>
+    <div id="typing-indicator">對方正在輸入...</div>
+    <div id="chat-input-area">
+        <input type="text" id="user-input" placeholder="請輸入您的回覆..." autocomplete="off">
+        <button id="send-btn">發送</button>
+    </div>
+</div>
+
+<script>
+    const messagesContainer = document.getElementById('chat-messages');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const header = document.getElementById('chat-header');
+    const typingIndicator = document.getElementById('typing-indicator');
+
+    let state = 0; 
+    let isAiTyping = false;
+
+    function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+        messageDiv.textContent = text;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function simulateAiResponse(text) {
+        isAiTyping = true;
+        typingIndicator.style.display = 'block';
+        const delay = text.length * 50 + 800;
+        
+        setTimeout(() => {
+            typingIndicator.style.display = 'none';
+            addMessage(text, 'ai');
+            isAiTyping = false;
+        }, delay);
+    }
+
+    function handleUserInput() {
+        const text = userInput.value.trim();
+        if (text === "" || isAiTyping) return;
+
+        addMessage(text, 'user');
+        userInput.value = "";
+
+        // 簡單邏輯分支
+        if (state === 0) {
+            if (text.includes("準備") || text.includes("好")) {
+                simulateAiResponse("收到！第一題：如果客戶沒接電話，現場又不能違停，你會怎麼處理？");
+                state = 1;
+            } else {
+                simulateAiResponse("沒關係，大哥你準備好了跟我說一聲「準備好了」就好。");
+            }
+        } else if (state === 1) {
+            simulateAiResponse("了解，回報並依照規定處理是正確的。面試結束，我正在幫你核對資料...");
+            setTimeout(() => { header.textContent = "客服專員 - 阿翔哥"; }, 2000);
+            state = 2;
+        } else {
+            simulateAiResponse("大哥辛苦了，以後有問題直接找我阿翔！");
+        }
+    }
+
+    sendBtn.onclick = handleUserInput;
+    userInput.onkeypress = (e) => { if (e.key === 'Enter') handleUserInput(); };
+
+    // 初始開場
+    window.onload = () => {
+        setTimeout(() => {
+            addMessage("大哥你好，我是面試引導員。準備好了我們就開始囉？", "ai");
+        }, 500);
+    };
+</script>
+</body>
+</html>
