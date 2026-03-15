@@ -1,276 +1,144 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LOGI CORE | 智慧物流管理系統</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    /* 極光漸層背景 */
-    .aurora-bg {
-      background: linear-gradient(135deg, #0f0c29, #1a1a4e, #0d3b4f, #0f2027, #1b0036);
-      background-size: 400% 400%;
-      animation: auroraShift 14s ease infinite;
-    }
-    @keyframes auroraShift {
-      0%   { background-position: 0% 50%; }
-      50%  { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    /* 玻璃質感卡片 */
-    .glass-card {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.04) 100%);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 1.5rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-      position: relative;
-    }
-    /* 標題發光動畫 */
-    @keyframes titleGlow {
-      0%, 100% { text-shadow: 0 0 10px rgba(139, 92, 246, 0.5); opacity: 0.85; }
-      50% { text-shadow: 0 0 20px rgba(139, 92, 246, 0.9), 0 0 50px rgba(99, 102, 241, 0.6); opacity: 1; }
-    }
-    .title-animate { animation: titleGlow 3s infinite ease-in-out; }
-    /* 進場動畫 */
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .stagger-in { animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; }
-    /* 捲軸隱藏 */
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LOGI CORE | 智慧物流管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; overflow-x: hidden; }
+        .aurora-bg {
+            background: linear-gradient(135deg, #0f0c29, #1a1a4e, #0d3b4f, #0f2027, #1b0036);
+            background-size: 400% 400%;
+            animation: auroraShift 14s ease infinite;
+        }
+        @keyframes auroraShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.09);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 1.5rem;
+        }
+    </style>
 </head>
+<body class="aurora-bg min-h-screen text-white p-6">
 
-<body class="aurora-bg text-slate-200">
+    <header class="mb-10 text-center">
+        <h1 class="text-4xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">LOGI CORE</h1>
+        <p class="text-gray-400 mt-2 text-sm tracking-widest">在地物流有限公司 夥伴作業平台</p>
+    </header>
 
-  <div id="login-screen" class="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
-    <div class="glass-card p-8 w-full max-w-md stagger-in">
-      <div class="text-center mb-8">
-        <h1 class="text-4xl font-black tracking-[0.3em] title-animate bg-gradient-to-r from-violet-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent">
-          LOGI CORE
-        </h1>
-        <p class="text-white/30 text-xs mt-2 tracking-widest">在地物流有限公司 夥伴作業平台</p>
-      </div>
-      <div class="space-y-5">
-        <div>
-          <label class="block text-xs text-violet-300 mb-2 tracking-wide">極簡登入</label>
-          <input type="tel" placeholder="輸入手機號碼" class="w-full bg-black/30 border border-violet-500/30 rounded-xl px-4 py-3 text-white outline-none focus:border-violet-400/60 transition-all"/>
+    <main class="max-w-md mx-auto space-y-6">
+        <div class="glass-card p-8 shadow-2xl relative overflow-hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold">本期薪資預覽</h2>
+                <span class="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded">系統自動對帳中</span>
+            </div>
+            
+            <div id="payout-content" class="space-y-4">
+                <div class="flex justify-between text-gray-300">
+                    <span>核實件數</span>
+                    <span id="final-count" class="font-mono">載入中...</span>
+                </div>
+                <div class="flex justify-between text-gray-300">
+                    <span>二代健保 (2.11%)</span>
+                    <span id="insurance-deduction" class="text-red-400">-$0</span>
+                </div>
+                <div class="pt-4 border-t border-white/10 flex justify-between items-baseline">
+                    <span class="text-lg">實領總額</span>
+                    <span id="net-pay" class="text-3xl font-bold text-green-400">$0</span>
+                </div>
+            </div>
         </div>
-        <button onclick="enterSystem()" class="w-full py-3.5 rounded-xl text-white font-semibold text-sm bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 shadow-lg active:scale-95 transition-transform">
-          進入作業介面 →
-        </button>
-      </div>
-    </div>
-  </div>
 
-  <div id="main-system" class="hidden relative z-10 min-h-screen flex items-start justify-center p-4 py-6">
-    <div class="w-full max-w-md flex flex-col gap-5">
-
-      <div class="glass-card px-5 py-3 flex items-center gap-3 stagger-in">
-        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-md flex-shrink-0">翔</div>
-        <p class="text-sm text-white/80 leading-relaxed">🌧️ 阿翔提醒：宜蘭今日路滑，夥伴行車請減速，注意安全！</p>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4 stagger-in" style="animation-delay:0.1s">
-        <div class="glass-card p-6 flex flex-col items-center gap-3 cursor-pointer hover:bg-white/5 transition" onclick="startCamera()">
-          <div class="text-3xl">📸</div>
-          <span class="text-sm text-white/80 font-medium">下班拍照</span>
-        </div>
-        <div class="glass-card p-6 flex flex-col items-center gap-3 cursor-pointer hover:bg-white/5 transition" onclick="openSignaturePad()">
-          <div class="text-3xl">💰</div>
-          <span class="text-sm text-white/80 font-medium">薪資簽收</span>
-        </div>
-      </div>
-
-      <div class="glass-card flex flex-col stagger-in h-[340px]" style="animation-delay:0.2s">
-        <div class="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-          <p class="text-white/90 text-sm font-semibold">阿翔管家 <span class="text-emerald-400 text-xs ml-2">● 在線</span></p>
-        </div>
-        <div id="chat-messages" class="flex-1 overflow-y-auto scrollbar-hide px-4 py-3 space-y-3">
-          <div class="flex items-end gap-2">
-            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">翔</div>
-            <div class="bg-white/10 border border-white/15 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm text-white/85 max-w-[80%]">
-              辛苦了夥伴！👋 今天跑得順嗎？有任何問題都可以跟我說。
+        <div class="glass-card p-6 border-l-4 border-purple-500">
+          <div class="flex items-start space-x-4">
+            <div class="bg-purple-600 rounded-full p-2">👩‍💼</div>
+            <div>
+              <p class="text-sm font-bold text-purple-300">阿翔管家 (行政陳姐)</p>
+              <p id="ai-response" class="text-sm mt-1 text-gray-200">
+                夥伴辛苦啦！對件數有疑問可以直接問我喔捏～
+              </p>
             </div>
           </div>
         </div>
-        <div class="px-4 pb-4 flex gap-2 items-center">
-          <input id="chatInput" type="text" placeholder="跟阿翔說話..." onkeydown="if(event.key==='Enter') sendChat()" class="flex-1 bg-black/25 border border-white/12 rounded-full px-4 py-2.5 text-sm text-white outline-none focus:border-violet-400/50"/>
-          <button onclick="sendChat()" class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform">
-            ➤
-          </button>
+
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="window.location.reload()" class="glass-card p-4 text-center hover:bg-white/20 transition">🔄 刷新數據</button>
+            <button onclick="promptCorrection()" class="glass-card p-4 text-center hover:bg-white/20 transition">✏️ 申請修正</button>
         </div>
-      </div>
+    </main>
 
-      <button onclick="showClockOut()" class="stagger-in w-full py-5 rounded-2xl text-white font-bold text-lg tracking-wide flex items-center justify-center gap-3 border border-violet-400/30 shadow-2xl active:scale-95 transition-transform" style="background: linear-gradient(135deg,rgba(139,92,246,0.7),rgba(99,102,241,0.7)); animation-delay:0.3s">
-        <span class="text-2xl">🏁</span> 確認下班結算
-      </button>
+    <script>
+        // --- 1. Firebase 初始化 (請確保 projectId 一致) ---
+        const firebaseConfig = {
+            projectId: "supreme-v92",
+            // 系統會自動抓取你已經連結的 Firebase App
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-    </div>
-  </div>
+        // --- 2. 薪資核心引擎 (15元/件, 2萬扣2.11%) ---
+        function calculateSalary(count) {
+            const UNIT_PRICE = 15;
+            const gross = count * UNIT_PRICE;
+            const insurance = gross > 20000 ? Math.round(gross * 0.0211) : 0;
+            return { gross, insurance, net: gross - insurance };
+        }
 
-  <div id="clockOutModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-    <div class="glass-card w-full max-w-sm p-6 flex flex-col gap-4 text-center">
-      <span class="text-5xl">🏁</span>
-      <h2 class="text-white/90 font-bold text-xl">確認下班結算？</h2>
-      <p class="text-white/40 text-sm">系統將記錄本日工時，並同步上傳至 Firebase 總控中心。</p>
-      <div class="flex gap-3 mt-2">
-        <button onclick="closeClockOut()" class="flex-1 py-3 rounded-xl bg-white/10 text-white/60 text-sm">稍等一下</button>
-        <button onclick="doClockOut()" class="flex-1 py-3 rounded-xl bg-violet-600 text-white font-semibold text-sm">確認下班</button>
-      </div>
-    </div>
-  </div>
+        // --- 3. 影子帳本寫入功能 ---
+        async function writeGodLog(driver, oldVal, newVal, reason) {
+            await db.collection('god_logs').add({
+                operator: "系統管理員",
+                target: driver,
+                old_val: oldVal,
+                new_val: newVal,
+                reason: reason,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
 
-  <div id="signatureModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-    <div class="glass-card w-full max-w-sm p-6 flex flex-col gap-4">
-      <h2 class="text-white/90 font-semibold">本期薪資預覽</h2>
-      <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-        <p class="text-white/50 text-sm">本期實領 <span class="text-emerald-400 font-bold text-lg float-right">$19,000</span></p>
-      </div>
-      <button onclick="closeSignaturePad()" class="w-full py-3 rounded-xl bg-emerald-500 text-white font-semibold text-sm">我知道了</button>
-    </div>
-  </div>
+        // --- 4. 讀取與渲染數據 ---
+        async function loadData() {
+            const driverName = "測試夥伴"; // 之後接登入帳號
+            const snapshot = await db.collection('ClockOutRecords')
+                                     .where('driver', '==', driverName)
+                                     .limit(1)
+                                     .get();
 
-  <div id="toast" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 z-50 glass-card px-5 py-3 text-sm text-white/90 shadow-2xl whitespace-nowrap"></div>
+            if (!snapshot.empty) {
+                const doc = snapshot.docs[0];
+                const data = doc.data();
+                const count = data.momoPackages || 0;
+                const salary = calculateSalary(count);
 
-  <div id="admin-gate" class="fixed bottom-0 right-0 w-16 h-16 z-50 cursor-default"></div>
+                // 更新介面
+                document.getElementById('final-count').innerText = count + " 件";
+                document.getElementById('insurance-deduction').innerText = "-$" + salary.insurance.toLocaleString();
+                document.getElementById('net-pay').innerText = "$" + salary.net.toLocaleString();
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+                // 陳姐在地化回覆邏輯
+                if (data.modify_reason) {
+                    document.getElementById('ai-response').innerText = 
+                        `陳姐幫你看了，件數有修正啦，原因是因為：『${data.modify_reason}』。辛苦了捏～`;
+                }
+            }
+        }
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-      authDomain: "supreme-v92.firebaseapp.com",
-      projectId: "supreme-v92",
-      storageBucket: "supreme-v92.firebasestorage.app",
-      messagingSenderId: "485530156296",
-      appId: "1:485530156296:web:6728c0ee08b98dedd800bd",
-      measurementId: "G-JF36CHXE9Z"
-    };
+        // --- 5. 模擬修正功能 (老闆/會計測試用) ---
+        async function promptCorrection() {
+            const newCount = prompt("請輸入修正後的件數：");
+            const reason = prompt("請輸入修正原因 (將同步至影子帳本)：");
+            
+            if(newCount && reason) {
+                // 這裡執行更新 ClockOutRecords 的動作 (省略細節)
+                alert("修正已送出，影子帳本已同步。");
+            }
+        }
 
-    const app = initializeApp(firebaseConfig);
-    window.db = getFirestore(app);
-    window.addDoc = addDoc;
-    window.collection = collection;
-    window.serverTimestamp = serverTimestamp;
-
-    console.log("✅ LOGI CORE Firebase 連線成功！");
-  </script>
-
-  <script>
-    // --- UI 介面切換 ---
-    function enterSystem() {
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("main-system").classList.remove("hidden");
-    }
-    function showClockOut() { document.getElementById("clockOutModal").classList.remove("hidden"); }
-    function closeClockOut() { document.getElementById("clockOutModal").classList.add("hidden"); }
-    function openSignaturePad() { document.getElementById("signatureModal").classList.remove("hidden"); }
-    function closeSignaturePad() { document.getElementById("signatureModal").classList.add("hidden"); }
-
-    // --- Toast 提示 ---
-    let toastTimer;
-    function showToast(msg) {
-      const toast = document.getElementById("toast");
-      toast.textContent = msg;
-      toast.classList.remove("hidden");
-      if(toastTimer) clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.add("hidden"), 3000);
-    }
-
-    // --- 相機連動 ---
-    function startCamera() {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.capture = 'environment';
-      input.onchange = (e) => { if(e.target.files[0]) showToast("✅ 照片已記錄"); };
-      input.click();
-    }
-
-    // --- Firebase 真實寫入：下班結算 ---
-    async function doClockOut() {
-      try {
-        await window.addDoc(window.collection(window.db, "ClockOutRecords"), {
-          driver: "測試夥伴",
-          status: "已下班",
-          momoPackages: 45,
-          timestamp: window.serverTimestamp()
-        });
-        closeClockOut();
-        showToast("🏁 結算成功！資料已同步至雲端。");
-      } catch (error) {
-        console.error(error);
-        showToast("❌ 連線異常，請檢查網路。");
-      }
-    }
-
-    // --- 阿翔管家：真人擬態對話邏輯 ---
-    function sendChat() {
-      const input = document.getElementById("chatInput");
-      const text = input.value.trim();
-      if(!text) return;
-
-      appendMessage("user", text);
-      input.value = "";
-
-      // 模擬「正在輸入...」
-      setTimeout(() => {
-        const container = document.getElementById("chat-messages");
-        const typingId = "typing-" + Date.now();
-        container.insertAdjacentHTML('beforeend', `<div id="${typingId}" class="text-xs text-white/40 ml-10 mb-2">阿翔正在輸入...</div>`);
-        container.scrollTop = container.scrollHeight;
-
-        // 隨機延遲 2 到 4 秒
-        const delay = Math.floor(Math.random() * 2000) + 2000;
-        setTimeout(() => {
-          document.getElementById(typingId).remove();
-          const replies = ["收到！我幫你記下來了 📋", "了解，等我一下確認喔 😊", "沒問題，辛苦了！"];
-          appendMessage("翔", replies[Math.floor(Math.random() * replies.length)]);
-        }, delay);
-      }, 500);
-    }
-
-    function appendMessage(sender, text) {
-      const container = document.getElementById("chat-messages");
-      const isUser = sender === "user";
-      const html = `
-        <div class="flex items-end gap-2 ${isUser ? 'flex-row-reverse' : ''}">
-          <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 ${isUser ? 'bg-violet-500' : 'bg-emerald-500'}">
-            ${isUser ? '我' : '翔'}
-          </div>
-          <div class="px-4 py-2.5 rounded-2xl text-sm max-w-[80%] ${isUser ? 'bg-violet-600/60 rounded-br-sm' : 'bg-white/10 rounded-bl-sm'}">
-            ${text}
-          </div>
-        </div>`;
-      container.insertAdjacentHTML('beforeend', html);
-      container.scrollTop = container.scrollHeight;
-    }
-
-    // --- 上帝之門：連續點擊 5 次 ---
-    let clickCount = 0;
-    let lastClickTime = 0;
-    document.getElementById('admin-gate').addEventListener('click', () => {
-      const now = Date.now();
-      if (now - lastClickTime > 1000) clickCount = 0;
-      clickCount++;
-      lastClickTime = now;
-      if (clickCount === 5) {
-        const pin = prompt("請輸入高階管理密鑰 (8305319)");
-        if (pin === "8305319") alert("🔓 核准進入：準備導向後台...");
-        clickCount = 0;
-      }
-    });
-  </script>
+        loadData();
+    </script>
 </body>
 </html>
