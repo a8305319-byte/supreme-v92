@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; overflow-x: hidden; }
         .aurora-bg {
@@ -26,7 +27,7 @@
 <body class="aurora-bg min-h-screen text-white p-6">
 
     <header class="mb-10 text-center">
-        <h1 class="text-4xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">LOGI CORE</h1>
+        <h1 class="text-4xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 cursor-pointer">LOGI CORE</h1>
         <p class="text-gray-400 mt-2 text-sm tracking-widest">在地物流有限公司 夥伴作業平台</p>
     </header>
 
@@ -34,13 +35,13 @@
         <div class="glass-card p-8 shadow-2xl relative overflow-hidden">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-semibold">本期薪資預覽</h2>
-                <span class="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded">系統自動對帳中</span>
+                <span id="sys-status" class="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded">系統連線中...</span>
             </div>
             
             <div id="payout-content" class="space-y-4">
                 <div class="flex justify-between text-gray-300">
                     <span>核實件數</span>
-                    <span id="final-count" class="font-mono">載入中...</span>
+                    <span id="final-count" class="font-mono text-xl">---</span>
                 </div>
                 <div class="flex justify-between text-gray-300">
                     <span>二代健保 (2.11%)</span>
@@ -59,28 +60,33 @@
             <div>
               <p class="text-sm font-bold text-purple-300">阿翔管家 (行政陳姐)</p>
               <p id="ai-response" class="text-sm mt-1 text-gray-200">
-                夥伴辛苦啦！對件數有疑問可以直接問我喔捏～
+                載入中，請稍候喔捏～
               </p>
             </div>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-            <button onclick="window.location.reload()" class="glass-card p-4 text-center hover:bg-white/20 transition">🔄 刷新數據</button>
-            <button onclick="promptCorrection()" class="glass-card p-4 text-center hover:bg-white/20 transition">✏️ 申請修正</button>
+            <button onclick="loadData()" class="glass-card p-4 text-center hover:bg-white/20 transition">🔄 刷新數據</button>
+            <button onclick="alert('上帝模式代碼已備妥，請輸入PIN碼')" class="glass-card p-4 text-center hover:bg-white/20 transition">✏️ 申請修正</button>
         </div>
     </main>
 
     <script>
-        // --- 1. Firebase 初始化 (請確保 projectId 一致) ---
+        // --- 1. Firebase 初始化 (這部分必須對接你的專案) ---
         const firebaseConfig = {
+            apiKey: "AIzaSy...", // 請在此填入你的真實 API Key
+            authDomain: "supreme-v92.firebaseapp.com",
             projectId: "supreme-v92",
-            // 系統會自動抓取你已經連結的 Firebase App
+            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
         };
-        firebase.initializeApp(firebaseConfig);
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.firestore();
 
-        // --- 2. 薪資核心引擎 (15元/件, 2萬扣2.11%) ---
+        // --- 2. 算錢邏輯 ---
         function calculateSalary(count) {
             const UNIT_PRICE = 15;
             const gross = count * UNIT_PRICE;
@@ -88,57 +94,11 @@
             return { gross, insurance, net: gross - insurance };
         }
 
-        // --- 3. 影子帳本寫入功能 ---
-        async function writeGodLog(driver, oldVal, newVal, reason) {
-            await db.collection('god_logs').add({
-                operator: "系統管理員",
-                target: driver,
-                old_val: oldVal,
-                new_val: newVal,
-                reason: reason,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
-
-        // --- 4. 讀取與渲染數據 ---
+        // --- 3. 讀取資料 (加上錯誤偵測) ---
         async function loadData() {
-            const driverName = "測試夥伴"; // 之後接登入帳號
-            const snapshot = await db.collection('ClockOutRecords')
-                                     .where('driver', '==', driverName)
-                                     .limit(1)
-                                     .get();
-
-            if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                const data = doc.data();
-                const count = data.momoPackages || 0;
-                const salary = calculateSalary(count);
-
-                // 更新介面
-                document.getElementById('final-count').innerText = count + " 件";
-                document.getElementById('insurance-deduction').innerText = "-$" + salary.insurance.toLocaleString();
-                document.getElementById('net-pay').innerText = "$" + salary.net.toLocaleString();
-
-                // 陳姐在地化回覆邏輯
-                if (data.modify_reason) {
-                    document.getElementById('ai-response').innerText = 
-                        `陳姐幫你看了，件數有修正啦，原因是因為：『${data.modify_reason}』。辛苦了捏～`;
-                }
-            }
-        }
-
-        // --- 5. 模擬修正功能 (老闆/會計測試用) ---
-        async function promptCorrection() {
-            const newCount = prompt("請輸入修正後的件數：");
-            const reason = prompt("請輸入修正原因 (將同步至影子帳本)：");
-            
-            if(newCount && reason) {
-                // 這裡執行更新 ClockOutRecords 的動作 (省略細節)
-                alert("修正已送出，影子帳本已同步。");
-            }
-        }
-
-        loadData();
-    </script>
-</body>
-</html>
+            try {
+                // 這裡要跟你的 Firestore 集合名稱完全一樣
+                const snapshot = await db.collection('ClockOutRecords').limit(10).get();
+                
+                if (snapshot.empty) {
+                    document.getElementById('ai-response').innerText
