@@ -16,10 +16,17 @@
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getFirestore, collection, doc, setDoc, onSnapshot, query, addDoc, getDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-    let firebaseConfig = { apiKey: "" };
-    if (typeof __firebase_config !== 'undefined') {
-      try { firebaseConfig = JSON.parse(__firebase_config); } catch (e) {}
-    }
+    // 這裡換成你專屬的 Firebase 設定！
+    const firebaseConfig = {
+      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+      authDomain: "supreme-v92.firebaseapp.com",
+      projectId: "supreme-v92",
+      storageBucket: "supreme-v92.firebasestorage.app",
+      messagingSenderId: "485530156296",
+      appId: "1:485530156296:web:6728c0ee08b98dedd800bd",
+      measurementId: "G-JF36CHXE9Z"
+    };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
