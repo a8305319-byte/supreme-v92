@@ -1,104 +1,97 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LOGI CORE | 智慧物流管理系統</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>在地物流 LOGI CORE</title>
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; overflow-x: hidden; }
-        .aurora-bg {
-            background: linear-gradient(135deg, #0f0c29, #1a1a4e, #0d3b4f, #0f2027, #1b0036);
-            background-size: 400% 400%;
-            animation: auroraShift 14s ease infinite;
-        }
-        @keyframes auroraShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.09);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 1.5rem;
-        }
+        :root { --main: #1a1a1a; --accent: #2ecc71; --bg: #f8f9fa; --text: #333; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); padding-bottom: 80px; }
+        
+        /* 頂部標題 */
+        .app-header { background: var(--main); color: white; padding: 40px 20px 20px; text-align: left; border-radius: 0 0 20px 20px; }
+        .app-header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
+        .app-header p { margin: 5px 0 0; font-size: 12px; opacity: 0.7; }
+
+        /* 卡片式設計 */
+        .card { background: white; margin: 15px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card-title { font-weight: bold; font-size: 16px; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        
+        /* 薪資明細樣式 */
+        .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .minus { color: #e74c3c; }
+        .total-amount { font-size: 24px; font-weight: bold; color: var(--accent); text-align: right; margin-top: 15px; }
+
+        /* 底部選單 */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; padding: 10px 0; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+        .nav-item { flex: 1; text-align: center; font-size: 10px; color: #888; text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: var(--main); font-weight: bold; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+        /* 隱藏/顯示分頁 */
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        /* 按鈕形象 */
+        .btn-action { background: var(--main); color: white; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
-<body class="aurora-bg min-h-screen text-white p-6">
+<body>
 
-    <header class="mb-10 text-center">
-        <h1 class="text-4xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 cursor-pointer">LOGI CORE</h1>
-        <p class="text-gray-400 mt-2 text-sm tracking-widest">在地物流有限公司 夥伴作業平台</p>
-    </header>
+<div class="app-header">
+    <h1>在地物流有限公司</h1>
+    <p>司機編號：A085 | 系統狀態：已連線</p>
+</div>
 
-    <main class="max-w-md mx-auto space-y-6">
-        <div class="glass-card p-8 shadow-2xl relative overflow-hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-semibold">本期薪資預覽</h2>
-                <span id="sys-status" class="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded">系統連線中...</span>
-            </div>
-            
-            <div id="payout-content" class="space-y-4">
-                <div class="flex justify-between text-gray-300">
-                    <span>核實件數</span>
-                    <span id="final-count" class="font-mono text-xl">---</span>
-                </div>
-                <div class="flex justify-between text-gray-300">
-                    <span>二代健保 (2.11%)</span>
-                    <span id="insurance-deduction" class="text-red-400">-$0</span>
-                </div>
-                <div class="pt-4 border-t border-white/10 flex justify-between items-baseline">
-                    <span class="text-lg">實領總額</span>
-                    <span id="net-pay" class="text-3xl font-bold text-green-400">$0</span>
-                </div>
-            </div>
-        </div>
+<div id="task" class="page active">
+    <div class="card">
+        <div class="card-title">今日配送進度</div>
+        <div class="row"><span>本月累計件數</span><span>1,250 件</span></div>
+        <div class="row"><span>今日已完成</span><span>42 件</span></div>
+        <button class="btn-action" onclick="alert('AI 提示：請拍攝簽單，系統將自動辨識件數。')">📸 完工回報 (AI 自動辨識)</button>
+    </div>
+</div>
 
-        <div class="glass-card p-6 border-l-4 border-purple-500">
-          <div class="flex items-start space-x-4">
-            <div class="bg-purple-600 rounded-full p-2">👩‍💼</div>
-            <div>
-              <p class="text-sm font-bold text-purple-300">阿翔管家 (行政陳姐)</p>
-              <p id="ai-response" class="text-sm mt-1 text-gray-200">
-                載入中，請稍候喔捏～
-              </p>
-            </div>
-          </div>
-        </div>
+<div id="salary" class="page">
+    <div class="card">
+        <div class="card-title">本月報酬結算 (29,500 級距)</div>
+        <div class="row"><span>承攬報酬總額</span><span>+ 52,000</span></div>
+        <div class="row minus"><span>勞保代扣</span><span>- 649</span></div>
+        <div class="row minus"><span>健保代扣</span><span>- 452</span></div>
+        <div class="row"><span>會計調整項</span><span>0</span></div>
+        <div class="total-amount">$ 50,899</div>
+    </div>
+    <div style="padding: 0 20px; font-size: 12px; color: #999;">
+        * 本數據由在地物流會計系統依 29,500 級距自動核算，如有異議請點擊客服。
+    </div>
+</div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <button onclick="loadData()" class="glass-card p-4 text-center hover:bg-white/20 transition">🔄 刷新數據</button>
-            <button onclick="alert('上帝模式代碼已備妥，請輸入PIN碼')" class="glass-card p-4 text-center hover:bg-white/20 transition">✏️ 申請修正</button>
-        </div>
-    </main>
+<div id="service" class="page">
+    <div class="card">
+        <div class="card-title">數位客服 (AI 會計)</div>
+        <p style="font-size: 14px; color: #666;">您好！我是會計部數位助理，有什麼可以幫您？</p>
+        <button class="btn-action" style="background:#fff; color:#333; border:1px solid #ddd;" onclick="alert('系統說明：依據承攬合約，公司代辦勞健保扣繳，級距採標準 29,500 元。')">💡 為什麼扣勞健保？</button>
+        <button class="btn-action" style="background:#fff; color:#333; border:1px solid #ddd; margin-top:10px;" onclick="alert('請上傳工會繳費證明照片，會計將於下期結算停止代扣。')">📄 我已投保工會(補件)</button>
+    </div>
+</div>
 
-    <script>
-        // --- 1. Firebase 初始化 (這部分必須對接你的專案) ---
-        const firebaseConfig = {
-            apiKey: "AIzaSy...", // 請在此填入你的真實 API Key
-            authDomain: "supreme-v92.firebaseapp.com",
-            projectId: "supreme-v92",
-            appId: "1:485530156296:web:6728c0ee08b98dedd800bd"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.firestore();
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="showPage('task', this)"><span class="nav-icon">🚚</span>任務</div>
+    <div class="nav-item" onclick="showPage('salary', this)"><span class="nav-icon">💰</span>薪資</div>
+    <div class="nav-item" onclick="showPage('service', this)"><span class="nav-icon">💬</span>客服</div>
+</nav>
 
-        // --- 2. 算錢邏輯 ---
-        function calculateSalary(count) {
-            const UNIT_PRICE = 15;
-            const gross = count * UNIT_PRICE;
-            const insurance = gross > 20000 ? Math.round(gross * 0.0211) : 0;
-            return { gross, insurance, net: gross - insurance };
-        }
+<script>
+    function showPage(pageId, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        btn.classList.add('active');
+    }
+</script>
 
-        // --- 3. 讀取資料 (加上錯誤偵測) ---
-        async function loadData() {
-            try {
-                // 這裡要跟你的 Firestore 集合名稱完全一樣
-                const snapshot = await db.collection('ClockOutRecords').limit(10).get();
-                
-                if (snapshot.empty) {
-                    document.getElementById('ai-response').innerText
+</body>
+</html>
