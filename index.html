@@ -4,12 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>在地物流有限公司</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <!-- Firebase ESM 載入與全域綁定，確保 React 可以直接呼叫 -->
+
+  <!-- Firebase ESM 載入與全域綁定 -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
@@ -19,17 +20,16 @@
     if (typeof __firebase_config !== 'undefined') {
       try { firebaseConfig = JSON.parse(__firebase_config); } catch (e) {}
     }
-
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    window.__firebaseAPI = {
+    window._firebaseAPI = {
       app, auth, db,
       signInAnonymously, onAuthStateChanged, signInWithCustomToken,
       collection, doc, setDoc, onSnapshot, query, addDoc, getDoc, updateDoc, deleteDoc
     };
-    
+
     // 觸發 React 渲染
     window.dispatchEvent(new Event('firebase-ready'));
   </script>
@@ -50,1018 +50,954 @@
   </style>
 </head>
 <body>
-<div id="root"></div>
+  <div id="root"></div>
 
-<script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
-
-const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'local-logistics-v92';
-
-const PRESET_REASONS = [
-  "依據廠商提供之原始報表修正數據。",
-  "廠商判定包裝受損，不予計件。",
-  "條碼無法辨識，廠商系統無紀錄。",
-  "逆物流件數經廠商盤點，扣除非本單貨件。",
-  "人工溝通後修正內容。"
-];
-
-// ===================== SVG Icon 元件 =====================
-const Icon = ({ d, size = 20, cls = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-    strokeLinejoin="round" className={cls}>
-    {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
-  </svg>
-);
-
-const Icons = {
-  RotateCcw: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74","M3 3v4h4"]} />,
-  ChevronRight: ({size=20,cls=''}) => <Icon size={size} cls={cls} d="m9 18 6-6-6-6" />,
-  ShieldCheck: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10","m9 12 2 2 4-4"]} />,
-  Lock: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2","M7 11V7a5 5 0 0 1 10 0v4"]} />,
-  User: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2","M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"]} />,
-  ArrowRight: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M5 12h14","m12 5 7 7-7 7"]} />,
-  Settings: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z","M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"]} />,
-  Loader2: ({size=20,cls=''}) => <Icon size={size} cls={cls} d="M21 12a9 9 0 1 1-6.219-8.56" />,
-  MessageSquare: ({size=20,cls=''}) => <Icon size={size} cls={cls} d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
-  Send: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["m22 2-7 20-4-9-9-4 20-7","M22 2 11 13"]} />,
-  X: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M18 6 6 18","m6 6 12 12"]} />,
-  Truck: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3","M9 17H7","M13 17h8l-3-5H9v5","M17 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4","M9 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4"]} />,
-  PackageCheck: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["m16 16 2 2 4-4","M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 2 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14","M3.29 7 12 12l8.71-5","M12 22V12"]} />,
-  PackageX: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 2 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14","M3.29 7 12 12l8.71-5","M12 22V12","m19 14 4 4m0-4-4 4"]} />,
-  ClipboardList: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2","M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z","M9 12h6","M9 16h4"]} />,
-  Camera: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z","M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"]} />,
-  Upload: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4","M17 8l-5-5-5-5","M12 3v12"]} />,
-  CheckCircle2: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10","m9 12 2 2 4-4"]} />,
-  AlertCircle: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10","M12 8v4","M12 16h.01"]} />,
-  LogOut: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4","M16 17l5-5-5-5","M21 12H9"]} />,
-  LayoutDashboard: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M3 3h7v9H3z","M14 3h7v5h-7z","M14 12h7v9h-7z","M3 16h7v5H3z"]} />,
-  UserCog: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2","M9 7a4 4 0 1 0 0 8 4 4 0 0 0 0-8","M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l1.06-.82a.25.25 0 0 0 .06-.32l-1-1.73a.25.25 0 0 0-.31-.11l-1.25.5a3.63 3.63 0 0 0-1.67-.97l-.19-1.33A.25.25 0 0 0 16 7h-2a.25.25 0 0 0-.25.21l-.19 1.33c-.6.16-1.16.44-1.67.97l-1.25-.5a.25.25 0 0 0-.31.11l-1 1.73a.25.25 0 0 0 .06.32l1.06.82c-.04.32-.07.65-.07.98s.03.66.07.98l-1.06.82a.25.25 0 0 0-.06.32l1 1.73c.07.12.2.15.31.11l1.25-.5c.51.53 1.07.81 1.67.97l.19 1.33c.04.13.14.21.25.21h2c.11 0 .21-.08.25-.21l.19-1.33c.6-.16 1.16-.44 1.67-.97l1.25.5c.11.04.24 0 .31-.11l1-1.73a.25.25 0 0 0-.06-.32z","M17 12a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"]} />,
-  DollarSign: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M12 2v20","M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"]} />,
-  History: ({size=20,cls=''}) => <Icon size={size} cls={cls} d={["M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74","M3 3v4h4","M12 7v5l4 2"]} />,
-};
-
-const { RotateCcw, ChevronRight, ShieldCheck, Lock, User, ArrowRight, Settings, Loader2, MessageSquare, Send, X, Truck, PackageCheck, PackageX, ClipboardList, Camera, Upload, CheckCircle2, AlertCircle, LogOut, LayoutDashboard, UserCog, DollarSign, History } = Icons;
-
-
-// ===================== 共用元件 =====================
-const PageHeader = ({ title, onBack, rightAction }) => (
-  <div style={{
-    position: 'sticky', top: 0, zIndex: 10,
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '12px 16px',
-    background: 'rgba(15,23,42,0.95)',
-    backdropFilter: 'blur(12px)',
-    borderBottom: '1px solid rgba(255,255,255,0.08)'
-  }}>
-    <button onClick={onBack} className="active-scale" style={{
-      display: 'flex', alignItems: 'center', gap: 6,
-      color: '#94a3b8', background: 'none', border: 'none',
-      cursor: 'pointer', padding: '6px 8px', borderRadius: 12,
-      fontSize: 13, fontWeight: 700
-    }}>
-      <RotateCcw size={15} /> 返回
-    </button>
-    <h1 style={{ color: '#fff', fontSize: 15, fontWeight: 900, margin: 0 }}>{title}</h1>
-    <div style={{ width: 56, display: 'flex', justifyContent: 'flex-end' }}>{rightAction || null}</div>
-  </div>
-);
-
-const ActionCard = ({ icon, label, sublabel, onClick, color = 'indigo', disabled = false, badge }) => {
-  const colorMap = {
-    indigo: 'from-indigo-600 to-indigo-700 shadow-indigo-900/50',
-    emerald: 'from-emerald-600 to-emerald-700 shadow-emerald-900/50',
-    amber: 'from-amber-500 to-amber-600 shadow-amber-900/50',
-    rose: 'from-rose-600 to-rose-700 shadow-rose-900/50',
-    sky: 'from-sky-600 to-sky-700 shadow-sky-900/50',
-    violet: 'from-violet-600 to-violet-700 shadow-violet-900/50',
-    slate: 'from-slate-600 to-slate-700 shadow-slate-900/50',
-  };
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`relative w-full flex items-center gap-4 p-5 rounded-3xl text-white font-bold text-left transition-all duration-200 active:scale-95 shadow-xl
-        ${disabled
-          ? 'opacity-40 cursor-not-allowed bg-white/5 border border-white/10'
-          : `bg-gradient-to-br ${colorMap[color]}`
-        }`}
-    >
-      <div className="w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center bg-white/20">
-        {icon}
-      </div>
-      <div className="flex-grow min-w-0">
-        <p className="m-0 text-[15px] font-black">{label}</p>
-        {sublabel && <p className="m-0 mt-0.5 text-[11px] text-white/60 font-medium">{sublabel}</p>}
-      </div>
-      {badge && (
-        <div className="px-2 py-1 rounded-full bg-white/20 text-[10px] font-black flex-shrink-0">
-          {badge}
-        </div>
-      )}
-      {!disabled && <ChevronRight size={17} cls="text-white/40 flex-shrink-0" />}
-    </button>
-  );
-};
-
-
-// ===================== 視圖：Portal 登入 =====================
-const PortalView = ({
-  step, setStep, userName, setUserName, pin, setPin,
-  userRole, setUserRole, isNewUser, isProcessing,
-  handleNameSubmit, handlePinSubmit, setView,
-  showSupport, setShowSupport, supportMessages, setSupportMessages, scrollRef
-}) => {
-  const [supportInput, setSupportInput] = useState('');
-
-  const handleSendSupport = async () => {
-    if (!supportInput.trim()) return;
-    const msg = supportInput.trim();
-    setSupportInput('');
-    setSupportMessages(prev => [...prev, { role: 'user', text: msg, time: '現在' }]);
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'local-logistics-v92';
     
-    if (msg === '我是老闆') {
-      try {
-        const { db, updateDoc, doc } = window.__firebaseAPI;
-        await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userName), { role: 'ACCOUNTANT' });
-        setUserRole('ACCOUNTANT');
-        setTimeout(() => setSupportMessages(p => [...p, {
-          role: 'office', text: '老闆您好，權限已解鎖！請重新查看主選單。', time: '現在'
-        }]), 900);
-      } catch (e) { console.error(e); }
-    } else {
-      setTimeout(() => setSupportMessages(p => [...p, {
-        role: 'office', text: '收到，我們正在處理您的請求，請稍候。', time: '現在'
-      }]), 1800);
-    }
-  };
+    const PRESET_REASONS = [
+      "依據廠商提供之原始報表修正數據。",
+      "廠商判定包裝受損，不予計件。",
+      "條碼無法辨識，廠商系統無紀錄。",
+      "逆物流件數經廠商盤點，扣除非本單貨件。",
+      "人工溝通後修正內容。"
+    ];
 
-  return (
-    <div style={{
-      minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: 16, background: '#080c1a', color: '#fff', position: 'relative', overflow: 'hidden'
-    }}>
-      {/* 背景光暈 */}
-      {[
-        { top: -160, left: -160, bg: 'rgba(99,102,241,0.18)' },
-        { bottom: -160, right: -160, bg: 'rgba(139,92,246,0.16)' },
-        { top: '40%', left: '35%', bg: 'rgba(67,56,202,0.12)', w: 220, h: 220 }
-      ].map((s, i) => (
-        <div key={i} style={{
-          position: 'absolute', width: s.w || 340, height: s.h || 340,
-          borderRadius: '50%', background: s.bg, filter: 'blur(60px)',
-          pointerEvents: 'none', top: s.top, left: s.left,
-          bottom: s.bottom, right: s.right
-        }} />
-      ))}
+    // ===================== SVG Icon 元件 =====================
+    const Icon = ({ d, size = 20, cls = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cls}>
+        {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+      </svg>
+    );
 
-      <div className="relative w-full max-w-sm">
-        <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 text-center shadow-2xl">
-          <div className="mb-2 inline-flex w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-3xl items-center justify-center text-2xl font-black shadow-lg shadow-indigo-900/60">
-            在地
+    // 修復後乾淨的圖示路徑
+    const Icons = {
+      RotateCcw: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74", "M3 3v4h4"]} />,
+      ChevronRight: ({size=20,cls=""}) => <Icon size={size} cls={cls} d="m9 18 6-6-6-6" />,
+      ShieldCheck: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", "m9 12 2 2 4-4"]} />,
+      Lock: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z", "M7 11V7a5 5 0 0 1 10 0v4"]} />,
+      User: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", "M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"]} />,
+      ArrowRight: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M5 12h14", "m12 5 7 7-7-7"]} />,
+      Settings: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z", "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"]} />,
+      Loader2: ({size=20,cls=""}) => <Icon size={size} cls={cls} d="M21 12a9 9 0 1 1-6.219-8.56" />,
+      MessageSquare: ({size=20,cls=""}) => <Icon size={size} cls={cls} d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
+      Send: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["m22 2-7 20-4-9-9-4 20-7z", "M22 2 11 13"]} />,
+      X: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M18 6 6 18", "m6 6 12 12"]} />,
+      Truck: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3", "M9 17H7", "M13 17h8l-3-5H9v5", "M17 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0z", "M9 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"]} />,
+      PackageCheck: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["m16 16 2 2 4-4", "M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14", "M3.29 7 12 12 20.71 7", "M12 22V12"]} />,
+      PackageX: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14", "M3.29 7 12 12 20.71 7", "M12 22V12", "m17 13 5 5", "m17 18 5-5"]} />,
+      ClipboardList: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2", "M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z", "M12 11h4", "M12 16h4", "M8 11h.01", "M8 16h.01"]} />,
+      Camera: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z", "M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"]} />,
+      Upload: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", "M17 8l-5-5-5 5", "M12 3v12"]} />,
+      CheckCircle2: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M22 11.08V12a10 10 0 1 1-5.93-9.14", "m9 11 3 3L22 4"]} />,
+      AlertCircle: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "M12 8v4", "M12 16h.01"]} />,
+      LogOut: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"]} />,
+      LayoutDashboard: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M3 3h7v9H3z", "M14 3h7v5h-7z", "M14 12h7v9h-7z", "M3 16h7v5H3z"]} />,
+      UserCog: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M19 11v2", "M19 17v2", "M22 15h-2", "M16 15h-2"]} />,
+      DollarSign: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12 2v20", "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"]} />,
+      History: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", "M3 3v5h5", "M12 7v5l4 2"]} />
+    };
+
+    const { RotateCcw, ChevronRight, ShieldCheck, Lock, User, ArrowRight, Settings, Loader2, MessageSquare, Send, X, Truck, PackageCheck, PackageX, ClipboardList, Camera, Upload, CheckCircle2, AlertCircle, LogOut, LayoutDashboard, UserCog, DollarSign, History } = Icons;
+
+    // ===================== 共用元件 =====================
+    const PageHeader = ({ title, onBack, rightAction }) => (
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <button onClick={onBack} className="active-scale" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', borderRadius: 12, fontSize: 13, fontWeight: 700 }}>
+          <RotateCcw size={15} /> 返回
+        </button>
+        <h1 style={{ color: '#fff', fontSize: 15, fontWeight: 900, margin: 0 }}>{title}</h1>
+        <div style={{ width: 56, display: 'flex', justifyContent: 'flex-end' }}>{rightAction || null}</div>
+      </div>
+    );
+
+    const ActionCard = ({ icon, label, sublabel, onClick, color = 'indigo', disabled = false, badge }) => {
+      const colorMap = {
+        indigo: 'from-indigo-600 to-indigo-700 shadow-indigo-900/50',
+        emerald: 'from-emerald-600 to-emerald-700 shadow-emerald-900/50',
+        amber: 'from-amber-500 to-amber-600 shadow-amber-900/50',
+        rose: 'from-rose-600 to-rose-700 shadow-rose-900/50',
+        sky: 'from-sky-600 to-sky-700 shadow-sky-900/50',
+        violet: 'from-violet-600 to-violet-700 shadow-violet-900/50',
+        slate: 'from-slate-600 to-slate-700 shadow-slate-900/50',
+      };
+      
+      const dynamicClass = disabled 
+        ? 'opacity-40 cursor-not-allowed bg-white/5 border border-white/10' 
+        : `bg-gradient-to-br ${colorMap[color]}`;
+
+      return (
+        <button onClick={onClick} disabled={disabled} className={`relative w-full flex items-center gap-4 p-5 rounded-3xl text-white font-bold text-left transition-all duration-200 active:scale-95 shadow-xl ${dynamicClass}`}>
+          <div className="w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center bg-white/20">
+            {icon}
           </div>
-          <h1 className="text-lg font-black mb-1 tracking-tight">在地物流有限公司</h1>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-8">
-            Logistics Management System
-          </p>
+          <div className="flex-grow min-w-0">
+            <p className="m-0 text-[15px] font-black">{label}</p>
+            {sublabel && <p className="m-0 mt-0.5 text-[11px] text-white/60 font-medium">{sublabel}</p>}
+          </div>
+          {badge && <div className="px-2 py-1 rounded-full bg-white/20 text-[10px] font-black flex-shrink-0">{badge}</div>}
+          {!disabled && <ChevronRight size={17} cls="text-white/40 flex-shrink-0" />}
+        </button>
+      );
+    };
 
-          {/* 步驟：姓名 */}
-          {step === 'NAME' && (
-            <form onSubmit={handleNameSubmit} className="space-y-4">
-              <div className="relative">
-                <User size={16} cls="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
-                  type="text" value={userName} onChange={e => setUserName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-center font-bold outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-600"
-                  placeholder="請輸入您的姓名" required autoComplete="off"
-                />
+    // ===================== 視圖: Portal 登入 =====================
+    const PortalView = ({
+      step, setStep, userName, setUserName, pin, setPin,
+      userRole, setUserRole, isNewUser, isProcessing,
+      handleNameSubmit, handlePinSubmit, setView,
+      showSupport, setShowSupport, supportMessages, setSupportMessages, scrollRef
+    }) => {
+      const [supportInput, setSupportInput] = useState("");
+
+      const handleSendSupport = async () => {
+        if (!supportInput.trim()) return;
+        const msg = supportInput.trim();
+        setSupportInput("");
+        setSupportMessages(prev => [...prev, { role: 'user', text: msg, time: '現在' }]);
+
+        if (msg === '老闆') {
+          try {
+            const { db, updateDoc, doc } = window._firebaseAPI;
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userName), { role: 'ACCOUNTANT' });
+            setUserRole('ACCOUNTANT');
+            setTimeout(() => setSupportMessages(p => [...p, { time: '現在', role: 'office', text: '老闆您好，權限已解鎖！請重新查看主選單。' }]), 900);
+          } catch (e) { console.error(e); }
+        } else {
+          setTimeout(() => setSupportMessages(p => [...p, { time: '現在', role: 'office', text: '收到，我們正在處理您的請求，請稍候。' }]), 1800);
+        }
+      };
+
+      return (
+        <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, background: '#080c1a', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+          {/* 背景光暈 */}
+          {[
+            { top: -160, left: -160, bg: 'rgba(99,102,241,0.18)' },
+            { bottom: -160, right: -160, bg: 'rgba(139,92,246,0.16)' },
+            { top: '40%', left: '35%', bg: 'rgba(67,56,202,0.12)', w: 220, h: 220 }
+          ].map((s, i) => (
+            <div key={i} style={{ position: 'absolute', width: s.w || 340, height: s.h || 340, borderRadius: '50%', background: s.bg, filter: 'blur(60px)', pointerEvents: 'none', top: s.top, left: s.left, bottom: s.bottom, right: s.right }} />
+          ))}
+
+          <div className="relative w-full max-w-sm">
+            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 text-center shadow-2xl">
+              <div className="mb-2 inline-flex w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-3xl items-center justify-center text-2xl font-black shadow-lg shadow-indigo-900/60">在地</div>
+              <h1 className="text-lg font-black mb-1 tracking-tight">在地物流有限公司</h1>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-8">Logistics Management System</p>
+
+              {/* 步驟: 姓名 */}
+              {step === 'NAME' && (
+                <form onSubmit={handleNameSubmit} className="space-y-4">
+                  <div className="relative">
+                    <User size={16} cls="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="text" value={userName} onChange={e => setUserName(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-center font-bold outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-600"
+                      placeholder="請輸入您的姓名" required autoComplete="off"
+                    />
+                  </div>
+                  <button type="submit" disabled={isProcessing} className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/50 active:scale-95 transition-all">
+                    {isProcessing ? <Loader2 size={20} cls="animate-spin" /> : <>下一步<ArrowRight size={16} /></>}
+                  </button>
+                </form>
+              )}
+
+              {/* 步驟: PIN */}
+              {step === 'PIN' && (
+                <form onSubmit={handlePinSubmit} className="space-y-4">
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl px-4 py-3">
+                    <p className="text-xs font-bold text-indigo-300">
+                      {isNewUser ? `歡迎 ${userName}，請設定4位數口令` : `你好 ${userName}，請輸入口令`}
+                    </p>
+                  </div>
+                  <div className="relative">
+                    <Lock size={16} cls="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="password" pattern="\d*" maxLength="4" inputMode="numeric"
+                      value={pin} onChange={e => setPin(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-center text-3xl tracking-[0.5em] font-black outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-600"
+                      placeholder="...." required autoFocus
+                    />
+                  </div>
+                  <button type="submit" disabled={isProcessing} className="w-full bg-white text-indigo-950 py-4 rounded-2xl font-black shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                    {isProcessing ? <Loader2 size={20} cls="animate-spin text-indigo-600" /> : <>進入系統 <ShieldCheck size={16} /></>}
+                  </button>
+                  <button type="button" onClick={() => { setStep('NAME'); setPin(""); }} className="text-xs text-slate-500 hover:text-slate-300 underline font-bold transition-colors mt-2">
+                    返回修改姓名
+                  </button>
+                </form>
+              )}
+
+              {/* 步驟: 已登入選單 */}
+              {step === 'LOGGED_IN' && (
+                <div className="space-y-3 animate-fade text-left">
+                  <div className="bg-indigo-500/10 rounded-2xl p-4 border border-indigo-500/20 flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center font-black text-lg shadow-lg">
+                        {userName[0]}
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-white">{userName}</p>
+                        <p className="text-[10px] text-indigo-300 font-bold">{userRole === 'ACCOUNTANT' ? '管理員' : '司機夥伴'}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => { setStep('NAME'); setPin(""); setUserName(""); }} className="p-2 bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors">
+                      <LogOut size={16} />
+                    </button>
+                  </div>
+
+                  <ActionCard icon={<Truck size={22}/>} label="司機操作台" sublabel="回報配送、逆物流與拍照" onClick={() => setView('DRIVER')} color="indigo" />
+                  
+                  {userRole === 'ACCOUNTANT' && (
+                    <>
+                      <ActionCard icon={<ClipboardList size={22}/>} label="對帳審核中心" sublabel="審核司機每日回報" onClick={() => setView('ACCOUNTANT')} color="emerald" />
+                      <ActionCard icon={<UserCog size={22}/>} label="人員與權限管理" sublabel="管理系統使用者" onClick={() => setView('STAFF')} color="violet" />
+                    </>
+                  )}
+
+                  <button onClick={() => setShowSupport(true)} className="w-full mt-4 py-3 bg-white/5 rounded-2xl text-xs font-bold text-slate-400 flex justify-center items-center gap-2 hover:bg-white/10 transition-colors">
+                    <MessageSquare size={14} /> 聯絡辦公室/支援
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 支援 Modal */}
+          {showSupport && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end animate-fade">
+              <div className="w-full max-w-lg mx-auto bg-[#0f1629] border border-white/10 rounded-t-[36px] p-6 shadow-2xl h-[80dvh] flex flex-col">
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                  <h2 className="text-base font-black flex items-center gap-2"><MessageSquare size={18} className="text-indigo-400"/> 辦公室支援</h2>
+                  <button onClick={() => setShowSupport(false)} className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center"><X size={14} /></button>
+                </div>
+                <div className="flex-grow overflow-y-auto space-y-3 mb-4 pr-2">
+                  {supportMessages.map((msg, idx) => (
+                    <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                      <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white/10 text-slate-200 rounded-tl-sm'}`}>
+                        {msg.text}
+                      </div>
+                      <span className="text-[9px] text-slate-500 mt-1 font-medium">{msg.time}</span>
+                    </div>
+                  ))}
+                  <div ref={scrollRef} />
+                </div>
+                <div className="relative">
+                  <input
+                    type="text" value={supportInput} onChange={e => setSupportInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSendSupport()}
+                    placeholder="輸入訊息..."
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl pl-4 pr-12 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                  <button onClick={handleSendSupport} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-indigo-500 rounded-xl flex items-center justify-center text-white active:scale-95">
+                    <Send size={14} />
+                  </button>
+                </div>
               </div>
-              <button type="submit" disabled={isProcessing} className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/50 active:scale-95 transition-all">
-                {isProcessing
-                  ? <Loader2 size={20} cls="animate-spin" />
-                  : <>下一步 <ArrowRight size={16} /></>
-                }
-              </button>
-            </form>
+            </div>
           )}
+        </div>
+      );
+    };
 
-          {/* 步驟：口令 */}
-          {step === 'PIN' && (
-            <form onSubmit={handlePinSubmit} className="space-y-4">
-              <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl px-4 py-3">
-                <p className="text-xs font-bold text-indigo-300">
-                  {isNewUser ? `👋 歡迎 ${userName}，請設定 4 位數口令` : `🔐 你好 ${userName}，請輸入口令`}
-                </p>
-              </div>
-              <div className="relative">
-                <Lock size={16} cls="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
-                  type="password" pattern="\d*" maxLength="4" inputMode="numeric"
-                  value={pin} onChange={e => setPin(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-center text-3xl tracking-[0.5em] font-black outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-600"
-                  placeholder="••••" required autoFocus
-                />
-              </div>
-              <button type="submit" disabled={isProcessing} className="w-full bg-white text-indigo-950 py-4 rounded-2xl font-black shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
-                {isProcessing
-                  ? <Loader2 size={20} cls="animate-spin text-indigo-600" />
-                  : <>進入系統 <ShieldCheck size={16} /></>
-                }
-              </button>
-              <button type="button" onClick={() => { setStep('NAME'); setPin(''); }} className="text-xs text-slate-500 hover:text-slate-300 underline font-bold transition-colors mt-2">
-                ← 返回修改姓名
-              </button>
-            </form>
-          )}
+    // ===================== 視圖: 司機操作台 =====================
+    const DriverView = ({ setView, userName }) => {
+      const [driverStep, setDriverStep] = useState('MENU');
+      const [deliveryData, setDeliveryData] = useState({ totalParcels: '', successDelivery: '', failedDelivery: '', notes: '' });
+      const [reverseData, setReverseData] = useState({ returnCount: '', reason: '', notes: '' });
+      const [photoFile, setPhotoFile] = useState(null);
+      const [photoPreview, setPhotoPreview] = useState(null);
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      const [submitSuccess, setSubmitSuccess] = useState(false);
+      const fileInputRef = useRef(null);
 
-          {/* 步驟：已登入選單 */}
-          {step === 'LOGGED_IN' && (
-            <div className="space-y-3 animate-fade text-left">
-              <div className="bg-indigo-500/10 rounded-2xl p-4 border border-indigo-500/20 flex items-center justify-between mb-5">
+      const handlePhotoCapture = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setPhotoFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => setPhotoPreview(reader.result);
+        reader.readAsDataURL(file);
+      };
+
+      const handleDeliverySubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+          const { db, collection, addDoc } = window._firebaseAPI;
+          await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'), {
+            type: 'DELIVERY', driverName: userName, ...deliveryData,
+            timestamp: Date.now(), status: 'PENDING', date: new Date().toLocaleDateString('zh-TW')
+          });
+          setSubmitSuccess(true);
+          setTimeout(() => { setSubmitSuccess(false); setDriverStep('MENU'); }, 2000);
+        } catch (err) { alert('提交失敗，請重試。'); console.error(err); }
+        setIsSubmitting(false);
+      };
+
+      const handleReverseSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+          const { db, collection, addDoc } = window._firebaseAPI;
+          await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'), {
+            type: 'REVERSE_LOGISTICS', driverName: userName, ...reverseData,
+            timestamp: Date.now(), status: 'PENDING', date: new Date().toLocaleDateString('zh-TW')
+          });
+          setSubmitSuccess(true);
+          setTimeout(() => { setSubmitSuccess(false); setDriverStep('MENU'); }, 2000);
+        } catch (err) { alert('提交失敗，請重試。'); console.error(err); }
+        setIsSubmitting(false);
+      };
+
+      if (submitSuccess) {
+        return (
+          <div className="min-h-screen bg-[#080c1a] flex flex-col items-center justify-center text-white gap-4">
+            <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center animate-zoom duration-300">
+              <CheckCircle2 size={44} cls="text-emerald-400" />
+            </div>
+            <p className="text-xl font-black text-emerald-400">提交成功！</p>
+            <p className="text-sm text-slate-400">資料已送出，正在返回...</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
+          <div className="fixed inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-40 -left-40 w-80 h-80 bg-indigo-900/30 rounded-full blur-3xl" />
+            <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-violet-900/20 rounded-full blur-3xl" />
+          </div>
+
+          {driverStep === 'MENU' && (
+            <div className="relative flex flex-col min-h-screen">
+              <PageHeader title="司機操作台" onBack={() => setView('PORTAL')} />
+              <div className="mx-4 mt-4 bg-gradient-to-r from-indigo-600/30 to-violet-600/30 border border-indigo-500/30 rounded-3xl p-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center font-black text-lg shadow-lg">
+                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg">
                     {userName[0]}
                   </div>
                   <div>
-                    <p className="text-sm font-black text-white">{userName}</p>
-                    <p className="text-[10px] text-indigo-300 font-bold">{userRole === 'ACCOUNTANT' ? '管理員' : '司機夥伴'}</p>
+                    <p className="font-black text-base">{userName} 司機</p>
+                    <p className="text-xs text-slate-400 font-medium">
+                      {new Date().toLocaleDateString('zh-TW', { weekday: 'long', month: 'long', day: 'numeric' })}
+                    </p>
                   </div>
                 </div>
-                <button onClick={() => { setStep('NAME'); setPin(''); setUserName(''); }} className="p-2 bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors">
-                  <LogOut size={16} />
-                </button>
               </div>
 
-              <ActionCard
-                icon={<Truck size={22} />} label="司機操作台" sublabel="回報配送、逆物流與拍照"
-                onClick={() => setView('DRIVER')} color="indigo"
-              />
-              
-              {userRole === 'ACCOUNTANT' && (
-                <>
-                  <ActionCard
-                    icon={<ClipboardList size={22} />} label="對帳審核中心" sublabel="審核司機每日回報"
-                    onClick={() => setView('ACCOUNTANT')} color="emerald"
-                  />
-                  <ActionCard
-                    icon={<UserCog size={22} />} label="人員與權限管理" sublabel="管理系統使用者"
-                    onClick={() => setView('STAFF')} color="violet"
-                  />
-                </>
-              )}
+              <div className="flex-grow p-4 space-y-3 mt-2">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-3">今日任務</p>
+                <ActionCard icon={<PackageCheck size={22}/>} label="配送回報" sublabel="回報今日配送件數與狀況" onClick={() => setDriverStep('DELIVERY')} color="emerald" />
+                <ActionCard icon={<PackageX size={22}/>} label="逆物流回報" sublabel="回報退件與逆物流數量" onClick={() => setDriverStep('REVERSE_LOGISTICS')} color="amber" />
+                <ActionCard icon={<ClipboardList size={22}/>} label="每日數據總回報" sublabel="填寫完整每日回報表單" onClick={() => setDriverStep('REPORT')} color="sky" />
+                <ActionCard icon={<Camera size={22}/>} label="拍照上傳" sublabel="拍攝貨件照片作為憑證" onClick={() => setDriverStep('PHOTO')} color="violet" />
+                
+                <div className="pt-2">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-3">其他</p>
+                  <ActionCard icon={<History size={22}/>} label="查看回報紀錄" sublabel="功能即將開通" color="slate" disabled />
+                </div>
+              </div>
+            </div>
+          )}
 
-              <button onClick={() => setShowSupport(true)} className="w-full mt-4 py-3 bg-white/5 rounded-2xl text-xs font-bold text-slate-400 flex justify-center items-center gap-2 hover:bg-white/10 transition-colors">
-                <MessageSquare size={14} /> 聯絡辦公室 / 支援
-              </button>
+          {/* 配送回報 */}
+          {driverStep === 'DELIVERY' && (
+            <div className="flex flex-col min-h-screen">
+              <PageHeader title="配送回報" onBack={() => setDriverStep('MENU')} />
+              <form onSubmit={handleDeliverySubmit} className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4">
+                  <p className="text-xs text-emerald-300 font-bold">填寫今日配送數據</p>
+                </div>
+                {[
+                  { key: 'totalParcels', label: '總派件數', placeholder: '例: 85', type: 'number' },
+                  { key: 'successDelivery', label: '成功配送件數', placeholder: '例: 78', type: 'number' },
+                  { key: 'failedDelivery', label: '未配達件數', placeholder: '例: 7', type: 'number' },
+                ].map(({ key, label, placeholder, type }) => (
+                  <div key={key}>
+                    <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">{label}</label>
+                    <input
+                      type={type} value={deliveryData[key]} onChange={e => setDeliveryData(prev => ({ ...prev, [key]: e.target.value }))}
+                      placeholder={placeholder} required
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600 text-lg"
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">備註</label>
+                  <textarea
+                    value={deliveryData.notes} onChange={e => setDeliveryData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="填寫特殊狀況或備註..." rows={3}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white font-medium outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600 resize-none"
+                  />
+                </div>
+                <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 py-5 rounded-3xl font-black text-white text-lg flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/50 active:scale-95 transition-all mt-4">
+                  {isSubmitting ? <Loader2 size={22} cls="animate-spin" /> : <><Send size={18}/> 提交配送回報</>}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* 逆物流回報 */}
+          {driverStep === 'REVERSE_LOGISTICS' && (
+            <div className="flex flex-col min-h-screen">
+              <PageHeader title="逆物流回報" onBack={() => setDriverStep('MENU')} />
+              <form onSubmit={handleReverseSubmit} className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
+                  <p className="text-xs text-amber-300 font-bold">填寫逆物流與退件數據</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">退件總數</label>
+                  <input
+                    type="number" value={reverseData.returnCount}
+                    onChange={e => setReverseData(prev => ({ ...prev, returnCount: e.target.value }))}
+                    placeholder="例: 12" required
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-amber-500/50 transition-all placeholder:text-slate-600 text-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">退件原因</label>
+                  <div className="grid grid-cols-1 gap-2 mb-3">
+                    {['收件人不在', '地址錯誤', '拒收', '包裝損壞', '其他'].map(reason => (
+                      <button
+                        key={reason} type="button" onClick={() => setReverseData(prev => ({ ...prev, reason }))}
+                        className={`px-4 py-3 rounded-2xl text-sm font-bold text-left transition-all active:scale-95 ${reverseData.reason === reason ? 'bg-amber-500/30 border-2 border-amber-500/60 text-amber-300' : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'}`}
+                      >
+                        {reverseData.reason === reason ? '✓ ' : ''}{reason}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">備註說明</label>
+                  <textarea
+                    value={reverseData.notes} onChange={e => setReverseData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="填寫退件詳細說明..." rows={3}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white font-medium outline-none focus:ring-2 focus:ring-amber-500/50 transition-all placeholder:text-slate-600 resize-none"
+                  />
+                </div>
+                <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-amber-500 to-amber-600 py-5 rounded-3xl font-black text-white text-lg flex items-center justify-center gap-2 shadow-xl shadow-amber-900/50 active:scale-95 transition-all mt-4">
+                  {isSubmitting ? <Loader2 size={22} cls="animate-spin" /> : <><Send size={18}/> 提交逆物流回報</>}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* 每日總回報(整合列表) */}
+          {driverStep === 'REPORT' && (
+            <div className="flex flex-col min-h-screen">
+              <PageHeader title="每日數據總回報" onBack={() => setDriverStep('MENU')} />
+              <div className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
+                <div className="bg-sky-500/10 border border-sky-500/30 rounded-2xl p-4">
+                  <p className="text-xs text-sky-300 font-bold"> 請依序完成所有回報項目</p>
+                </div>
+                <div className="space-y-3">
+                  <ActionCard icon={<PackageCheck size={20} />} label="填寫配送數據" sublabel="點擊前往配送回報" onClick={() => setDriverStep('DELIVERY')} color="emerald" />
+                  <ActionCard icon={<PackageX size={20} />} label="填寫逆物流數據" sublabel="點擊前往逆物流回報" onClick={() => setDriverStep('REVERSE_LOGISTICS')} color="amber" />
+                  <ActionCard icon={<Camera size={20} />} label="上傳憑證照片" sublabel="點擊前往拍照上傳" onClick={() => setDriverStep('PHOTO')} color="violet" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 拍照上傳 */}
+          {driverStep === 'PHOTO' && (
+            <div className="flex flex-col min-h-screen">
+              <PageHeader title="拍照上傳" onBack={() => setDriverStep('MENU')} />
+              <div className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
+                <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4">
+                  <p className="text-xs text-violet-300 font-bold"> 拍攝貨件照片作為簽收憑證</p>
+                </div>
+
+                <div onClick={() => fileInputRef.current?.click()} className={`relative w-full aspect-[4/3] rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 overflow-hidden border-2 border-dashed ${photoPreview ? 'border-violet-500/50' : 'border-white/20 bg-white/5 hover:bg-white/10'}`}>
+                  {photoPreview ? (
+                    <>
+                      <img src={photoPreview} alt="預覽" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2 flex items-center gap-2">
+                          <RotateCcw size={16} cls="text-white" />
+                          <span className="text-white text-sm font-bold">重新拍攝</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 text-slate-500">
+                      <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center">
+                        <Camera size={32} cls="text-slate-400" />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-black text-slate-300">點擊拍照或選取圖片</p>
+                        <p className="text-xs text-slate-500 mt-1">支援 JPG、PNG 格式</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoCapture} className="hidden" />
+
+                {!photoPreview && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button type="button" onClick={() => { if (fileInputRef.current) { fileInputRef.current.removeAttribute('capture'); fileInputRef.current.click(); setTimeout(() => fileInputRef.current?.setAttribute('capture', 'environment'), 500); } }} className="flex flex-col items-center gap-2 bg-white/5 border border-white/10 rounded-2xl py-4 px-3 active:scale-95 transition-all">
+                      <Upload size={20} cls="text-violet-400" />
+                      <span className="text-xs font-bold text-slate-300">從相簿選取</span>
+                    </button>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center gap-2 bg-violet-500/20 border border-violet-500/30 rounded-2xl py-4 px-3 active:scale-95 transition-all">
+                      <Camera size={20} cls="text-violet-400" />
+                      <span className="text-xs font-bold text-violet-300">開啟相機</span>
+                    </button>
+                  </div>
+                )}
+
+                {photoPreview && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!photoFile) return;
+                      setIsSubmitting(true);
+                      try {
+                        const { db, collection, addDoc } = window._firebaseAPI;
+                        await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'), {
+                          type: 'PHOTO_UPLOAD', driverName: userName,
+                          fileName: photoFile.name, fileSize: photoFile.size,
+                          timestamp: Date.now(), status: 'UPLOADED', date: new Date().toLocaleDateString('zh-TW')
+                        });
+                        setSubmitSuccess(true);
+                        setPhotoFile(null);
+                        setPhotoPreview(null);
+                        setTimeout(() => { setSubmitSuccess(false); setDriverStep('MENU'); }, 2000);
+                      } catch (err) { alert('上傳失敗，請重試。'); console.error(err); }
+                      setIsSubmitting(false);
+                    }}
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-violet-600 to-violet-700 py-5 rounded-3xl font-black text-white text-lg flex items-center justify-center gap-2 shadow-xl shadow-violet-900/50 active:scale-95 transition-all"
+                  >
+                    {isSubmitting ? <Loader2 size={22} cls="animate-spin" /> : <><Upload size={18}/> 確認上傳照片</>}
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
-      </div>
+      );
+    };
 
-      {/* 支援 Modal */}
-      {showSupport && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end animate-fade">
-          <div className="w-full max-w-lg mx-auto bg-[#0f1629] border border-white/10 rounded-t-[36px] p-6 shadow-2xl h-[80dvh] flex flex-col">
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
-              <h2 className="text-base font-black flex items-center gap-2"><MessageSquare size={18} className="text-indigo-400"/> 辦公室支援</h2>
-              <button onClick={() => setShowSupport(false)} className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center"><X size={14} /></button>
-            </div>
-            <div className="flex-grow overflow-y-auto space-y-3 mb-4 pr-2">
-              {supportMessages.map((msg, idx) => (
-                <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white/10 text-slate-200 rounded-tl-sm'}`}>
-                    {msg.text}
-                  </div>
-                  <span className="text-[9px] text-slate-500 mt-1 font-medium">{msg.time}</span>
+    // ===================== 視圖: 對帳審核中心 =====================
+    const AccountantView = ({ setView, reports, userName }) => {
+      const [selectedReport, setSelectedReport] = useState(null);
+      const [adjustReason, setAdjustReason] = useState("");
+      const [adjustedValue, setAdjustedValue] = useState("");
+      const [isProcessing, setIsProcessing] = useState(false);
+
+      const pending = reports.filter(r => r.status === 'PENDING');
+      const reviewed = reports.filter(r => r.status !== 'PENDING');
+
+      const handleApprove = async (reportId) => {
+        setIsProcessing(true);
+        const { db, updateDoc, doc } = window._firebaseAPI;
+        await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports', reportId), {
+          status: 'APPROVED', reviewedBy: userName, reviewedAt: Date.now()
+        });
+        setSelectedReport(null);
+        setIsProcessing(false);
+      };
+
+      const handleAdjust = async (reportId) => {
+        if (!adjustReason.trim()) { alert('請填寫對帳原因。'); return; }
+        setIsProcessing(true);
+        const { db, updateDoc, doc } = window._firebaseAPI;
+        await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports', reportId), {
+          status: 'ADJUSTED', adjustedValue, adjustReason, reviewedBy: userName, reviewedAt: Date.now()
+        });
+        setSelectedReport(null);
+        setAdjustReason("");
+        setAdjustedValue("");
+        setIsProcessing(false);
+      };
+
+      const typeLabel = (type) => ({ DELIVERY: '配送', REVERSE_LOGISTICS: '逆物流', PHOTO_UPLOAD: '照片' })[type] || type;
+      const typeIconBg = (type) => ({ DELIVERY: 'bg-emerald-500/20', REVERSE_LOGISTICS: 'bg-amber-500/20', PHOTO_UPLOAD: 'bg-violet-500/20' })[type] || 'bg-slate-500/20';
+
+      const statusBadge = (status) => {
+        const map = {
+          PENDING: { label: '待審核', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+          APPROVED: { label: '已核准', cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+          ADJUSTED: { label: '已調整', cls: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
+          UPLOADED: { label: '已上傳', cls: 'bg-violet-500/20 text-violet-300 border-violet-500/30' }
+        };
+        const s = map[status] || { label: status, cls: 'bg-slate-500/20 text-slate-300 border-slate-500/30' };
+        return <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${s.cls}`}>{s.label}</span>;
+      };
+
+      return (
+        <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
+          <div className="fixed inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-900/20 rounded-full blur-3xl" />
+          </div>
+          <PageHeader title="對帳審核中心" onBack={() => setView('PORTAL')} />
+
+          <div className="relative flex-grow p-4 space-y-4 overflow-y-auto">
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: '待審核', value: pending.length, color: 'text-amber-400' },
+                { label: '已核准', value: reviewed.filter(r => r.status === 'APPROVED').length, color: 'text-emerald-400' },
+                { label: '已調整', value: reviewed.filter(r => r.status === 'ADJUSTED').length, color: 'text-rose-400' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                  <p className={`text-2xl font-black ${color}`}>{value}</p>
+                  <p className="text-[10px] text-slate-500 font-bold mt-0.5">{label}</p>
                 </div>
               ))}
-              <div ref={scrollRef} />
             </div>
-            <div className="relative">
-              <input
-                type="text" value={supportInput} onChange={e => setSupportInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSendSupport()}
-                placeholder="輸入訊息..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl pl-4 pr-12 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/50"
-              />
-              <button onClick={handleSendSupport} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-indigo-500 rounded-xl flex items-center justify-center text-white active:scale-95">
-                <Send size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
-// ===================== 視圖：司機操作台 =====================
-const DriverView = ({ setView, userName }) => {
-  const [driverStep, setDriverStep] = useState('MENU');
-  const [deliveryData, setDeliveryData] = useState({ totalParcels: '', successDelivery: '', failedDelivery: '', notes: '' });
-  const [reverseData, setReverseData] = useState({ returnCount: '', reason: '', notes: '' });
-  const [photoFile, setPhotoFile] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handlePhotoCapture = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setPhotoPreview(reader.result);
-    reader.readAsDataURL(file);
-  };
-
-  const handleDeliverySubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const { db, collection, addDoc } = window.__firebaseAPI;
-      await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'), {
-        type: 'DELIVERY', driverName: userName, ...deliveryData,
-        timestamp: Date.now(), status: 'PENDING', date: new Date().toLocaleDateString('zh-TW')
-      });
-      setSubmitSuccess(true);
-      setTimeout(() => { setSubmitSuccess(false); setDriverStep('MENU'); }, 2000);
-    } catch (err) { alert('提交失敗，請重試。'); console.error(err); }
-    setIsSubmitting(false);
-  };
-
-  const handleReverseSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const { db, collection, addDoc } = window.__firebaseAPI;
-      await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'), {
-        type: 'REVERSE_LOGISTICS', driverName: userName, ...reverseData,
-        timestamp: Date.now(), status: 'PENDING', date: new Date().toLocaleDateString('zh-TW')
-      });
-      setSubmitSuccess(true);
-      setTimeout(() => { setSubmitSuccess(false); setDriverStep('MENU'); }, 2000);
-    } catch (err) { alert('提交失敗，請重試。'); console.error(err); }
-    setIsSubmitting(false);
-  };
-
-  if (submitSuccess) {
-    return (
-      <div className="min-h-screen bg-[#080c1a] flex flex-col items-center justify-center text-white gap-4">
-        <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center animate-zoom duration-300">
-          <CheckCircle2 size={44} cls="text-emerald-400" />
-        </div>
-        <p className="text-xl font-black text-emerald-400">提交成功！</p>
-        <p className="text-sm text-slate-400">資料已送出，正在返回...</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-indigo-900/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-violet-900/20 rounded-full blur-3xl" />
-      </div>
-
-      {driverStep === 'MENU' && (
-        <div className="relative flex flex-col min-h-screen">
-          <PageHeader title="司機操作台" onBack={() => setView('PORTAL')} />
-
-          <div className="mx-4 mt-4 bg-gradient-to-r from-indigo-600/30 to-violet-600/30 border border-indigo-500/30 rounded-3xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg">
-                {userName[0]}
-              </div>
+            {pending.length > 0 && (
               <div>
-                <p className="font-black text-base">{userName} 司機</p>
-                <p className="text-xs text-slate-400 font-medium">
-                  {new Date().toLocaleDateString('zh-TW', { weekday: 'long', month: 'long', day: 'numeric' })}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-grow p-4 space-y-3 mt-2">
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-3">今日任務</p>
-            <ActionCard icon={<PackageCheck size={22} />} label="配送回報" sublabel="回報今日配送件數與狀況" onClick={() => setDriverStep('DELIVERY')} color="emerald" />
-            <ActionCard icon={<PackageX size={22} />} label="逆物流回報" sublabel="回報退件與逆物流數量" onClick={() => setDriverStep('REVERSE_LOGISTICS')} color="amber" />
-            <ActionCard icon={<ClipboardList size={22} />} label="每日數據總回報" sublabel="填寫完整每日回報表單" onClick={() => setDriverStep('REPORT')} color="sky" />
-            <ActionCard icon={<Camera size={22} />} label="拍照上傳" sublabel="拍攝貨件照片作為憑證" onClick={() => setDriverStep('PHOTO')} color="violet" />
-            
-            <div className="pt-2">
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-3">其他</p>
-              <ActionCard icon={<History size={22} />} label="查看回報紀錄" sublabel="功能即將開通" color="slate" disabled />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 配送回報 */}
-      {driverStep === 'DELIVERY' && (
-        <div className="flex flex-col min-h-screen">
-          <PageHeader title="配送回報" onBack={() => setDriverStep('MENU')} />
-          <form onSubmit={handleDeliverySubmit} className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4">
-              <p className="text-xs text-emerald-300 font-bold">📦 填寫今日配送數據</p>
-            </div>
-            {[
-              { key: 'totalParcels', label: '總派件數', placeholder: '例：85', type: 'number' },
-              { key: 'successDelivery', label: '成功配送件數', placeholder: '例：78', type: 'number' },
-              { key: 'failedDelivery', label: '未配達件數', placeholder: '例：7', type: 'number' },
-            ].map(({ key, label, placeholder, type }) => (
-              <div key={key}>
-                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">{label}</label>
-                <input
-                  type={type} value={deliveryData[key]} onChange={e => setDeliveryData(prev => ({ ...prev, [key]: e.target.value }))}
-                  placeholder={placeholder} required
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600 text-lg"
-                />
-              </div>
-            ))}
-            <div>
-              <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">備註</label>
-              <textarea
-                value={deliveryData.notes} onChange={e => setDeliveryData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="填寫特殊狀況或備註..." rows={3}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white font-medium outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600 resize-none"
-              />
-            </div>
-            <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 py-5 rounded-3xl font-black text-white text-lg flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/50 active:scale-95 transition-all mt-4">
-              {isSubmitting ? <Loader2 size={22} cls="animate-spin" /> : <><Send size={18} /> 提交配送回報</>}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* 逆物流回報 */}
-      {driverStep === 'REVERSE_LOGISTICS' && (
-        <div className="flex flex-col min-h-screen">
-          <PageHeader title="逆物流回報" onBack={() => setDriverStep('MENU')} />
-          <form onSubmit={handleReverseSubmit} className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
-              <p className="text-xs text-amber-300 font-bold">🔄 填寫逆物流與退件數據</p>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">退件總數</label>
-              <input
-                type="number" value={reverseData.returnCount} onChange={e => setReverseData(prev => ({ ...prev, returnCount: e.target.value }))}
-                placeholder="例：12" required
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-amber-500/50 transition-all placeholder:text-slate-600 text-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">退件原因</label>
-              <div className="grid grid-cols-1 gap-2 mb-3">
-                {['收件人不在', '地址錯誤', '拒收', '包裝損壞', '其他'].map(reason => (
-                  <button
-                    key={reason} type="button" onClick={() => setReverseData(prev => ({ ...prev, reason }))}
-                    className={`px-4 py-3 rounded-2xl text-sm font-bold text-left transition-all active:scale-95 ${reverseData.reason === reason ? 'bg-amber-500/30 border-2 border-amber-500/60 text-amber-300' : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'}`}
-                  >
-                    {reverseData.reason === reason ? '✓ ' : ''}{reason}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">備註說明</label>
-              <textarea
-                value={reverseData.notes} onChange={e => setReverseData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="填寫退件詳細說明..." rows={3}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white font-medium outline-none focus:ring-2 focus:ring-amber-500/50 transition-all placeholder:text-slate-600 resize-none"
-              />
-            </div>
-            <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-amber-500 to-amber-600 py-5 rounded-3xl font-black text-white text-lg flex items-center justify-center gap-2 shadow-xl shadow-amber-900/50 active:scale-95 transition-all mt-4">
-              {isSubmitting ? <Loader2 size={22} cls="animate-spin" /> : <><Send size={18} /> 提交逆物流回報</>}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* 每日總回報 (整合列表) */}
-      {driverStep === 'REPORT' && (
-        <div className="flex flex-col min-h-screen">
-          <PageHeader title="每日數據總回報" onBack={() => setDriverStep('MENU')} />
-          <div className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
-            <div className="bg-sky-500/10 border border-sky-500/30 rounded-2xl p-4">
-              <p className="text-xs text-sky-300 font-bold">📋 請依序完成所有回報項目</p>
-            </div>
-            <div className="space-y-3">
-              <ActionCard icon={<PackageCheck size={20} />} label="填寫配送數據" sublabel="點擊前往配送回報" onClick={() => setDriverStep('DELIVERY')} color="emerald" />
-              <ActionCard icon={<PackageX size={20} />} label="填寫逆物流數據" sublabel="點擊前往逆物流回報" onClick={() => setDriverStep('REVERSE_LOGISTICS')} color="amber" />
-              <ActionCard icon={<Camera size={20} />} label="上傳憑證照片" sublabel="點擊前往拍照上傳" onClick={() => setDriverStep('PHOTO')} color="violet" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 拍照上傳 */}
-      {driverStep === 'PHOTO' && (
-        <div className="flex flex-col min-h-screen">
-          <PageHeader title="拍照上傳" onBack={() => setDriverStep('MENU')} />
-          <div className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
-            <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4">
-              <p className="text-xs text-violet-300 font-bold">📷 拍攝貨件照片作為簽收憑證</p>
-            </div>
-
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className={`relative w-full aspect-[4/3] rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 overflow-hidden border-2 border-dashed ${photoPreview ? 'border-violet-500/50' : 'border-white/20 bg-white/5 hover:bg-white/10'}`}
-            >
-              {photoPreview ? (
-                <>
-                  <img src={photoPreview} alt="預覽" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2 flex items-center gap-2">
-                      <RotateCcw size={16} cls="text-white" />
-                      <span className="text-white text-sm font-bold">重新拍攝</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center gap-3 text-slate-500">
-                  <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center">
-                    <Camera size={32} cls="text-slate-400" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-black text-slate-300">點擊拍照或選取圖片</p>
-                    <p className="text-xs text-slate-500 mt-1">支援 JPG、PNG 格式</p>
-                  </div>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-2">待審核</p>
+                <div className="space-y-2">
+                  {pending.map(report => (
+                    <button
+                      key={report.id} onClick={() => setSelectedReport(report)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-left flex items-center gap-3 active:scale-95 transition-all hover:bg-white/10"
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${typeIconBg(report.type)} flex-shrink-0`}>
+                        {report.type === 'DELIVERY' ? <PackageCheck size={18} cls="text-emerald-400" /> :
+                         report.type === 'REVERSE_LOGISTICS' ? <PackageX size={18} cls="text-amber-400" /> :
+                         <Camera size={18} cls="text-violet-400" />}
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <p className="font-black text-sm">{report.driverName}</p>
+                        <p className="text-xs text-slate-400 font-medium">{typeLabel(report.type)} {report.date}</p>
+                      </div>
+                      {statusBadge(report.status)}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoCapture} className="hidden" />
+            {reviewed.length > 0 && (
+              <div>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-2">已完成</p>
+                <div className="space-y-2">
+                  {reviewed.slice(0, 10).map(report => (
+                    <div key={report.id} className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 flex-shrink-0">
+                        {report.type === 'DELIVERY' ? <PackageCheck size={18} cls="text-slate-500" /> :
+                         report.type === 'REVERSE_LOGISTICS' ? <PackageX size={18} cls="text-slate-500" /> :
+                         <Camera size={18} cls="text-slate-500" />}
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <p className="font-bold text-sm text-slate-400">{report.driverName}</p>
+                        <p className="text-xs text-slate-600 font-medium">{typeLabel(report.type)} {report.date}</p>
+                      </div>
+                      {statusBadge(report.status)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => { if (fileInputRef.current) { fileInputRef.current.removeAttribute('capture'); fileInputRef.current.click(); setTimeout(() => fileInputRef.current?.setAttribute('capture', 'environment'), 500); } }} className="flex flex-col items-center gap-2 bg-white/5 border border-white/10 rounded-2xl py-4 px-3 active:scale-95 transition-all">
-                <Upload size={20} cls="text-violet-400" />
-                <span className="text-xs font-bold text-slate-300">從相簿選取</span>
-              </button>
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center gap-2 bg-violet-500/20 border border-violet-500/30 rounded-2xl py-4 px-3 active:scale-95 transition-all">
-                <Camera size={20} cls="text-violet-400" />
-                <span className="text-xs font-bold text-violet-300">開啟相機</span>
-              </button>
-            </div>
-
-            {photoPreview && (
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!photoFile) return;
-                  setIsSubmitting(true);
-                  try {
-                    const { db, collection, addDoc } = window.__firebaseAPI;
-                    await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'), {
-                      type: 'PHOTO_UPLOAD', driverName: userName, fileName: photoFile.name, fileSize: photoFile.size,
-                      timestamp: Date.now(), status: 'UPLOADED', date: new Date().toLocaleDateString('zh-TW')
-                    });
-                    setSubmitSuccess(true);
-                    setPhotoFile(null);
-                    setPhotoPreview(null);
-                    setTimeout(() => { setSubmitSuccess(false); setDriverStep('MENU'); }, 2000);
-                  } catch (err) { alert('上傳失敗，請重試。'); console.error(err); }
-                  setIsSubmitting(false);
-                }}
-                disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-violet-600 to-violet-700 py-5 rounded-3xl font-black text-white text-lg flex items-center justify-center gap-2 shadow-xl shadow-violet-900/50 active:scale-95 transition-all"
-              >
-                {isSubmitting ? <Loader2 size={22} cls="animate-spin" /> : <><Upload size={18} /> 確認上傳照片</>}
-              </button>
+            {reports.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-600">
+                <ClipboardList size={48} cls="mb-4 opacity-30" />
+                <p className="font-bold">目前沒有回報資料</p>
+                <p className="text-xs mt-1">等待司機提交數據...</p>
+              </div>
             )}
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
-// ===================== 視圖：對帳審核中心 =====================
-const AccountantView = ({ setView, reports, userName }) => {
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [adjustReason, setAdjustReason] = useState('');
-  const [adjustedValue, setAdjustedValue] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const pending = reports.filter(r => r.status === 'PENDING');
-  const reviewed = reports.filter(r => r.status !== 'PENDING');
-
-  const handleApprove = async (reportId) => {
-    setIsProcessing(true);
-    const { db, updateDoc, doc } = window.__firebaseAPI;
-    await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports', reportId), {
-      status: 'APPROVED', reviewedBy: userName, reviewedAt: Date.now()
-    });
-    setSelectedReport(null);
-    setIsProcessing(false);
-  };
-
-  const handleAdjust = async (reportId) => {
-    if (!adjustReason.trim()) { alert('請填寫對帳原因。'); return; }
-    setIsProcessing(true);
-    const { db, updateDoc, doc } = window.__firebaseAPI;
-    await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports', reportId), {
-      status: 'ADJUSTED', adjustedValue, adjustReason, reviewedBy: userName, reviewedAt: Date.now()
-    });
-    setSelectedReport(null);
-    setAdjustReason('');
-    setAdjustedValue('');
-    setIsProcessing(false);
-  };
-
-  const typeLabel = (type) => ({ DELIVERY: '配送', REVERSE_LOGISTICS: '逆物流', PHOTO_UPLOAD: '照片' })[type] || type;
-  const typeIconBg = (type) => ({ DELIVERY: 'bg-emerald-500/20', REVERSE_LOGISTICS: 'bg-amber-500/20', PHOTO_UPLOAD: 'bg-violet-500/20' })[type] || 'bg-slate-500/20';
-
-  const statusBadge = (status) => {
-    const map = {
-      PENDING: { label: '待審核', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-      APPROVED: { label: '已核准', cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-      ADJUSTED: { label: '已調整', cls: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
-      UPLOADED: { label: '已上傳', cls: 'bg-violet-500/20 text-violet-300 border-violet-500/30' }
-    };
-    const s = map[status] || { label: status, cls: 'bg-slate-500/20 text-slate-300 border-slate-500/30' };
-    return <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${s.cls}`}>{s.label}</span>;
-  };
-
-  return (
-    <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-900/20 rounded-full blur-3xl" />
-      </div>
-
-      <PageHeader title="對帳審核中心" onBack={() => setView('PORTAL')} />
-
-      <div className="relative flex-grow p-4 space-y-4 overflow-y-auto">
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: '待審核', value: pending.length, color: 'text-amber-400' },
-            { label: '已核准', value: reviewed.filter(r => r.status === 'APPROVED').length, color: 'text-emerald-400' },
-            { label: '已調整', value: reviewed.filter(r => r.status === 'ADJUSTED').length, color: 'text-rose-400' },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-              <p className={`text-2xl font-black ${color}`}>{value}</p>
-              <p className="text-[10px] text-slate-500 font-bold mt-0.5">{label}</p>
-            </div>
-          ))}
-        </div>
-
-        {pending.length > 0 && (
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-2">待審核</p>
-            <div className="space-y-2">
-              {pending.map(report => (
-                <button
-                  key={report.id} onClick={() => setSelectedReport(report)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-left flex items-center gap-3 active:scale-95 transition-all hover:bg-white/10"
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${typeIconBg(report.type)} flex-shrink-0`}>
-                    {report.type === 'DELIVERY' ? <PackageCheck size={18} cls="text-emerald-400" /> :
-                     report.type === 'REVERSE_LOGISTICS' ? <PackageX size={18} cls="text-amber-400" /> :
-                     <Camera size={18} cls="text-violet-400" />}
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <p className="font-black text-sm">{report.driverName}</p>
-                    <p className="text-xs text-slate-400 font-medium">{typeLabel(report.type)} · {report.date}</p>
-                  </div>
-                  {statusBadge(report.status)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {reviewed.length > 0 && (
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-2">已完成</p>
-            <div className="space-y-2">
-              {reviewed.slice(0, 10).map(report => (
-                <div key={report.id} className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 flex-shrink-0">
-                    {report.type === 'DELIVERY' ? <PackageCheck size={18} cls="text-slate-500" /> :
-                     report.type === 'REVERSE_LOGISTICS' ? <PackageX size={18} cls="text-slate-500" /> :
-                     <Camera size={18} cls="text-slate-500" />}
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <p className="font-bold text-sm text-slate-400">{report.driverName}</p>
-                    <p className="text-xs text-slate-600 font-medium">{typeLabel(report.type)} · {report.date}</p>
-                  </div>
-                  {statusBadge(report.status)}
+          {selectedReport && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end animate-fade">
+              <div className="w-full max-w-lg mx-auto bg-[#0f1629] border border-white/10 rounded-t-[36px] p-6 space-y-4 shadow-2xl max-h-[90dvh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-black">審核回報</h2>
+                  <button onClick={() => setSelectedReport(null)} className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center"><X size={14} /></button>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+                
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
+                  {Object.entries(selectedReport)
+                    .filter(([k]) => !['id', 'status', 'timestamp', 'reviewedBy', 'reviewedAt'].includes(k))
+                    .map(([key, val]) => (
+                      <div key={key} className="flex justify-between items-start gap-4">
+                        <span className="text-xs text-slate-500 font-bold uppercase flex-shrink-0">{key}</span>
+                        <span className="text-xs text-slate-300 font-medium text-right break-all">{String(val)}</span>
+                      </div>
+                    ))}
+                </div>
 
-        {reports.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-600">
-            <ClipboardList size={48} cls="mb-4 opacity-30" />
-            <p className="font-bold">目前沒有回報資料</p>
-            <p className="text-xs mt-1">等待司機提交數據...</p>
-          </div>
-        )}
-      </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">修正數值(選填)</label>
+                  <input
+                    type="text" value={adjustedValue} onChange={e => setAdjustedValue(e.target.value)}
+                    placeholder="輸入修正後的數值..."
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-600"
+                  />
+                </div>
 
-      {selectedReport && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end animate-fade">
-          <div className="w-full max-w-lg mx-auto bg-[#0f1629] border border-white/10 rounded-t-[36px] p-6 space-y-4 shadow-2xl max-h-[90dvh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-black">審核回報</h2>
-              <button onClick={() => setSelectedReport(null)} className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center"><X size={14} /></button>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
-              {Object.entries(selectedReport)
-                .filter(([k]) => !['id', 'status', 'timestamp', 'reviewedBy', 'reviewedAt'].includes(k))
-                .map(([key, val]) => (
-                  <div key={key} className="flex justify-between items-start gap-4">
-                    <span className="text-xs text-slate-500 font-bold uppercase flex-shrink-0">{key}</span>
-                    <span className="text-xs text-slate-300 font-medium text-right break-all">{String(val)}</span>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">對帳原因</label>
+                  <div className="space-y-1.5 mb-2">
+                    {PRESET_REASONS.map(r => (
+                      <button
+                        key={r} type="button" onClick={() => setAdjustReason(r)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all active:scale-95 ${adjustReason === r ? 'bg-indigo-500/30 border border-indigo-500/50 text-indigo-300' : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'}`}
+                      >
+                        {r}
+                      </button>
+                    ))}
                   </div>
-                ))}
-            </div>
+                  <textarea
+                    value={adjustReason} onChange={e => setAdjustReason(e.target.value)}
+                    placeholder="或自行輸入原因..." rows={2}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-600 resize-none"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">修正數值（選填）</label>
-              <input
-                type="text" value={adjustedValue} onChange={e => setAdjustedValue(e.target.value)}
-                placeholder="輸入修正後的數值..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">對帳原因</label>
-              <div className="space-y-1.5 mb-2">
-                {PRESET_REASONS.map(r => (
-                  <button
-                    key={r} type="button" onClick={() => setAdjustReason(r)}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all active:scale-95
-                      ${adjustReason === r ? 'bg-indigo-500/30 border border-indigo-500/50 text-indigo-300' : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'}`}
-                  >
-                    {r}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button onClick={() => handleApprove(selectedReport.id)} disabled={isProcessing} className="bg-gradient-to-r from-emerald-600 to-emerald-700 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-emerald-900/50">
+                    {isProcessing ? <Loader2 size={16} cls="animate-spin" /> : <><CheckCircle2 size={16}/> 核准</>}
                   </button>
-                ))}
+                  <button onClick={() => handleAdjust(selectedReport.id)} disabled={isProcessing} className="bg-gradient-to-r from-rose-600 to-rose-700 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-rose-900/50">
+                    {isProcessing ? <Loader2 size={16} cls="animate-spin" /> : <><AlertCircle size={16}/> 調整對帳</>}
+                  </button>
+                </div>
               </div>
-              <textarea
-                value={adjustReason} onChange={e => setAdjustReason(e.target.value)}
-                placeholder="或自行輸入原因..." rows={2}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-600 resize-none"
-              />
             </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button onClick={() => handleApprove(selectedReport.id)} disabled={isProcessing} className="bg-gradient-to-r from-emerald-600 to-emerald-700 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-emerald-900/50">
-                {isProcessing ? <Loader2 size={16} cls="animate-spin" /> : <><CheckCircle2 size={16} /> 核准</>}
-              </button>
-              <button onClick={() => handleAdjust(selectedReport.id)} disabled={isProcessing} className="bg-gradient-to-r from-rose-600 to-rose-700 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-rose-900/50">
-                {isProcessing ? <Loader2 size={16} cls="animate-spin" /> : <><AlertCircle size={16} /> 調整對帳</>}
-              </button>
-            </div>
-          </div>
+          )}
         </div>
-      )}
-    </div>
-  );
-};
-
-// ===================== 視圖：人員管理 =====================
-const StaffView = ({ setView, staffList }) => {
-  const roleLabel = (role) => ({ DRIVER: '司機夥伴', ACCOUNTANT: '管理員' })[role] || role;
-  const roleColor = (role) => role === 'ACCOUNTANT' ? 'bg-violet-500/20 text-violet-300 border-violet-500/30' : 'bg-sky-500/20 text-sky-300 border-sky-500/30';
-
-  const handleRoleChange = async (userId, newRole) => {
-    const { db, updateDoc, doc } = window.__firebaseAPI;
-    await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userId), { role: newRole });
-  };
-
-  const handleDelete = async (userId) => {
-    if (!window.confirm(`確定要刪除 ${userId} 的帳號嗎？`)) return;
-    const { db, deleteDoc, doc } = window.__firebaseAPI;
-    await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userId));
-  };
-
-  return (
-    <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-violet-900/20 rounded-full blur-3xl" />
-      </div>
-
-      <PageHeader title="人員與權限管理" onBack={() => setView('PORTAL')} />
-
-      <div className="relative flex-grow p-4 space-y-3 overflow-y-auto">
-        <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4 mb-2">
-          <p className="text-xs text-violet-300 font-bold">👥 共 {staffList.length} 位成員</p>
-        </div>
-
-        {staffList.map(staff => (
-          <div key={staff.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
-            <div className="w-11 h-11 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0">
-              {staff.userName?.[0] || '?'}
-            </div>
-            <div className="flex-grow min-w-0">
-              <p className="font-black text-sm truncate">{staff.userName}</p>
-              <span className={`inline-block mt-1 text-[10px] font-black px-2 py-0.5 rounded-full border ${roleColor(staff.role)}`}>
-                {roleLabel(staff.role)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button onClick={() => handleRoleChange(staff.id, staff.role === 'DRIVER' ? 'ACCOUNTANT' : 'DRIVER')} className="w-9 h-9 bg-indigo-500/20 border border-indigo-500/30 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="切換角色">
-                <UserCog size={15} cls="text-indigo-400" />
-              </button>
-              <button onClick={() => handleDelete(staff.id)} className="w-9 h-9 bg-rose-500/20 border border-rose-500/30 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="刪除帳號">
-                <X size={15} cls="text-rose-400" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-
-// ===================== 主程式 App =====================
-const App = () => {
-  const [firebaseReady, setFirebaseReady] = useState(false);
-  const [user, setUser] = useState(null);
-  
-  // 視圖狀態
-  const [view, setView] = useState('PORTAL'); // PORTAL, DRIVER, ACCOUNTANT, STAFF
-  const [step, setStep] = useState('NAME'); // NAME, PIN, LOGGED_IN
-  
-  // 使用者狀態
-  const [userName, setUserName] = useState('');
-  const [pin, setPin] = useState('');
-  const [userRole, setUserRole] = useState('DRIVER');
-  const [isNewUser, setIsNewUser] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  // 支援視窗狀態
-  const [showSupport, setShowSupport] = useState(false);
-  const [supportMessages, setSupportMessages] = useState([
-    { role: 'office', text: '你好！有任何問題請告訴我們。', time: '系統' }
-  ]);
-  const scrollRef = useRef(null);
-
-  // 系統資料
-  const [reports, setReports] = useState([]);
-  const [staffList, setStaffList] = useState([]);
-
-  // 監聽 Firebase 載入完成與身份驗證事件
-  useEffect(() => {
-    const initFirebase = async () => {
-      if (!window.__firebaseAPI) return;
-      const { auth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window.__firebaseAPI;
-
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (error) {
-        console.error("Auth init error:", error);
-      }
-
-      const unsubscribe = onAuthStateChanged(auth, (u) => {
-        setUser(u);
-        setFirebaseReady(true);
-      });
-
-      return () => unsubscribe();
+      );
     };
 
-    if (window.__firebaseAPI) {
-      initFirebase();
-    } else {
-      const handleFirebaseReady = () => initFirebase();
-      window.addEventListener('firebase-ready', handleFirebaseReady);
-      return () => window.removeEventListener('firebase-ready', handleFirebaseReady);
-    }
-  }, []);
+    // ===================== 視圖: 人員管理 =====================
+    const StaffView = ({ setView, staffList }) => {
+      const roleLabel = (role) => ({ DRIVER: '司機夥伴', ACCOUNTANT: '管理員' })[role] || role;
+      const roleColor = (role) => role === 'ACCOUNTANT' ? 'bg-violet-500/20 text-violet-300 border-violet-500/30' : 'bg-sky-500/20 text-sky-300 border-sky-500/30';
 
-  // 當使用者為管理員時，監聽回報和人員清單
-  useEffect(() => {
-    if (!firebaseReady || !user || userRole !== 'ACCOUNTANT' || step !== 'LOGGED_IN') return;
-    
-    const { db, collection, query, onSnapshot } = window.__firebaseAPI;
-    
-    const unsubReports = onSnapshot(query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports')), (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp - a.timestamp);
-      setReports(data);
-    }, (err) => console.error("Reports listener error:", err));
+      const handleRoleChange = async (userId, newRole) => {
+        const { db, updateDoc, doc } = window._firebaseAPI;
+        await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userId), { role: newRole });
+      };
 
-    const unsubStaff = onSnapshot(query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'users')), (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setStaffList(data);
-    }, (err) => console.error("Staff listener error:", err));
+      const handleDelete = async (userId) => {
+        if (!window.confirm(`確定要刪除 ${userId} 的帳號嗎？`)) return;
+        const { db, deleteDoc, doc } = window._firebaseAPI;
+        await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userId));
+      };
 
-    return () => { unsubReports(); unsubStaff(); };
-  }, [firebaseReady, user, userRole, step]);
+      return (
+        <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
+          <div className="fixed inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-40 -left-40 w-80 h-80 bg-violet-900/20 rounded-full blur-3xl" />
+          </div>
+          <PageHeader title="人員與權限管理" onBack={() => setView('PORTAL')} />
 
-  // 支援對話框自動捲動
-  useEffect(() => {
-    if (showSupport && scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [supportMessages, showSupport]);
+          <div className="relative flex-grow p-4 space-y-3 overflow-y-auto">
+            <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4 mb-2">
+              <p className="text-xs text-violet-300 font-bold">共 {staffList.length} 位成員</p>
+            </div>
 
-  // 登入流程處理
-  const handleNameSubmit = async (e) => {
-    e.preventDefault();
-    if (!userName.trim() || !firebaseReady || !user) return;
-    setIsProcessing(true);
-    
-    try {
-      const { db, getDoc, doc } = window.__firebaseAPI;
-      const userRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userName);
-      const userSnap = await getDoc(userRef);
-      
-      if (userSnap.exists()) {
-        setIsNewUser(false);
-      } else {
-        setIsNewUser(true);
-      }
-      setStep('PIN');
-    } catch (err) {
-      console.error(err);
-      alert('網路連線錯誤，請稍後再試');
-    }
-    setIsProcessing(false);
-  };
+            {staffList.map(staff => (
+              <div key={staff.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+                <div className="w-11 h-11 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0">
+                  {staff.userName?.[0] || '?'}
+                </div>
+                <div className="flex-grow min-w-0">
+                  <p className="font-black text-sm truncate">{staff.userName}</p>
+                  <span className={`inline-block mt-1 text-[10px] font-black px-2 py-0.5 rounded-full border ${roleColor(staff.role)}`}>
+                    {roleLabel(staff.role)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button onClick={() => handleRoleChange(staff.id, staff.role === 'DRIVER' ? 'ACCOUNTANT' : 'DRIVER')} className="w-9 h-9 bg-indigo-500/20 border border-indigo-500/30 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="切換角色">
+                    <UserCog size={15} cls="text-indigo-400" />
+                  </button>
+                  <button onClick={() => handleDelete(staff.id)} className="w-9 h-9 bg-rose-500/20 border border-rose-500/30 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="刪除帳號">
+                    <X size={15} cls="text-rose-400" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
 
-  const handlePinSubmit = async (e) => {
-    e.preventDefault();
-    if (!pin || pin.length !== 4 || !firebaseReady || !user) return;
-    setIsProcessing(true);
+    // ===================== 主程式 App =====================
+    const App = () => {
+      const [firebaseReady, setFirebaseReady] = useState(false);
+      const [user, setUser] = useState(null);
 
-    try {
-      const { db, getDoc, setDoc, doc } = window.__firebaseAPI;
-      const userRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userName);
-      
-      if (isNewUser) {
-        await setDoc(userRef, { userName, pin, role: 'DRIVER', createdAt: Date.now() });
-        setUserRole('DRIVER');
-        setStep('LOGGED_IN');
-      } else {
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
-        if (userData.pin === pin) {
-          setUserRole(userData.role || 'DRIVER');
-          setStep('LOGGED_IN');
+      // 視圖狀態
+      const [view, setView] = useState('PORTAL');
+      const [step, setStep] = useState('NAME');
+
+      // 使用者狀態
+      const [userName, setUserName] = useState("");
+      const [pin, setPin] = useState("");
+      const [userRole, setUserRole] = useState('DRIVER');
+      const [isNewUser, setIsNewUser] = useState(false);
+      const [isProcessing, setIsProcessing] = useState(false);
+
+      // 支援視窗狀態
+      const [showSupport, setShowSupport] = useState(false);
+      const [supportMessages, setSupportMessages] = useState([
+        { role: 'office', text: '你好！有任何問題請告訴我們。', time: '系統' }
+      ]);
+      const scrollRef = useRef(null);
+
+      // 系統資料
+      const [reports, setReports] = useState([]);
+      const [staffList, setStaffList] = useState([]);
+
+      // 監聽 Firebase 載入完成與身份驗證事件
+      useEffect(() => {
+        let unsubscribeAuth = () => {};
+
+        const initFirebase = async () => {
+          if (!window._firebaseAPI) return;
+          const { auth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window._firebaseAPI;
+
+          // 確保就算網路有延遲也能監聽到狀態改變，解除轉圈圈
+          unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+            setUser(u);
+            setFirebaseReady(true);
+          });
+
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              await signInAnonymously(auth);
+            }
+          } catch (error) {
+            console.error("Auth init error:", error);
+            setFirebaseReady(true); // 即使失敗也關閉轉圈，讓錯誤能夠被觀察到
+          }
+        };
+
+        if (window._firebaseAPI) {
+          initFirebase();
         } else {
-          alert('口令錯誤，請重新輸入');
-          setPin('');
+          const handleFirebaseReady = () => initFirebase();
+          window.addEventListener('firebase-ready', handleFirebaseReady);
+          return () => {
+            window.removeEventListener('firebase-ready', handleFirebaseReady);
+            unsubscribeAuth();
+          };
         }
+        return () => unsubscribeAuth();
+      }, []);
+
+      // 當使用者為管理員時，監聽回報和人員清單
+      useEffect(() => {
+        if (!firebaseReady || !user || userRole !== 'ACCOUNTANT' || step !== 'LOGGED_IN') return;
+        const { db, collection, query, onSnapshot } = window._firebaseAPI;
+
+        const unsubReports = onSnapshot(query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports')), (snap) => {
+          const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp - a.timestamp);
+          setReports(data);
+        }, (err) => console.error("Reports listener error:", err));
+
+        const unsubStaff = onSnapshot(query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'users')), (snap) => {
+          const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setStaffList(data);
+        }, (err) => console.error("Staff listener error:", err));
+
+        return () => { unsubReports(); unsubStaff(); };
+      }, [firebaseReady, user, userRole, step]);
+
+      // 支援對話框自動捲動
+      useEffect(() => {
+        if (showSupport && scrollRef.current) {
+          scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, [supportMessages, showSupport]);
+
+      // 登入流程處理
+      const handleNameSubmit = async (e) => {
+        e.preventDefault();
+        if (!userName.trim() || !firebaseReady || !user) return;
+        setIsProcessing(true);
+        try {
+          const { db, getDoc, doc } = window._firebaseAPI;
+          const userRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userName);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            setIsNewUser(false);
+          } else {
+            setIsNewUser(true);
+          }
+          setStep('PIN');
+        } catch (err) {
+          console.error(err);
+          alert('網路連線錯誤，請稍後再試');
+        }
+        setIsProcessing(false);
+      };
+
+      const handlePinSubmit = async (e) => {
+        e.preventDefault();
+        if (!pin || pin.length !== 4 || !firebaseReady || !user) return;
+        setIsProcessing(true);
+        try {
+          const { db, getDoc, setDoc, doc } = window._firebaseAPI;
+          const userRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userName);
+          
+          if (isNewUser) {
+            await setDoc(userRef, { userName, pin, role: 'DRIVER', createdAt: Date.now() });
+            setUserRole('DRIVER');
+            setStep('LOGGED_IN');
+          } else {
+            const userSnap = await getDoc(userRef);
+            const userData = userSnap.data();
+            if (userData.pin === pin) {
+              setUserRole(userData.role || 'DRIVER');
+              setStep('LOGGED_IN');
+            } else {
+              alert('口令錯誤，請重新輸入');
+              setPin("");
+            }
+          }
+        } catch (err) {
+          console.error(err);
+          alert('登入失敗，請稍後再試');
+        }
+        setIsProcessing(false);
+      };
+
+      if (!firebaseReady) {
+        return <div className="min-h-screen bg-[#080c1a] flex items-center justify-center text-white"><Loader2 size={32} cls="animate-spin text-indigo-500" /></div>;
       }
-    } catch (err) {
-      console.error(err);
-      alert('登入失敗，請稍後再試');
-    }
-    setIsProcessing(false);
-  };
 
-  if (!firebaseReady || !user) {
-    return <div className="min-h-screen bg-[#080c1a] flex items-center justify-center text-white"><Loader2 size={32} cls="animate-spin text-indigo-500" /></div>;
-  }
+      // 路由分發
+      if (view === 'PORTAL') {
+        return (
+          <PortalView
+            step={step} setStep={setStep}
+            userName={userName} setUserName={setUserName}
+            pin={pin} setPin={setPin}
+            userRole={userRole} setUserRole={setUserRole}
+            isNewUser={isNewUser} isProcessing={isProcessing}
+            handleNameSubmit={handleNameSubmit}
+            handlePinSubmit={handlePinSubmit}
+            setView={setView}
+            showSupport={showSupport} setShowSupport={setShowSupport}
+            supportMessages={supportMessages} setSupportMessages={setSupportMessages}
+            scrollRef={scrollRef}
+          />
+        );
+      }
+      if (view === 'DRIVER') return <DriverView setView={setView} userName={userName} />;
+      if (view === 'ACCOUNTANT') return <AccountantView setView={setView} reports={reports} userName={userName} />;
+      if (view === 'STAFF') return <StaffView setView={setView} staffList={staffList} />;
+      
+      return null;
+    };
 
-  // 路由分發
-  if (view === 'PORTAL') {
-    return (
-      <PortalView 
-        step={step} setStep={setStep}
-        userName={userName} setUserName={setUserName}
-        pin={pin} setPin={setPin}
-        userRole={userRole} setUserRole={setUserRole}
-        isNewUser={isNewUser} isProcessing={isProcessing}
-        handleNameSubmit={handleNameSubmit} handlePinSubmit={handlePinSubmit}
-        setView={setView}
-        showSupport={showSupport} setShowSupport={setShowSupport}
-        supportMessages={supportMessages} setSupportMessages={setSupportMessages}
-        scrollRef={scrollRef}
-      />
-    );
-  }
-
-  if (view === 'DRIVER') {
-    return <DriverView setView={setView} userName={userName} />;
-  }
-
-  if (view === 'ACCOUNTANT') {
-    return <AccountantView setView={setView} reports={reports} userName={userName} />;
-  }
-
-  if (view === 'STAFF') {
-    return <StaffView setView={setView} staffList={staffList} />;
-  }
-
-  return null;
-};
-
-// ===================== 渲染入口 =====================
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
-</script>
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
+
