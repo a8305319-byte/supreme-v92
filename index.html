@@ -1,428 +1,216 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore, collection, doc, setDoc, onSnapshot, query, addDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { 
-  Coffee, BrainCircuit, Send, MessageSquare, X, Sparkles, Settings, 
-  LayoutDashboard, ChevronRight, Loader2, Truck, Megaphone, UserPlus, 
-  Headset, Briefcase, RotateCcw, UserCog, History, AlertTriangle, 
-  TrendingUp, Users, Camera, ClipboardCheck, DollarSign, LogOut,
-  Smile, Frown, Star, CheckCircle2, ShieldCheck, Heart, Info
-} from 'lucide-react';
-
-// --- Firebase 初始化 (遵守規則 1, 2, 3) ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'local-logistics-v92';
-const apiKey = ""; // 執行環境自動注入
-
-// --- 常數設定 ---
-const UNIT_PRICE_POS = 30; // 正向件單價
-const UNIT_PRICE_NEG = 20; // 逆物流單價
-const HEALTH_INS_RATE = 0.0211; // 二代健保費率
-const PRESET_REASONS = [
-  "依據廠商原始報表修正。",
-  "包裝破損，廠商不予計件。",
-  "條碼髒污，系統無紀錄。",
-  "非本區域件，已退回。",
-  "人工核對後數據修正。"
-];
-
-export default function App() {
-  // --- 視圖管理 ---
-  const [view, setView] = useState('LOGIN'); 
-  const [userName, setUserName] = useState('');
-  const [userRole, setUserRole] = useState('DRIVER'); 
-  const [step, setStep] = useState('NAME'); 
-  const [isNewUser, setIsNewUser] = useState(false);
-  
-  // 數據狀態
-  const [reports, setReports] = useState([]);
-  const [staffList, setStaffList] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [aiChatOpen, setAiChatOpen] = useState(false);
-  const [chatHistory, setChatHistory] = useState([
-    { role: 'ai', text: '老闆，我是您的管家。今天想先處理哪一部分呢？' }
-  ]);
-
-  // 面試模組狀態
-  const [interviewCandidate, setInterviewCandidate] = useState('');
-  const [interviewStep, setInterviewStep] = useState(0);
-  const [interviewScores, setInterviewScores] = useState({});
-
-  const scrollRef = useRef(null);
-
-  // --- 1. 核心認證與數據監聽 ---
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supreme-V92 | Business OS</title>
+    
+    <style>
+        :root {
+            --primary-color: #00ffcc;
+            --bg-dark: #1a1a2e;
+            --text-gray: #a0a0a0;
         }
-      } catch (err) { console.error("Auth error", err); }
-    };
-    initAuth();
-    return onAuthStateChanged(auth, (u) => {
-      setIsLoading(false);
-    });
-  }, []);
 
-  useEffect(() => {
-    if (!auth.currentUser) return;
-    const unsubReports = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'daily_reports')), (snap) => {
-      setReports(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.timestamp - a.timestamp));
-    }, (err) => console.error(err));
-    
-    const unsubUsers = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'users')), (snap) => {
-      setStaffList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, (err) => console.error(err));
-    
-    return () => { unsubReports(); unsubUsers(); };
-  }, [auth.currentUser]);
+        body {
+            margin: 0;
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            transition: filter 0.5s ease;
+        }
 
-  // --- 2. 登入邏輯 ---
-  const handleLoginNext = async (e) => {
-    e.preventDefault();
-    if (!userName.trim()) return;
-    setIsProcessing(true);
-    const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userName));
-    setIsNewUser(!userDoc.exists());
-    if (userDoc.exists()) setUserRole(userDoc.data().role || 'DRIVER');
-    setStep('PIN');
-    setIsProcessing(false);
-  };
+        .fallback-active {
+            filter: blur(5px) grayscale(0.5);
+            pointer-events: none;
+        }
 
-  const handleLoginFinal = async (pin) => {
-    if (pin.length !== 4) return;
-    setIsProcessing(true);
-    if (isNewUser) {
-      const newUser = { userName, pin, role: 'DRIVER', createdAt: Date.now() };
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userName), newUser);
-      setUserRole('DRIVER');
-    } else {
-      const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userName));
-      if (userDoc.data().pin !== pin) {
-        alert("口令不對喔，再回想一下？");
-        setIsProcessing(false); return;
-      }
-      setUserRole(userDoc.data().role || 'DRIVER');
-    }
-    setView('DASHBOARD');
-    setIsProcessing(false);
-  };
+        #v92-resilience-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
 
-  // --- 3. 司機回報邏輯 ---
-  const [posIn, setPosIn] = useState('');
-  const [negIn, setNegIn] = useState('');
-  const handleReportSubmit = async () => {
-    if (!posIn || !negIn) return alert("請輸入完整件數喔。");
-    setIsProcessing(true);
-    const reportData = {
-      driverName: userName,
-      posCount: parseInt(posIn),
-      negCount: parseInt(negIn),
-      timestamp: Date.now(),
-      status: 'pending',
-      date: new Date().toLocaleDateString(),
-      memo: ''
-    };
-    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'daily_reports'), reportData);
-    setPosIn(''); setNegIn('');
-    setIsProcessing(false);
-    alert("管家：數據已同步，您可以休息一下了。");
-  };
+        .spinner {
+            border: 4px solid rgba(0, 255, 204, 0.1);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
 
-  // --- 4. 會計審核與修正 ---
-  const approveReport = async (id) => {
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'daily_reports', id), { status: 'approved' });
-  };
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-  const correctReport = async (id, newPos, newNeg, reason) => {
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'daily_reports', id), {
-      posCount: parseInt(newPos),
-      negCount: parseInt(newNeg),
-      memo: reason,
-      status: 'corrected'
-    });
-    alert("修正完成，司機端的帳單也會同步更新。");
-  };
+        .status-tag {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid var(--primary-color);
+        }
 
-  // --- 5. 薪資計算邏輯 ---
-  const calculateSalary = (pos, neg) => {
-    const raw = (pos * UNIT_PRICE_POS) + (neg * UNIT_PRICE_NEG);
-    const tax = raw > 20000 ? Math.round(raw * HEALTH_INS_RATE) : 0;
-    return { raw, tax, net: raw - tax };
-  };
+        section {
+            display: flex;
+            gap: 15px;
+            max-width: 1200px;
+            margin-top: 20px;
+        }
 
-  // --- 6. AI 對話模組 (真人感) ---
-  const askAi = async (text) => {
-    if (!text.trim()) return;
-    setChatHistory(prev => [...prev, { role: 'user', text }]);
-    // 延遲一段時間，模仿真人思考
-    setTimeout(() => {
-      let aiResponse = "老闆，我幫您看過了，今天的配送進度很穩定，目前還沒有發現任何異常。";
-      if (text.includes("錢") || text.includes("利潤")) aiResponse = `目前累積預計利潤約為 $${reports.length * 500} 元，對帳完成後會更準確。`;
-      if (text.includes("我是老闆")) {
-          updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userName), { role: 'ACCOUNTANT' });
-          setUserRole('ACCOUNTANT');
-          aiResponse = "身分確認！老闆，權限已為您解鎖，請重新查看主選單。";
-      }
-      setChatHistory(prev => [...prev, { role: 'ai', text: aiResponse }]);
-    }, 1500);
-  };
+        #user-input {
+            flex: 1;
+            padding: 12px;
+            background: #0f3460;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            outline: none;
+        }
 
-  // --- 視圖組件 ---
+        #user-input:focus {
+            box-shadow: 0 0 5px var(--primary-color);
+        }
 
-  if (isLoading) return <div className="h-screen bg-[#fdfbf7] flex items-center justify-center"><Loader2 className="animate-spin text-slate-300" /></div>;
+        button {
+            padding: 10px 25px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
 
-  return (
-    <div className="h-screen bg-[#fdfbf7] text-slate-800 flex flex-col overflow-hidden font-sans">
-      
-      {/* 視圖 A: 數位大門 (LOGIN) */}
-      {view === 'LOGIN' && (
-        <div className="h-full flex flex-col items-center justify-center p-8 space-y-12">
-          <header className="text-center space-y-4">
-             <div className="w-16 h-16 bg-slate-900 rounded-[24px] flex items-center justify-center text-white text-3xl font-black mx-auto shadow-xl"><Coffee /></div>
-             <div className="space-y-1">
-               <h1 className="text-2xl font-black tracking-tighter">您好，歡迎回家。</h1>
-               <p className="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase">Supreme-V92 Smart Portal</p>
-             </div>
-          </header>
+        button:active {
+            transform: scale(0.95);
+        }
 
-          <div className="w-full max-w-sm bg-white rounded-[40px] p-10 shadow-sm border border-slate-100">
-            {step === 'NAME' ? (
-              <form onSubmit={handleLoginNext} className="space-y-6">
-                <div className="text-center space-y-2">
-                  <p className="text-[10px] font-black text-slate-300 uppercase">請問怎麼稱呼您？</p>
-                  <input type="text" value={userName} onChange={e => setUserName(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl p-4 text-center font-bold outline-none focus:ring-2 focus:ring-slate-100" placeholder="姓名" required />
-                </div>
-                <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl">下一步</button>
-              </form>
-            ) : (
-              <div className="space-y-6">
-                <p className="text-center text-[10px] font-black text-slate-300 uppercase">{isNewUser ? "設定新口令" : `你好 ${userName}`}</p>
-                <input type="password" pattern="\d*" maxLength="4" inputMode="numeric" onChange={e => e.target.value.length === 4 && handleLoginFinal(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl p-4 text-center text-4xl font-black tracking-[0.5em] outline-none" placeholder="****" autoFocus />
-                <button onClick={() => setStep('NAME')} className="text-[10px] text-slate-400 font-bold block mx-auto underline">名字錯了？</button>
-              </div>
-            )}
-          </div>
+        .typing-hint {
+            border-right: 2px solid var(--primary-color);
+            animation: blink 0.8s infinite;
+        }
+        @keyframes blink { 50% { border-color: transparent; } }
 
-          <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-            <button className="p-5 bg-white border border-slate-100 rounded-[32px] flex flex-col items-center gap-2 active:scale-95 transition-all"><Megaphone className="text-orange-300" size={18} /><span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">最新公告</span></button>
-            <button onClick={() => setView('INTERVIEW')} className="p-5 bg-white border border-slate-100 rounded-[32px] flex flex-col items-center gap-2 active:scale-95 transition-all"><UserPlus className="text-blue-300" size={18} /><span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">應徵夥伴</span></button>
-          </div>
-        </div>
-      )}
+        /* 訊息氣泡樣式 */
+        .msg { margin-bottom: 15px; padding: 10px; border-radius: 6px; }
+        .user-msg { background: #16213e; border-left: 3px solid var(--primary-color); }
+        .alpha-msg { background: #0f3460; border-left: 3px solid var(--text-gray); }
+    </style>
+</head>
+<body>
 
-      {/* 視圖 B: 主工作區 (DASHBOARD) */}
-      {view === 'DASHBOARD' && (
-        <div className="h-full flex flex-col overflow-y-auto">
-          <header className="p-6 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black">{userName[0]}</div>
-              <div><p className="font-black text-sm">{userName}</p><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{userRole === 'DRIVER' ? '司機夥伴' : '管理員'}</p></div>
+    <div id="app-root">
+        <header style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h1>Supreme-V92 <span style="font-size: 14px; color: var(--text-gray);">Alpha Core</span></h1>
+            <div id="connection-status" class="status-tag">系統連線中</div>
+        </header>
+
+        <main style="padding: 20px;">
+            <div id="output-area" style="min-height: 300px; border: 1px solid #333; padding: 15px; border-radius: 8px; background: #16213e; line-height: 1.6; overflow-y: auto; max-height: 60vh;">
+                等待指令中...
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setAiChatOpen(true)} className="p-2 text-indigo-400"><BrainCircuit size={20} /></button>
-              <button onClick={() => setView('LOGIN')} className="p-2 text-slate-300"><LogOut size={20} /></button>
-            </div>
-          </header>
-
-          <main className="p-6 md:px-20 space-y-6 max-w-4xl mx-auto w-full pb-24">
-            {/* 智慧摘要卡片 */}
-            <div className="bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm flex items-center gap-6">
-              <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center animate-pulse"><Sparkles className="text-orange-400" size={20} /></div>
-              <p className="text-xs text-slate-500 leading-relaxed italic">「老闆，今天已有 {reports.length} 筆回報。{userRole === 'DRIVER' ? '記得在收工前上傳照片喔。' : '其中有 2 筆數據存在小幅誤差，管家已標記。'}」</p>
-            </div>
-
-            {userRole === 'DRIVER' ? (
-              <div className="space-y-6">
-                {/* 報件卡片 */}
-                <div className="bg-slate-900 text-white rounded-[40px] p-8 space-y-6 shadow-xl">
-                   <div className="flex items-center gap-4"><Camera size={24} className="text-orange-300" /><h2 className="text-lg font-black">今日配送數據回報</h2></div>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2"><p className="text-[10px] font-bold opacity-50 uppercase text-center tracking-widest">正向件數</p><input type="number" value={posIn} onChange={e => setPosIn(e.target.value)} className="w-full bg-white/10 rounded-2xl p-4 text-center text-2xl font-black outline-none" placeholder="0" /></div>
-                      <div className="space-y-2"><p className="text-[10px] font-bold opacity-50 uppercase text-center tracking-widest">逆物流件</p><input type="number" value={negIn} onChange={e => setNegIn(e.target.value)} className="w-full bg-white/10 rounded-2xl p-4 text-center text-2xl font-black outline-none" placeholder="0" /></div>
-                   </div>
-                   <button onClick={handleReportSubmit} className="w-full bg-white text-slate-900 py-4 rounded-2xl font-black shadow-lg">確認上傳數據</button>
-                </div>
-
-                {/* 個人薪資單 (透明機制) */}
-                <div className="bg-white border border-slate-100 rounded-[40px] p-8 space-y-6">
-                   <div className="flex items-center justify-between"><h2 className="text-sm font-black">個人透明薪資單 (本月)</h2><DollarSign size={18} className="text-slate-300" /></div>
-                   <div className="space-y-4">
-                      {reports.filter(r => r.driverName === userName).map(r => {
-                        const { net, tax } = calculateSalary(r.posCount, r.negCount);
-                        return (
-                          <div key={r.id} className="p-4 bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100">
-                             <div><p className="text-xs font-bold">{r.date}</p><p className="text-[9px] text-slate-400">核定狀態：{r.status === 'approved' ? '✓ 已入帳' : r.status === 'corrected' ? '⚠️ 已修正' : '⏳ 待核'}</p></div>
-                             <div className="text-right">
-                               <p className="text-sm font-black text-slate-800">${net.toLocaleString()}</p>
-                               {tax > 0 && <p className="text-[9px] text-rose-400">已扣二代健保 ${tax}</p>}
-                               {r.memo && <p className="text-[9px] text-indigo-400 italic">備註：{r.memo}</p>}
-                             </div>
-                          </div>
-                        );
-                      })}
-                      {reports.filter(r => r.driverName === userName).length === 0 && <p className="text-center py-10 text-xs text-slate-400 italic">暫無配送紀錄</p>}
-                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* 管理員儀表板：異常核定 */}
-                <div className="bg-white border border-slate-100 rounded-[40px] p-8 space-y-8">
-                   <div className="flex items-center justify-between"><h2 className="text-sm font-black">待對帳數據清單</h2><span className="text-[10px] font-black bg-indigo-50 text-indigo-500 px-3 py-1 rounded-full">{reports.filter(r => r.status === 'pending').length} 筆待處理</span></div>
-                   <div className="space-y-4">
-                      {reports.map(r => (
-                        <div key={r.id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-500 font-black">{r.driverName[0]}</div>
-                              <div><p className="text-sm font-bold text-slate-800">{r.driverName}</p><p className="text-[10px] text-slate-400">{r.date} ‧ {new Date(r.timestamp).toLocaleTimeString()}</p></div>
-                            </div>
-                            <div className="text-right"><p className="text-sm font-black">{r.posCount} 正 / {r.negCount} 逆</p></div>
-                          </div>
-                          
-                          {r.status === 'pending' && (
-                            <div className="flex gap-2">
-                              <button onClick={() => approveReport(r.id)} className="flex-grow bg-emerald-500 text-white py-3 rounded-xl text-xs font-bold shadow-sm">核定無誤</button>
-                              <button onClick={() => {
-                                const newPos = prompt("修正正向件數：", r.posCount);
-                                const newNeg = prompt("修正逆物流：", r.negCount);
-                                const reason = prompt("修正原因 (例如：條碼污損、包裝破損)：");
-                                if (newPos && newNeg) correctReport(r.id, newPos, newNeg, reason);
-                              }} className="flex-grow bg-white border border-slate-200 py-3 rounded-xl text-xs font-bold">修正數據</button>
-                            </div>
-                          )}
-                          {r.status !== 'pending' && <p className="text-center text-[9px] font-black uppercase text-slate-300 tracking-widest pt-2">狀態：{r.status}</p>}
-                        </div>
-                      ))}
-                   </div>
-                </div>
-
-                {/* 人員管理捷徑 */}
-                <div className="grid grid-cols-2 gap-4">
-                  <button onClick={() => setView('STAFF_MGT')} className="bg-slate-900 text-white p-8 rounded-[40px] font-black flex flex-col items-center gap-4 active:scale-95 transition-all shadow-xl">
-                    <UserCog size={24} /> <span className="text-xs">權限管理</span>
-                  </button>
-                  <button onClick={() => setView('INTERVIEW')} className="bg-white border border-slate-100 p-8 rounded-[40px] font-black flex flex-col items-center gap-4 active:scale-95 transition-all shadow-sm">
-                    <UserPlus size={24} /> <span className="text-xs text-slate-600">應徵夥伴</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </main>
-        </div>
-      )}
-
-      {/* 視圖 C: 人員與權限管理 (STAFF_MGT) */}
-      {view === 'STAFF_MGT' && (
-        <div className="h-full bg-slate-50 p-8 overflow-y-auto animate-in slide-in-from-right duration-500">
-          <div className="max-w-3xl mx-auto space-y-8">
-            <header className="flex justify-between items-center">
-               <h2 className="text-2xl font-black">人員管理中心</h2>
-               <button onClick={() => setView('DASHBOARD')} className="p-2 bg-white rounded-full shadow-sm"><X size={20} /></button>
-            </header>
-            <div className="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden divide-y divide-slate-50">
-               {staffList.map(s => (
-                 <div key={s.id} className="p-6 flex justify-between items-center hover:bg-slate-50">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 font-black">{s.userName[0]}</div>
-                      <div><p className="font-black text-slate-800">{s.userName}</p><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">身分：{s.role}</p></div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={async () => {
-                        const newRole = s.role === 'DRIVER' ? 'ACCOUNTANT' : 'DRIVER';
-                        if(window.confirm(`更改 ${s.userName} 權限為 ${newRole}？`))
-                          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', s.userName), { role: newRole });
-                      }} className="p-2 text-slate-300 hover:text-slate-900"><UserCog size={18} /></button>
-                      <button onClick={async () => {
-                        if(window.confirm(`確定要將 ${s.userName} 移除系統？`))
-                          await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', s.userName));
-                      }} className="p-2 text-slate-300 hover:text-rose-500"><RotateCcw size={18} /></button>
-                    </div>
-                 </div>
-               ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 視圖 D: 智慧面試伴侶 (INTERVIEW) */}
-      {view === 'INTERVIEW' && (
-        <div className="h-full bg-[#fafaf9] flex flex-col items-center justify-center p-8 animate-in fade-in">
-           {!interviewCandidate ? (
-             <div className="w-full max-w-sm bg-white p-12 rounded-[48px] shadow-sm text-center space-y-8 border border-slate-100">
-               <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto text-3xl">☕</div>
-               <h1 className="text-xl font-black">今天想認識哪位新夥伴？</h1>
-               <input type="text" onChange={e => setInterviewCandidate(e.target.value)} placeholder="應徵者姓名" className="w-full bg-slate-50 rounded-2xl p-4 text-center font-bold outline-none" />
-               <button onClick={() => setInterviewStep(1)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl">開始輕鬆面談</button>
-               <button onClick={() => setView('LOGIN')} className="text-xs text-slate-400 underline font-bold">返回首頁</button>
-             </div>
-           ) : (
-             <div className="w-full max-w-2xl space-y-8">
-                <header className="flex justify-between items-center text-slate-400">
-                   <p className="text-[10px] font-black uppercase tracking-widest">與 {interviewCandidate} 面談中</p>
-                   <p className="text-[10px] font-black">{interviewStep} / 5</p>
-                </header>
-                <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 space-y-6">
-                   <h2 className="text-xl font-black text-slate-800">
-                     {interviewStep === 1 && "你以前跑車的時候，最自豪的一件事是什麼？"}
-                     {interviewStep === 2 && "如果送貨時發現包裝稍微損壞了，你會怎麼處理？"}
-                     {interviewStep === 3 && "如果對帳數據有誤差，你會如何跟會計溝通？"}
-                     {interviewStep === 4 && "你平常是用什麼方式紀錄每天的配送數據？"}
-                     {interviewStep === 5 && "你認為在物流業，什麼特質最能讓老闆放心？"}
-                   </h2>
-                   <div className="bg-orange-50 p-6 rounded-3xl flex gap-3">
-                      <Sparkles size={18} className="text-orange-300 shrink-0" />
-                      <p className="text-xs text-slate-500 italic leading-relaxed">
-                        管家提示：{interviewStep === 1 && "觀察他是否重視細節。"}
-                        {interviewStep === 2 && "測試誠信。會主動告知者加分。"}
-                        {interviewStep === 3 && "測試溝通穩定性，有無壓力承擔力。"}
-                        {interviewStep === 4 && "觀察其數位適應能力。"}
-                        {interviewStep === 5 && "尋找具備誠信與負責特質的夥伴。"}
-                      </p>
-                   </div>
-                </div>
-                <div className="flex gap-4">
-                   <button onClick={() => interviewStep < 5 ? setInterviewStep(interviewStep+1) : setView('DASHBOARD')} className="flex-grow bg-white border border-slate-200 p-8 rounded-[32px] flex flex-col items-center gap-3"><Frown size={32} className="text-slate-300" /><span className="text-[10px] font-bold text-slate-400 uppercase">印象普通</span></button>
-                   <button onClick={() => interviewStep < 5 ? setInterviewStep(interviewStep+1) : setView('DASHBOARD')} className="flex-grow bg-white border border-slate-200 p-8 rounded-[32px] flex flex-col items-center gap-3"><Smile size={32} className="text-orange-400" /><span className="text-[10px] font-bold text-slate-400 uppercase">感覺不錯</span></button>
-                </div>
-             </div>
-           )}
-        </div>
-      )}
-
-      {/* 智慧管家聊天視窗 (底部分支) */}
-      {aiChatOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col animate-in fade-in duration-300">
-          <div className="flex-grow bg-black/60 backdrop-blur-sm" onClick={() => setAiChatOpen(false)}></div>
-          <div className="h-[75dvh] bg-white rounded-t-[48px] shadow-2xl flex flex-col relative">
-             <header className="p-8 border-b border-slate-50 flex justify-between items-center">
-                <div className="flex items-center gap-3"><div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-400 animate-pulse"><BrainCircuit size={20} /></div><h3 className="font-black">靈魂管家服務中</h3></div>
-                <button onClick={() => setAiChatOpen(false)}><X size={20} className="text-slate-300" /></button>
-             </header>
-             <div className="flex-grow p-8 overflow-y-auto space-y-6 bg-[#fafafa]">
-                {chatHistory.map((m, i) => (
-                  <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] p-4 rounded-[24px] text-sm leading-relaxed ${m.role === 'user' ? 'bg-slate-900 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-800 rounded-bl-none shadow-sm'}`}>{m.text}</div>
-                  </div>
-                ))}
-             </div>
-             <div className="p-8 bg-white border-t border-slate-50 pb-12">
-                <input type="text" placeholder="老闆，想聊聊經營或是心情嗎？" className="w-full bg-slate-50 rounded-3xl px-6 py-4 outline-none text-slate-900" onKeyPress={e => {if(e.key === 'Enter' && e.target.value){ askAi(e.target.value); e.target.value = ''; }}} />
-             </div>
-          </div>
-        </div>
-      )}
-
+            
+            <section>
+                <input type="text" id="user-input" placeholder="請輸入指令...">
+                <button onclick="handleSend()">傳送</button>
+            </section>
+        </main>
     </div>
-  );
-}
 
+    <div id="v92-resilience-overlay">
+        <div class="spinner"></div>
+        <h2 style="color: var(--primary-color);">Alpha 正在深度加密通訊</h2>
+        <p style="color: var(--text-gray);">系統已自動切換至「故障安全預覽模式」<br>請稍候，管家正在為您處理...</p>
+    </div>
+
+    <script>
+        const RESILIENCE_TIMEOUT = 10000;
+        const overlay = document.getElementById('v92-resilience-overlay');
+        const mainUI = document.getElementById('app-root');
+        const statusTag = document.getElementById('connection-status');
+        const userInput = document.getElementById('user-input');
+        const outputArea = document.getElementById('output-area');
+
+        // 【細心助理：恢復草稿】
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedDraft = localStorage.getItem('v92_draft');
+            if (savedDraft) {
+                userInput.value = savedDraft;
+                console.log("助理：老闆，已恢復草稿。");
+            }
+        });
+
+        // 【細心助理：自動記憶】
+        userInput.addEventListener('input', () => {
+            localStorage.setItem('v92_draft', userInput.value);
+        });
+
+        async function alphaAnalyze(data) {
+            let isTimedOut = false;
+            const timeoutTrigger = setTimeout(() => {
+                isTimedOut = true;
+                activateResilienceMode();
+            }, RESILIENCE_TIMEOUT);
+
+            try {
+                // 模擬請求，目前先用延遲模擬後端處理
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                clearTimeout(timeoutTrigger);
+                deactivateResilienceMode();
+                return { reply: "指令已接收，正在對接邏輯中..." };
+            } catch (error) {
+                clearTimeout(timeoutTrigger);
+                activateResilienceMode();
+                return null;
+            }
+        }
+
+        function activateResilienceMode() {
+            overlay.style.display = 'flex';
+            mainUI.classList.add('fallback-active');
+            statusTag.textContent = "加密模式 (Offline)";
+            statusTag.style.borderColor = "#ff4d4d";
+        }
+
+        function deactivateResilienceMode() {
+            overlay.style.display = 'none';
+            mainUI.classList.remove('fallback-active');
+            statusTag.textContent = "系統連線中";
+            statusTag.style.borderColor = "#00ffcc";
+        }
+
+        async function handleSend() {
+            const input = userInput.value.trim();
+            if(!input) return;
+            
+            if(outputArea.innerText === "等待指令中...") outputArea.innerHTML = '';
+            
+            // 顯示用戶訊息
+            outputArea.innerHTML += `<div class="msg user-msg"><b>您：</b>${input}</div>`;
+            
+            localStorage.removeItem('v92_draft');
+            userInput.value = '';
+
+            // 助理優化：模擬人性化節奏，不秒回
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'msg alpha-msg';
+            loadingMsg.innerHTML = '<span class="typing-hint">Alpha 正在研讀指令...</span>';
+            outputArea.appendChild(loadingMsg);
+            outputArea.scrollTop = outputArea.scrollHeight;
+            
+            const result = await alphaAnalyze({ prompt: input });
+            
+            if (result) {
+                loadingMsg.innerHTML = `<b>Alpha：</b>${result.reply}`;
+            }
+            outputArea.scrollTop = outputArea.scrollHeight;
+        }
+    </script>
+</body>
+</html>
