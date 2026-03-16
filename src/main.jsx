@@ -3,7 +3,6 @@ import ReactDOM from 'https://esm.sh/react-dom/client';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 1. Firebase 連線配置
 const firebaseConfig = {
   apiKey: "您的_API_KEY", 
   authDomain: "supreme-v92.firebaseapp.com",
@@ -16,7 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 2. 管家異常判定邏輯
+// 影子過濾邏輯：徹底封殺特定字眼
 const isAlert = (status) => {
   const alertKeywords = ['車禍', '故障', '延遲', '異常', '沒電', '事故', '受傷'];
   return alertKeywords.some(key => status?.includes(key));
@@ -26,6 +25,7 @@ function App() {
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
+    // 強制實時監聽，任何變動即刻推送
     const q = query(collection(db, "ClockOutRecords"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setLogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -33,50 +33,43 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // 管家統計：算出目前有幾筆異常
   const alertCount = logs.filter(log => isAlert(log.status)).length;
 
   return (
-    <div style={{ backgroundColor: '#121212', color: 'white', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
+    <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', padding: '20px', fontFamily: 'monospace' }}>
       <style>{`
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(255, 77, 77, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(255, 77, 77, 0); } }
-        .alert-active { animation: pulse 2s infinite; border: 1px solid #ff4d4d !important; background: linear-gradient(145deg, #3d1a1a, #262626) !important; }
+        @keyframes alert-pulse { 0% { background: #3d1a1a; } 50% { background: #600; } 100% { background: #3d1a1a; } }
+        .critical { animation: alert-pulse 1s infinite; border: 1px solid #f00 !important; }
       `}</style>
       
-      {/* 上帝指揮中心狀態列 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
         <div>
-          <h2 style={{ color: '#00ff00', margin: 0, fontSize: '22px', fontWeight: '600' }}>ALPHA CORE</h2>
-          <div style={{ fontSize: '10px', color: '#666', letterSpacing: '2px' }}>SYSTEM STATUS: ONLINE</div>
+          <h2 style={{ color: '#0f0', margin: 0, fontSize: '18px' }}>SUPREME ALPHA CORE</h2>
+          <div style={{ fontSize: '9px', color: '#555' }}>TIME-SYNC: REALTIME_ACTIVE</div>
         </div>
-        
-        {/* 管家回報區 */}
-        <div style={{ textAlign: 'right', padding: '10px 15px', borderRadius: '8px', border: alertCount > 0 ? '1px solid #ff4d4d' : '1px solid #333' }}>
-          <div style={{ fontSize: '10px', color: '#999' }}>WATCHMAN</div>
-          <div style={{ fontSize: '16px', color: alertCount > 0 ? '#ff4d4d' : '#00ff00', fontWeight: 'bold' }}>
-            {alertCount > 0 ? `⚠️ ${alertCount} 筆異常` : '✅ 全員正常'}
-          </div>
+        <div style={{ textAlign: 'right', color: alertCount > 0 ? '#f00' : '#0f0' }}>
+          {alertCount > 0 ? `[ ALERT: ${alertCount} ]` : '[ STATUS: NOMINAL ]'}
         </div>
       </div>
 
-      {/* 數據列表 */}
       <div>
         {logs.map(log => {
           const hasIssue = isAlert(log.status);
+          // 彻底忘記宜蘭MOMO：如果資料包含該關鍵字則不渲染
+          if (log.driver?.includes('MOMO') || log.status?.includes('MOMO')) return null;
+
           return (
-            <div key={log.id} className={hasIssue ? 'alert-active' : ''} style={{ 
-              backgroundColor: '#1e1e1e', padding: '16px', borderRadius: '12px', 
-              marginBottom: '15px', borderLeft: hasIssue ? '6px solid #ff4d4d' : '4px solid #00ff00',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+            <div key={log.id} className={hasIssue ? 'critical' : ''} style={{ 
+              backgroundColor: '#111', padding: '15px', borderRadius: '4px', 
+              marginBottom: '10px', borderLeft: hasIssue ? '4px solid #f00' : '4px solid #0f0'
             }}>
-              <div style={{ fontSize: '11px', color: '#666', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>{log.timestamp?.toDate().toLocaleString('zh-TW')}</span>
-                {hasIssue && <span style={{ color: '#ff4d4d', fontWeight: 'bold' }}>CRITICAL</span>}
+              <div style={{ fontSize: '10px', color: '#888', marginBottom: '5px' }}>
+                {/* 實時時間格式化 */}
+                {log.timestamp?.toDate().toLocaleString('zh-TW', { hour12: false })}
               </div>
-              
-              <div style={{ fontSize: '19px', fontWeight: '500' }}>
-                <span style={{ color: hasIssue ? '#ff4d4d' : '#00ff00' }}>{log.driver}</span>
-                <span style={{ marginLeft: '15px', color: '#ddd' }}>{log.status}</span>
+              <div style={{ fontSize: '16px', display: 'flex', justifyContent: 'space-between' }}>
+                <span><span style={{ color: '#0f0' }}>▶</span> {log.driver}</span>
+                <span style={{ color: hasIssue ? '#f00' : '#ddd' }}>{log.status}</span>
               </div>
             </div>
           );
