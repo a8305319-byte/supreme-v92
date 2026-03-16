@@ -1,1308 +1,428 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>在地物流有限公司</title>
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getFirestore, collection, doc, setDoc, onSnapshot, query, addDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { 
+  Coffee, BrainCircuit, Send, MessageSquare, X, Sparkles, Settings, 
+  LayoutDashboard, ChevronRight, Loader2, Truck, Megaphone, UserPlus, 
+  Headset, Briefcase, RotateCcw, UserCog, History, AlertTriangle, 
+  TrendingUp, Users, Camera, ClipboardCheck, DollarSign, LogOut,
+  Smile, Frown, Star, CheckCircle2, ShieldCheck, Heart, Info
+} from 'lucide-react';
+
+// --- Firebase 初始化 (遵守規則 1, 2, 3) ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'local-logistics-v92';
+const apiKey = ""; // 執行環境自動注入
+
+// --- 常數設定 ---
+const UNIT_PRICE_POS = 30; // 正向件單價
+const UNIT_PRICE_NEG = 20; // 逆物流單價
+const HEALTH_INS_RATE = 0.0211; // 二代健保費率
+const PRESET_REASONS = [
+  "依據廠商原始報表修正。",
+  "包裝破損，廠商不予計件。",
+  "條碼髒污，系統無紀錄。",
+  "非本區域件，已退回。",
+  "人工核對後數據修正。"
+];
+
+export default function App() {
+  // --- 視圖管理 ---
+  const [view, setView] = useState('LOGIN'); 
+  const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState('DRIVER'); 
+  const [step, setStep] = useState('NAME'); 
+  const [isNewUser, setIsNewUser] = useState(false);
   
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  // 數據狀態
+  const [reports, setReports] = useState([]);
+  const [staffList, setStaffList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState([
+    { role: 'ai', text: '老闆，我是您的管家。今天想先處理哪一部分呢？' }
+  ]);
 
-  <!-- Firebase ESM 載入與全域綁定 -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, collection, doc, setDoc, onSnapshot, query, addDoc, getDoc, updateDoc, deleteDoc, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+  // 面試模組狀態
+  const [interviewCandidate, setInterviewCandidate] = useState('');
+  const [interviewStep, setInterviewStep] = useState(0);
+  const [interviewScores, setInterviewScores] = useState({});
 
-    // 專屬的 Firebase 設定
-    const firebaseConfig = {
-      apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-      authDomain: "supreme-v92.firebaseapp.com",
-      projectId: "supreme-v92",
-      storageBucket: "supreme-v92.firebasestorage.app",
-      messagingSenderId: "485530156296",
-      appId: "1:485530156296:web:6728c0ee08b98dedd800bd",
-      measurementId: "G-JF36CHXE9Z"
-    };
+  const scrollRef = useRef(null);
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    window._firebaseAPI = {
-      app, auth, db,
-      signInAnonymously, onAuthStateChanged, signInWithCustomToken,
-      collection, doc, setDoc, onSnapshot, query, addDoc, getDoc, updateDoc, deleteDoc, getDocs
-    };
-
-    // 觸發 React 渲染
-    window.dispatchEvent(new Event('firebase-ready'));
-  </script>
-
-  <style>
-    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    body { margin: 0; background: #080c1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-    @keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-    .animate-spin { animation: spin 1s linear infinite; }
-    .animate-fade { animation: fadeIn 0.4s ease forwards; }
-    .animate-zoom { animation: zoomIn 0.3s ease forwards; }
-    .animate-toast { animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .active-scale:active { transform: scale(0.95); }
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    ::-webkit-scrollbar { width: 0; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-
-  <script type="text/babel">
-    const { useState, useEffect, useRef, useCallback } = React;
-    const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'local-logistics-v92';
-    
-    const PRESET_REASONS = [
-      "依據廠商提供之原始報表修正數據。",
-      "廠商判定包裝受損，不予計件。",
-      "條碼無法辨識，廠商系統無紀錄。",
-      "逆物流件數經廠商盤點，扣除非本單貨件。",
-      "人工溝通後修正內容。"
-    ];
-
-    // ===================== 安全性：PIN 碼雜湊加密 =====================
-    const hashString = async (string) => {
-      const msgBuffer = new TextEncoder().encode(string);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    };
-
-    // ===================== SVG Icon 元件 =====================
-    const Icon = ({ d, size = 20, cls = "" }) => (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cls}>
-        {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
-      </svg>
-    );
-
-    const Icons = {
-      RotateCcw: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74", "M3 3v4h4"]} />,
-      ChevronRight: ({size=20,cls=""}) => <Icon size={size} cls={cls} d="m9 18 6-6-6-6" />,
-      ChevronLeft: ({size=20,cls=""}) => <Icon size={size} cls={cls} d="m15 18-6-6 6-6" />,
-      ShieldCheck: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", "m9 12 2 2 4-4"]} />,
-      Lock: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z", "M7 11V7a5 5 0 0 1 10 0v4"]} />,
-      User: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", "M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"]} />,
-      ArrowRight: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M5 12h14", "m12 5 7 7-7-7"]} />,
-      Settings: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z", "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"]} />,
-      Loader2: ({size=20,cls=""}) => <Icon size={size} cls={cls} d="M21 12a9 9 0 1 1-6.219-8.56" />,
-      MessageSquare: ({size=20,cls=""}) => <Icon size={size} cls={cls} d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
-      Send: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["m22 2-7 20-4-9-9-4 20-7z", "M22 2 11 13"]} />,
-      X: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M18 6 6 18", "m6 6 12 12"]} />,
-      Truck: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3", "M9 17H7", "M13 17h8l-3-5H9v5", "M17 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0z", "M9 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"]} />,
-      PackageCheck: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["m16 16 2 2 4-4", "M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14", "M3.29 7 12 12 20.71 7", "M12 22V12"]} />,
-      PackageX: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14", "M3.29 7 12 12 20.71 7", "M12 22V12", "m17 13 5 5", "m17 18 5-5"]} />,
-      ClipboardList: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2", "M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z", "M12 11h4", "M12 16h4", "M8 11h.01", "M8 16h.01"]} />,
-      Camera: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z", "M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"]} />,
-      Upload: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", "M17 8l-5-5-5 5", "M12 3v12"]} />,
-      CheckCircle2: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M22 11.08V12a10 10 0 1 1-5.93-9.14", "m9 11 3 3L22 4"]} />,
-      AlertCircle: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "M12 8v4", "M12 16h.01"]} />,
-      LogOut: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"]} />,
-      LayoutDashboard: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M3 3h7v9H3z", "M14 3h7v5h-7z", "M14 12h7v9h-7z", "M3 16h7v5H3z"]} />,
-      UserCog: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M19 11v2", "M19 17v2", "M22 15h-2", "M16 15h-2"]} />,
-      Trash2: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M3 6h18", "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", "M10 11v6", "M14 11v6"]} />,
-      Info: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "M12 16v-4", "M12 8h.01"]} />,
-      // 面試新圖示
-      PlayCircle: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "m10 8 6 4-6 4v-8z"]} />,
-      XCircle: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "m15 9-6 6", "m9 9 6 6"]} />,
-      Clock: ({size=20,cls=""}) => <Icon size={size} cls={cls} d={["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "M12 6v6l4 2"]} />,
-      Bookmark: ({size=20,cls=""}) => <Icon size={size} cls={cls} d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
-    };
-
-    const { RotateCcw, ChevronRight, ChevronLeft, ShieldCheck, Lock, User, ArrowRight, Settings, Loader2, MessageSquare, Send, X, Truck, PackageCheck, PackageX, ClipboardList, Camera, Upload, CheckCircle2, AlertCircle, LogOut, LayoutDashboard, UserCog, Trash2, Info, PlayCircle, XCircle, Clock, Bookmark } = Icons;
-
-    // ===================== 共用元件 =====================
-    const PageHeader = ({ title, onBack, rightAction }) => (
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <button onClick={onBack} className="active-scale" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', borderRadius: 12, fontSize: 13, fontWeight: 700 }}>
-          <RotateCcw size={15} /> 返回
-        </button>
-        <h1 style={{ color: '#fff', fontSize: 15, fontWeight: 900, margin: 0 }}>{title}</h1>
-        <div style={{ width: 56, display: 'flex', justifyContent: 'flex-end' }}>{rightAction || null}</div>
-      </div>
-    );
-
-    const ActionCard = ({ icon, label, sublabel, onClick, color = 'indigo', disabled = false, badge }) => {
-      const colorMap = {
-        indigo: 'from-indigo-600 to-indigo-700 shadow-indigo-900/50',
-        emerald: 'from-emerald-600 to-emerald-700 shadow-emerald-900/50',
-        amber: 'from-amber-500 to-amber-600 shadow-amber-900/50',
-        rose: 'from-rose-600 to-rose-700 shadow-rose-900/50',
-        sky: 'from-sky-600 to-sky-700 shadow-sky-900/50',
-        violet: 'from-violet-600 to-violet-700 shadow-violet-900/50',
-        slate: 'from-slate-600 to-slate-700 shadow-slate-900/50',
-      };
-      
-      const dynamicClass = disabled 
-        ? 'opacity-40 cursor-not-allowed bg-white/5 border border-white/10' 
-        : `bg-gradient-to-br ${colorMap[color]}`;
-
-      return (
-        <button onClick={onClick} disabled={disabled} className={`relative w-full flex items-center gap-4 p-5 rounded-3xl text-white font-bold text-left transition-all duration-200 active:scale-95 shadow-xl ${dynamicClass}`}>
-          <div className="w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center bg-white/20">
-            {icon}
-          </div>
-          <div className="flex-grow min-w-0">
-            <p className="m-0 text-[15px] font-black">{label}</p>
-            {sublabel && <p className="m-0 mt-0.5 text-[11px] text-white/60 font-medium">{sublabel}</p>}
-          </div>
-          {badge && <div className="px-2 py-1 rounded-full bg-white/20 text-[10px] font-black flex-shrink-0">{badge}</div>}
-          {!disabled && <ChevronRight size={17} cls="text-white/40 flex-shrink-0" />}
-        </button>
-      );
-    };
-
-    // ===================== 視圖: Portal 登入 =====================
-    const PortalView = ({
-      step, setStep, userName, setUserName, pin, setPin,
-      userRole, setUserRole, isNewUser, isProcessing,
-      handleNameSubmit, handlePinSubmit, setView, showToast,
-      showSupport, setShowSupport, supportMessages, setSupportMessages, scrollRef
-    }) => {
-      const [supportInput, setSupportInput] = useState("");
-
-      const handleSendSupport = async () => {
-        if (!supportInput.trim()) return;
-        const msg = supportInput.trim();
-        setSupportInput("");
-        setSupportMessages(prev => [...prev, { role: 'user', text: msg, time: '現在' }]);
-
-        if (msg === '老闆') {
-          try {
-            const { db, updateDoc, doc } = window._firebaseAPI;
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userName), { role: 'ACCOUNTANT' });
-            setUserRole('ACCOUNTANT');
-            setTimeout(() => setSupportMessages(p => [...p, { time: '現在', role: 'office', text: '老闆您好，權限已解鎖！請重新查看主選單。' }]), 900);
-          } catch (e) { console.error(e); }
+  // --- 1. 核心認證與數據監聽 ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
         } else {
-          setTimeout(() => setSupportMessages(p => [...p, { time: '現在', role: 'office', text: '收到，我們正在處理您的請求，請稍候。' }]), 1800);
+          await signInAnonymously(auth);
         }
-      };
-
-      return (
-        <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, background: '#080c1a', color: '#fff', position: 'relative', overflow: 'hidden' }}>
-          {/* 背景光暈 */}
-          {[
-            { top: -160, left: -160, bg: 'rgba(99,102,241,0.18)' },
-            { bottom: -160, right: -160, bg: 'rgba(139,92,246,0.16)' },
-            { top: '40%', left: '35%', bg: 'rgba(67,56,202,0.12)', w: 220, h: 220 }
-          ].map((s, i) => (
-            <div key={i} style={{ position: 'absolute', width: s.w || 340, height: s.h || 340, borderRadius: '50%', background: s.bg, filter: 'blur(60px)', pointerEvents: 'none', top: s.top, left: s.left, bottom: s.bottom, right: s.right }} />
-          ))}
-
-          <div className="relative w-full max-w-sm">
-            <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 text-center shadow-2xl">
-              <div className="mb-2 inline-flex w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-3xl items-center justify-center text-2xl font-black shadow-lg shadow-indigo-900/60">在地</div>
-              <h1 className="text-lg font-black mb-1 tracking-tight">在地物流有限公司</h1>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-8">Logistics Management System</p>
-
-              {/* 步驟: 姓名 */}
-              {step === 'NAME' && (
-                <form onSubmit={handleNameSubmit} className="space-y-4">
-                  <div className="relative">
-                    <User size={16} cls="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="text" value={userName} onChange={e => setUserName(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-center font-bold outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-600"
-                      placeholder="請輸入您的姓名" required autoComplete="off"
-                    />
-                  </div>
-                  <button type="submit" disabled={isProcessing} className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/50 active:scale-95 transition-all">
-                    {isProcessing ? <Loader2 size={20} cls="animate-spin" /> : <>下一步<ArrowRight size={16} /></>}
-                  </button>
-                </form>
-              )}
-
-              {/* 步驟: PIN */}
-              {step === 'PIN' && (
-                <form onSubmit={handlePinSubmit} className="space-y-4">
-                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl px-4 py-3">
-                    <p className="text-xs font-bold text-indigo-300">
-                      {isNewUser ? `歡迎 ${userName}，請設定4位數口令` : `你好 ${userName}，請輸入口令`}
-                    </p>
-                  </div>
-                  <div className="relative">
-                    <Lock size={16} cls="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="password" pattern="\d*" maxLength="4" inputMode="numeric"
-                      value={pin} onChange={e => setPin(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-center text-3xl tracking-[0.5em] font-black outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-600"
-                      placeholder="...." required autoFocus
-                    />
-                  </div>
-                  <button type="submit" disabled={isProcessing} className="w-full bg-white text-indigo-950 py-4 rounded-2xl font-black shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
-                    {isProcessing ? <Loader2 size={20} cls="animate-spin text-indigo-600" /> : <>進入系統 <ShieldCheck size={16} /></>}
-                  </button>
-                  <button type="button" onClick={() => { setStep('NAME'); setPin(""); }} className="text-xs text-slate-500 hover:text-slate-300 underline font-bold transition-colors mt-2">
-                    返回修改姓名
-                  </button>
-                </form>
-              )}
-
-              {/* 步驟: 已登入選單 */}
-              {step === 'LOGGED_IN' && (
-                <div className="space-y-3 animate-fade text-left">
-                  <div className="bg-indigo-500/10 rounded-2xl p-4 border border-indigo-500/20 flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center font-black text-lg shadow-lg">
-                        {userName[0]}
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-white">{userName}</p>
-                        <p className="text-[10px] text-indigo-300 font-bold">{userRole === 'ACCOUNTANT' ? '管理員' : '司機夥伴'}</p>
-                      </div>
-                    </div>
-                    <button onClick={() => { setStep('NAME'); setPin(""); setUserName(""); }} className="p-2 bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors">
-                      <LogOut size={16} />
-                    </button>
-                  </div>
-
-                  <ActionCard icon={<Truck size={22}/>} label="司機操作台" sublabel="回報配送、逆物流與拍照" onClick={() => setView('DRIVER')} color="indigo" />
-                  
-                  {/* 新增面試功能入口 */}
-                  <ActionCard icon={<ClipboardList size={22}/>} label="📝 線上面試測驗" sublabel="新人司機招募與線上測驗專區" onClick={() => setView('INTERVIEW')} color="sky" />
-
-                  {userRole === 'ACCOUNTANT' && (
-                    <>
-                      <ActionCard icon={<CheckCircle2 size={22}/>} label="對帳審核中心" sublabel="審核司機每日回報" onClick={() => setView('ACCOUNTANT')} color="emerald" />
-                      <ActionCard icon={<UserCog size={22}/>} label="人員與權限管理" sublabel="管理系統使用者" onClick={() => setView('STAFF')} color="violet" />
-                    </>
-                  )}
-
-                  <button onClick={() => setShowSupport(true)} className="w-full mt-4 py-3 bg-white/5 rounded-2xl text-xs font-bold text-slate-400 flex justify-center items-center gap-2 hover:bg-white/10 transition-colors">
-                    <MessageSquare size={14} /> 聯絡辦公室/支援
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 支援 Modal */}
-          {showSupport && (
-            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end animate-fade">
-              <div className="w-full max-w-lg mx-auto bg-[#0f1629] border border-white/10 rounded-t-[36px] p-6 shadow-2xl h-[80dvh] flex flex-col">
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
-                  <h2 className="text-base font-black flex items-center gap-2"><MessageSquare size={18} className="text-indigo-400"/> 辦公室支援</h2>
-                  <button onClick={() => setShowSupport(false)} className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center"><X size={14} /></button>
-                </div>
-                <div className="flex-grow overflow-y-auto space-y-3 mb-4 pr-2">
-                  {supportMessages.map((msg, idx) => (
-                    <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                      <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white/10 text-slate-200 rounded-tl-sm'}`}>
-                        {msg.text}
-                      </div>
-                      <span className="text-[9px] text-slate-500 mt-1 font-medium">{msg.time}</span>
-                    </div>
-                  ))}
-                  <div ref={scrollRef} />
-                </div>
-                <div className="relative">
-                  <input
-                    type="text" value={supportInput} onChange={e => setSupportInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSendSupport()}
-                    placeholder="輸入訊息..."
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl pl-4 pr-12 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/50"
-                  />
-                  <button onClick={handleSendSupport} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-indigo-500 rounded-xl flex items-center justify-center text-white active:scale-95">
-                    <Send size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      );
+      } catch (err) { console.error("Auth error", err); }
     };
+    initAuth();
+    return onAuthStateChanged(auth, (u) => {
+      setIsLoading(false);
+    });
+  }, []);
 
-    // ===================== 視圖: 新增的面試專區 (使用你定義的所有精美按鈕) =====================
-    const InterviewView = ({ setView, userName, showToast }) => {
-      const [interviewStep, setInterviewStep] = useState('WELCOME'); // WELCOME, Q1, Q2, SUBMIT
-      const [isProcessing, setIsProcessing] = useState(false);
-      const [bookmarked, setBookmarked] = useState(false);
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const unsubReports = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'daily_reports')), (snap) => {
+      setReports(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.timestamp - a.timestamp));
+    }, (err) => console.error(err));
+    
+    const unsubUsers = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'users')), (snap) => {
+      setStaffList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => console.error(err));
+    
+    return () => { unsubReports(); unsubUsers(); };
+  }, [auth.currentUser]);
 
-      // 1. 主要行動按鈕行為
-      const handleStartInterview = () => {
-        setIsProcessing(true);
-        setTimeout(() => {
-          setIsProcessing(false);
-          setInterviewStep('Q1');
-          showToast('面試開始！請仔細作答', 'info');
-        }, 800);
-      };
+  // --- 2. 登入邏輯 ---
+  const handleLoginNext = async (e) => {
+    e.preventDefault();
+    if (!userName.trim()) return;
+    setIsProcessing(true);
+    const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userName));
+    setIsNewUser(!userDoc.exists());
+    if (userDoc.exists()) setUserRole(userDoc.data().role || 'DRIVER');
+    setStep('PIN');
+    setIsProcessing(false);
+  };
 
-      // 2. 次要按鈕行為
-      const handleLater = () => {
-        showToast('已為您保留進度，隨時可以回來', 'info');
-        setView('PORTAL');
-      };
-
-      // 3. 危險操作按鈕行為
-      const handleAbandon = () => {
-        setIsProcessing(true);
-        setTimeout(() => {
-          setIsProcessing(false);
-          showToast('已放棄本次面試', 'error');
-          setView('PORTAL');
-        }, 600);
-      };
-
-      // 4. 導覽按鈕行為
-      const handlePrev = () => {
-        setInterviewStep('Q1');
-      };
-      
-      const handleNext = () => {
-        if (interviewStep === 'Q1') setInterviewStep('Q2');
-        else if (interviewStep === 'Q2') setInterviewStep('SUBMIT');
-      };
-
-      // 5. 確認提交按鈕行為
-      const handleSubmit = () => {
-        setIsProcessing(true);
-        setTimeout(() => {
-          setIsProcessing(false);
-          showToast('提交成功！我們將盡快審核您的資料', 'success');
-          setView('PORTAL');
-        }, 1200);
-      };
-
-      // 6. 圖示操作按鈕行為
-      const handleBookmark = () => {
-        setBookmarked(!bookmarked);
-        showToast(bookmarked ? '已取消書籤' : '已加入書籤', 'info');
-      };
-
-      return (
-        <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
-          <div className="fixed inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-40 -left-40 w-80 h-80 bg-indigo-900/20 rounded-full blur-3xl" />
-            <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-rose-900/10 rounded-full blur-3xl" />
-          </div>
-          
-          <PageHeader title="線上面試測驗" onBack={() => setView('PORTAL')} rightAction={
-            // 放右上角的小書籤按鈕展示
-            (interviewStep === 'Q1' || interviewStep === 'Q2') && (
-              <button
-                onClick={handleBookmark}
-                className={`w-9 h-9 border rounded-xl flex items-center justify-center active:scale-95 transition-all ${bookmarked ? 'bg-indigo-500/40 border-indigo-500/60' : 'bg-indigo-500/20 border-indigo-500/30 hover:bg-indigo-500/30'}`}
-                title="書籤"
-              >
-                <Bookmark size={15} className="text-indigo-400" />
-              </button>
-            )
-          } />
-
-          <div className="relative flex-grow p-5 flex flex-col justify-center max-w-md mx-auto w-full">
-            
-            {interviewStep === 'WELCOME' && (
-              <div className="space-y-6 animate-fade">
-                <div className="text-center space-y-2 mb-8">
-                  <div className="w-20 h-20 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <ClipboardList size={36} className="text-indigo-400" />
-                  </div>
-                  <h2 className="text-xl font-black">司機夥伴線上測驗</h2>
-                  <p className="text-sm text-slate-400 font-medium leading-relaxed">
-                    歡迎來到在地物流！<br/>接下來會有幾個簡單的情境題，幫助我們了解您的應變能力。準備好就可以開始囉！
-                  </p>
-                </div>
-                
-                <div className="space-y-3">
-                  {/* 使用你定義的 1. 主要行動按鈕 */}
-                  <button
-                    onClick={handleStartInterview}
-                    disabled={isProcessing}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 
-                      py-4 rounded-2xl font-black text-sm flex items-center justify-center 
-                      gap-2 active:scale-95 transition-all shadow-lg shadow-indigo-900/50
-                      disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isProcessing
-                      ? <Loader2 size={16} className="animate-spin" />
-                      : <><PlayCircle size={16} /> 開始面試</>}
-                  </button>
-
-                  {/* 使用你定義的 2. 次要按鈕 */}
-                  <button
-                    onClick={handleLater}
-                    className="w-full bg-white/5 border border-white/10 
-                      py-4 rounded-2xl font-black text-sm text-slate-400
-                      flex items-center justify-center gap-2 
-                      active:scale-95 transition-all hover:bg-white/10"
-                  >
-                    <Clock size={16} /> 稍後再試
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {(interviewStep === 'Q1' || interviewStep === 'Q2') && (
-              <div className="space-y-6 animate-zoom flex flex-col flex-grow">
-                <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                  <span>情境測驗</span>
-                  <span>{interviewStep === 'Q1' ? '1 / 2' : '2 / 2'}</span>
-                </div>
-                
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex-grow">
-                  <h3 className="text-lg font-black mb-4">
-                    {interviewStep === 'Q1' 
-                      ? "如果遇到收件人不在家，且電話不通的情況，您會怎麼處理？" 
-                      : "當客戶反映包裹外箱有破損時，您的第一步反應是？"}
-                  </h3>
-                  
-                  {/* 模擬選項 */}
-                  <div className="space-y-3 mt-6">
-                    {['A. 依照公司標準流程處理', 'B. 拍照回報並聯繫客服', 'C. 現場判斷其他替代方案'].map(opt => (
-                      <div key={opt} className="p-4 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold text-slate-300 hover:bg-indigo-500/20 hover:border-indigo-500/40 transition-all cursor-pointer">
-                        {opt}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 使用你定義的 4. 導覽按鈕組 */}
-                <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
-                  <button
-                    onClick={handlePrev}
-                    disabled={interviewStep === 'Q1' || isProcessing}
-                    className="bg-white/5 border border-white/10 
-                      py-4 rounded-2xl font-black text-sm text-slate-400
-                      flex items-center justify-center gap-2 
-                      active:scale-95 transition-all hover:bg-white/10
-                      disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft size={16} /> 上一題
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    disabled={isProcessing}
-                    className="bg-gradient-to-r from-indigo-600 to-violet-600 
-                      py-4 rounded-2xl font-black text-sm flex items-center justify-center 
-                      gap-2 active:scale-95 transition-all shadow-lg shadow-indigo-900/50
-                      disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    下一題 <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {interviewStep === 'SUBMIT' && (
-              <div className="space-y-6 animate-fade">
-                <div className="text-center space-y-2 mb-8">
-                  <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 size={36} className="text-emerald-400" />
-                  </div>
-                  <h2 className="text-xl font-black">測驗完成</h2>
-                  <p className="text-sm text-slate-400 font-medium">您已完成所有題目，確認無誤後即可送出。</p>
-                </div>
-
-                <div className="space-y-3">
-                  {/* 使用你定義的 5. 確認提交按鈕 */}
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isProcessing}
-                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 
-                      py-4 rounded-2xl font-black text-sm flex items-center justify-center 
-                      gap-2 active:scale-95 transition-all shadow-lg shadow-emerald-900/50
-                      disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isProcessing
-                      ? <Loader2 size={16} className="animate-spin" />
-                      : <><CheckCircle2 size={16} /> 提交答案</>}
-                  </button>
-                  
-                  {/* 使用你定義的 3. 危險操作按鈕 */}
-                  <button
-                    onClick={handleAbandon}
-                    disabled={isProcessing}
-                    className="w-full bg-gradient-to-r from-rose-600 to-rose-700 
-                      py-4 rounded-2xl font-black text-sm flex items-center justify-center 
-                      gap-2 active:scale-95 transition-all shadow-lg shadow-rose-900/50
-                      disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isProcessing
-                      ? <Loader2 size={16} className="animate-spin" />
-                      : <><XCircle size={16} /> 放棄面試</>}
-                  </button>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      );
-    };
-
-    // ===================== 視圖: 司機操作台 =====================
-    const DriverView = ({ setView, userName, showToast }) => {
-      const [driverStep, setDriverStep] = useState('MENU');
-      const [deliveryData, setDeliveryData] = useState({ totalParcels: '', successDelivery: '', failedDelivery: '', notes: '' });
-      const [reverseData, setReverseData] = useState({ returnCount: '', reason: '', notes: '' });
-      const [photoFile, setPhotoFile] = useState(null);
-      const [photoPreview, setPhotoPreview] = useState(null);
-      const [isSubmitting, setIsSubmitting] = useState(false);
-      const [submitSuccess, setSubmitSuccess] = useState(false);
-      const fileInputRef = useRef(null);
-
-      const handlePhotoCapture = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setPhotoFile(file);
-        const reader = new FileReader();
-        reader.onloadend = () => setPhotoPreview(reader.result);
-        reader.readAsDataURL(file);
-      };
-
-      const handleDeliverySubmit = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-          const { db, collection, addDoc } = window._firebaseAPI;
-          await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'), {
-            type: 'DELIVERY', driverName: userName, ...deliveryData,
-            timestamp: Date.now(), status: 'PENDING', date: new Date().toLocaleDateString('zh-TW')
-          });
-          setSubmitSuccess(true);
-          setTimeout(() => { setSubmitSuccess(false); setDriverStep('MENU'); }, 2000);
-        } catch (err) { showToast('提交失敗，請重試', 'error'); console.error(err); }
-        setIsSubmitting(false);
-      };
-
-      const handleReverseSubmit = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-          const { db, collection, addDoc } = window._firebaseAPI;
-          await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'), {
-            type: 'REVERSE_LOGISTICS', driverName: userName, ...reverseData,
-            timestamp: Date.now(), status: 'PENDING', date: new Date().toLocaleDateString('zh-TW')
-          });
-          setSubmitSuccess(true);
-          setTimeout(() => { setSubmitSuccess(false); setDriverStep('MENU'); }, 2000);
-        } catch (err) { showToast('提交失敗，請重試', 'error'); console.error(err); }
-        setIsSubmitting(false);
-      };
-
-      if (submitSuccess) {
-        return (
-          <div className="min-h-screen bg-[#080c1a] flex flex-col items-center justify-center text-white gap-4">
-            <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center animate-zoom duration-300">
-              <CheckCircle2 size={44} cls="text-emerald-400" />
-            </div>
-            <p className="text-xl font-black text-emerald-400">提交成功！</p>
-            <p className="text-sm text-slate-400">資料已送出，正在返回...</p>
-          </div>
-        );
+  const handleLoginFinal = async (pin) => {
+    if (pin.length !== 4) return;
+    setIsProcessing(true);
+    if (isNewUser) {
+      const newUser = { userName, pin, role: 'DRIVER', createdAt: Date.now() };
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userName), newUser);
+      setUserRole('DRIVER');
+    } else {
+      const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userName));
+      if (userDoc.data().pin !== pin) {
+        alert("口令不對喔，再回想一下？");
+        setIsProcessing(false); return;
       }
+      setUserRole(userDoc.data().role || 'DRIVER');
+    }
+    setView('DASHBOARD');
+    setIsProcessing(false);
+  };
 
-      return (
-        <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
-          <div className="fixed inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-40 -left-40 w-80 h-80 bg-indigo-900/30 rounded-full blur-3xl" />
-            <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-violet-900/20 rounded-full blur-3xl" />
+  // --- 3. 司機回報邏輯 ---
+  const [posIn, setPosIn] = useState('');
+  const [negIn, setNegIn] = useState('');
+  const handleReportSubmit = async () => {
+    if (!posIn || !negIn) return alert("請輸入完整件數喔。");
+    setIsProcessing(true);
+    const reportData = {
+      driverName: userName,
+      posCount: parseInt(posIn),
+      negCount: parseInt(negIn),
+      timestamp: Date.now(),
+      status: 'pending',
+      date: new Date().toLocaleDateString(),
+      memo: ''
+    };
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'daily_reports'), reportData);
+    setPosIn(''); setNegIn('');
+    setIsProcessing(false);
+    alert("管家：數據已同步，您可以休息一下了。");
+  };
+
+  // --- 4. 會計審核與修正 ---
+  const approveReport = async (id) => {
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'daily_reports', id), { status: 'approved' });
+  };
+
+  const correctReport = async (id, newPos, newNeg, reason) => {
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'daily_reports', id), {
+      posCount: parseInt(newPos),
+      negCount: parseInt(newNeg),
+      memo: reason,
+      status: 'corrected'
+    });
+    alert("修正完成，司機端的帳單也會同步更新。");
+  };
+
+  // --- 5. 薪資計算邏輯 ---
+  const calculateSalary = (pos, neg) => {
+    const raw = (pos * UNIT_PRICE_POS) + (neg * UNIT_PRICE_NEG);
+    const tax = raw > 20000 ? Math.round(raw * HEALTH_INS_RATE) : 0;
+    return { raw, tax, net: raw - tax };
+  };
+
+  // --- 6. AI 對話模組 (真人感) ---
+  const askAi = async (text) => {
+    if (!text.trim()) return;
+    setChatHistory(prev => [...prev, { role: 'user', text }]);
+    // 延遲一段時間，模仿真人思考
+    setTimeout(() => {
+      let aiResponse = "老闆，我幫您看過了，今天的配送進度很穩定，目前還沒有發現任何異常。";
+      if (text.includes("錢") || text.includes("利潤")) aiResponse = `目前累積預計利潤約為 $${reports.length * 500} 元，對帳完成後會更準確。`;
+      if (text.includes("我是老闆")) {
+          updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userName), { role: 'ACCOUNTANT' });
+          setUserRole('ACCOUNTANT');
+          aiResponse = "身分確認！老闆，權限已為您解鎖，請重新查看主選單。";
+      }
+      setChatHistory(prev => [...prev, { role: 'ai', text: aiResponse }]);
+    }, 1500);
+  };
+
+  // --- 視圖組件 ---
+
+  if (isLoading) return <div className="h-screen bg-[#fdfbf7] flex items-center justify-center"><Loader2 className="animate-spin text-slate-300" /></div>;
+
+  return (
+    <div className="h-screen bg-[#fdfbf7] text-slate-800 flex flex-col overflow-hidden font-sans">
+      
+      {/* 視圖 A: 數位大門 (LOGIN) */}
+      {view === 'LOGIN' && (
+        <div className="h-full flex flex-col items-center justify-center p-8 space-y-12">
+          <header className="text-center space-y-4">
+             <div className="w-16 h-16 bg-slate-900 rounded-[24px] flex items-center justify-center text-white text-3xl font-black mx-auto shadow-xl"><Coffee /></div>
+             <div className="space-y-1">
+               <h1 className="text-2xl font-black tracking-tighter">您好，歡迎回家。</h1>
+               <p className="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase">Supreme-V92 Smart Portal</p>
+             </div>
+          </header>
+
+          <div className="w-full max-w-sm bg-white rounded-[40px] p-10 shadow-sm border border-slate-100">
+            {step === 'NAME' ? (
+              <form onSubmit={handleLoginNext} className="space-y-6">
+                <div className="text-center space-y-2">
+                  <p className="text-[10px] font-black text-slate-300 uppercase">請問怎麼稱呼您？</p>
+                  <input type="text" value={userName} onChange={e => setUserName(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl p-4 text-center font-bold outline-none focus:ring-2 focus:ring-slate-100" placeholder="姓名" required />
+                </div>
+                <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl">下一步</button>
+              </form>
+            ) : (
+              <div className="space-y-6">
+                <p className="text-center text-[10px] font-black text-slate-300 uppercase">{isNewUser ? "設定新口令" : `你好 ${userName}`}</p>
+                <input type="password" pattern="\d*" maxLength="4" inputMode="numeric" onChange={e => e.target.value.length === 4 && handleLoginFinal(e.target.value)} className="w-full bg-slate-50 border-none rounded-2xl p-4 text-center text-4xl font-black tracking-[0.5em] outline-none" placeholder="****" autoFocus />
+                <button onClick={() => setStep('NAME')} className="text-[10px] text-slate-400 font-bold block mx-auto underline">名字錯了？</button>
+              </div>
+            )}
           </div>
 
-          {driverStep === 'MENU' && (
-            <div className="relative flex flex-col min-h-screen">
-              <PageHeader title="司機操作台" onBack={() => setView('PORTAL')} />
-              <div className="mx-4 mt-4 bg-gradient-to-r from-indigo-600/30 to-violet-600/30 border border-indigo-500/30 rounded-3xl p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg">
-                    {userName[0]}
-                  </div>
-                  <div>
-                    <p className="font-black text-base">{userName} 司機</p>
-                    <p className="text-xs text-slate-400 font-medium">
-                      {new Date().toLocaleDateString('zh-TW', { weekday: 'long', month: 'long', day: 'numeric' })}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+            <button className="p-5 bg-white border border-slate-100 rounded-[32px] flex flex-col items-center gap-2 active:scale-95 transition-all"><Megaphone className="text-orange-300" size={18} /><span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">最新公告</span></button>
+            <button onClick={() => setView('INTERVIEW')} className="p-5 bg-white border border-slate-100 rounded-[32px] flex flex-col items-center gap-2 active:scale-95 transition-all"><UserPlus className="text-blue-300" size={18} /><span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">應徵夥伴</span></button>
+          </div>
+        </div>
+      )}
 
-              <div className="flex-grow p-4 space-y-3 mt-2">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-3">今日任務</p>
-                <ActionCard icon={<PackageCheck size={22}/>} label="配送回報" sublabel="回報今日配送件數與狀況" onClick={() => setDriverStep('DELIVERY')} color="emerald" />
-                <ActionCard icon={<PackageX size={22}/>} label="逆物流回報" sublabel="回報退件與逆物流數量" onClick={() => setDriverStep('REVERSE_LOGISTICS')} color="amber" />
-                <ActionCard icon={<ClipboardList size={22}/>} label="每日數據總回報" sublabel="填寫完整每日回報表單" onClick={() => setDriverStep('REPORT')} color="sky" />
-                <ActionCard icon={<Camera size={22}/>} label="拍照上傳" sublabel="拍攝貨件照片作為憑證" onClick={() => setDriverStep('PHOTO')} color="violet" />
-                
-                <div className="pt-2">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-3">其他</p>
-                  <ActionCard icon={<History size={22}/>} label="查看回報紀錄" sublabel="功能即將開通" color="slate" disabled />
-                </div>
-              </div>
+      {/* 視圖 B: 主工作區 (DASHBOARD) */}
+      {view === 'DASHBOARD' && (
+        <div className="h-full flex flex-col overflow-y-auto">
+          <header className="p-6 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black">{userName[0]}</div>
+              <div><p className="font-black text-sm">{userName}</p><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{userRole === 'DRIVER' ? '司機夥伴' : '管理員'}</p></div>
             </div>
-          )}
+            <div className="flex gap-2">
+              <button onClick={() => setAiChatOpen(true)} className="p-2 text-indigo-400"><BrainCircuit size={20} /></button>
+              <button onClick={() => setView('LOGIN')} className="p-2 text-slate-300"><LogOut size={20} /></button>
+            </div>
+          </header>
 
-          {/* 配送回報 */}
-          {driverStep === 'DELIVERY' && (
-            <div className="flex flex-col min-h-screen">
-              <PageHeader title="配送回報" onBack={() => setDriverStep('MENU')} />
-              <form onSubmit={handleDeliverySubmit} className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4">
-                  <p className="text-xs text-emerald-300 font-bold">填寫今日配送數據</p>
+          <main className="p-6 md:px-20 space-y-6 max-w-4xl mx-auto w-full pb-24">
+            {/* 智慧摘要卡片 */}
+            <div className="bg-white border border-slate-100 p-8 rounded-[40px] shadow-sm flex items-center gap-6">
+              <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center animate-pulse"><Sparkles className="text-orange-400" size={20} /></div>
+              <p className="text-xs text-slate-500 leading-relaxed italic">「老闆，今天已有 {reports.length} 筆回報。{userRole === 'DRIVER' ? '記得在收工前上傳照片喔。' : '其中有 2 筆數據存在小幅誤差，管家已標記。'}」</p>
+            </div>
+
+            {userRole === 'DRIVER' ? (
+              <div className="space-y-6">
+                {/* 報件卡片 */}
+                <div className="bg-slate-900 text-white rounded-[40px] p-8 space-y-6 shadow-xl">
+                   <div className="flex items-center gap-4"><Camera size={24} className="text-orange-300" /><h2 className="text-lg font-black">今日配送數據回報</h2></div>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2"><p className="text-[10px] font-bold opacity-50 uppercase text-center tracking-widest">正向件數</p><input type="number" value={posIn} onChange={e => setPosIn(e.target.value)} className="w-full bg-white/10 rounded-2xl p-4 text-center text-2xl font-black outline-none" placeholder="0" /></div>
+                      <div className="space-y-2"><p className="text-[10px] font-bold opacity-50 uppercase text-center tracking-widest">逆物流件</p><input type="number" value={negIn} onChange={e => setNegIn(e.target.value)} className="w-full bg-white/10 rounded-2xl p-4 text-center text-2xl font-black outline-none" placeholder="0" /></div>
+                   </div>
+                   <button onClick={handleReportSubmit} className="w-full bg-white text-slate-900 py-4 rounded-2xl font-black shadow-lg">確認上傳數據</button>
                 </div>
-                {[
-                  { key: 'totalParcels', label: '總派件數', placeholder: '例: 85', type: 'number' },
-                  { key: 'successDelivery', label: '成功配送件數', placeholder: '例: 78', type: 'number' },
-                  { key: 'failedDelivery', label: '未配達件數', placeholder: '例: 7', type: 'number' },
-                ].map(({ key, label, placeholder, type }) => (
-                  <div key={key}>
-                    <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">{label}</label>
-                    <input
-                      type={type} value={deliveryData[key]} onChange={e => setDeliveryData(prev => ({ ...prev, [key]: e.target.value }))}
-                      placeholder={placeholder} required
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600 text-lg"
-                    />
+
+                {/* 個人薪資單 (透明機制) */}
+                <div className="bg-white border border-slate-100 rounded-[40px] p-8 space-y-6">
+                   <div className="flex items-center justify-between"><h2 className="text-sm font-black">個人透明薪資單 (本月)</h2><DollarSign size={18} className="text-slate-300" /></div>
+                   <div className="space-y-4">
+                      {reports.filter(r => r.driverName === userName).map(r => {
+                        const { net, tax } = calculateSalary(r.posCount, r.negCount);
+                        return (
+                          <div key={r.id} className="p-4 bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100">
+                             <div><p className="text-xs font-bold">{r.date}</p><p className="text-[9px] text-slate-400">核定狀態：{r.status === 'approved' ? '✓ 已入帳' : r.status === 'corrected' ? '⚠️ 已修正' : '⏳ 待核'}</p></div>
+                             <div className="text-right">
+                               <p className="text-sm font-black text-slate-800">${net.toLocaleString()}</p>
+                               {tax > 0 && <p className="text-[9px] text-rose-400">已扣二代健保 ${tax}</p>}
+                               {r.memo && <p className="text-[9px] text-indigo-400 italic">備註：{r.memo}</p>}
+                             </div>
+                          </div>
+                        );
+                      })}
+                      {reports.filter(r => r.driverName === userName).length === 0 && <p className="text-center py-10 text-xs text-slate-400 italic">暫無配送紀錄</p>}
+                   </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* 管理員儀表板：異常核定 */}
+                <div className="bg-white border border-slate-100 rounded-[40px] p-8 space-y-8">
+                   <div className="flex items-center justify-between"><h2 className="text-sm font-black">待對帳數據清單</h2><span className="text-[10px] font-black bg-indigo-50 text-indigo-500 px-3 py-1 rounded-full">{reports.filter(r => r.status === 'pending').length} 筆待處理</span></div>
+                   <div className="space-y-4">
+                      {reports.map(r => (
+                        <div key={r.id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-500 font-black">{r.driverName[0]}</div>
+                              <div><p className="text-sm font-bold text-slate-800">{r.driverName}</p><p className="text-[10px] text-slate-400">{r.date} ‧ {new Date(r.timestamp).toLocaleTimeString()}</p></div>
+                            </div>
+                            <div className="text-right"><p className="text-sm font-black">{r.posCount} 正 / {r.negCount} 逆</p></div>
+                          </div>
+                          
+                          {r.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <button onClick={() => approveReport(r.id)} className="flex-grow bg-emerald-500 text-white py-3 rounded-xl text-xs font-bold shadow-sm">核定無誤</button>
+                              <button onClick={() => {
+                                const newPos = prompt("修正正向件數：", r.posCount);
+                                const newNeg = prompt("修正逆物流：", r.negCount);
+                                const reason = prompt("修正原因 (例如：條碼污損、包裝破損)：");
+                                if (newPos && newNeg) correctReport(r.id, newPos, newNeg, reason);
+                              }} className="flex-grow bg-white border border-slate-200 py-3 rounded-xl text-xs font-bold">修正數據</button>
+                            </div>
+                          )}
+                          {r.status !== 'pending' && <p className="text-center text-[9px] font-black uppercase text-slate-300 tracking-widest pt-2">狀態：{r.status}</p>}
+                        </div>
+                      ))}
+                   </div>
+                </div>
+
+                {/* 人員管理捷徑 */}
+                <div className="grid grid-cols-2 gap-4">
+                  <button onClick={() => setView('STAFF_MGT')} className="bg-slate-900 text-white p-8 rounded-[40px] font-black flex flex-col items-center gap-4 active:scale-95 transition-all shadow-xl">
+                    <UserCog size={24} /> <span className="text-xs">權限管理</span>
+                  </button>
+                  <button onClick={() => setView('INTERVIEW')} className="bg-white border border-slate-100 p-8 rounded-[40px] font-black flex flex-col items-center gap-4 active:scale-95 transition-all shadow-sm">
+                    <UserPlus size={24} /> <span className="text-xs text-slate-600">應徵夥伴</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </main>
+        </div>
+      )}
+
+      {/* 視圖 C: 人員與權限管理 (STAFF_MGT) */}
+      {view === 'STAFF_MGT' && (
+        <div className="h-full bg-slate-50 p-8 overflow-y-auto animate-in slide-in-from-right duration-500">
+          <div className="max-w-3xl mx-auto space-y-8">
+            <header className="flex justify-between items-center">
+               <h2 className="text-2xl font-black">人員管理中心</h2>
+               <button onClick={() => setView('DASHBOARD')} className="p-2 bg-white rounded-full shadow-sm"><X size={20} /></button>
+            </header>
+            <div className="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden divide-y divide-slate-50">
+               {staffList.map(s => (
+                 <div key={s.id} className="p-6 flex justify-between items-center hover:bg-slate-50">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 font-black">{s.userName[0]}</div>
+                      <div><p className="font-black text-slate-800">{s.userName}</p><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">身分：{s.role}</p></div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={async () => {
+                        const newRole = s.role === 'DRIVER' ? 'ACCOUNTANT' : 'DRIVER';
+                        if(window.confirm(`更改 ${s.userName} 權限為 ${newRole}？`))
+                          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', s.userName), { role: newRole });
+                      }} className="p-2 text-slate-300 hover:text-slate-900"><UserCog size={18} /></button>
+                      <button onClick={async () => {
+                        if(window.confirm(`確定要將 ${s.userName} 移除系統？`))
+                          await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', s.userName));
+                      }} className="p-2 text-slate-300 hover:text-rose-500"><RotateCcw size={18} /></button>
+                    </div>
+                 </div>
+               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 視圖 D: 智慧面試伴侶 (INTERVIEW) */}
+      {view === 'INTERVIEW' && (
+        <div className="h-full bg-[#fafaf9] flex flex-col items-center justify-center p-8 animate-in fade-in">
+           {!interviewCandidate ? (
+             <div className="w-full max-w-sm bg-white p-12 rounded-[48px] shadow-sm text-center space-y-8 border border-slate-100">
+               <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto text-3xl">☕</div>
+               <h1 className="text-xl font-black">今天想認識哪位新夥伴？</h1>
+               <input type="text" onChange={e => setInterviewCandidate(e.target.value)} placeholder="應徵者姓名" className="w-full bg-slate-50 rounded-2xl p-4 text-center font-bold outline-none" />
+               <button onClick={() => setInterviewStep(1)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl">開始輕鬆面談</button>
+               <button onClick={() => setView('LOGIN')} className="text-xs text-slate-400 underline font-bold">返回首頁</button>
+             </div>
+           ) : (
+             <div className="w-full max-w-2xl space-y-8">
+                <header className="flex justify-between items-center text-slate-400">
+                   <p className="text-[10px] font-black uppercase tracking-widest">與 {interviewCandidate} 面談中</p>
+                   <p className="text-[10px] font-black">{interviewStep} / 5</p>
+                </header>
+                <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 space-y-6">
+                   <h2 className="text-xl font-black text-slate-800">
+                     {interviewStep === 1 && "你以前跑車的時候，最自豪的一件事是什麼？"}
+                     {interviewStep === 2 && "如果送貨時發現包裝稍微損壞了，你會怎麼處理？"}
+                     {interviewStep === 3 && "如果對帳數據有誤差，你會如何跟會計溝通？"}
+                     {interviewStep === 4 && "你平常是用什麼方式紀錄每天的配送數據？"}
+                     {interviewStep === 5 && "你認為在物流業，什麼特質最能讓老闆放心？"}
+                   </h2>
+                   <div className="bg-orange-50 p-6 rounded-3xl flex gap-3">
+                      <Sparkles size={18} className="text-orange-300 shrink-0" />
+                      <p className="text-xs text-slate-500 italic leading-relaxed">
+                        管家提示：{interviewStep === 1 && "觀察他是否重視細節。"}
+                        {interviewStep === 2 && "測試誠信。會主動告知者加分。"}
+                        {interviewStep === 3 && "測試溝通穩定性，有無壓力承擔力。"}
+                        {interviewStep === 4 && "觀察其數位適應能力。"}
+                        {interviewStep === 5 && "尋找具備誠信與負責特質的夥伴。"}
+                      </p>
+                   </div>
+                </div>
+                <div className="flex gap-4">
+                   <button onClick={() => interviewStep < 5 ? setInterviewStep(interviewStep+1) : setView('DASHBOARD')} className="flex-grow bg-white border border-slate-200 p-8 rounded-[32px] flex flex-col items-center gap-3"><Frown size={32} className="text-slate-300" /><span className="text-[10px] font-bold text-slate-400 uppercase">印象普通</span></button>
+                   <button onClick={() => interviewStep < 5 ? setInterviewStep(interviewStep+1) : setView('DASHBOARD')} className="flex-grow bg-white border border-slate-200 p-8 rounded-[32px] flex flex-col items-center gap-3"><Smile size={32} className="text-orange-400" /><span className="text-[10px] font-bold text-slate-400 uppercase">感覺不錯</span></button>
+                </div>
+             </div>
+           )}
+        </div>
+      )}
+
+      {/* 智慧管家聊天視窗 (底部分支) */}
+      {aiChatOpen && (
+        <div className="fixed inset-0 z-[100] flex flex-col animate-in fade-in duration-300">
+          <div className="flex-grow bg-black/60 backdrop-blur-sm" onClick={() => setAiChatOpen(false)}></div>
+          <div className="h-[75dvh] bg-white rounded-t-[48px] shadow-2xl flex flex-col relative">
+             <header className="p-8 border-b border-slate-50 flex justify-between items-center">
+                <div className="flex items-center gap-3"><div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-400 animate-pulse"><BrainCircuit size={20} /></div><h3 className="font-black">靈魂管家服務中</h3></div>
+                <button onClick={() => setAiChatOpen(false)}><X size={20} className="text-slate-300" /></button>
+             </header>
+             <div className="flex-grow p-8 overflow-y-auto space-y-6 bg-[#fafafa]">
+                {chatHistory.map((m, i) => (
+                  <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] p-4 rounded-[24px] text-sm leading-relaxed ${m.role === 'user' ? 'bg-slate-900 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-800 rounded-bl-none shadow-sm'}`}>{m.text}</div>
                   </div>
                 ))}
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">備註</label>
-                  <textarea
-                    value={deliveryData.notes} onChange={e => setDeliveryData(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="填寫特殊狀況或備註..." rows={3}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white font-medium outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600 resize-none"
-                  />
-                </div>
-                <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 py-5 rounded-3xl font-black text-white text-lg flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/50 active:scale-95 transition-all mt-4">
-                  {isSubmitting ? <Loader2 size={22} cls="animate-spin" /> : <><Send size={18}/> 提交配送回報</>}
-                </button>
-              </form>
-            </div>
-          )}
-
-          {/* 逆物流回報 */}
-          {driverStep === 'REVERSE_LOGISTICS' && (
-            <div className="flex flex-col min-h-screen">
-              <PageHeader title="逆物流回報" onBack={() => setDriverStep('MENU')} />
-              <form onSubmit={handleReverseSubmit} className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
-                  <p className="text-xs text-amber-300 font-bold">填寫逆物流與退件數據</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">退件總數</label>
-                  <input
-                    type="number" value={reverseData.returnCount}
-                    onChange={e => setReverseData(prev => ({ ...prev, returnCount: e.target.value }))}
-                    placeholder="例: 12" required
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-amber-500/50 transition-all placeholder:text-slate-600 text-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">退件原因</label>
-                  <div className="grid grid-cols-1 gap-2 mb-3">
-                    {['收件人不在', '地址錯誤', '拒收', '包裝損壞', '其他'].map(reason => (
-                      <button
-                        key={reason} type="button" onClick={() => setReverseData(prev => ({ ...prev, reason }))}
-                        className={`px-4 py-3 rounded-2xl text-sm font-bold text-left transition-all active:scale-95 ${reverseData.reason === reason ? 'bg-amber-500/30 border-2 border-amber-500/60 text-amber-300' : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'}`}
-                      >
-                        {reverseData.reason === reason ? '✓ ' : ''}{reason}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">備註說明</label>
-                  <textarea
-                    value={reverseData.notes} onChange={e => setReverseData(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="填寫退件詳細說明..." rows={3}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white font-medium outline-none focus:ring-2 focus:ring-amber-500/50 transition-all placeholder:text-slate-600 resize-none"
-                  />
-                </div>
-                <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-amber-500 to-amber-600 py-5 rounded-3xl font-black text-white text-lg flex items-center justify-center gap-2 shadow-xl shadow-amber-900/50 active:scale-95 transition-all mt-4">
-                  {isSubmitting ? <Loader2 size={22} cls="animate-spin" /> : <><Send size={18}/> 提交逆物流回報</>}
-                </button>
-              </form>
-            </div>
-          )}
-
-          {/* 每日總回報(整合列表) */}
-          {driverStep === 'REPORT' && (
-            <div className="flex flex-col min-h-screen">
-              <PageHeader title="每日數據總回報" onBack={() => setDriverStep('MENU')} />
-              <div className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
-                <div className="bg-sky-500/10 border border-sky-500/30 rounded-2xl p-4">
-                  <p className="text-xs text-sky-300 font-bold"> 請依序完成所有回報項目</p>
-                </div>
-                <div className="space-y-3">
-                  <ActionCard icon={<PackageCheck size={20} />} label="填寫配送數據" sublabel="點擊前往配送回報" onClick={() => setDriverStep('DELIVERY')} color="emerald" />
-                  <ActionCard icon={<PackageX size={20} />} label="填寫逆物流數據" sublabel="點擊前往逆物流回報" onClick={() => setDriverStep('REVERSE_LOGISTICS')} color="amber" />
-                  <ActionCard icon={<Camera size={20} />} label="上傳憑證照片" sublabel="點擊前往拍照上傳" onClick={() => setDriverStep('PHOTO')} color="violet" />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 拍照上傳 */}
-          {driverStep === 'PHOTO' && (
-            <div className="flex flex-col min-h-screen">
-              <PageHeader title="拍照上傳" onBack={() => setDriverStep('MENU')} />
-              <div className="flex-grow p-4 space-y-4 overflow-y-auto z-10">
-                <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4">
-                  <p className="text-xs text-violet-300 font-bold"> 拍攝貨件照片作為簽收憑證</p>
-                </div>
-
-                <div onClick={() => fileInputRef.current?.click()} className={`relative w-full aspect-[4/3] rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 overflow-hidden border-2 border-dashed ${photoPreview ? 'border-violet-500/50' : 'border-white/20 bg-white/5 hover:bg-white/10'}`}>
-                  {photoPreview ? (
-                    <>
-                      <img src={photoPreview} alt="預覽" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                        <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2 flex items-center gap-2">
-                          <RotateCcw size={16} cls="text-white" />
-                          <span className="text-white text-sm font-bold">重新拍攝</span>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center gap-3 text-slate-500">
-                      <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center">
-                        <Camera size={32} cls="text-slate-400" />
-                      </div>
-                      <div className="text-center">
-                        <p className="font-black text-slate-300">點擊拍照或選取圖片</p>
-                        <p className="text-xs text-slate-500 mt-1">支援 JPG、PNG 格式</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoCapture} className="hidden" />
-
-                {!photoPreview && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <button type="button" onClick={() => { if (fileInputRef.current) { fileInputRef.current.removeAttribute('capture'); fileInputRef.current.click(); setTimeout(() => fileInputRef.current?.setAttribute('capture', 'environment'), 500); } }} className="flex flex-col items-center gap-2 bg-white/5 border border-white/10 rounded-2xl py-4 px-3 active:scale-95 transition-all">
-                      <Upload size={20} cls="text-violet-400" />
-                      <span className="text-xs font-bold text-slate-300">從相簿選取</span>
-                    </button>
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center gap-2 bg-violet-500/20 border border-violet-500/30 rounded-2xl py-4 px-3 active:scale-95 transition-all">
-                      <Camera size={20} cls="text-violet-400" />
-                      <span className="text-xs font-bold text-violet-300">開啟相機</span>
-                    </button>
-                  </div>
-                )}
-
-                {photoPreview && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!photoFile) return;
-                      setIsSubmitting(true);
-                      try {
-                        const { db, collection, addDoc } = window._firebaseAPI;
-                        await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'), {
-                          type: 'PHOTO_UPLOAD', driverName: userName,
-                          fileName: photoFile.name, fileSize: photoFile.size,
-                          timestamp: Date.now(), status: 'UPLOADED', date: new Date().toLocaleDateString('zh-TW')
-                        });
-                        setSubmitSuccess(true);
-                        setPhotoFile(null);
-                        setPhotoPreview(null);
-                        setTimeout(() => { setSubmitSuccess(false); setDriverStep('MENU'); }, 2000);
-                      } catch (err) { showToast('上傳失敗，請重試', 'error'); console.error(err); }
-                      setIsSubmitting(false);
-                    }}
-                    disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-violet-600 to-violet-700 py-5 rounded-3xl font-black text-white text-lg flex items-center justify-center gap-2 shadow-xl shadow-violet-900/50 active:scale-95 transition-all"
-                  >
-                    {isSubmitting ? <Loader2 size={22} cls="animate-spin" /> : <><Upload size={18}/> 確認上傳照片</>}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+             </div>
+             <div className="p-8 bg-white border-t border-slate-50 pb-12">
+                <input type="text" placeholder="老闆，想聊聊經營或是心情嗎？" className="w-full bg-slate-50 rounded-3xl px-6 py-4 outline-none text-slate-900" onKeyPress={e => {if(e.key === 'Enter' && e.target.value){ askAi(e.target.value); e.target.value = ''; }}} />
+             </div>
+          </div>
         </div>
-      );
-    };
+      )}
 
-    // ===================== 視圖: 對帳審核中心 =====================
-    const AccountantView = ({ setView, reports, userName, showToast }) => {
-      const [selectedReport, setSelectedReport] = useState(null);
-      const [adjustReason, setAdjustReason] = useState("");
-      const [adjustedValue, setAdjustedValue] = useState("");
-      const [isProcessing, setIsProcessing] = useState(false);
-
-      const pending = reports.filter(r => r.status === 'PENDING');
-      const reviewed = reports.filter(r => r.status !== 'PENDING');
-
-      const handleApprove = async (reportId) => {
-        setIsProcessing(true);
-        try {
-          const { db, updateDoc, doc } = window._firebaseAPI;
-          await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports', reportId), {
-            status: 'APPROVED', reviewedBy: userName, reviewedAt: Date.now()
-          });
-          setSelectedReport(null);
-          showToast('核准成功', 'success');
-        } catch (e) {
-          showToast('操作失敗，請重試', 'error');
-        }
-        setIsProcessing(false);
-      };
-
-      const handleAdjust = async (reportId) => {
-        if (!adjustReason.trim()) { showToast('請填寫對帳原因', 'error'); return; }
-        setIsProcessing(true);
-        try {
-          const { db, updateDoc, doc } = window._firebaseAPI;
-          await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports', reportId), {
-            status: 'ADJUSTED', adjustedValue, adjustReason, reviewedBy: userName, reviewedAt: Date.now()
-          });
-          setSelectedReport(null);
-          setAdjustReason("");
-          setAdjustedValue("");
-          showToast('調整成功', 'success');
-        } catch (e) {
-          showToast('操作失敗，請重試', 'error');
-        }
-        setIsProcessing(false);
-      };
-
-      const typeLabel = (type) => ({ DELIVERY: '配送', REVERSE_LOGISTICS: '逆物流', PHOTO_UPLOAD: '照片' })[type] || type;
-      const typeIconBg = (type) => ({ DELIVERY: 'bg-emerald-500/20', REVERSE_LOGISTICS: 'bg-amber-500/20', PHOTO_UPLOAD: 'bg-violet-500/20' })[type] || 'bg-slate-500/20';
-
-      const statusBadge = (status) => {
-        const map = {
-          PENDING: { label: '待審核', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-          APPROVED: { label: '已核准', cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-          ADJUSTED: { label: '已調整', cls: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
-          UPLOADED: { label: '已上傳', cls: 'bg-violet-500/20 text-violet-300 border-violet-500/30' }
-        };
-        const s = map[status] || { label: status, cls: 'bg-slate-500/20 text-slate-300 border-slate-500/30' };
-        return <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${s.cls}`}>{s.label}</span>;
-      };
-
-      return (
-        <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
-          <div className="fixed inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-900/20 rounded-full blur-3xl" />
-          </div>
-          <PageHeader title="對帳審核中心" onBack={() => setView('PORTAL')} />
-
-          <div className="relative flex-grow p-4 space-y-4 overflow-y-auto">
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: '待審核', value: pending.length, color: 'text-amber-400' },
-                { label: '已核准', value: reviewed.filter(r => r.status === 'APPROVED').length, color: 'text-emerald-400' },
-                { label: '已調整', value: reviewed.filter(r => r.status === 'ADJUSTED').length, color: 'text-rose-400' },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-                  <p className={`text-2xl font-black ${color}`}>{value}</p>
-                  <p className="text-[10px] text-slate-500 font-bold mt-0.5">{label}</p>
-                </div>
-              ))}
-            </div>
-
-            {pending.length > 0 && (
-              <div>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-2">待審核</p>
-                <div className="space-y-2">
-                  {pending.map(report => (
-                    <button
-                      key={report.id} onClick={() => setSelectedReport(report)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-left flex items-center gap-3 active:scale-95 transition-all hover:bg-white/10"
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${typeIconBg(report.type)} flex-shrink-0`}>
-                        {report.type === 'DELIVERY' ? <PackageCheck size={18} cls="text-emerald-400" /> :
-                         report.type === 'REVERSE_LOGISTICS' ? <PackageX size={18} cls="text-amber-400" /> :
-                         <Camera size={18} cls="text-violet-400" />}
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <p className="font-black text-sm">{report.driverName}</p>
-                        <p className="text-xs text-slate-400 font-medium">{typeLabel(report.type)} {report.date}</p>
-                      </div>
-                      {statusBadge(report.status)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {reviewed.length > 0 && (
-              <div>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1 mb-2">已完成</p>
-                <div className="space-y-2">
-                  {reviewed.slice(0, 10).map(report => (
-                    <div key={report.id} className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 flex-shrink-0">
-                        {report.type === 'DELIVERY' ? <PackageCheck size={18} cls="text-slate-500" /> :
-                         report.type === 'REVERSE_LOGISTICS' ? <PackageX size={18} cls="text-slate-500" /> :
-                         <Camera size={18} cls="text-slate-500" />}
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <p className="font-bold text-sm text-slate-400">{report.driverName}</p>
-                        <p className="text-xs text-slate-600 font-medium">{typeLabel(report.type)} {report.date}</p>
-                      </div>
-                      {statusBadge(report.status)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {reports.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-600">
-                <ClipboardList size={48} cls="mb-4 opacity-30" />
-                <p className="font-bold">目前沒有回報資料</p>
-                <p className="text-xs mt-1">等待司機提交數據...</p>
-              </div>
-            )}
-          </div>
-
-          {selectedReport && (
-            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end animate-fade">
-              <div className="w-full max-w-lg mx-auto bg-[#0f1629] border border-white/10 rounded-t-[36px] p-6 space-y-4 shadow-2xl max-h-[90dvh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-base font-black">審核回報</h2>
-                  <button onClick={() => setSelectedReport(null)} className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center"><X size={14} /></button>
-                </div>
-                
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
-                  {Object.entries(selectedReport)
-                    .filter(([k]) => !['id', 'status', 'timestamp', 'reviewedBy', 'reviewedAt'].includes(k))
-                    .map(([key, val]) => (
-                      <div key={key} className="flex justify-between items-start gap-4">
-                        <span className="text-xs text-slate-500 font-bold uppercase flex-shrink-0">{key}</span>
-                        <span className="text-xs text-slate-300 font-medium text-right break-all">{String(val)}</span>
-                      </div>
-                    ))}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">修正數值(選填)</label>
-                  <input
-                    type="text" value={adjustedValue} onChange={e => setAdjustedValue(e.target.value)}
-                    placeholder="輸入修正後的數值..."
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">對帳原因</label>
-                  <div className="space-y-1.5 mb-2">
-                    {PRESET_REASONS.map(r => (
-                      <button
-                        key={r} type="button" onClick={() => setAdjustReason(r)}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all active:scale-95 ${adjustReason === r ? 'bg-indigo-500/30 border border-indigo-500/50 text-indigo-300' : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'}`}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    value={adjustReason} onChange={e => setAdjustReason(e.target.value)}
-                    placeholder="或自行輸入原因..." rows={2}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-600 resize-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button onClick={() => handleApprove(selectedReport.id)} disabled={isProcessing} className="bg-gradient-to-r from-emerald-600 to-emerald-700 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-emerald-900/50">
-                    {isProcessing ? <Loader2 size={16} cls="animate-spin" /> : <><CheckCircle2 size={16}/> 核准</>}
-                  </button>
-                  <button onClick={() => handleAdjust(selectedReport.id)} disabled={isProcessing} className="bg-gradient-to-r from-rose-600 to-rose-700 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-rose-900/50">
-                    {isProcessing ? <Loader2 size={16} cls="animate-spin" /> : <><AlertCircle size={16}/> 調整對帳</>}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    // ===================== 視圖: 人員管理 (補上自訂確認框與 try-catch) =====================
-    const StaffView = ({ setView, staffList, showToast }) => {
-      const [confirmDialog, setConfirmDialog] = useState(null);
-      const [isProcessing, setIsProcessing] = useState(false);
-
-      const roleLabel = (role) => ({ DRIVER: '司機夥伴', ACCOUNTANT: '管理員' })[role] || role;
-      const roleColor = (role) => role === 'ACCOUNTANT' ? 'bg-violet-500/20 text-violet-300 border-violet-500/30' : 'bg-sky-500/20 text-sky-300 border-sky-500/30';
-
-      const handleRoleChange = async (userId, newRole) => {
-        try {
-          const { db, updateDoc, doc } = window._firebaseAPI;
-          await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userId), { role: newRole });
-          showToast(`已更改權限為 ${roleLabel(newRole)}`, 'success');
-        } catch (e) {
-          showToast('更改權限失敗，請重試', 'error');
-        }
-      };
-
-      const executeDelete = async (userId) => {
-        setIsProcessing(true);
-        try {
-          const { db, deleteDoc, doc, collection, getDocs } = window._firebaseAPI;
-          // 刪除使用者
-          await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userId));
-          
-          // 抓取並刪除該使用者的孤立歷史回報
-          const reportsSnap = await getDocs(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports'));
-          const userReports = reportsSnap.docs.filter(d => d.data().driverName === userId);
-          for (const r of userReports) {
-            await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports', r.id));
-          }
-          
-          showToast(`已刪除帳號與相關回報`, 'success');
-        } catch (e) {
-          showToast('刪除失敗，請檢查網路狀態', 'error');
-        }
-        setIsProcessing(false);
-        setConfirmDialog(null);
-      };
-
-      return (
-        <div className="min-h-screen bg-[#080c1a] text-white flex flex-col">
-          <div className="fixed inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-40 -left-40 w-80 h-80 bg-violet-900/20 rounded-full blur-3xl" />
-          </div>
-          <PageHeader title="人員與權限管理" onBack={() => setView('PORTAL')} />
-
-          <div className="relative flex-grow p-4 space-y-3 overflow-y-auto">
-            <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4 mb-2 flex items-center gap-2">
-              <Info size={16} cls="text-violet-400" />
-              <p className="text-xs text-violet-300 font-bold">系統內共有 {staffList.length} 位成員</p>
-            </div>
-
-            {staffList.map(staff => (
-              <div key={staff.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3 transition-all hover:bg-white/10">
-                <div className="w-11 h-11 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0">
-                  {staff.userName?.[0] || '?'}
-                </div>
-                <div className="flex-grow min-w-0">
-                  <p className="font-black text-sm truncate">{staff.userName}</p>
-                  <span className={`inline-block mt-1 text-[10px] font-black px-2 py-0.5 rounded-full border ${roleColor(staff.role)}`}>
-                    {roleLabel(staff.role)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button onClick={() => handleRoleChange(staff.id, staff.role === 'DRIVER' ? 'ACCOUNTANT' : 'DRIVER')} className="w-9 h-9 bg-indigo-500/20 border border-indigo-500/30 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="切換角色">
-                    <UserCog size={15} cls="text-indigo-400" />
-                  </button>
-                  <button onClick={() => setConfirmDialog(staff.id)} className="w-9 h-9 bg-rose-500/20 border border-rose-500/30 rounded-xl flex items-center justify-center active:scale-95 transition-all" title="刪除帳號">
-                    <Trash2 size={15} cls="text-rose-400" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 漂亮的自訂警告 Modal 取代原生的 confirm() */}
-          {confirmDialog && (
-            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade">
-              <div className="bg-[#0f1629] border border-white/10 rounded-3xl w-full max-w-xs p-6 shadow-2xl animate-zoom text-center">
-                <div className="w-16 h-16 bg-rose-500/20 rounded-full mx-auto flex items-center justify-center mb-4">
-                  <Trash2 size={28} cls="text-rose-500" />
-                </div>
-                <h3 className="text-lg font-black text-white mb-2">確認刪除帳號？</h3>
-                <p className="text-xs text-slate-400 font-medium mb-6">
-                  您即將刪除 <span className="text-rose-400 font-bold">{confirmDialog}</span> 的帳號以及所有歷史回報紀錄。此操作無法復原。
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => setConfirmDialog(null)} disabled={isProcessing} className="py-3.5 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold text-slate-300 active:scale-95 transition-all">
-                    取消
-                  </button>
-                  <button onClick={() => executeDelete(confirmDialog)} disabled={isProcessing} className="py-3.5 bg-gradient-to-r from-rose-600 to-rose-700 shadow-lg shadow-rose-900/50 rounded-2xl text-sm font-black text-white flex items-center justify-center gap-2 active:scale-95 transition-all">
-                    {isProcessing ? <Loader2 size={16} cls="animate-spin" /> : '確認刪除'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    // ===================== 主程式 App =====================
-    const App = () => {
-      const [firebaseReady, setFirebaseReady] = useState(false);
-      const [user, setUser] = useState(null);
-
-      // 全域 Toast 狀態
-      const [toast, setToast] = useState(null);
-      
-      const showToast = useCallback((msg, type = 'info') => {
-        setToast({ msg, type });
-        setTimeout(() => setToast(null), 3000);
-      }, []);
-
-      // 視圖狀態
-      const [view, setView] = useState('PORTAL');
-      const [step, setStep] = useState('NAME');
-
-      // 使用者狀態
-      const [userName, setUserName] = useState("");
-      const [pin, setPin] = useState("");
-      const [userRole, setUserRole] = useState('DRIVER');
-      const [isNewUser, setIsNewUser] = useState(false);
-      const [isProcessing, setIsProcessing] = useState(false);
-
-      // 支援視窗狀態
-      const [showSupport, setShowSupport] = useState(false);
-      const [supportMessages, setSupportMessages] = useState([
-        { role: 'office', text: '你好！有任何問題請告訴我們。', time: '系統' }
-      ]);
-      const scrollRef = useRef(null);
-
-      // 系統資料
-      const [reports, setReports] = useState([]);
-      const [staffList, setStaffList] = useState([]);
-
-      // 監聽 Firebase
-      useEffect(() => {
-        let unsubscribeAuth = () => {};
-
-        const initFirebase = async () => {
-          if (!window._firebaseAPI) return;
-          const { auth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window._firebaseAPI;
-
-          unsubscribeAuth = onAuthStateChanged(auth, (u) => {
-            setUser(u);
-            setFirebaseReady(true);
-          });
-
-          try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-              await signInAnonymously(auth);
-            }
-          } catch (error) {
-            console.error("Auth init error:", error);
-            setFirebaseReady(true);
-          }
-        };
-
-        if (window._firebaseAPI) {
-          initFirebase();
-        } else {
-          const handleFirebaseReady = () => initFirebase();
-          window.addEventListener('firebase-ready', handleFirebaseReady);
-          return () => {
-            window.removeEventListener('firebase-ready', handleFirebaseReady);
-            unsubscribeAuth();
-          };
-        }
-        return () => unsubscribeAuth();
-      }, []);
-
-      useEffect(() => {
-        if (!firebaseReady || !user || userRole !== 'ACCOUNTANT' || step !== 'LOGGED_IN') return;
-        const { db, collection, query, onSnapshot } = window._firebaseAPI;
-
-        const unsubReports = onSnapshot(query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'daily_reports')), (snap) => {
-          const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp - a.timestamp);
-          setReports(data);
-        }, (err) => console.error(err));
-
-        const unsubStaff = onSnapshot(query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'users')), (snap) => {
-          const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setStaffList(data);
-        }, (err) => console.error(err));
-
-        return () => { unsubReports(); unsubStaff(); };
-      }, [firebaseReady, user, userRole, step]);
-
-      useEffect(() => {
-        if (showSupport && scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-      }, [supportMessages, showSupport]);
-
-      // 登入流程 (防堵名稱衝突與實作 PIN 雜湊)
-      const handleNameSubmit = async (e) => {
-        e.preventDefault();
-        if (!userName.trim() || !firebaseReady || !user) return;
-        setIsProcessing(true);
-        try {
-          const { db, getDoc, doc } = window._firebaseAPI;
-          const userSnap = await getDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userName));
-          
-          if (userSnap.exists()) {
-            setIsNewUser(false);
-          } else {
-            setIsNewUser(true);
-            showToast('此名稱尚未註冊，請設定您的 PIN 碼', 'info');
-          }
-          setStep('PIN');
-        } catch (err) {
-          showToast('網路連線錯誤，請稍後再試', 'error');
-        }
-        setIsProcessing(false);
-      };
-
-      const handlePinSubmit = async (e) => {
-        e.preventDefault();
-        if (!pin || pin.length !== 4 || !firebaseReady || !user) return;
-        setIsProcessing(true);
-        try {
-          const { db, getDoc, setDoc, doc } = window._firebaseAPI;
-          const userRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', userName);
-          const secureHashedPin = await hashString(pin); // 加密使用者的 PIN
-          
-          if (isNewUser) {
-            // 新使用者：存入加密後的密碼
-            await setDoc(userRef, { userName, pin: secureHashedPin, role: 'DRIVER', createdAt: Date.now() });
-            setUserRole('DRIVER');
-            setStep('LOGGED_IN');
-            showToast('註冊成功並已登入', 'success');
-          } else {
-            // 既有使用者驗證
-            const userData = (await getDoc(userRef)).data();
-            // 相容檢查：舊明文密碼 or 新的雜湊密碼
-            if (userData.pin === pin || userData.pin === secureHashedPin) {
-              setUserRole(userData.role || 'DRIVER');
-              setStep('LOGGED_IN');
-            } else {
-              showToast('口令錯誤，請重新輸入', 'error');
-              setPin("");
-            }
-          }
-        } catch (err) {
-          showToast('系統錯誤，請稍後再試', 'error');
-        }
-        setIsProcessing(false);
-      };
-
-      if (!firebaseReady) {
-        return <div className="min-h-screen bg-[#080c1a] flex items-center justify-center text-white"><Loader2 size={32} cls="animate-spin text-indigo-500" /></div>;
-      }
-
-      return (
-        <>
-          {/* 全域超有質感的 Toast 提示取代原生 alert */}
-          {toast && (
-            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-toast">
-              <div className={`px-5 py-3 rounded-full shadow-2xl font-black text-sm text-white flex items-center gap-2 border border-white/20 ${toast.type === 'error' ? 'bg-gradient-to-r from-rose-600 to-rose-700 shadow-rose-900/50' : toast.type === 'success' ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 shadow-emerald-900/50' : 'bg-gradient-to-r from-indigo-600 to-violet-600 shadow-indigo-900/50'}`}>
-                {toast.type === 'error' ? <AlertCircle size={16} /> : toast.type === 'success' ? <CheckCircle2 size={16} /> : <Info size={16} />}
-                {toast.msg}
-              </div>
-            </div>
-          )}
-
-          {/* 路由分發 */}
-          {view === 'PORTAL' && <PortalView step={step} setStep={setStep} userName={userName} setUserName={setUserName} pin={pin} setPin={setPin} userRole={userRole} setUserRole={setUserRole} isNewUser={isNewUser} isProcessing={isProcessing} handleNameSubmit={handleNameSubmit} handlePinSubmit={handlePinSubmit} setView={setView} showToast={showToast} showSupport={showSupport} setShowSupport={setShowSupport} supportMessages={supportMessages} setSupportMessages={setSupportMessages} scrollRef={scrollRef} />}
-          {view === 'DRIVER' && <DriverView setView={setView} userName={userName} showToast={showToast} />}
-          {view === 'ACCOUNTANT' && <AccountantView setView={setView} reports={reports} userName={userName} showToast={showToast} />}
-          {view === 'STAFF' && <StaffView setView={setView} staffList={staffList} showToast={showToast} />}
-          {view === 'INTERVIEW' && <InterviewView setView={setView} userName={userName} showToast={showToast} />}
-        </>
-      );
-    };
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
-
+    </div>
+  );
+}
 
