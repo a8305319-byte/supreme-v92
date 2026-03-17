@@ -1,25 +1,33 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>在地物流有限公司 | Alpha Core v3.0</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        oledBlack: '#000000',
+                        neonCyan: '#22d3ee',
+                        neonRose: '#f43f5e',
+                        neonAmber: '#fbbf24',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-      /* 確保背景 OLED 純黑，防止載入時閃白 */
-      body {
-        background-color: #000000;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-      }
+        body { background-color: #000000; color: white; margin: 0; padding: 0; }
+        #root { min-height: 100vh; }
+        /* 隱藏滾動條但保持功能 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
-  </head>
-  <body>
+</head>
+<body class="no-scrollbar">
     <div id="root"></div>
-
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+</body>
 </html>
