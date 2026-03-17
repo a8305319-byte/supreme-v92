@@ -1,216 +1,25 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supreme-V92 | Business OS</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>在地物流有限公司 | Alpha Core v3.0</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        :root {
-            --primary-color: #00ffcc;
-            --bg-dark: #1a1a2e;
-            --text-gray: #a0a0a0;
-        }
-
-        body {
-            margin: 0;
-            background-color: var(--bg-dark);
-            color: white;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            transition: filter 0.5s ease;
-        }
-
-        .fallback-active {
-            filter: blur(5px) grayscale(0.5);
-            pointer-events: none;
-        }
-
-        #v92-resilience-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 9999;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-
-        .spinner {
-            border: 4px solid rgba(0, 255, 204, 0.1);
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            width: 50px; height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .status-tag {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            border: 1px solid var(--primary-color);
-        }
-
-        section {
-            display: flex;
-            gap: 15px;
-            max-width: 1200px;
-            margin-top: 20px;
-        }
-
-        #user-input {
-            flex: 1;
-            padding: 12px;
-            background: #0f3460;
-            border: none;
-            color: white;
-            border-radius: 4px;
-            outline: none;
-        }
-
-        #user-input:focus {
-            box-shadow: 0 0 5px var(--primary-color);
-        }
-
-        button {
-            padding: 10px 25px;
-            background: var(--primary-color);
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: transform 0.1s;
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        .typing-hint {
-            border-right: 2px solid var(--primary-color);
-            animation: blink 0.8s infinite;
-        }
-        @keyframes blink { 50% { border-color: transparent; } }
-
-        /* 訊息氣泡樣式 */
-        .msg { margin-bottom: 15px; padding: 10px; border-radius: 6px; }
-        .user-msg { background: #16213e; border-left: 3px solid var(--primary-color); }
-        .alpha-msg { background: #0f3460; border-left: 3px solid var(--text-gray); }
+      /* 確保背景 OLED 純黑，防止載入時閃白 */
+      body {
+        background-color: #000000;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div id="root"></div>
 
-    <div id="app-root">
-        <header style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-            <h1>Supreme-V92 <span style="font-size: 14px; color: var(--text-gray);">Alpha Core</span></h1>
-            <div id="connection-status" class="status-tag">系統連線中</div>
-        </header>
-
-        <main style="padding: 20px;">
-            <div id="output-area" style="min-height: 300px; border: 1px solid #333; padding: 15px; border-radius: 8px; background: #16213e; line-height: 1.6; overflow-y: auto; max-height: 60vh;">
-                等待指令中...
-            </div>
-            
-            <section>
-                <input type="text" id="user-input" placeholder="請輸入指令...">
-                <button onclick="handleSend()">傳送</button>
-            </section>
-        </main>
-    </div>
-
-    <div id="v92-resilience-overlay">
-        <div class="spinner"></div>
-        <h2 style="color: var(--primary-color);">Alpha 正在深度加密通訊</h2>
-        <p style="color: var(--text-gray);">系統已自動切換至「故障安全預覽模式」<br>請稍候，管家正在為您處理...</p>
-    </div>
-
-    <script>
-        const RESILIENCE_TIMEOUT = 10000;
-        const overlay = document.getElementById('v92-resilience-overlay');
-        const mainUI = document.getElementById('app-root');
-        const statusTag = document.getElementById('connection-status');
-        const userInput = document.getElementById('user-input');
-        const outputArea = document.getElementById('output-area');
-
-        // 【細心助理：恢復草稿】
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedDraft = localStorage.getItem('v92_draft');
-            if (savedDraft) {
-                userInput.value = savedDraft;
-                console.log("助理：老闆，已恢復草稿。");
-            }
-        });
-
-        // 【細心助理：自動記憶】
-        userInput.addEventListener('input', () => {
-            localStorage.setItem('v92_draft', userInput.value);
-        });
-
-        async function alphaAnalyze(data) {
-            let isTimedOut = false;
-            const timeoutTrigger = setTimeout(() => {
-                isTimedOut = true;
-                activateResilienceMode();
-            }, RESILIENCE_TIMEOUT);
-
-            try {
-                // 模擬請求，目前先用延遲模擬後端處理
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                clearTimeout(timeoutTrigger);
-                deactivateResilienceMode();
-                return { reply: "指令已接收，正在對接邏輯中..." };
-            } catch (error) {
-                clearTimeout(timeoutTrigger);
-                activateResilienceMode();
-                return null;
-            }
-        }
-
-        function activateResilienceMode() {
-            overlay.style.display = 'flex';
-            mainUI.classList.add('fallback-active');
-            statusTag.textContent = "加密模式 (Offline)";
-            statusTag.style.borderColor = "#ff4d4d";
-        }
-
-        function deactivateResilienceMode() {
-            overlay.style.display = 'none';
-            mainUI.classList.remove('fallback-active');
-            statusTag.textContent = "系統連線中";
-            statusTag.style.borderColor = "#00ffcc";
-        }
-
-        async function handleSend() {
-            const input = userInput.value.trim();
-            if(!input) return;
-            
-            if(outputArea.innerText === "等待指令中...") outputArea.innerHTML = '';
-            
-            // 顯示用戶訊息
-            outputArea.innerHTML += `<div class="msg user-msg"><b>您：</b>${input}</div>`;
-            
-            localStorage.removeItem('v92_draft');
-            userInput.value = '';
-
-            // 助理優化：模擬人性化節奏，不秒回
-            const loadingMsg = document.createElement('div');
-            loadingMsg.className = 'msg alpha-msg';
-            loadingMsg.innerHTML = '<span class="typing-hint">Alpha 正在研讀指令...</span>';
-            outputArea.appendChild(loadingMsg);
-            outputArea.scrollTop = outputArea.scrollHeight;
-            
-            const result = await alphaAnalyze({ prompt: input });
-            
-            if (result) {
-                loadingMsg.innerHTML = `<b>Alpha：</b>${result.reply}`;
-            }
-            outputArea.scrollTop = outputArea.scrollHeight;
-        }
-    </script>
-</body>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
