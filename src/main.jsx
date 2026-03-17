@@ -549,4 +549,11 @@ const App = () => {
       {/* 公佈欄發布 Modal */}
       {isBulletinOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300">
-           <div className="glass-card max-w-sm w-full p-8 space-y-6"><h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3 text-amber-400"><Megaphone /> 廣播發布</h3><textarea placeholder="對司機端發布最新公告內容..." value={tempBulletin} onChange={e => setTempBulletin(e.target.value)} className="w-full h-32 bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none text-white focus:border-cyan-500/50 resize-none font-bold" /><div className="flex gap-4"><button onClick={() => setIsBulletinOpen(false)} className="flex-1 py-4 text-white/40 text-xs font-bold uppercase tracking-widest uppercase">取消</button><button onClick={() => { setBulletin(tempBulletin); setIsBulletinOpen(false); setTempBulletin(""); logAction('發布公告', tempBulletin.substring(0,10)+'...'); }} className
+           <div className="glass-card max-w-sm w-full p-8 space-y-6"><h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3 text-amber-400"><Megaphone /> 廣播發布</h3><textarea placeholder="對司機端發布最新公告內容..." value={tempBulletin} onChange={e => setTempBulletin(e.target.value)} className="w-full h-32 bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none text-white focus:border-cyan-500/50 resize-none font-bold" /><div className="flex gap-4"><button onClick={() => setIsBulletinOpen(false)} className="flex-1 py-4 text-white/40 text-xs font-bold uppercase tracking-widest uppercase">取消</button><button onClick={() => { setBulletin(tempBulletin); setIsBulletinOpen(false); setTempBulletin(""); logAction('發布公告', tempBulletin.substring(0,10)+'...'); }} className="flex-[2] py-4 bg-amber-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl btn-tactile uppercase">確認發布並同步</button></div></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
