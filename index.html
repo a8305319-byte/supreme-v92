@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>在地物流有限公司 | Alpha Core v3.0</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        oledBlack: '#000000',
+                        neonCyan: '#22d3ee',
+                        neonRose: '#f43f5e',
+                        neonAmber: '#fbbf24',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { 
+            background-color: #000000 !important; 
+            color: #ffffff !important; 
+            margin: 0; 
+            padding: 0; 
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        #root { min-height: 100vh; }
+
+        /* 強制按鈕現形：賦予霓虹藍背景與高度 */
+        button {
+            min-height: 50px !important;
+            background-color: #22d3ee !important; 
+            color: #000000 !important;
+            border-radius: 14px !important;
+            font-weight: 900 !important;
+            text-transform: uppercase !important;
+            border: none !important;
+            cursor: pointer !important;
+            padding: 0 24px !important;
+            margin: 8px 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100%;
+        }
+
+        /* 強制輸入框現形 */
+        input {
+            background: rgba(255,255,255,0.1) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            color: #22d3ee !important;
+            padding: 16px !important;
+            border-radius: 12px !important;
+            width: 100% !important;
+            margin-bottom: 12px !important;
+            box-sizing: border-box !important;
+        }
+
+        /* 隱藏捲軸 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="no-scrollbar">
+    <div id="root"></div>
+
+    <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
