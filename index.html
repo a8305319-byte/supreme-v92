@@ -3,24 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>在地物流有限公司 | Alpha Core</title>
+    <title>在地物流有限公司 | Alpha Core v3.0</title>
+    
+    <style>
+        :root { --neon-cyan: #22d3ee; --oled-black: #000000; }
+        body { background-color: var(--oled-black) !important; color: white !important; margin: 0; padding: 0; font-family: sans-serif; }
+        #root { min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* 物理級補償樣式：強制讓按鈕具備高度與背景色 */
+        button { 
+            min-height: 50px !important; 
+            background-color: var(--neon-cyan) !important; 
+            color: black !important;
+            border-radius: 1rem !important;
+            border: none !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900 !important;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        input { 
+            background: rgba(255,255,255,0.1) !important; 
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            color: white !important;
+            padding: 15px !important;
+            border-radius: 12px !important;
+            margin-bottom: 10px;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { oledBlack: '#000000', neonCyan: '#22d3ee', neonRose: '#f43f5e' } } }
+            theme: { extend: { colors: { oledBlack: '#000000', neonCyan: '#22d3ee' } } }
         }
     </script>
-    <style>
-        body { background-color: #000000 !important; color: #ffffff !important; margin: 0; }
-        #root { min-height: 100vh; display: flex; flex-direction: column; }
-        /* 強制讓所有按鈕具備高度與背景色，防止樣式引擎失效 */
-        button { min-height: 44px; display: flex; align-items: center; justify-content: center; }
-        .glass-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-    </style>
 </head>
 <body class="no-scrollbar">
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+
+    <script type="module">
+        import "/src/main.jsx";
+    </script>
 </body>
 </html>
