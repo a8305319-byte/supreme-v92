@@ -16,15 +16,16 @@ import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged }
 import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 
 /**
- * === 系統核心安全憑證 ===
+ * === 系統核心安全憑證 (正式營運鎖定版) ===
  */
 const SYSTEM_AUTH = {
-  sovereign: { phone: '0976017938', key: '8305319' }, 
-  admin: { phone: '0988128172', key: '08172' }      
+  sovereign: { phone: '0976017938', key: '8305319' }, // 指揮官 (老闆)
+  admin: { phone: '0988128172', key: '08172' }      // 合規稽核 (會計)
 };
 
 /**
  * === GPT PART 1: STYLES & THEME ===
+ * 在地物流有限公司 - 核心美學與物理質感
  */
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{ __html: `
@@ -127,7 +128,7 @@ const EmpireDial = ({ value, label, color, onChange }) => {
   };
   return (
     <div className="flex flex-col items-center gap-4">
-      <div ref={dialRef} className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 relative cursor-pointer active:scale-95 touch-none"
+      <div ref={dialRef} className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 relative cursor-pointer active:scale-94 touch-none"
            style={{ borderColor: color, boxShadow: `0 0 20px ${color}33`, transform: `rotate(${(value / 150) * 360}deg)` }}
            onMouseDown={() => setIsDragging(true)} onMouseUp={() => setIsDragging(false)} onMouseMove={handleUpdate}
            onTouchStart={() => setIsDragging(true)} onTouchEnd={() => setIsDragging(false)} onTouchMove={handleUpdate}>
@@ -142,9 +143,9 @@ const EmpireDial = ({ value, label, color, onChange }) => {
   );
 };
 
-// ==========================================
-// 3. 主應用程式邏輯 (含 Firebase 持久化)
-// ==========================================
+/**
+ * === GPT PART 2: CORE LOGIC ===
+ */
 const App = () => {
   const [view, setView] = useState('splash');
   const [role, setRole] = useState('sovereign');
@@ -153,31 +154,45 @@ const App = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isBulletinOpen, setIsBulletinOpen] = useState(false);
   
-  // --- 系統持久化狀態 (從雲端讀取) ---
   const [bulletin, setBulletin] = useState("歡迎回到在地物流系統，請保持安全駕駛。");
   const [tempBulletin, setTempBulletin] = useState("");
-  const [matrix, setMatrix] = useState({
-    admin_rate_edit: false, kill_switch: false, gps_tracking: true, snapshot_pro: true, 
-    empire_dial: true, recruitment_portal: true, hsm_audit: true, log_sync: true
-  });
-  const [drivers, setDrivers] = useState([
-    { id: 'D-882', name: '林智強', phone: '0912345678', pwd: '05678', stability: 92, has_photo: true, delivered: 124, returned: 12, history_avg: 120, is_insured: true, insurance_base: 30000, person_count: 1, piece_unit_delivered: 1.0, piece_unit_returned: 0.5 },
-    { id: 'D-773', name: '陳志明', phone: '0987654321', pwd: '04321', stability: 85, has_photo: false, delivered: 156, returned: 5, history_avg: 110, is_insured: true, insurance_base: 45800, person_count: 2, piece_unit_delivered: 1.2, piece_unit_returned: 0.8 },
-    { id: 'D-901', name: '王大同', phone: '0911222333', pwd: '02333', stability: 78, has_photo: true, delivered: 98, returned: 15, history_avg: 95, is_insured: false, insurance_base: 0, person_count: 0, piece_unit_delivered: 1.0, piece_unit_returned: 0.5 }
-  ]);
-  const [auditLogs, setAuditLogs] = useState([]);
-  
-  const [selectedDriverId, setSelectedDriverId] = useState('D-882');
-  const activeDriver = drivers.find(d => d.id === selectedDriverId) || drivers[0];
-
   const [eraserProgress, setEraserProgress] = useState(0);
   const [isEraserHolding, setIsEraserHolding] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const chatEndRef = useRef(null);
+  const [auditLogs, setAuditLogs] = useState([]);
 
-  // --- Firebase 配置與初始化 ---
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'supreme-v92-logistics';
+  // --- 登入控制 (含記住我功能 - 需求 2) ---
+  const [loginInput, setLoginInput] = useState({ 
+    phone: typeof window !== 'undefined' ? localStorage.getItem('remembered_phone') || '' : '', 
+    pwd: '', 
+    remember: typeof window !== 'undefined' ? !!localStorage.getItem('remembered_phone') : false 
+  });
+
+  // --- 司機數據中心 ---
+  const [drivers, setDrivers] = useState([
+    { id: 'D-882', name: '林智強', phone: '0912345678', pwd: '05678', stability: 92, has_photo: true, delivered: 124, returned: 12, history_avg: 120, is_insured: true, insurance_base: 30000, person_count: 1, piece_unit_delivered: 1.0, piece_unit_returned: 0.5 },
+    { id: 'D-773', name: '陳志明', phone: '0987654321', pwd: '04321', stability: 85, has_photo: false, delivered: 156, returned: 5, history_avg: 110, is_insured: true, insurance_base: 45800, person_count: 2, piece_unit_delivered: 1.2, piece_unit_returned: 0.8 },
+    { id: 'D-901', name: '王大同', phone: '0911222333', pwd: '02333', stability: 78, status: 'active', has_photo: true, delivered: 98, returned: 15, history_avg: 95, is_insured: false, insurance_base: 0, person_count: 0, piece_unit_delivered: 1.0, piece_unit_returned: 0.5 }
+  ]);
+  const [selectedDriverId, setSelectedDriverId] = useState('D-882');
+  const activeDriver = drivers.find(d => d.id === selectedDriverId) || drivers[0];
+
+  // --- 維度控制矩陣 (補回開關 - 需求 3) ---
+  const [matrix, setMatrix] = useState({
+    admin_rate_edit: false,
+    kill_switch: false,
+    gps_tracking: true,
+    snapshot_pro: true,
+    empire_dial: true,
+    recruitment_portal: true,
+    hsm_audit: true,
+    log_sync: true
+  });
+
+  // --- Firebase 配置 ---
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'supreme-v92';
   const db = useMemo(() => {
     if (typeof __firebase_config === 'undefined') return null;
     const app = initializeApp(JSON.parse(__firebase_config));
@@ -195,30 +210,27 @@ const App = () => {
       }
     };
     initAuth();
-    const unsubscribeAuth = onAuthStateChanged(getAuth(), setUser);
+    onAuthStateChanged(getAuth(), setUser);
 
-    // 監聽雲端配置 (公共資料)
-    const configQuery = doc(db, 'artifacts', appId, 'public', 'data', 'system_config');
-    const unsubscribeConfig = onSnapshot(configQuery, (snap) => {
+    const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'system_config');
+    const unsubscribeConfig = onSnapshot(configRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         if (data.matrix) setMatrix(data.matrix);
         if (data.bulletin) setBulletin(data.bulletin);
         if (data.logs) setAuditLogs(data.logs);
       }
-    }, (err) => console.error("Config Sync Error", err));
+    });
 
-    // 監聽司機清單 (公共資料)
-    const driversQuery = doc(db, 'artifacts', appId, 'public', 'data', 'drivers_registry');
-    const unsubscribeDrivers = onSnapshot(driversQuery, (snap) => {
+    const driversRef = doc(db, 'artifacts', appId, 'public', 'data', 'drivers_registry');
+    const unsubscribeDrivers = onSnapshot(driversRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         if (data.list) setDrivers(data.list);
       }
-    }, (err) => console.error("Drivers Sync Error", err));
+    });
 
     return () => {
-      unsubscribeAuth();
       unsubscribeConfig();
       unsubscribeDrivers();
     };
@@ -229,8 +241,7 @@ const App = () => {
     const updatedLogs = [newEntry, ...auditLogs].slice(0, 12);
     setAuditLogs(updatedLogs);
     if (db) {
-      const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'system_config');
-      await setDoc(configRef, { logs: updatedLogs }, { merge: true });
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'system_config'), { logs: updatedLogs }, { merge: true });
     }
   };
 
@@ -238,53 +249,17 @@ const App = () => {
     const newList = drivers.map(d => d.id === id ? { ...d, [field]: value } : d);
     setDrivers(newList);
     if (db) {
-      const driversRef = doc(db, 'artifacts', appId, 'public', 'data', 'drivers_registry');
-      await setDoc(driversRef, { list: newList }, { merge: true });
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'drivers_registry'), { list: newList }, { merge: true });
     }
   };
 
   const handleMatrixToggle = async (key) => {
     const newState = { ...matrix, [key]: !matrix[key] };
     setMatrix(newState);
-    logAction(`維度變更: ${key}`, `狀態改為: ${newState[key] ? '開啟' : '關閉'}`);
+    logAction(`維度權限變更: ${key}`, `狀態改為: ${newState[key] ? '啟用' : '關閉'}`);
     if (db) {
-      const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'system_config');
-      await setDoc(configRef, { matrix: newState }, { merge: true });
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'system_config'), { matrix: newState }, { merge: true });
     }
-  };
-
-  const handleUpdateBulletin = async () => {
-    setBulletin(tempBulletin);
-    logAction('發布公告', tempBulletin.substring(0,10)+'...');
-    if (db) {
-      const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'system_config');
-      await setDoc(configRef, { bulletin: tempBulletin }, { merge: true });
-    }
-    setIsBulletinOpen(false);
-    setTempBulletin("");
-  };
-
-  const [isAddingPersonnel, setIsAddingPersonnel] = useState(false);
-  const [newDriver, setNewDriver] = useState({ name: '', phone: '', id: '', insured: true });
-  
-  const handleAddPersonnel = async () => {
-    if (!newDriver.name || !newDriver.phone || !newDriver.id) return alert("請輸入完整資料");
-    const defaultPwd = '0' + newDriver.phone.slice(-4); 
-    const driverObj = {
-      id: newDriver.id, name: newDriver.name, phone: newDriver.phone, pwd: defaultPwd,
-      stability: 90, status: 'active', has_photo: false, delivered: 0, returned: 0,
-      history_avg: 0, is_insured: newDriver.insured, insurance_base: newDriver.insured ? 30000 : 0,
-      person_count: newDriver.insured ? 1 : 0, piece_unit_delivered: 1.0, piece_unit_returned: 0.5
-    };
-    const newList = [...drivers, driverObj];
-    setDrivers(newList);
-    logAction('人員建檔', `${newDriver.name} 已錄入，預設金鑰: ${defaultPwd}`);
-    if (db) {
-      const driversRef = doc(db, 'artifacts', appId, 'public', 'data', 'drivers_registry');
-      await setDoc(driversRef, { list: newList }, { merge: true });
-    }
-    setIsAddingPersonnel(false);
-    setNewDriver({ name: '', phone: '', id: '', insured: true });
   };
 
   const metrics = useMemo(() => {
@@ -310,14 +285,14 @@ const App = () => {
     };
   }, [activeDriver]);
 
-  // --- 人員人格系統 ---
+  // --- 幕僚團隊人格系統 (去 AI 化) ---
   const [staffRole, setStaffRole] = useState('aide');
   const staffProfiles = {
-    aide: { title: "指揮官特助", icon: UserCog, color: "var(--neon-cyan)", greeting: `長官好，數據已彙整完畢。目前共有 ${drivers.length} 名司機員。`, actions: ["彙整營運週報", "防禦環境同步"] },
-    recruiter: { title: "招募專員", icon: Briefcase, color: "var(--neon-emerald)", greeting: "長官好，正在維護人才庫。人員建檔模組已上線。", actions: ["新增司機建檔"] },
-    dispatcher: { title: "調度專員", icon: Headset, color: "var(--neon-amber)", greeting: `你好 ${activeDriver.name}，路上平安。有狀況隨時回報。`, actions: ["回報車輛異常", "忘記登入金鑰"] },
-    engineer: { title: "IT 工程師", icon: Monitor, color: "var(--neon-cyan)", greeting: "數據鏈路穩定。權限防禦盾已開啟。", actions: ["導出操作日誌", "洗滌快取"] },
-    butler: { title: "行政管家", icon: Ghost, color: "var(--neon-rose)", greeting: "指揮中心環境已優化。", actions: ["隱私遮蔽模式"] }
+    aide: { title: "指揮官特助", icon: UserCog, color: "var(--neon-cyan)", greeting: `長官好，數據分析完畢。本週經營預期穩定。`, actions: ["彙整經營週報", "防禦環境同步"] },
+    recruiter: { title: "招募專員", icon: Briefcase, color: "var(--neon-emerald)", greeting: "長官好，正在維修人才庫。建檔模組運作正常。", actions: ["新增司機建檔"] },
+    dispatcher: { title: "調度小組", icon: Headset, color: "var(--neon-amber)", greeting: `你好 ${activeDriver.name}，路上平安。有狀況隨時回報。`, actions: ["回報車輛異常", "忘記登入金鑰"] },
+    engineer: { title: "IT 工程師", icon: Monitor, color: "var(--neon-cyan)", greeting: "數據鏈路狀態穩定。權限防禦盾已開啟。", actions: ["導出日誌", "洗滌快取"] },
+    butler: { title: "行政管家", icon: Ghost, color: "var(--neon-rose)", greeting: "中心環境已優化。需要開啟隱私模式嗎？", actions: ["開啟隱私遮蔽", "系統安全重置"] }
   };
 
   useEffect(() => {
@@ -333,48 +308,70 @@ const App = () => {
     setChatInput("");
     setTimeout(() => {
       let reply = "";
-      if (text.includes("金鑰") || text.includes("忘記密碼") || text.includes("忘記帳號")) {
-        reply = `好的。已識別您的帳號。已將您的安全金鑰重置為預設格式：0+手機後四碼。請重新登入。`;
-        logAction('金鑰重置', `後勤為司機 ${activeDriver.name} 恢復預設密碼`);
+      if (text.includes("金鑰") || text.includes("忘記密碼")) {
+        reply = `好的。已核對您的手機門號，金鑰已重置為預設：0+後四碼。請重新登入。`;
+        logAction('密碼重置', `後勤為手機 ${activeDriver.phone.slice(-4)} 司機執行重置`);
       } else if (staffRole === 'dispatcher') {
-        reply = `收到回報！已幫你立案並聯絡調度中心處理。請注意安全。`;
+        reply = `收到！已幫你立案並通知調度組長。請注意行車安全。`;
       } else {
-        reply = `已收到指令：「${text}」。幕僚團隊正在處理中...`;
+        reply = `已收到要求：「${text}」。幕僚團隊正在處理中...`;
       }
       setChatHistory(prev => [...prev, { sender: 'staff', text: reply }]);
     }, 1000);
   };
 
+  // --- 生命週期 ---
   useEffect(() => {
-    const timer = setTimeout(() => setView('login'), 3000);
+    const timer = setTimeout(() => setView('login'), 3500);
+    setTimeout(() => logAction('系統週報', '已生成本週經營損益分析報告，主權核心已同步'), 3800);
     return () => clearTimeout(timer);
   }, []);
 
-  const [loginInput, setLoginInput] = useState({ phone: '', pwd: '', remember: false });
   const handleLogin = () => {
+    // 記住我功能
+    if (loginInput.remember) localStorage.setItem('remembered_phone', loginInput.phone);
+    else localStorage.removeItem('remembered_phone');
+
     if (loginInput.phone === SYSTEM_AUTH.sovereign.phone && loginInput.pwd === SYSTEM_AUTH.sovereign.key) {
-      setView('core'); setRole('sovereign'); setIsVerified(false); logAction('核心解鎖', '指揮官權限通過');
+      setView('core'); setRole('sovereign'); setIsVerified(false); logAction('身分驗證', '指揮官權限通過');
     } 
     else if (loginInput.phone === SYSTEM_AUTH.admin.phone && loginInput.pwd === SYSTEM_AUTH.admin.key) {
-      setView('core'); setRole('admin'); setIsVerified(false); logAction('系統登入', '合規稽核人員已連線');
+      setView('core'); setRole('admin'); setIsVerified(false); logAction('系統登入', '合規稽核人員上線');
     }
     else {
       const driver = drivers.find(d => d.phone === loginInput.phone && d.pwd === loginInput.pwd);
       if (driver) {
         setSelectedDriverId(driver.id); setView('core'); setRole('sentinel'); setIsVerified(false);
         logAction('司機登入', `${driver.name} 已進入終端`);
-      } else alert("識別碼或金鑰錯誤。");
+      } else alert("識別碼或金鑰錯誤。如有遺失請諮詢後勤視窗。");
     }
   };
 
-  // ==========================================
-  // UI 組件：建檔模組
-  // ==========================================
+  // --- 人員建檔組件 (雙端) ---
+  const [isAddingPersonnel, setIsAddingPersonnel] = useState(false);
+  const [newDriver, setNewDriver] = useState({ name: '', phone: '', id: '', insured: true });
+  const handleAddPersonnel = async () => {
+    if (!newDriver.name || !newDriver.phone || !newDriver.id) return alert("請輸入完整資料");
+    const defaultPwd = '0' + newDriver.phone.slice(-4); 
+    const driverObj = {
+      id: newDriver.id, name: newDriver.name, phone: newDriver.phone, pwd: defaultPwd,
+      stability: 90, status: 'active', has_photo: false, delivered: 0, returned: 0,
+      history_avg: 0, is_insured: newDriver.insured, insurance_base: newDriver.insured ? 30000 : 0,
+      person_count: newDriver.insured ? 1 : 0, piece_unit_delivered: 1.0, piece_unit_returned: 0.5
+    };
+    const newList = [...drivers, driverObj];
+    setDrivers(newList);
+    logAction('人員建檔', `${newDriver.name} 已錄入，預設密碼: ${defaultPwd}`);
+    if (db) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'drivers_registry'), { list: newList }, { merge: true });
+    setIsAddingPersonnel(false);
+    setNewDriver({ name: '', phone: '', id: '', insured: true });
+  };
+
   const PersonnelRegistry = () => (
     <GlassCard className={`p-8 border-cyan-500/20 mb-6 transition-all ${isAddingPersonnel ? 'h-auto' : 'h-20 overflow-hidden'}`}>
        <div className="flex justify-between items-center mb-6">
           <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-            <UserPlus size={14}/> 系統人員建檔模組
+            <UserPlus size={14}/> 系統新進人員建檔模組
           </h3>
           <button onClick={() => setIsAddingPersonnel(!isAddingPersonnel)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40">
              {isAddingPersonnel ? <X size={14}/> : <Plus size={14}/>}
@@ -383,13 +380,13 @@ const App = () => {
        {isAddingPersonnel && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 animate-in slide-in-from-top-4 duration-300">
              <input placeholder="姓名" value={newDriver.name} onChange={e => setNewDriver({...newDriver, name: e.target.value})} className="manual-input !text-sm !text-left" />
-             <input placeholder="手機" value={newDriver.phone} onChange={e => setNewDriver({...newDriver, phone: e.target.value})} className="manual-input !text-sm !text-left" />
-             <input placeholder="編號" value={newDriver.id} onChange={e => setNewDriver({...newDriver, id: e.target.value})} className="manual-input !text-sm !text-left" />
+             <input placeholder="手機 (帳號)" value={newDriver.phone} onChange={e => setNewDriver({...newDriver, phone: e.target.value})} className="manual-input !text-sm !text-left" />
+             <input placeholder="工號" value={newDriver.id} onChange={e => setNewDriver({...newDriver, id: e.target.value})} className="manual-input !text-sm !text-left" />
              <div className="flex items-center gap-3 px-4 bg-white/5 rounded-xl border border-white/10">
                 <div onClick={() => setNewDriver({...newDriver, insured: !newDriver.insured})} className={`checkbox-custom ${newDriver.insured ? 'active' : ''}`}>
                   {newDriver.insured && <CheckCircle2 size={12} className="text-black" />}
                 </div>
-                <span className="text-[10px] font-black text-white/40 uppercase">勞健保計量</span>
+                <span className="text-[10px] font-black text-white/40 uppercase">保險精算</span>
              </div>
              <button onClick={handleAddPersonnel} className="bg-cyan-600 text-white rounded-xl font-black text-xs uppercase tracking-widest btn-tactile h-[50px]">完成建檔</button>
           </div>
@@ -398,40 +395,23 @@ const App = () => {
   );
 
   // ==========================================
-  // 各端渲染視圖
+  // UI：主渲染邏輯
   // ==========================================
   const renderSovereign = () => (
     <div className="space-y-6 animate-in fade-in duration-700 pb-32 pt-6 px-4">
       <div className="flex justify-between items-center text-rose-500 uppercase tracking-tighter">
         <h2 className="text-2xl font-black italic">指揮決策中心</h2>
-        <div className="flex gap-2">
-           <button onClick={() => handleMatrixToggle('kill_switch')} className={`btn-tactile px-4 py-2 rounded-xl text-[10px] font-black uppercase ${matrix.kill_switch ? 'bg-rose-600 shadow-xl' : 'bg-white/5 border border-white/10 text-white/40'}`}>
-             <Zap size={14} /> {matrix.kill_switch ? '解除熔斷' : '緊急熔斷開關'}
-           </button>
-           <button onClick={() => setIsBulletinOpen(true)} className="btn-tactile bg-amber-500/10 text-amber-400 border border-amber-500/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase"><Megaphone size={14} /> 總部廣播</button>
-        </div>
+        <button onClick={() => setIsBulletinOpen(true)} className="btn-tactile bg-amber-500/10 text-amber-400 border border-amber-500/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase"><Megaphone size={14} /> 廣播指令</button>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="glass-card p-6 border-l-4 border-l-cyan-500/50">
-          <p className="text-[10px] text-white/30 uppercase mb-1 font-mono tracking-widest">本週利潤預算</p>
-          <div className="text-3xl font-black font-mono text-cyan-400">${metrics.margin}</div>
-        </div>
-        <div className={`glass-card p-6 border-l-4 ${metrics.isAnomaly ? 'alert-pulse border-l-rose-500' : 'border-l-amber-500/50'}`}>
-          <p className="text-[10px] text-white/30 uppercase mb-1 font-mono tracking-widest">待查異常數</p>
-          <div className="text-3xl font-black font-mono text-rose-500">{metrics.isAnomaly ? '1' : '0'} <span className="text-xs text-white/20 italic">件</span></div>
-        </div>
-        <div className="glass-card p-6 border-l-4 border-l-emerald-500/50">
-          <p className="text-[10px] text-white/30 uppercase mb-1 font-mono tracking-widest">現有司機人數</p>
-          <div className="text-3xl font-black font-mono text-emerald-400">{drivers.length} <span className="text-xs text-white/20 italic">員</span></div>
-        </div>
+        <div className="glass-card p-6 border-l-4 border-l-cyan-500/50"><p className="text-[10px] text-white/30 uppercase mb-1 font-mono tracking-widest">本週利潤預計</p><div className="text-3xl font-black font-mono text-cyan-400">${metrics.margin}</div></div>
+        <div className={`glass-card p-6 border-l-4 ${metrics.isAnomaly ? 'alert-pulse border-l-rose-500' : 'border-l-amber-500/50'}`}><p className="text-[10px] text-white/30 uppercase mb-1 font-mono tracking-widest">異常審核池</p><div className="text-3xl font-black font-mono text-rose-500">{metrics.isAnomaly ? '1' : '0'} <span className="text-xs text-white/20 italic">件</span></div></div>
+        <div className="glass-card p-6 border-l-4 border-l-emerald-500/50"><p className="text-[10px] text-white/30 uppercase mb-1 font-mono tracking-widest">現有司機人數</p><div className="text-3xl font-black font-mono text-emerald-400">{drivers.length} <span className="text-xs text-white/20 italic">員</span></div></div>
       </div>
-
       <PersonnelRegistry />
-
       <div className="glass-card p-8">
          <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4 text-[10px] font-black text-cyan-400 uppercase tracking-widest">
-             <div className="flex items-center gap-2"><Users size={14}/> 司機人事權限與單價控制矩陣</div>
+             <div className="flex items-center gap-2"><Users size={14}/> 司機人事權限與單價控制 (主權授權)</div>
              <select value={selectedDriverId} onChange={e => setSelectedDriverId(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-black text-cyan-400 outline-none">
                  {drivers.map(d => <option key={d.id} value={d.id}>{d.name} ({d.id})</option>)}
              </select>
@@ -446,7 +426,7 @@ const App = () => {
                    <div onClick={() => updateDriverData(activeDriver.id, 'is_insured', !activeDriver.is_insured)} className={`switch-matrix ${activeDriver.is_insured ? 'active' : ''}`}><div className="knob"></div></div>
                 </div>
                 <div className={`grid grid-cols-2 gap-4 ${!activeDriver.is_insured ? 'opacity-20 pointer-events-none' : ''}`}>
-                    <div className="space-y-2"><label className="text-[9px] text-white/40 uppercase font-bold">投保金額 (月額)</label><input type="number" value={activeDriver.insurance_base} onChange={e => updateDriverData(selectedDriverId, 'insurance_base', parseInt(e.target.value))} className="manual-input" /></div>
+                    <div className="space-y-2"><label className="text-[9px] text-white/40 uppercase font-bold">投保月額 (手動)</label><input type="number" value={activeDriver.insurance_base} onChange={e => updateDriverData(selectedDriverId, 'insurance_base', parseInt(e.target.value))} className="manual-input" /></div>
                     <div className="space-y-2"><label className="text-[9px] text-white/40 uppercase font-bold">加保人數</label><input type="number" value={activeDriver.person_count} onChange={e => updateDriverData(selectedDriverId, 'person_count', parseInt(e.target.value))} className="manual-input" /></div>
                 </div>
             </div>
@@ -456,7 +436,6 @@ const App = () => {
             </div>
          </div>
       </div>
-
       <div className="glass-card p-8">
          <h3 className="text-xs font-black text-cyan-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-white/5 pb-4"><Settings2 size={14}/> 全系統維度防禦矩陣</h3>
          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -479,29 +458,24 @@ const App = () => {
            {drivers.map(d => <option key={d.id} value={d.id} className="bg-black text-white">{d.name}</option>)}
         </select>
       </div>
-
       <PersonnelRegistry />
-
       <GlassCard className={`p-8 space-y-6 relative overflow-hidden transition-all ${metrics.isAnomaly ? 'border-rose-500/40' : ''}`}>
         {!matrix.admin_rate_edit && (
           <div className="absolute inset-0 z-10 bg-black/70 backdrop-blur-[6px] flex flex-col items-center justify-center p-8 text-center">
              <LockKeyhole size={32} className="text-rose-500 mb-4" />
-             <p className="text-rose-500 font-black uppercase text-xs tracking-widest leading-relaxed">人事變更與單價設定權限鎖定<br/><span className="text-[9px] opacity-60">需開啟「授權會計修改設定」維度</span></p>
+             <p className="text-rose-500 font-black uppercase text-xs tracking-widest leading-relaxed">人事變更與單價設定權限鎖定<br/><span className="text-[9px] opacity-60">需由指揮官開啟「授權會計修改設定」</span></p>
           </div>
         )}
         <div className="flex justify-between items-center border-b border-white/5 pb-4"><p className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-2"><Calculator size={12}/> 精算對照明細</p>{metrics.isAnomaly && <span className="bg-rose-600 text-white px-2 py-0.5 rounded font-black animate-pulse uppercase text-[9px]">偏差警訊: {metrics.deviation_percent}%</span>}</div>
-        
         <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-6 text-center font-black">
            <div className="p-4 rounded-xl bg-black/20"><p className="text-[9px] text-white/20 uppercase mb-2 font-mono">二代健保代扣</p><p className="text-xl font-mono text-rose-500/80">-${metrics.supplement}</p></div>
            <div className="p-4 rounded-xl bg-black/20"><p className="text-[9px] text-white/20 uppercase mb-2 font-mono">核定實領總額</p><p className="text-xl font-mono text-emerald-400/80">${metrics.real_payout}</p></div>
         </div>
-
         <div className="grid grid-cols-2 gap-4">
-           <div className="p-5 rounded-xl bg-black/40 border border-white/5 text-center font-bold"><p className="text-[9px] text-white/30 uppercase mb-3">核定配送數 (件)</p><input type="number" value={activeDriver.delivered} onChange={e => updateDriverData(activeDriver.id, 'delivered', parseInt(e.target.value)||0)} className="manual-input" /></div>
-           <div className="p-5 rounded-xl bg-black/40 border border-white/5 text-center font-bold"><p className="text-[9px] text-white/30 uppercase mb-3">核定回收數 (件)</p><input type="number" value={activeDriver.returned} onChange={e => updateDriverData(activeDriver.id, 'returned', parseInt(e.target.value)||0)} className="manual-input !text-orange-400" /></div>
+           <div className="p-5 rounded-xl bg-black/40 border border-white/5 text-center font-bold"><p className="text-[9px] text-white/30 uppercase mb-3">配送件數 (核定)</p><input type="number" value={activeDriver.delivered} onChange={e => updateDriverData(activeDriver.id, 'delivered', parseInt(e.target.value)||0)} className="manual-input" /></div>
+           <div className="p-5 rounded-xl bg-black/40 border border-white/5 text-center font-bold"><p className="text-[9px] text-white/30 uppercase mb-3">回收件數 (核定)</p><input type="number" value={activeDriver.returned} onChange={e => updateDriverData(activeDriver.id, 'returned', parseInt(e.target.value)||0)} className="manual-input !text-orange-400" /></div>
         </div>
-        
-        <textarea placeholder="核銷理由或偏差原因 (此紀錄將同步至決策看板)..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs h-20 outline-none resize-none focus:border-cyan-500/50 text-white/80 font-bold" />
+        <textarea placeholder="核銷理由或偏差原因 (此紀錄將同步至決策看板足跡)..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs h-20 outline-none resize-none focus:border-cyan-500/50 text-white/80 font-bold" />
         <button disabled={!activeDriver.has_photo || matrix.kill_switch || metrics.isAnomaly} className={`w-full py-6 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl btn-tactile ${(!activeDriver.has_photo || matrix.kill_switch || metrics.isAnomaly) ? 'bg-white/5 text-white/10' : 'bg-emerald-600 text-white'}`}>確認核銷並發放薪資</button>
       </GlassCard>
     </div>
@@ -510,4 +484,95 @@ const App = () => {
   const renderSentinel = () => (
     <div className="space-y-6 animate-in fade-in duration-700 pt-6 pb-32 px-4">
       <div className="glass-card p-6 border-l-4 border-amber-500 shadow-amber-900/10 relative overflow-hidden">
-        <div className="flex items-center gap-3 mb-3 text-amber-400 font-black"><Bell size={16} className="animate-bounce" /><span className="text-[10px] uppercase tracking-widest">總部公告與溫馨提醒</span></div>
+        <div className="flex items-center gap-3 mb-3 text-amber-400"><Bell size={16} className="animate-bounce" /><span className="text-[10px] font-black uppercase tracking-widest">總部公告與溫馨提醒</span></div>
+        <p className="text-sm font-bold text-white/95 leading-relaxed italic relative z-10 font-mono italic">"{bulletin}"</p>
+      </div>
+      <div className="text-center pt-4 uppercase italic tracking-widest text-white"><h2 className="text-2xl font-black">哨兵數據終端</h2><p className="text-[10px] text-white/30 tracking-[0.4em] mt-2 font-mono">司機員：{activeDriver.name} ({activeDriver.phone})</p></div>
+      <div className="glass-card p-12 flex justify-around items-center">
+        {matrix.empire_dial ? (
+          <div className="flex gap-4 sm:gap-12 text-center w-full justify-center">
+             <EmpireDial value={activeDriver.delivered} label="配送完成數" color="#22d3ee" onChange={(v) => updateDriverData(activeDriver.id, 'delivered', v)} />
+             <EmpireDial value={activeDriver.returned} label="逆物流回收" color="#fbbf24" onChange={(v) => updateDriverData(activeDriver.id, 'returned', v)} />
+          </div>
+        ) : (
+          <div className="py-12 text-center opacity-40 flex flex-col items-center"><ShieldAlert size={64} className="text-rose-500 mb-6 animate-pulse" /><p className="text-rose-500 text-xs font-black uppercase tracking-widest">權限由中心鎖定</p></div>
+        )}
+      </div>
+      <GlassCard className="p-6 border-white/5 bg-white/5 text-white">
+         <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2 mb-4"><Key size={14}/> 終端安全設定 (金鑰修改)</h3>
+         <div className="flex gap-4">
+            <input type="password" placeholder="修改個人安全金鑰" value={activeDriver.pwd} onChange={e => updateDriverData(activeDriver.id, 'pwd', e.target.value)} className="manual-input !text-sm !text-left !py-3" />
+            <button className="px-6 bg-cyan-600/20 border border-cyan-500/30 rounded-xl text-[10px] font-black text-cyan-400 uppercase tracking-widest transition-all">更新</button>
+         </div>
+      </GlassCard>
+      <button className="w-full btn-tactile py-6 rounded-2xl bg-cyan-600 text-white font-black text-xs uppercase tracking-[0.5em] shadow-xl">提交本日結算數據</button>
+      <button onMouseDown={() => setIsEraserHolding(true)} onMouseUp={() => setIsEraserHolding(false)} onTouchStart={() => setIsEraserHolding(true)} onTouchEnd={() => setIsEraserHolding(false)} 
+              className="w-full relative overflow-hidden py-4 rounded-2xl border border-rose-500/20 text-rose-500/60 font-black text-[10px] tracking-[0.5em] uppercase active:scale-95 transition-all mt-4">
+          <div className="absolute left-0 top-0 h-full bg-rose-500/30 transition-all duration-100" style={{ width: `${eraserProgress}%` }}></div>
+          <span className="relative z-10 flex items-center justify-center gap-2 text-white/50"><RefreshCcw size={12} className={isEraserHolding ? 'animate-spin' : ''} /> 長按 3s 安全重置終端</span>
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="h-screen w-screen flex flex-col no-scrollbar relative font-sans overflow-hidden">
+      <GlobalStyles />
+      {view === 'splash' && (
+        <div className="h-screen w-screen bg-black flex flex-col items-center justify-center scanner-active overflow-hidden relative z-[200]">
+          <Fingerprint size={80} className="text-cyan-400 animate-pulse mb-8" />
+          <h2 className="text-2xl font-black tracking-[0.6em] text-white/90 uppercase italic text-center px-8">在地物流有限公司</h2>
+          <p className="text-[10px] text-cyan-500/50 mt-4 font-mono uppercase tracking-[0.3em]">企業防禦核心啟動中...</p>
+        </div>
+      )}
+      {view === 'login' && (
+        <div className="flex flex-col items-center justify-center h-screen px-8 space-y-12 animate-in fade-in duration-1000">
+          <div className="text-center text-white">
+             <Building2 size={64} className="text-cyan-400 mx-auto mb-6" />
+             <h1 className="text-4xl font-black italic tracking-tighter uppercase">在地物流 <span className="text-cyan-400">有限公司</span></h1>
+             <p className="text-[10px] text-white/20 tracking-[0.3em] mt-2 font-mono uppercase font-black">V3.0 Enterprise Portal</p>
+          </div>
+          <div className="w-full max-w-sm space-y-5">
+            <input type="text" placeholder="手機號碼 / 指揮官識別碼" className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none focus:border-cyan-500/50" value={loginInput.phone} onChange={e => setLoginInput({...loginInput, phone: e.target.value})} />
+            <input type="password" placeholder="安全性授權金鑰" className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none focus:border-cyan-500/50" value={loginInput.pwd} onChange={e => setLoginInput({...loginInput, pwd: e.target.value})} />
+            <div className="flex items-center gap-3 px-1">
+               <div onClick={() => setLoginInput({...loginInput, remember: !loginInput.remember})} className={`checkbox-custom ${loginInput.remember ? 'active' : ''}`}>
+                 {loginInput.remember && <CheckCircle2 size={12} className="text-black" />}
+               </div>
+               <span className="text-[10px] font-black text-white/30 tracking-widest uppercase">記住我的手機帳號</span>
+            </div>
+            <button onClick={handleLogin} className="w-full btn-tactile py-5 rounded-2xl bg-white text-black font-black uppercase tracking-widest shadow-xl font-bold">啟動主權認證</button>
+          </div>
+        </div>
+      )}
+      {view === 'core' && (
+        <React.Fragment>
+          <header className="px-6 pt-12 pb-4 flex justify-between items-center z-50 bg-gradient-to-b from-black to-transparent">
+            <div className="flex items-center gap-3"><Building2 size={18} className="text-cyan-400/60" /><span className="text-[10px] font-black tracking-widest uppercase text-white/40 italic">在地物流有限公司 <span className="opacity-30 ml-2 italic tracking-tighter">82749921</span></span></div>
+            <div className="flex items-center gap-4 text-white"><Fingerprint size={18} className={isVerified ? 'text-cyan-400 shadow-[0_0_10px_#22d3ee]' : 'text-white/10'} /><button onClick={() => {setView('login'); setIsVerified(false);}} className="text-white/20 hover:text-rose-500 transition-colors"><LogOut size={16}/></button></div>
+          </header>
+          <main className="flex-1 overflow-y-auto no-scrollbar relative z-10 px-1">{role === 'sovereign' && renderSovereign()}{role === 'admin' && renderAdmin()}{role === 'sentinel' && renderSentinel()}</main>
+          <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50 animate-in slide-in-from-bottom duration-700 text-white"><div className="glass-card !rounded-full p-1.5 flex justify-between shadow-2xl bg-black/60 border-white/10 backdrop-blur-[40px]">{[ { id: 'sovereign', label: '指揮', icon: Eye }, { id: 'admin', label: '稽核', icon: Calculator }, { id: 'sentinel', label: '哨兵', icon: Truck } ].map(tab => (<button key={tab.id} onClick={() => setRole(tab.id as any)} className={`flex-1 py-3 rounded-full flex flex-col items-center gap-1 transition-all duration-300 btn-tactile ${role === tab.id ? 'bg-white text-black shadow-lg scale-100' : 'text-white/25 hover:text-white/40'}`}><tab.icon size={16} strokeWidth={role === tab.id ? 3 : 2} /><span className="text-[9px] font-black uppercase tracking-tighter">{tab.label}</span></button>))}</div></nav>
+        </React.Fragment>
+      )}
+      {view === 'core' && (
+        <React.Fragment>
+          <div onClick={() => setIsChatOpen(!isChatOpen)} className={`fixed bottom-24 right-6 w-14 h-14 rounded-full flex items-center justify-center z-[110] cursor-pointer shadow-2xl transition-all duration-500 ${isChatOpen ? 'bg-white text-black rotate-90 scale-90' : 'bg-cyan-500 text-white animate-bounce'}`}>{isChatOpen ? <X size={24} /> : <MessageSquare size={24} />}</div>
+          <div className={`fixed bottom-[110px] right-6 w-80 h-[520px] glass-card p-6 flex flex-col transition-all duration-500 origin-bottom-right z-[100] ${isChatOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-50 translate-y-20 pointer-events-none'}`}>
+            <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4 shrink-0"><div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]"></div><span className="text-xs font-black uppercase tracking-widest text-cyan-400">總部後勤支援</span></div><div className="flex gap-1">{Object.keys(staffProfiles).map(p => { const isLocked = role !== 'sovereign' && p !== staffRole; return <button key={p} disabled={isLocked} title={staffProfiles[p].title} onClick={() => setStaffRole(p)} className={`p-2 rounded-lg transition-all ${staffRole === p ? 'bg-white/15 text-white shadow-inner' : 'text-white/20 hover:bg-white/5'} ${isLocked ? 'opacity-0 scale-0' : ''}`}><UserCog size={14} /></button>})}</div></div>
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pr-1 flex flex-col"><div className="bg-white/5 p-4 rounded-2xl text-[11px] leading-relaxed text-white/70 border border-white/5 shadow-inner shrink-0"><p className="font-bold mb-2 flex items-center gap-2" style={{ color: staffProfiles[staffRole].color }}>[{staffProfiles[staffRole].title}]</p>{staffProfiles[staffRole].greeting}</div>{chatHistory.length === 0 && (<div className="grid grid-cols-1 gap-2 shrink-0">{staffProfiles[staffRole].actions.map(action => (<button key={action} onClick={() => handleSendMessage(action)} className="p-3 bg-black/40 border border-white/10 rounded-xl text-[10px] font-black text-white/50 hover:text-cyan-400 transition-all uppercase tracking-widest text-left pl-4 flex items-center gap-3 font-mono font-bold italic"><Zap size={10} /> {action}</button>))}</div>)}{chatHistory.map((msg, idx) => (<div key={idx} className={`p-3 rounded-2xl text-[11px] leading-relaxed max-w-[85%] shrink-0 shadow-lg ${msg.sender === 'user' ? 'bg-cyan-600/20 text-cyan-100 self-end ml-auto border border-cyan-500/20' : 'bg-white/5 text-white/70 border border-white/10 self-start'}`}>{msg.text}</div>))}<div ref={chatEndRef} className="shrink-0" /></div>
+            <div className="mt-4 flex gap-2 shrink-0"><input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSendMessage()} placeholder="輸入指令或詢問..." className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-xs outline-none focus:border-cyan-500/50 text-white placeholder:text-white/20 font-bold" /><button onClick={() => handleSendMessage()} className="w-10 h-10 bg-cyan-500 rounded-xl flex items-center justify-center btn-tactile shadow-lg text-white active:scale-90"><Send size={14} /></button></div>
+          </div>
+        </React.Fragment>
+      )}
+      {isBulletinOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300">
+           <div className="glass-card max-w-sm w-full p-8 space-y-6"><h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3 text-amber-400"><Megaphone /> 廣播指令</h3><textarea placeholder="輸入對司機端的最新公告..." value={tempBulletin} onChange={e => setTempBulletin(e.target.value)} className="w-full h-32 bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none text-white focus:border-cyan-500/50 resize-none font-bold" /><div className="flex gap-4"><button onClick={() => setIsBulletinOpen(false)} className="flex-1 py-4 text-white/40 text-xs font-bold uppercase tracking-widest uppercase">取消</button><button onClick={() => { handleUpdateBulletin(); }} className="flex-[2] py-4 bg-amber-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl btn-tactile uppercase font-black">確認發布並同步 (SYNC)</button></div></div>
+        </div>
+      )}
+      <div className="fixed -bottom-40 -right-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+      <div className="fixed -top-40 -left-40 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+    </div>
+  );
+};
+
+export default App;
