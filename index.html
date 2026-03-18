@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Supreme-V92 Alpha Core v3.0</title>
   <style>
@@ -104,4 +104,45 @@
             React.createElement('div', { className: 'glass-card' }, [
               React.createElement('h3', { style: { marginBottom: '1.5rem', fontSize: '0.8rem', color: '#fbbf24', fontWeight: 900 } }, '維度防禦矩陣 / SYSTEM MATRIX'),
               ['kill_switch', 'empire_dial'].map(k => React.createElement('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' } }, [
-                React.createElement('span', { style: { fontSize: '0.8rem', fontWeight: 700,
+                React.createElement('span', { style: { fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8' } }, k.toUpperCase()),
+                React.createElement('label', { className: 'toggle-wrap' }, [
+                  React.createElement('input', { 
+                    type: 'checkbox', 
+                    checked: matrix[k], 
+                    style: { display: 'none' },
+                    onChange: (e) => setDoc(doc(db, "system", "matrix"), { ...matrix, [k]: e.target.checked })
+                  }),
+                  React.createElement('div', { className: 'toggle-track' }),
+                  React.createElement('div', { className: 'toggle-thumb' })
+                ])
+              ]))
+            ]),
+            // Driver List
+            React.createElement('div', { className: 'glass-card' }, [
+              React.createElement('h3', { style: { marginBottom: '1rem', fontSize: '0.8rem', opacity: 0.5, fontWeight: 900 } }, '實時人員核算 / DATA SYNC'),
+              drivers.map(d => React.createElement('div', { key: d.id, style: { display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' } }, [
+                React.createElement('div', null, [
+                  React.createElement('p', { style: { fontWeight: 800, fontSize: '1rem' } }, d.name),
+                  React.createElement('p', { style: { fontSize: '0.6rem', color: '#64748b' } }, d.phone)
+                ]),
+                React.createElement('span', { style: { color: '#4ade80', fontWeight: 900, fontSize: '1.2rem' } }, `$${((d.delivered || 0) * 12).toLocaleString()}`)
+              ]))
+            ])
+          ])
+        ]),
+
+        // Navigation Bar
+        React.createElement('div', { className: 'nav-bar' }, [
+          ['sovereign', '中心'], ['admin', '稽核'], ['sentinel', '物流']
+        ].map(([id, label]) => React.createElement('div', {
+          key: id,
+          className: `nav-item ${tab === id ? 'active' : ''}`,
+          onClick: () => setTab(id)
+        }, label)))
+      ]);
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+  </script>
+</body>
+</html>
