@@ -5,23 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Supreme-V92 Alpha Core v3.0</title>
   <style>
+    /* ══ 物理鎖死樣式 ══ */
     *, *::before, *::after { box-sizing: border-box !important; margin: 0 !important; padding: 0 !important; }
     html, body { background: #000 !important; color: #e2e8f0 !important; height: 100vh; width: 100vw; overflow: hidden; font-family: sans-serif; }
+    #root { height: 100%; width: 100%; display: flex; flex-direction: column; position: relative; z-index: 10; }
     #scanlines { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(34,211,238,0.015) 2px, rgba(34,211,238,0.015) 4px); }
-    .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(34,211,238,0.18); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; }
+    .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(34,211,238,0.18); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; }
     .toggle-wrap { position: relative; width: 50px; height: 26px; cursor: pointer; }
     .toggle-track { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
     .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #475569; border-radius: 50%; transition: 0.3s; }
-    input:checked ~ .toggle-track { background: rgba(34,211,238,0.3); border-color: #22d3ee; box-shadow: 0 0 10px #22d3ee; }
-    input:checked ~ .toggle-thumb { transform: translateX(24px); background: #22d3ee; box-shadow: 0 0 8px #22d3ee; }
-    .nav-bar { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(15,15,15,0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; display: flex; padding: 0.4rem; z-index: 1000; }
-    .nav-item { flex: 1; text-align: center; padding: 0.7rem; color: rgba(255,255,255,0.3); font-size: 0.8rem; font-weight: 800; cursor: pointer; }
+    input:checked ~ .toggle-track { background: rgba(34,211,238,0.3); border-color: #22d3ee; box-shadow: 0 0 15px #22d3ee; }
+    input:checked ~ .toggle-thumb { transform: translateX(24px); background: #22d3ee; box-shadow: 0 0 10px #22d3ee; }
+    .nav-bar { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(15,15,15,0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; display: flex; padding: 0.4rem; z-index: 1000; }
+    .nav-item { flex: 1; text-align: center; padding: 0.75rem; color: rgba(255,255,255,0.3); font-size: 0.8rem; font-weight: 800; }
     .nav-item.active { color: #fff; background: rgba(255,255,255,0.1); border-radius: 50px; }
   </style>
 </head>
 <body>
   <div id="scanlines"></div>
-  <div id="root"></div>
+  <div id="root">系統初始化中...</div>
 
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -30,9 +32,9 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const fb = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92" };
-    const db = getFirestore(initializeApp(fb));
-    const { useState, useEffect } = React;
+    const fbConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92" };
+    const db = getFirestore(initializeApp(fbConfig));
+    const { useState, useEffect, createElement: h } = React;
 
     const App = () => {
       const [tab, setTab] = useState('admin');
@@ -44,36 +46,37 @@
         onSnapshot(query(collection(db, "drivers"), orderBy("timestamp", "desc")), (s) => setDrivers(s.docs.map(d => ({id: d.id, ...d.data()}))));
       }, []);
 
-      const content = tab === 'admin' ? React.createElement('div', null, [
-        React.createElement('div', { className: 'glass-card', style: { borderLeft: '5px solid #22d3ee' } }, [
-          React.createElement('h2', { style: { color: '#22d3ee', fontSize: '2.4rem', fontWeight: 900 } }, '$11,675'),
-          React.createElement('p', { style: { fontSize: '0.7rem', opacity: 0.5 } }, 'ALPHA CORE REAL-TIME PROFIT')
+      const AdminView = h('div', null, [
+        h('div', { className: 'glass-card', style: { borderLeft: '5px solid #22d3ee' } }, [
+          h('h2', { style: { color: '#22d3ee', fontSize: '2.5rem', fontWeight: 900 } }, '$11,675'),
+          h('p', { style: { fontSize: '0.7rem', opacity: 0.4 } }, 'ALPHA CORE REAL-TIME PROFIT')
         ]),
-        React.createElement('div', { className: 'glass-card' }, [
-          ['kill_switch', 'empire_dial'].map(k => React.createElement('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' } }, [
-            React.createElement('span', { style: { fontSize: '0.8rem', fontWeight: 700 } }, k.toUpperCase()),
-            React.createElement('label', { className: 'toggle-wrap' }, [
-              React.createElement('input', { type: 'checkbox', checked: matrix[k], style: { display: 'none' }, onChange: (e) => setDoc(doc(db, "system", "matrix"), { ...matrix, [k]: e.target.checked }) }),
-              React.createElement('div', { className: 'toggle-track' }), React.createElement('div', { className: 'toggle-thumb' })
+        h('div', { className: 'glass-card' }, [
+          ['kill_switch', 'empire_dial'].map(k => h('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', marginBottom: '1.2rem' } }, [
+            h('span', { style: { fontSize: '0.8rem', fontWeight: 700 } }, k.toUpperCase()),
+            h('label', { className: 'toggle-wrap' }, [
+              h('input', { type: 'checkbox', checked: matrix[k], style: { display: 'none' }, onChange: (e) => setDoc(doc(db, "system", "matrix"), { ...matrix, [k]: e.target.checked }) }),
+              h('div', { className: 'toggle-track' }), h('div', { className: 'toggle-thumb' })
             ])
           ]))
         ]),
-        React.createElement('div', { className: 'glass-card' }, drivers.map(d => React.createElement('div', { key: d.id, style: { display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0' } }, [
-          React.createElement('span', null, d.name),
-          React.createElement('span', { style: { color: '#4ade80', fontWeight: 900 } }, `$${((d.delivered || 0) * 12).toLocaleString()}`)
+        h('div', { className: 'glass-card' }, drivers.map(d => h('div', { key: d.id, style: { display: 'flex', justifyContent: 'space-between', padding: '0.8rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' } }, [
+          h('span', null, d.name),
+          h('span', { style: { color: '#4ade80', fontWeight: 900 } }, `$${((d.delivered || 0) * 12).toLocaleString()}`)
         ])))
-      ]) : React.createElement('div', { style: { textAlign: 'center', padding: '2rem', opacity: 0.5 } }, '維度數據載入中...');
+      ]);
 
-      return React.createElement('div', { style: { height: '100vh', display: 'flex', flexDirection: 'column' } }, [
-        React.createElement('div', { style: { padding: '1.2rem', borderBottom: '1px solid rgba(34,211,238,0.2)', fontWeight: 900, color: '#22d3ee' } }, '◈ SUPREME-V92'),
-        React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '1rem' } }, content),
-        React.createElement('div', { className: 'nav-bar' }, [
+      return h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } }, [
+        h('div', { style: { padding: '1.5rem', borderBottom: '1px solid rgba(34,211,238,0.2)', fontWeight: 900, color: '#22d3ee' } }, '◈ SUPREME-V92'),
+        h('div', { style: { flex: 1, overflowY: 'auto', padding: '1.5rem' } }, tab === 'admin' ? AdminView : '載入中...'),
+        h('div', { className: 'nav-bar' }, [
           ['sovereign', '中心'], ['admin', '稽核'], ['sentinel', '物流']
-        ].map(([id, label]) => React.createElement('div', { key: id, className: `nav-item ${tab === id ? 'active' : ''}`, onClick: () => setTab(id) }, label)))
+        ].map(([id, label]) => h('div', { key: id, className: `nav-item ${tab === id ? 'active' : ''}`, onClick: () => setTab(id) }, label)))
       ]);
     };
 
-    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(h(App));
   </script>
 </body>
 </html>
