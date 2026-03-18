@@ -1,44 +1,48 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>在地物流 | Alpha Core v3.0</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        window.tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        oledBlack: '#000000',
-                        neonCyan: '#22d3ee',
-                        neonRose: '#f43f5e',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { background-color: #000000 !important; color: white !important; margin: 0; padding: 0; }
-        #root { min-height: 100vh; }
-        /* 強制賦予所有按鈕亮藍色背景與高度 */
-        button { 
-            min-height: 48px !important; 
-            background-color: #22d3ee !important; 
-            color: black !important;
-            border-radius: 12px !important;
-            font-weight: 900 !important;
-            border: none !important;
-            display: flex !important;
-            align-items: center; justify-content: center;
-            width: 100%; margin: 8px 0;
-            cursor: pointer;
-        }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-    </style>
-</head>
-<body class="no-scrollbar">
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-</body>
-</html>
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] z-[9999]">
+    <div class="relative group">
+        <div class="flex justify-around items-center h-20 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] px-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:border-white/20">
+            
+            <button onclick="switchTab('monitor')" class="nav-btn flex flex-col items-center justify-center space-y-1 text-cyan-400">
+                <div class="p-2 rounded-2xl bg-cyan-400/10 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </div>
+                <span class="text-[10px] font-bold tracking-widest uppercase">Center</span>
+            </button>
+
+            <button onclick="switchTab('salary')" class="nav-btn flex flex-col items-center justify-center space-y-1 text-white/40 hover:text-white transition-all">
+                <div class="p-2 rounded-2xl hover:bg-white/5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <span class="text-[10px] font-medium tracking-widest uppercase">Payroll</span>
+            </button>
+
+            <button onclick="switchTab('logistics')" class="nav-btn flex flex-col items-center justify-center space-y-1 text-white/40 hover:text-white transition-all">
+                <div class="p-2 rounded-2xl hover:bg-white/5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                    </svg>
+                </div>
+                <span class="text-[10px] font-medium tracking-widest uppercase">Fleet</span>
+            </button>
+
+        </div>
+
+        <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent blur-sm"></div>
+    </div>
+</nav>
+
+<div class="pb-32"></div>
+
+<script>
+    // 簡單的標籤切換邏輯
+    function switchTab(tabId) {
+        console.log(`Switching to: ${tabId}`);
+        // 指揮官，這裡可以放入你原本的頁面切換邏輯
+    }
+</script>
