@@ -1,83 +1,122 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>在地物流 | SUPREME V92 CORE</title>
-    <style>
-        :root { --neon-cyan: #22d3ee; --neon-amber: #fbbf24; }
-        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; overflow-x: hidden; }
-        .glass-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; backdrop-filter: blur(20px); padding: 2rem; margin-bottom: 1.5rem; }
-        .btn-cyan { background: var(--neon-cyan); color: #000; border: none; padding: 1rem; border-radius: 1rem; font-weight: 900; cursor: pointer; box-shadow: 0 0 15px var(--neon-cyan); width: 100%; }
-        .switch { width: 50px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 13px; position: relative; cursor: pointer; }
-        .switch.active { background: var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); }
-        .knob { width: 22px; height: 22px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
-        .switch.active .knob { left: 26px; }
-        .nav-bar { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(10,10,10,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; display: flex; padding: 0.5rem; backdrop-filter: blur(20px); z-index: 1000; }
-        .nav-item { flex: 1; text-align: center; padding: 1rem; color: rgba(255,255,255,0.2); font-size: 0.7rem; font-weight: 900; cursor: pointer; }
-        .nav-item.active { color: #fff; background: rgba(255,255,255,0.1); border-radius: 100px; }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
+<div class="hero-metric-label">預估總營收</div>
+      </div>
+      <div class="hero-metric">
+        <div class="hero-metric-value hmv-green" id="heroNetProfit">0%</div>
+        <div class="hero-metric-label">人事穩定度</div>
+      </div>
+    </div>
+  </div>
 
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  <section class="glass-card">
+    <div class="card-header">
+      <div class="card-title">◈ 財務稽核矩陣 / 薪資核算</div>
+      <div class="card-badge cb-blue">SYNCED</div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">配送單價設定 (TWD)</label>
+      <div class="input-field-wrap">
+        <span class="input-prefix">$</span>
+        <input type="number" id="baseRate" class="neon-input" value="12" placeholder="預設 12">
+      </div>
+    </div>
+    <div class="result-grid" id="driverList">
+      </div>
+  </section>
 
-        const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+  <aside class="space-y-6">
+    <div class="glass-card">
+      <div class="card-header">
+        <div class="card-title">◈ 維度防禦矩陣 / SYSTEM MATRIX</div>
+        <div class="card-badge cb-amber">LEVEL 4</div>
+      </div>
+      <div class="switch-list" id="matrixContainer">
+        </div>
+    </div>
+  </aside>
+</main>
 
-        const { useState, useEffect } = React;
+<div class="toast-container" id="toastContainer"></div>
 
-        const App = () => {
-            const [tab, setTab] = useState('admin');
-            const [matrix, setMatrix] = useState({ kill_switch: false, empire_dial: true });
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-            useEffect(() => {
-                onSnapshot(doc(db, "system", "matrix"), (s) => s.exists() && setMatrix(s.data()));
-            }, []);
+  const firebaseConfig = { 
+    apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
+    authDomain: "supreme-v92.firebaseapp.com", 
+    projectId: "supreme-v92" 
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-            return React.createElement('div', { style: { padding: '2rem' } }, [
-                // 標題區
-                React.createElement('div', { style: { marginBottom: '2rem', textAlign: 'center' } }, [
-                    React.createElement('h1', { style: { fontSize: '0.8rem', letterSpacing: '0.4em', opacity: 0.4 } }, 'SUPREME V92 ALPHA CORE'),
-                ]),
+  // 1. 載入遮罩邏輯
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const loadingBar = document.getElementById('loadingBar');
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 10;
+    loadingBar.style.width = `${Math.min(progress, 100)}%`;
+    if (progress >= 100) {
+      clearInterval(interval);
+      setTimeout(() => loadingOverlay.classList.add('hidden'), 500);
+    }
+  }, 50);
 
-                // 決策數據區 (圖四十的功能)
-                tab === 'admin' && React.createElement('div', null, [
-                    React.createElement('div', { className: 'glass-card' }, [
-                        React.createElement('h2', { style: { color: 'var(--neon-cyan)', margin: 0 } }, '$11,675'),
-                        React.createElement('p', { style: { fontSize: '0.6rem', opacity: 0.4 } }, '本週利潤預估'),
-                    ]),
-                    React.createElement('div', { className: 'glass-card' }, [
-                        React.createElement('h3', { style: { margin: '0 0 1.5rem 0' } }, '維度防禦矩陣'),
-                        Object.keys(matrix).map(k => React.createElement('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' } }, [
-                            React.createElement('span', null, k.toUpperCase()),
-                            React.createElement('div', { 
-                                className: `switch ${matrix[k] ? 'active' : ''}`,
-                                onClick: () => setDoc(doc(db, "system", "matrix"), { ...matrix, [k]: !matrix[k] })
-                            }, React.createElement('div', { className: 'knob' }))
-                        ]))
-                    ])
-                ]),
+  // 2. 時鐘更新
+  setInterval(() => {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+  }, 1000);
 
-                // 底部導航
-                React.createElement('div', { className: 'nav-bar' }, [
-                    ['sovereign', '中心'], ['admin', '稽核'], ['sentinel', '物流']
-                ].map(([id, label]) => React.createElement('div', {
-                    key: id,
-                    className: `nav-item ${tab === id ? 'active' : ''}`,
-                    onClick: () => setTab(id)
-                }, label)))
-            ]);
-        };
+  // 3. 監聽維度矩陣
+  const matrixKeys = [
+    { id: 'kill_switch', name: '緊急熔斷開關', desc: 'INSTANT SYSTEM SHUTDOWN', color: 'danger' },
+    { id: 'empire_dial', name: '物流撥盤授權', desc: 'SENTINEL DATA ENTRY LOCK', color: 'amber' },
+    { id: 'admin_rate_edit', name: '財務稽核修改權', desc: 'FINANCIAL PARAMETER EDIT', color: 'blue' }
+  ];
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
-    </script>
+  onSnapshot(doc(db, "system", "matrix"), (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    const container = document.getElementById('matrixContainer');
+    container.innerHTML = matrixKeys.map(k => `
+      <div class="switch-item ${data[k.id] ? 'active' : ''}">
+        <div class="switch-info">
+          <div class="switch-name">${k.name}</div>
+          <div class="switch-desc">${k.desc}</div>
+        </div>
+        <div class="switch-right">
+          <div class="switch-status-text">${data[k.id] ? 'ON' : 'OFF'}</div>
+          <div class="toggle-wrap ${k.color}">
+            <input type="checkbox" ${data[k.id] ? 'checked' : ''} onchange="toggleMatrix('${k.id}', this.checked)">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('firebaseDot').className = 'status-dot online';
+    document.getElementById('firebaseStatusText').textContent = 'CORE SYNCED';
+  });
+
+  window.toggleMatrix = async (key, val) => {
+    const snap = await (await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js")).getDoc(doc(db, "system", "matrix"));
+    const current = snap.exists() ? snap.data() : {};
+    await setDoc(doc(db, "system", "matrix"), { ...current, [key]: val });
+  };
+
+  // 4. 司機數據核算
+  onSnapshot(collection(db, "drivers"), (snap) => {
+    const drivers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const list = document.getElementById('driverList');
+    const rate = document.getElementById('baseRate').value || 12;
+    list.innerHTML = drivers.map(d => `
+      <div class="result-cell rc-blue">
+        <div class="result-value rv-blue">$${((d.delivered || 0) * rate).toLocaleString()}</div>
+        <div class="result-label">${d.name} / ${d.phone}</div>
+      </div>
+    `).join('');
+    document.getElementById('heroTotalOrders').textContent = drivers.reduce((a, b) => a + (b.delivered || 0), 0);
+  });
+
+</script>
 </body>
 </html>
