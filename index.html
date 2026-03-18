@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Supreme-V92 Alpha Core v3.0</title>
   <style>
-    /* ══ 物理級重置：鎖死樣式 ══ */
+    /* ══ 樣式鎖死：強制執行圖四十美學 ══ */
     *, *::before, *::after {
       box-sizing: border-box !important; margin: 0 !important; padding: 0 !important;
       -webkit-tap-highlight-color: transparent !important; user-select: none !important;
@@ -20,17 +20,17 @@
       font-family: -apple-system, system-ui, sans-serif !important;
     }
 
-    /* ══ 核心視覺：圖四十發光感 ══ */
     #scanlines {
       position: fixed !important; inset: 0 !important; z-index: 0 !important; pointer-events: none !important;
       background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(34,211,238,0.015) 2px, rgba(34,211,238,0.015) 4px) !important;
     }
+
     .glass-card {
       background: rgba(255,255,255,0.04) !important; backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
       border: 1px solid rgba(34,211,238,0.18) !important; border-radius: 20px !important; padding: 1.5rem !important; margin-bottom: 1.2rem !important;
     }
-    
-    /* ══ 發光開關 (Toggle Switches) ══ */
+
+    /* ══ 霓虹開關 ══ */
     .toggle-wrap { position: relative !important; width: 52px !important; height: 28px !important; cursor: pointer !important; }
     .toggle-track {
       position: absolute !important; inset: 0 !important; border-radius: 999px !important;
@@ -44,18 +44,15 @@
     input:checked ~ .toggle-track { background: rgba(34,211,238,0.2) !important; border-color: #22d3ee !important; box-shadow: 0 0 15px rgba(34,211,238,0.5) !important; }
     input:checked ~ .toggle-thumb { transform: translateX(24px) !important; background: #22d3ee !important; box-shadow: 0 0 10px #22d3ee !important; }
 
-    /* ══ 導航列 ══ */
+    /* ══ 導航 ══ */
     .nav-bar {
       position: fixed !important; bottom: 1.5rem !important; left: 50% !important; transform: translateX(-50%) !important;
       width: 90% !important; max-width: 400px !important; background: rgba(10,10,10,0.85) !important;
       border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 100px !important;
       display: flex !important; padding: 0.5rem !important; backdrop-filter: blur(20px) !important; z-index: 1000 !important;
     }
-    .nav-item { flex: 1 !important; text-align: center !important; padding: 0.8rem !important; color: rgba(255,255,255,0.3) !important; font-size: 0.75rem !important; font-weight: 900 !important; cursor: pointer !important; transition: 0.3s !important; }
+    .nav-item { flex: 1 !important; text-align: center !important; padding: 0.8rem !important; color: rgba(255,255,255,0.3) !important; font-size: 0.75rem !important; font-weight: 900 !important; cursor: pointer !important; }
     .nav-item.active { color: #fff !important; background: rgba(255,255,255,0.1) !important; border-radius: 100px !important; }
-    
-    /* ══ 滾動區域 ══ */
-    #scroll-root { position: absolute !important; top: 64px !important; bottom: 0 !important; width: 100% !important; overflow-y: auto !important; padding: 1.5rem !important; }
   </style>
 </head>
 <body>
@@ -64,11 +61,16 @@
 
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92" };
+    const firebaseConfig = { 
+        apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", 
+        authDomain: "supreme-v92.firebaseapp.com", 
+        projectId: "supreme-v92" 
+    };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -84,60 +86,22 @@
         onSnapshot(query(collection(db, "drivers"), orderBy("timestamp", "desc")), (s) => setDrivers(s.docs.map(d => ({id: d.id, ...d.data()}))));
       }, []);
 
-      return React.createElement('div', null, [
-        // 頂部
-        React.createElement('div', { style: { height: '64px', display: 'flex', alignItems: 'center', padding: '0 2rem', borderBottom: '1px solid rgba(34,211,238,0.2)' } }, [
-          React.createElement('span', { style: { color: '#22d3ee', fontWeight: 900, letterSpacing: '2px' } }, '◈ SUPREME-V92 CORE')
+      return React.createElement('div', { style: { height: '100vh', display: 'flex', flexDirection: 'column' } }, [
+        // Top Bar
+        React.createElement('div', { style: { height: '64px', display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderBottom: '1px solid rgba(34,211,238,0.2)', background: 'rgba(0,0,0,0.8)' } }, [
+          React.createElement('span', { style: { color: '#22d3ee', fontWeight: 900, letterSpacing: '2px', fontSize: '1rem' } }, '◈ SUPREME-V92 CORE')
         ]),
 
-        // 主內容
-        React.createElement('div', { id: 'scroll-root' }, [
+        // Main Content
+        React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '1.5rem' } }, [
           tab === 'admin' && React.createElement('div', null, [
-            // 利潤面板
+            // Profit Card
             React.createElement('div', { className: 'glass-card', style: { borderLeft: '4px solid #22d3ee' } }, [
-              React.createElement('h2', { style: { color: '#22d3ee', fontSize: '2.5rem', margin: 0 } }, '$11,675'),
-              React.createElement('p', { style: { fontSize: '0.7rem', opacity: 0.4, letterSpacing: '2px' } }, '本週利潤預估 / REAL-TIME PROFIT')
+              React.createElement('h2', { style: { color: '#22d3ee', fontSize: '2.5rem', margin: 0, fontWeight: 900 } }, '$11,675'),
+              React.createElement('p', { style: { fontSize: '0.7rem', opacity: 0.4, letterSpacing: '1px' } }, '本週預估利潤 / TOTAL PROFIT')
             ]),
-            // 維度矩陣
+            // Switches
             React.createElement('div', { className: 'glass-card' }, [
-              React.createElement('h3', { style: { marginBottom: '1.5rem', fontSize: '0.9rem', color: '#fbbf24' } }, '維度防禦矩陣 / DIMENSION MATRIX'),
+              React.createElement('h3', { style: { marginBottom: '1.5rem', fontSize: '0.8rem', color: '#fbbf24', fontWeight: 900 } }, '維度防禦矩陣 / SYSTEM MATRIX'),
               ['kill_switch', 'empire_dial'].map(k => React.createElement('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' } }, [
-                React.createElement('span', { style: { fontSize: '0.8rem', fontWeight: 700 } }, k.toUpperCase()),
-                React.createElement('label', { className: 'toggle-wrap' }, [
-                  React.createElement('input', { 
-                    type: 'checkbox', 
-                    checked: matrix[k], 
-                    style: { display: 'none' },
-                    onChange: (e) => setDoc(doc(db, "system", "matrix"), { ...matrix, [k]: e.target.checked })
-                  }),
-                  React.createElement('div', { className: 'toggle-track' }),
-                  React.createElement('div', { className: 'toggle-thumb' })
-                ])
-              ]))
-            ]),
-            // 人員核算
-            React.createElement('div', { className: 'glass-card' }, [
-              React.createElement('h3', { style: { marginBottom: '1rem', fontSize: '0.8rem', opacity: 0.5 } }, '實時人員核算'),
-              drivers.map(d => React.createElement('div', { key: d.id, style: { display: 'flex', justifyContent: 'space-between', padding: '0.8rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' } }, [
-                React.createElement('span', null, d.name),
-                React.createElement('span', { style: { color: '#4ade80', fontWeight: 900 } }, `$${(d.delivered || 0) * 12}`)
-              ]))
-            ])
-          ])
-        ]),
-
-        // 導航
-        React.createElement('div', { className: 'nav-bar' }, [
-          ['sovereign', '中心'], ['admin', '稽核'], ['sentinel', '物流']
-        ].map(([id, label]) => React.createElement('div', {
-          key: id,
-          className: `nav-item ${tab === id ? 'active' : ''}`,
-          onClick: () => setTab(id)
-        }, label)))
-      ]);
-    };
-
-    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
-  </script>
-</body>
-</html>
+                React.createElement('span', { style: { fontSize: '0.8rem', fontWeight: 700,
