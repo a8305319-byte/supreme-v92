@@ -3,78 +3,187 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Supreme-V92 Alpha Core v3.0</title>
-  <style>
-    /* ══ 物理鎖死樣式 ══ */
-    *, *::before, *::after { box-sizing: border-box !important; margin: 0 !important; padding: 0 !important; }
-    html, body { background: #000 !important; color: #e2e8f0 !important; height: 100vh; width: 100vw; overflow: hidden; font-family: sans-serif; }
-    #root { height: 100%; width: 100%; display: flex; flex-direction: column; position: relative; z-index: 10; background: #000; }
-    .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(34,211,238,0.18); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; }
-    .toggle-wrap { position: relative; width: 50px; height: 26px; cursor: pointer; }
-    .toggle-track { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
-    .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #475569; border-radius: 50%; transition: 0.3s; }
-    input:checked ~ .toggle-track { background: rgba(34,211,238,0.3); border-color: #22d3ee; box-shadow: 0 0 15px #22d3ee; }
-    input:checked ~ .toggle-thumb { transform: translateX(24px); background: #22d3ee; box-shadow: 0 0 10px #22d3ee; }
-    .nav-bar { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(15,15,15,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; display: flex; padding: 0.4rem; z-index: 1000; }
-    .nav-item { flex: 1; text-align: center; padding: 0.75rem; color: rgba(255,255,255,0.3); font-size: 0.8rem; font-weight: 800; }
-    .nav-item.active { color: #fff; background: rgba(255,255,255,0.1); border-radius: 50px; }
-  </style>
-</head>
-<body>
-  <div id="root">
-    <div style="height:100vh; display:flex; align-items:center; justify-content:center; color:#22d3ee; font-weight:900;">
-      ⚡ CORE CONNECTING...
-    </div>
-  </div>
-
+  <title>Supreme-V92 · Sentinel v5.4</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
+    :root { --cyan: #22d3ee; --oled-black: #000; }
+    body { background: var(--oled-black); color: #fff; overflow: hidden; font-family: sans-serif; user-select: none; }
+    .glass-card { background: rgba(255,255,255,0.03); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 1rem; margin-bottom: 0.8rem; }
+    
+    /* ════ 導航 HUD ════ */
+    .nav-hud { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; height: 56px; background: rgba(10,10,10,0.85); border: 1px solid rgba(34,211,238,0.2); border-radius: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; backdrop-filter: blur(30px); z-index: 999; }
+    .hud-btn { color: var(--cyan); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255,255,255,0.05); transition: 0.2s; cursor: pointer; }
+    .hud-btn:active { transform: scale(0.9); background: rgba(34,211,238,0.2); }
+    .hud-btn.disabled { opacity: 0.15; pointer-events: none; }
+    .hud-info { font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--cyan); font-weight: 800; letter-spacing: 1px; }
 
-  <script>
-    const fb = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92" };
-    firebase.initializeApp(fb);
+    /* ════ 底部導航 ════ */
+    .nav-bar { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; height: 68px; background: rgba(15,15,15,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; display: flex; padding: 0.5rem; z-index: 1000; }
+    .nav-item { flex: 1; text-align: center; padding: 0.8rem; color: rgba(255,255,255,0.3); font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: 0.3s; }
+    .nav-item.active { color: var(--cyan); background: rgba(255,255,255,0.05); border-radius: 40px; text-shadow: 0 0 8px var(--cyan); }
+    
+    .loading-blur { opacity: 0.3; filter: blur(4px); transition: 0.3s; }
+    .alert-pulse { border-color: #f43f5e !important; animation: alert-glow 1.5s infinite; }
+    @keyframes alert-glow { 0%, 100% { box-shadow: 0 0 10px rgba(244,63,94,0.2); } 50% { box-shadow: 0 0 30px rgba(244,63,94,0.5); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+    const fbConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92" };
+    if (!firebase.apps.length) firebase.initializeApp(fbConfig);
     const db = firebase.firestore();
-    const { useState, useEffect, createElement: h } = React;
+
+    /* ════════════════════════════════════════════
+       ★ 核心分頁 Hook (修復截斷邏輯)
+    ════════════════════════════════════════════ */
+    function usePagination(collectionName, pageSize = 12, killSwitch = false) {
+      const [items, setItems] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [totalCount, setTotalCount] = useState(0);
+      const [firstDoc, setFirstDoc] = useState(null);
+      const [lastDoc, setLastDoc] = useState(null);
+      const [hasPrev, setHasPrev] = useState(false);
+      const [hasNext, setHasNext] = useState(false);
+      const docIdField = firebase.firestore.FieldPath.documentId();
+
+      const fetchTotal = useCallback(async () => {
+        const snap = await db.collection(collectionName).count().get();
+        setTotalCount(snap.data().count);
+      }, [collectionName]);
+
+      const processDocs = (snap, isPrev = false) => {
+        const docs = isPrev ? snap.docs.slice().reverse() : snap.docs;
+        if (docs.length === 0) return;
+        setItems(docs.map(d => ({ id: d.id, ...d.data() })));
+        setFirstDoc(docs[0]);
+        setLastDoc(docs[docs.length - 1]);
+      };
+
+      const fetchFirst = async () => {
+        if (killSwitch) return;
+        setLoading(true);
+        try {
+          const snap = await db.collection(collectionName).orderBy('timestamp', 'asc').orderBy(docIdField, 'asc').limit(pageSize).get();
+          processDocs(snap);
+          setHasPrev(false);
+          setHasNext(snap.docs.length === pageSize);
+        } finally { setLoading(false); }
+      };
+
+      const fetchNext = async () => {
+        if (!lastDoc || loading || killSwitch) return;
+        setLoading(true);
+        try {
+          const snap = await db.collection(collectionName).orderBy('timestamp', 'asc').orderBy(docIdField, 'asc').startAfter(lastDoc).limit(pageSize).get();
+          if (!snap.empty) {
+            processDocs(snap);
+            setHasPrev(true);
+            setHasNext(snap.docs.length === pageSize);
+          }
+        } finally { setLoading(false); }
+      };
+
+      const fetchPrev = async () => {
+        if (!firstDoc || loading || killSwitch) return;
+        setLoading(true);
+        try {
+          const snap = await db.collection(collectionName).orderBy('timestamp', 'asc').orderBy(docIdField, 'asc').endBefore(firstDoc).limitToLast(pageSize).get();
+          if (!snap.empty) {
+            processDocs(snap);
+            setHasNext(true);
+            setHasPrev(snap.docs.length === pageSize);
+          }
+        } finally { setLoading(false); }
+      };
+
+      const fetchLast = async () => {
+        if (killSwitch) return;
+        setLoading(true);
+        try {
+          const snap = await db.collection(collectionName).orderBy('timestamp', 'desc').orderBy(docIdField, 'desc').limit(pageSize).get();
+          processDocs(snap, true);
+          setHasNext(false);
+          setHasPrev(snap.docs.length === pageSize);
+        } finally { setLoading(false); }
+      };
+
+      useEffect(() => { fetchTotal(); fetchFirst(); }, [killSwitch]);
+
+      return { items, loading, totalCount, hasPrev, hasNext, fetchFirst, fetchNext, fetchPrev, fetchLast };
+    }
 
     const App = () => {
-      const [tab, setTab] = useState('admin');
-      const [matrix, setMatrix] = useState({ kill_switch: false, empire_dial: true });
-      const [drivers, setDrivers] = useState([]);
+      const [tab, setTab] = useState('sentinel');
+      const [killSwitch, setKillSwitch] = useState(false);
+      
+      const { items: drivers, loading, totalCount, hasPrev, hasNext, fetchFirst, fetchNext, fetchPrev, fetchLast } = usePagination('drivers', 12, killSwitch);
 
+      // 模擬從 v3.0 繼承的監聽
       useEffect(() => {
-        db.doc("system/matrix").onSnapshot(s => s.exists() && setMatrix(s.data()));
-        db.collection("drivers").orderBy("timestamp", "desc").onSnapshot(s => setDrivers(s.docs.map(d => ({id: d.id, ...d.data()}))));
+        const unsub = db.doc("system/matrix").onSnapshot(s => s.exists && setKillSwitch(s.data().kill_switch));
+        return () => unsub();
       }, []);
 
-      const AdminView = h('div', null, [
-        h('div', { className: 'glass-card', style: { borderLeft: '5px solid #22d3ee' } }, [
-          h('h2', { style: { color: '#22d3ee', fontSize: '2.5rem', fontWeight: 900 } }, '$11,675'),
-          h('p', { style: { fontSize: '0.7rem', opacity: 0.4 } }, 'REAL-TIME SYSTEM PROFIT')
-        ]),
-        h('div', { className: 'glass-card' }, [
-          ['kill_switch', 'empire_dial'].map(k => h('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', marginBottom: '1.2rem', alignItems: 'center' } }, [
-            h('span', { style: { fontSize: '0.8rem', fontWeight: 700 } }, k.toUpperCase()),
-            h('label', { className: 'toggle-wrap' }, [
-              h('input', { type: 'checkbox', checked: matrix[k]||false, style: { display: 'none' }, onChange: (e) => db.doc("system/matrix").update({[k]: e.target.checked}) }),
-              h('div', { className: 'toggle-track' }), h('div', { className: 'toggle-thumb' })
-            ])
-          ]))
-        ]),
-        h('div', { className: 'glass-card' }, drivers.map(d => h('div', { key: d.id, style: { display: 'flex', justifyContent: 'space-between', padding: '0.8rem 0' } }, [
-          h('span', null, d.name), h('span', { style: { color: '#4ade80', fontWeight: 900 } }, `$${((d.delivered||0)*12).toLocaleString()}`)
-        ])))
-      ]);
+      return (
+        <div className="h-screen flex flex-col relative p-6">
+          <header className="flex justify-between items-center mb-6">
+            <div className="font-black text-cyan-400 text-xl tracking-tighter">◈ SUPREME-V92</div>
+            <div className={`px-3 py-1 rounded-full text-[10px] font-mono border ${killSwitch ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'}`}>
+              {killSwitch ? 'SYSTEM HALTED' : `TOTAL: ${totalCount} UNITS`}
+            </div>
+          </header>
 
-      return h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } }, [
-        h('div', { style: { padding: '1.5rem', borderBottom: '1px solid rgba(34,211,238,0.2)', fontWeight: 900, color: '#22d3ee' } }, '◈ SUPREME-V92'),
-        h('div', { style: { flex: 1, overflowY: 'auto', padding: '1.5rem' } }, tab === 'admin' ? AdminView : '載入中...'),
-        h('div', { className: 'nav-bar' }, [['sovereign', '中心'], ['admin', '稽核'], ['sentinel', '物流']].map(([id, label]) => h('div', { key: id, className: `nav-item ${tab === id ? 'active' : ''}`, onClick: () => setTab(id) }, label)))
-      ]);
+          <main className={`flex-1 overflow-y-auto pb-40 no-scrollbar ${loading ? 'loading-blur' : ''}`}>
+            {killSwitch ? (
+              <div className="empty-state py-20 text-center opacity-50">
+                <i className="fas fa-shield-halved text-4xl mb-4"></i>
+                <p className="text-xs tracking-widest font-bold">SECURITY LOCK ENABLED</p>
+              </div>
+            ) : drivers.map(d => (
+              <div key={d.id} className="glass-card flex justify-between items-center border-l-4 border-cyan-500 animate-in fade-in duration-300">
+                <div>
+                  <div className="font-bold text-white/90 text-sm">{d.name || 'Anonymous'}</div>
+                  <div className="text-[10px] text-white/30 font-mono">ID: {d.id}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-cyan-400 font-black font-mono text-lg">${(d.delivered || 0) * 12}</div>
+                  <div className="text-[10px] text-white/20 tracking-tighter">{d.phone || '09XX-XXX-XXX'}</div>
+                </div>
+              </div>
+            ))}
+          </main>
+
+          {/* Navigation HUD */}
+          {!killSwitch && (
+            <div className="nav-hud">
+              <button onClick={fetchFirst} className={`hud-btn ${!hasPrev ? 'disabled' : ''}`}><i className="fas fa-angles-left"></i></button>
+              <button onClick={fetchPrev} className={`hud-btn ${!hasPrev ? 'disabled' : ''}`}><i className="fas fa-angle-left"></i></button>
+              <div className="hud-info">{loading ? 'SYNC...' : 'READY'}</div>
+              <button onClick={fetchNext} className={`hud-btn ${!hasNext ? 'disabled' : ''}`}><i className="fas fa-angle-right"></i></button>
+              <button onClick={fetchLast} className={`hud-btn ${!hasNext ? 'disabled' : ''}`}><i className="fas fa-angles-right"></i></button>
+            </div>
+          )}
+
+          {/* 底部導航欄 */}
+          <nav className="nav-bar">
+            {[['sovereign', '中心'], ['admin', '稽核'], ['sentinel', '物流']].map(([id, label]) => (
+              <div key={id} className={`nav-item ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)}>{label}</div>
+            ))}
+          </nav>
+        </div>
+      );
     };
 
-    ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
