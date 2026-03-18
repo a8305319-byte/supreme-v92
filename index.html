@@ -3,23 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Supreme-V92 Alpha Core v3.0</title>
   <style>
-    /* ══ 物理鎖死樣式 ══ */
-    *, *::before, *::after { box-sizing: border-box !important; margin: 0 !important; padding: 0 !important; -webkit-tap-highlight-color: transparent !important; }
-    html, body { background: #000 !important; color: #e2e8f0 !important; height: 100% !important; width: 100% !important; overflow: hidden !important; position: fixed !important; font-family: -apple-system, sans-serif !important; }
-    #scanlines { position: fixed !important; inset: 0 !important; z-index: 0 !important; pointer-events: none !important; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(34,211,238,0.015) 2px, rgba(34,211,238,0.015) 4px) !important; }
-    .glass-card { background: rgba(255,255,255,0.04) !important; backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important; border: 1px solid rgba(34,211,238,0.18) !important; border-radius: 20px !important; padding: 1.5rem !important; margin-bottom: 1.2rem !important; }
-    .toggle-wrap { position: relative !important; width: 52px !important; height: 28px !important; cursor: pointer !important; }
-    .toggle-track { position: absolute !important; inset: 0 !important; border-radius: 999px !important; background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.14) !important; transition: all 0.3s !important; }
-    .toggle-thumb { position: absolute !important; top: 3px !important; left: 3px !important; width: 20px !important; height: 20px !important; background: #475569 !important; border-radius: 50% !important; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important; }
-    input:checked ~ .toggle-track { background: rgba(34,211,238,0.2) !important; border-color: #22d3ee !important; box-shadow: 0 0 15px rgba(34,211,238,0.5) !important; }
-    input:checked ~ .toggle-thumb { transform: translateX(24px) !important; background: #22d3ee !important; box-shadow: 0 0 10px #22d3ee !important; }
-    .nav-bar { position: fixed !important; bottom: 1.5rem !important; left: 50% !important; transform: translateX(-50%) !important; width: 90% !important; max-width: 400px !important; background: rgba(10,10,10,0.85) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 100px !important; display: flex !important; padding: 0.5rem !important; backdrop-filter: blur(20px) !important; z-index: 1000 !important; }
-    .nav-item { flex: 1 !important; text-align: center !important; padding: 0.8rem !important; color: rgba(255,255,255,0.3) !important; font-size: 0.75rem !important; font-weight: 900 !important; cursor: pointer !important; }
-    .nav-item.active { color: #fff !important; background: rgba(255,255,255,0.1) !important; border-radius: 100px !important; }
+    *, *::before, *::after { box-sizing: border-box !important; margin: 0 !important; padding: 0 !important; }
+    html, body { background: #000 !important; color: #e2e8f0 !important; height: 100vh; width: 100vw; overflow: hidden; font-family: sans-serif; }
+    #scanlines { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(34,211,238,0.015) 2px, rgba(34,211,238,0.015) 4px); }
+    .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(34,211,238,0.18); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; }
+    .toggle-wrap { position: relative; width: 50px; height: 26px; cursor: pointer; }
+    .toggle-track { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
+    .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #475569; border-radius: 50%; transition: 0.3s; }
+    input:checked ~ .toggle-track { background: rgba(34,211,238,0.3); border-color: #22d3ee; box-shadow: 0 0 10px #22d3ee; }
+    input:checked ~ .toggle-thumb { transform: translateX(24px); background: #22d3ee; box-shadow: 0 0 8px #22d3ee; }
+    .nav-bar { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(15,15,15,0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; display: flex; padding: 0.4rem; z-index: 1000; }
+    .nav-item { flex: 1; text-align: center; padding: 0.7rem; color: rgba(255,255,255,0.3); font-size: 0.8rem; font-weight: 800; cursor: pointer; }
+    .nav-item.active { color: #fff; background: rgba(255,255,255,0.1); border-radius: 50px; }
   </style>
 </head>
 <body>
@@ -33,9 +30,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92" };
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const fb = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92" };
+    const db = getFirestore(initializeApp(fb));
     const { useState, useEffect } = React;
 
     const App = () => {
@@ -48,43 +44,36 @@
         onSnapshot(query(collection(db, "drivers"), orderBy("timestamp", "desc")), (s) => setDrivers(s.docs.map(d => ({id: d.id, ...d.data()}))));
       }, []);
 
-      return React.createElement('div', { style: { height: '100vh', display: 'flex', flexDirection: 'column' } }, [
-        React.createElement('div', { style: { height: '64px', display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderBottom: '1px solid rgba(34,211,238,0.2)' } }, [
-          React.createElement('span', { style: { color: '#22d3ee', fontWeight: 900, letterSpacing: '2px' } }, '◈ SUPREME-V92 CORE')
+      const content = tab === 'admin' ? React.createElement('div', null, [
+        React.createElement('div', { className: 'glass-card', style: { borderLeft: '5px solid #22d3ee' } }, [
+          React.createElement('h2', { style: { color: '#22d3ee', fontSize: '2.4rem', fontWeight: 900 } }, '$11,675'),
+          React.createElement('p', { style: { fontSize: '0.7rem', opacity: 0.5 } }, 'ALPHA CORE REAL-TIME PROFIT')
         ]),
-        React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '1.5rem' } }, [
-          tab === 'admin' && React.createElement('div', null, [
-            React.createElement('div', { className: 'glass-card', style: { borderLeft: '4px solid #22d3ee' } }, [
-              React.createElement('h2', { style: { color: '#22d3ee', fontSize: '2.5rem', margin: 0, fontWeight: 900 } }, '$11,675'),
-              React.createElement('p', { style: { fontSize: '0.7rem', opacity: 0.4 } }, '本週預估利潤 / TOTAL PROFIT')
-            ]),
-            React.createElement('div', { className: 'glass-card' }, [
-              React.createElement('h3', { style: { marginBottom: '1.5rem', fontSize: '0.8rem', color: '#fbbf24' } }, '維度防禦矩陣'),
-              ['kill_switch', 'empire_dial'].map(k => React.createElement('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' } }, [
-                React.createElement('span', { style: { fontSize: '0.8rem', fontWeight: 700 } }, k.toUpperCase()),
-                React.createElement('label', { className: 'toggle-wrap' }, [
-                  React.createElement('input', { type: 'checkbox', checked: matrix[k], style: { display: 'none' }, onChange: (e) => setDoc(doc(db, "system", "matrix"), { ...matrix, [k]: e.target.checked }) }),
-                  React.createElement('div', { className: 'toggle-track' }),
-                  React.createElement('div', { className: 'toggle-thumb' })
-                ])
-              ]))
-            ]),
-            React.createElement('div', { className: 'glass-card' }, [
-              drivers.map(d => React.createElement('div', { key: d.id, style: { display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' } }, [
-                React.createElement('span', null, d.name),
-                React.createElement('span', { style: { color: '#4ade80', fontWeight: 900 } }, `$${((d.delivered || 0) * 12).toLocaleString()}`)
-              ]))
+        React.createElement('div', { className: 'glass-card' }, [
+          ['kill_switch', 'empire_dial'].map(k => React.createElement('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' } }, [
+            React.createElement('span', { style: { fontSize: '0.8rem', fontWeight: 700 } }, k.toUpperCase()),
+            React.createElement('label', { className: 'toggle-wrap' }, [
+              React.createElement('input', { type: 'checkbox', checked: matrix[k], style: { display: 'none' }, onChange: (e) => setDoc(doc(db, "system", "matrix"), { ...matrix, [k]: e.target.checked }) }),
+              React.createElement('div', { className: 'toggle-track' }), React.createElement('div', { className: 'toggle-thumb' })
             ])
-          ])
+          ]))
         ]),
+        React.createElement('div', { className: 'glass-card' }, drivers.map(d => React.createElement('div', { key: d.id, style: { display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0' } }, [
+          React.createElement('span', null, d.name),
+          React.createElement('span', { style: { color: '#4ade80', fontWeight: 900 } }, `$${((d.delivered || 0) * 12).toLocaleString()}`)
+        ])))
+      ]) : React.createElement('div', { style: { textAlign: 'center', padding: '2rem', opacity: 0.5 } }, '維度數據載入中...');
+
+      return React.createElement('div', { style: { height: '100vh', display: 'flex', flexDirection: 'column' } }, [
+        React.createElement('div', { style: { padding: '1.2rem', borderBottom: '1px solid rgba(34,211,238,0.2)', fontWeight: 900, color: '#22d3ee' } }, '◈ SUPREME-V92'),
+        React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '1rem' } }, content),
         React.createElement('div', { className: 'nav-bar' }, [
           ['sovereign', '中心'], ['admin', '稽核'], ['sentinel', '物流']
         ].map(([id, label]) => React.createElement('div', { key: id, className: `nav-item ${tab === id ? 'active' : ''}`, onClick: () => setTab(id) }, label)))
       ]);
     };
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(App));
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
   </script>
 </body>
 </html>
