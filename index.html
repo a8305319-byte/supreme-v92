@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>在地物流 | Alpha Core v3.0</title>
+    <title>在地物流有限公司 | Alpha Core v3.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.tailwind.config = {
+            theme: { extend: { colors: { oledBlack: '#000000', neonCyan: '#22d3ee' } } }
+        }
+    </script>
     <style>
         /* 物理級補償：確保按鈕與背景絕對顯影 */
         body { background-color: #000000 !important; color: white !important; margin: 0; }
@@ -29,6 +34,7 @@
             border-radius: 0.75rem !important;
             margin-bottom: 1rem;
         }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="no-scrollbar">
