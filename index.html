@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Supreme-V92 · Sentinel v5.4</title>
+  <title>Supreme-V92 · Enterprise Core v5.4</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -15,23 +15,26 @@
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
     :root { --cyan: #22d3ee; --oled-black: #000; }
     body { background: var(--oled-black); color: #fff; overflow: hidden; font-family: sans-serif; user-select: none; }
-    .glass-card { background: rgba(255,255,255,0.03); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 1rem; margin-bottom: 0.8rem; }
+    .glass-card { background: rgba(255,255,255,0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 1rem; margin-bottom: 0.8rem; }
     
-    /* ════ 導航 HUD ════ */
-    .nav-hud { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; height: 56px; background: rgba(10,10,10,0.85); border: 1px solid rgba(34,211,238,0.2); border-radius: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; backdrop-filter: blur(30px); z-index: 999; }
-    .hud-btn { color: var(--cyan); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255,255,255,0.05); transition: 0.2s; cursor: pointer; }
+    /* ════ 戰術 HUD (圖標化導航) ════ */
+    .nav-hud { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; height: 56px; background: rgba(10,10,10,0.85); border: 1px solid rgba(34,211,238,0.2); border-radius: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 1.2rem; backdrop-filter: blur(30px); z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+    .hud-btn { color: var(--cyan); font-size: 1.1rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: 0.2s; cursor: pointer; }
     .hud-btn:active { transform: scale(0.9); background: rgba(34,211,238,0.2); }
     .hud-btn.disabled { opacity: 0.15; pointer-events: none; }
-    .hud-info { font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--cyan); font-weight: 800; letter-spacing: 1px; }
+    .hud-info { font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--cyan); font-weight: 800; letter-spacing: 1px; }
 
-    /* ════ 底部導航 ════ */
-    .nav-bar { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; height: 68px; background: rgba(15,15,15,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; display: flex; padding: 0.5rem; z-index: 1000; }
-    .nav-item { flex: 1; text-align: center; padding: 0.8rem; color: rgba(255,255,255,0.3); font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: 0.3s; }
+    /* ════ 底部導航欄 (繼承圖 71 視覺) ════ */
+    .nav-bar { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; height: 62px; background: rgba(15,15,15,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; display: flex; padding: 0.4rem; z-index: 1000; }
+    .nav-item { flex: 1; text-align: center; padding: 0.7rem; color: rgba(255,255,255,0.3); font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: 0.3s; }
     .nav-item.active { color: var(--cyan); background: rgba(255,255,255,0.05); border-radius: 40px; text-shadow: 0 0 8px var(--cyan); }
     
-    .loading-blur { opacity: 0.3; filter: blur(4px); transition: 0.3s; }
-    .alert-pulse { border-color: #f43f5e !important; animation: alert-glow 1.5s infinite; }
-    @keyframes alert-glow { 0%, 100% { box-shadow: 0 0 10px rgba(244,63,94,0.2); } 50% { box-shadow: 0 0 30px rgba(244,63,94,0.5); } }
+    .loading-blur { opacity: 0.3; filter: blur(6px); transition: 0.3s; }
+    .toggle-wrap { position: relative; width: 48px; height: 24px; cursor: pointer; }
+    .toggle-track { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
+    .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #475569; border-radius: 50%; transition: 0.3s; }
+    input:checked ~ .toggle-track { background: rgba(34,211,238,0.3); border-color: var(--cyan); }
+    input:checked ~ .toggle-thumb { transform: translateX(24px); background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
   </style>
 </head>
 <body>
@@ -42,9 +45,7 @@
     if (!firebase.apps.length) firebase.initializeApp(fbConfig);
     const db = firebase.firestore();
 
-    /* ════════════════════════════════════════════
-       ★ 核心分頁 Hook (修復截斷邏輯)
-    ════════════════════════════════════════════ */
+    /* ════ 核心數據引擎 v5.4 (併網版) ════ */
     function usePagination(collectionName, pageSize = 12, killSwitch = false) {
       const [items, setItems] = useState([]);
       const [loading, setLoading] = useState(false);
@@ -60,7 +61,7 @@
         setTotalCount(snap.data().count);
       }, [collectionName]);
 
-      const processDocs = (snap, isPrev = false) => {
+      const applyDocs = (snap, isPrev = false) => {
         const docs = isPrev ? snap.docs.slice().reverse() : snap.docs;
         if (docs.length === 0) return;
         setItems(docs.map(d => ({ id: d.id, ...d.data() })));
@@ -73,7 +74,7 @@
         setLoading(true);
         try {
           const snap = await db.collection(collectionName).orderBy('timestamp', 'asc').orderBy(docIdField, 'asc').limit(pageSize).get();
-          processDocs(snap);
+          applyDocs(snap);
           setHasPrev(false);
           setHasNext(snap.docs.length === pageSize);
         } finally { setLoading(false); }
@@ -84,11 +85,7 @@
         setLoading(true);
         try {
           const snap = await db.collection(collectionName).orderBy('timestamp', 'asc').orderBy(docIdField, 'asc').startAfter(lastDoc).limit(pageSize).get();
-          if (!snap.empty) {
-            processDocs(snap);
-            setHasPrev(true);
-            setHasNext(snap.docs.length === pageSize);
-          }
+          if (!snap.empty) { applyDocs(snap); setHasPrev(true); setHasNext(snap.docs.length === pageSize); }
         } finally { setLoading(false); }
       };
 
@@ -97,11 +94,7 @@
         setLoading(true);
         try {
           const snap = await db.collection(collectionName).orderBy('timestamp', 'asc').orderBy(docIdField, 'asc').endBefore(firstDoc).limitToLast(pageSize).get();
-          if (!snap.empty) {
-            processDocs(snap);
-            setHasNext(true);
-            setHasPrev(snap.docs.length === pageSize);
-          }
+          if (!snap.empty) { applyDocs(snap); setHasNext(true); setHasPrev(snap.docs.length === pageSize); }
         } finally { setLoading(false); }
       };
 
@@ -110,70 +103,98 @@
         setLoading(true);
         try {
           const snap = await db.collection(collectionName).orderBy('timestamp', 'desc').orderBy(docIdField, 'desc').limit(pageSize).get();
-          processDocs(snap, true);
-          setHasNext(false);
-          setHasPrev(snap.docs.length === pageSize);
+          applyDocs(snap, true);
+          setHasNext(false); setHasPrev(snap.docs.length === pageSize);
         } finally { setLoading(false); }
       };
 
-      useEffect(() => { fetchTotal(); fetchFirst(); }, [killSwitch]);
+      useEffect(() => { fetchTotal(); fetchFirst(); }, [killSwitch, fetchTotal]);
 
       return { items, loading, totalCount, hasPrev, hasNext, fetchFirst, fetchNext, fetchPrev, fetchLast };
     }
 
     const App = () => {
-      const [tab, setTab] = useState('sentinel');
-      const [killSwitch, setKillSwitch] = useState(false);
-      
-      const { items: drivers, loading, totalCount, hasPrev, hasNext, fetchFirst, fetchNext, fetchPrev, fetchLast } = usePagination('drivers', 12, killSwitch);
+      const [tab, setTab] = useState('admin'); // 預設開啟稽核
+      const [matrix, setMatrix] = useState({ kill_switch: false, empire_dial: true });
+      const { items: drivers, loading, totalCount, hasPrev, hasNext, fetchFirst, fetchNext, fetchPrev, fetchLast } = usePagination('drivers', 12, matrix.kill_switch);
 
-      // 模擬從 v3.0 繼承的監聽
       useEffect(() => {
-        const unsub = db.doc("system/matrix").onSnapshot(s => s.exists && setKillSwitch(s.data().kill_switch));
+        const unsub = db.doc("system/matrix").onSnapshot(s => s.exists && setMatrix(s.data()));
         return () => unsub();
       }, []);
 
-      return (
-        <div className="h-screen flex flex-col relative p-6">
-          <header className="flex justify-between items-center mb-6">
-            <div className="font-black text-cyan-400 text-xl tracking-tighter">◈ SUPREME-V92</div>
-            <div className={`px-3 py-1 rounded-full text-[10px] font-mono border ${killSwitch ? 'bg-rose-500/10 text-rose-500 border-rose-500/30' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'}`}>
-              {killSwitch ? 'SYSTEM HALTED' : `TOTAL: ${totalCount} UNITS`}
-            </div>
-          </header>
-
-          <main className={`flex-1 overflow-y-auto pb-40 no-scrollbar ${loading ? 'loading-blur' : ''}`}>
-            {killSwitch ? (
-              <div className="empty-state py-20 text-center opacity-50">
-                <i className="fas fa-shield-halved text-4xl mb-4"></i>
-                <p className="text-xs tracking-widest font-bold">SECURITY LOCK ENABLED</p>
-              </div>
-            ) : drivers.map(d => (
-              <div key={d.id} className="glass-card flex justify-between items-center border-l-4 border-cyan-500 animate-in fade-in duration-300">
-                <div>
-                  <div className="font-bold text-white/90 text-sm">{d.name || 'Anonymous'}</div>
-                  <div className="text-[10px] text-white/30 font-mono">ID: {d.id}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-cyan-400 font-black font-mono text-lg">${(d.delivered || 0) * 12}</div>
-                  <div className="text-[10px] text-white/20 tracking-tighter">{d.phone || '09XX-XXX-XXX'}</div>
-                </div>
+      const AdminView = (
+        <div className="animate-in fade-in duration-500">
+          <div className="glass-card border-l-4 border-cyan-500">
+            <h2 className="text-cyan-400 text-4xl font-black font-mono">$11,675</h2>
+            <p className="text-[10px] opacity-40 tracking-widest mt-1">REAL-TIME SYSTEM PROFIT</p>
+          </div>
+          <div className="glass-card">
+            {['kill_switch', 'empire_dial'].map(k => (
+              <div key={k} className="flex justify-between items-center mb-4">
+                <span className="text-[10px] font-bold tracking-widest">{k.toUpperCase()}</span>
+                <label className="toggle-wrap">
+                  <input type="checkbox" checked={matrix[k]||false} className="hidden" 
+                    onChange={(e) => db.doc("system/matrix").update({[k]: e.target.checked})} />
+                  <div className="toggle-track"></div><div className="toggle-thumb"></div>
+                </label>
               </div>
             ))}
+          </div>
+          <div className="glass-card">
+             <p className="text-[10px] text-cyan-400 font-bold mb-4 opacity-50">AUDIT LOGS / UNITS</p>
+             {drivers.map(d => (
+               <div key={d.id} className="flex justify-between py-2 border-b border-white/5 last:border-0">
+                 <span className="text-xs font-bold text-white/80">{d.name}</span>
+                 <span className="text-cyan-400 font-mono text-sm">${((d.delivered||0)*12).toLocaleString()}</span>
+               </div>
+             ))}
+          </div>
+        </div>
+      );
+
+      const SentinelView = (
+        <div className="animate-in fade-in duration-500">
+           <div className={`flex flex-col gap-2 ${loading ? 'loading-blur' : ''}`}>
+             {drivers.map(d => (
+               <div key={d.id} className="glass-card flex justify-between items-center border-l-2 border-white/10">
+                 <div>
+                   <p className="font-bold text-sm text-white/90">{d.name}</p>
+                   <p className="text-[10px] opacity-30 font-mono">#{d.id.slice(-4)}</p>
+                 </div>
+                 <div className="text-right">
+                   <p className="text-cyan-400 font-black font-mono text-lg">{d.delivered || 0} PKT</p>
+                   <p className="text-[10px] opacity-30 italic">{d.phone}</p>
+                 </div>
+               </div>
+             ))}
+           </div>
+           {/* v5.4 Pagination HUD */}
+           <div className="nav-hud">
+             <div className="flex gap-4">
+               <i onClick={fetchFirst} className={`fas fa-angles-left hud-btn ${!hasPrev ? 'disabled' : ''}`}></i>
+               <i onClick={fetchPrev} className={`fas fa-angle-left hud-btn ${!hasPrev ? 'disabled' : ''}`}></i>
+             </div>
+             <div className="hud-info">{loading ? 'SYNCING...' : `TOTAL ${totalCount}`}</div>
+             <div className="flex gap-4">
+               <i onClick={fetchNext} className={`fas fa-angle-right hud-btn ${!hasNext ? 'disabled' : ''}`}></i>
+               <i onClick={fetchLast} className={`fas fa-angles-right hud-btn ${!hasNext ? 'disabled' : ''}`}></i>
+             </div>
+           </div>
+        </div>
+      );
+
+      return (
+        <div className="h-screen flex flex-col p-6">
+          <header className="flex justify-between items-center mb-6">
+            <span className="font-black text-cyan-400 tracking-tighter">◈ SUPREME-V92</span>
+            <span className="text-[9px] font-mono opacity-30">CORE v5.4·STABLE</span>
+          </header>
+
+          <main className="flex-1 overflow-y-auto pb-40 no-scrollbar">
+            {tab === 'admin' ? AdminView : (tab === 'sentinel' ? SentinelView : <div className="text-center py-20 opacity-20">COMMAND CENTER OFFLINE</div>)}
           </main>
 
-          {/* Navigation HUD */}
-          {!killSwitch && (
-            <div className="nav-hud">
-              <button onClick={fetchFirst} className={`hud-btn ${!hasPrev ? 'disabled' : ''}`}><i className="fas fa-angles-left"></i></button>
-              <button onClick={fetchPrev} className={`hud-btn ${!hasPrev ? 'disabled' : ''}`}><i className="fas fa-angle-left"></i></button>
-              <div className="hud-info">{loading ? 'SYNC...' : 'READY'}</div>
-              <button onClick={fetchNext} className={`hud-btn ${!hasNext ? 'disabled' : ''}`}><i className="fas fa-angle-right"></i></button>
-              <button onClick={fetchLast} className={`hud-btn ${!hasNext ? 'disabled' : ''}`}><i className="fas fa-angles-right"></i></button>
-            </div>
-          )}
-
-          {/* 底部導航欄 */}
           <nav className="nav-bar">
             {[['sovereign', '中心'], ['admin', '稽核'], ['sentinel', '物流']].map(([id, label]) => (
               <div key={id} className={`nav-item ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)}>{label}</div>
