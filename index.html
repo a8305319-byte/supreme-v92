@@ -3,42 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>在地物流有限公司 | Alpha Core v3.0</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        window.tailwind.config = {
-            theme: { extend: { colors: { oledBlack: '#000000', neonCyan: '#22d3ee' } } }
-        }
-    </script>
+    <title>在地物流 | SUPREME V92 CORE</title>
     <style>
-        /* 物理級補償：確保按鈕與背景絕對顯影 */
-        body { background-color: #000000 !important; color: white !important; margin: 0; }
-        #root { min-height: 100vh; }
-        /* 強制讓所有按鈕具備高度、背景色與圓角 */
-        button { 
-            min-height: 50px !important; 
-            background-color: #22d3ee !important; 
-            color: black !important;
-            border-radius: 1rem !important;
-            font-weight: 900 !important;
-            border: none !important;
-            cursor: pointer;
-            display: flex !important;
-            align-items: center; justify-content: center;
-        }
-        input {
-            background: rgba(255,255,255,0.1) !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-            color: white !important;
-            padding: 1rem !important;
-            border-radius: 0.75rem !important;
-            margin-bottom: 1rem;
-        }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        :root { --neon-cyan: #22d3ee; --neon-amber: #fbbf24; }
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; overflow-x: hidden; }
+        .glass-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; backdrop-filter: blur(20px); padding: 2rem; margin-bottom: 1.5rem; }
+        .btn-cyan { background: var(--neon-cyan); color: #000; border: none; padding: 1rem; border-radius: 1rem; font-weight: 900; cursor: pointer; box-shadow: 0 0 15px var(--neon-cyan); width: 100%; }
+        .switch { width: 50px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 13px; position: relative; cursor: pointer; }
+        .switch.active { background: var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); }
+        .knob { width: 22px; height: 22px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
+        .switch.active .knob { left: 26px; }
+        .nav-bar { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(10,10,10,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; display: flex; padding: 0.5rem; backdrop-filter: blur(20px); z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; padding: 1rem; color: rgba(255,255,255,0.2); font-size: 0.7rem; font-weight: 900; cursor: pointer; }
+        .nav-item.active { color: #fff; background: rgba(255,255,255,0.1); border-radius: 100px; }
     </style>
 </head>
-<body class="no-scrollbar">
+<body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI", authDomain: "supreme-v92.firebaseapp.com", projectId: "supreme-v92" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [tab, setTab] = useState('admin');
+            const [matrix, setMatrix] = useState({ kill_switch: false, empire_dial: true });
+
+            useEffect(() => {
+                onSnapshot(doc(db, "system", "matrix"), (s) => s.exists() && setMatrix(s.data()));
+            }, []);
+
+            return React.createElement('div', { style: { padding: '2rem' } }, [
+                // 標題區
+                React.createElement('div', { style: { marginBottom: '2rem', textAlign: 'center' } }, [
+                    React.createElement('h1', { style: { fontSize: '0.8rem', letterSpacing: '0.4em', opacity: 0.4 } }, 'SUPREME V92 ALPHA CORE'),
+                ]),
+
+                // 決策數據區 (圖四十的功能)
+                tab === 'admin' && React.createElement('div', null, [
+                    React.createElement('div', { className: 'glass-card' }, [
+                        React.createElement('h2', { style: { color: 'var(--neon-cyan)', margin: 0 } }, '$11,675'),
+                        React.createElement('p', { style: { fontSize: '0.6rem', opacity: 0.4 } }, '本週利潤預估'),
+                    ]),
+                    React.createElement('div', { className: 'glass-card' }, [
+                        React.createElement('h3', { style: { margin: '0 0 1.5rem 0' } }, '維度防禦矩陣'),
+                        Object.keys(matrix).map(k => React.createElement('div', { key: k, style: { display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' } }, [
+                            React.createElement('span', null, k.toUpperCase()),
+                            React.createElement('div', { 
+                                className: `switch ${matrix[k] ? 'active' : ''}`,
+                                onClick: () => setDoc(doc(db, "system", "matrix"), { ...matrix, [k]: !matrix[k] })
+                            }, React.createElement('div', { className: 'knob' }))
+                        ]))
+                    ])
+                ]),
+
+                // 底部導航
+                React.createElement('div', { className: 'nav-bar' }, [
+                    ['sovereign', '中心'], ['admin', '稽核'], ['sentinel', '物流']
+                ].map(([id, label]) => React.createElement('div', {
+                    key: id,
+                    className: `nav-item ${tab === id ? 'active' : ''}`,
+                    onClick: () => setTab(id)
+                }, label)))
+            ]);
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
 </body>
 </html>
