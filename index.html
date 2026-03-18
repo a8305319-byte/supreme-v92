@@ -1,15 +1,46 @@
-<div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-72 h-16 bg-[#1a1a1a]/80 backdrop-blur-xl border border-white/10 rounded-full flex justify-around items-center px-6 shadow-2xl z-50">
+<nav class="fixed bottom-8 left-1/2 -translate-x-1/2 w-72 h-16 bg-[#1a1a1a]/80 backdrop-blur-2xl border border-white/10 rounded-full flex justify-around items-center px-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[9999]">
     
-    <button class="text-cyan-400 hover:scale-110 transition-transform">
-        <i class="fas fa-eye text-xl"></i>
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+
+    <button onclick="switchTab('monitor')" class="group relative text-cyan-400 hover:scale-110 transition-all duration-300">
+        <i class="fas fa-eye text-xl drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"></i>
+        <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full shadow-[0_0_5px_cyan]"></div>
     </button>
 
-    <button class="text-white/70 hover:text-white hover:scale-110 transition-transform">
+    <button onclick="switchTab('salary')" class="group text-white/40 hover:text-white hover:scale-110 transition-all duration-300">
         <i class="fas fa-calculator text-xl"></i>
     </button>
 
-    <button class="text-white/70 hover:text-white hover:scale-110 transition-transform">
+    <button onclick="switchTab('fleet')" class="group text-white/40 hover:text-white hover:scale-110 transition-all duration-300">
         <i class="fas fa-truck text-xl"></i>
     </button>
 
-</div>
+</nav>
+
+<div class="h-32"></div>
+
+<script>
+    /**
+     * Supreme-V92 分頁切換核心
+     * @param {string} tabId - 目標頁面 ID
+     */
+    function switchTab(tabId) {
+        console.log(`Command Received: Accessing ${tabId} storage...`);
+        
+        // 1. 取得所有面板
+        const panels = ['monitor', 'salary', 'fleet'];
+        
+        // 2. 隱藏所有面板，顯示目標面板 (假設你的面板 ID 是 panel-monitor 等)
+        panels.forEach(id => {
+            const el = document.getElementById(`panel-${id}`);
+            if (el) el.style.display = 'none';
+        });
+
+        const targetEl = document.getElementById(`panel-${tabId}`);
+        if (targetEl) {
+            targetEl.style.display = 'block';
+        } else {
+            console.warn(`Warning: ${tabId} panel not found in Alpha Core.`);
+        }
+    }
+</script>
