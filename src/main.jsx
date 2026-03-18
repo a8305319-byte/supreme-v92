@@ -11,7 +11,6 @@ import {
   ChevronRight, TrendingUp, Plus, Trash2
 } from 'lucide-react';
 
-// --- Firebase 核心併網配置 ---
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, collection, query, orderBy } from "firebase/firestore";
 
@@ -33,78 +32,15 @@ const SYSTEM_AUTH = {
   admin: { phone: '0988128172', key: '08172' }
 };
 
-const GlobalStyles = () => (
-  <style dangerouslySetInnerHTML={{ __html: `
-    :root {
-      --oled-black: #000000;
-      --glass-bg: rgba(255, 255, 255, 0.03);
-      --glass-border: rgba(255, 255, 255, 0.08);
-      --neon-cyan: #22d3ee;
-      --neon-rose: #f43f5e;
-      --neon-amber: #fbbf24;
-      --neon-emerald: #10b981;
-    }
-    body { background-color: var(--oled-black); color: #ffffff; overflow-x: hidden; font-family: 'Inter', "Microsoft JhengHei", sans-serif; user-select: none; }
-    .glass-card { background: var(--glass-bg); backdrop-filter: blur(25px); border: 1px solid var(--glass-border); box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.9); border-radius: 2.5rem; }
-    .btn-tactile:active { transform: scale(0.94); filter: brightness(1.2); }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
-    .scanner-active::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--neon-cyan); box-shadow: 0 0 25px var(--neon-cyan); animation: scanline 3s linear infinite; opacity: 0.4; z-index: 50; pointer-events: none; }
-    .switch-matrix { width: 48px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 13px; position: relative; cursor: pointer; transition: 0.3s; }
-    .switch-matrix.active { background: var(--neon-cyan); box-shadow: 0 0 12px rgba(34,211,238,0.5); }
-    .knob { width: 22px; height: 22px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
-    .switch-matrix.active .knob { left: 24px; }
-    .manual-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 0.8rem; font-family: 'JetBrains Mono', monospace; color: var(--neon-cyan); font-size: 1.25rem; font-weight: 900; width: 100%; text-align: center; outline: none; transition: all 0.3s; }
-    .manual-input:focus { border-color: var(--neon-cyan); background: rgba(34, 211, 238, 0.05); }
-  ` }} />
-);
-
-const EmpireDial = ({ value, label, color, onChange, disabled }) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const dialRef = useRef(null);
-  const handleUpdate = (e) => {
-    if (disabled || (!isDragging && e.type !== 'click')) return;
-    if (!dialRef.current) return;
-    const rect = dialRef.current.getBoundingClientRect();
-    const clientX = e.clientX || (e.touches?.[0]?.clientX || 0);
-    const clientY = e.clientY || (e.touches?.[0]?.clientY || 0);
-    let angle = Math.atan2(clientY - (rect.top + rect.height / 2), clientX - (rect.left + rect.width / 2)) * (180 / Math.PI) + 90;
-    if (angle < 0) angle += 360;
-    onChange(Math.round((angle / 360) * 150));
-  };
-  return (
-    <div className={`flex flex-col items-center gap-4 ${disabled ? 'opacity-20 pointer-events-none' : ''}`}>
-      <div ref={dialRef} className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 relative cursor-pointer active:scale-95 touch-none"
-           style={{ borderColor: color, boxShadow: `0 0 20px ${color}33`, transform: `rotate(${(value / 150) * 360}deg)` }}
-           onMouseDown={() => setIsDragging(true)} onMouseUp={() => setIsDragging(false)} onMouseMove={handleUpdate}
-           onTouchStart={() => setIsDragging(true)} onTouchEnd={() => setIsDragging(false)} onTouchMove={handleUpdate}>
-        <div className="w-1.5 h-6 absolute top-1.5 rounded-full left-1/2 -translate-x-1/2" style={{ background: color }}></div>
-      </div>
-      <div className="flex flex-col items-center">
-        <input type="number" value={value} readOnly={disabled} onChange={(e) => onChange(parseInt(e.target.value) || 0)}
-               className="bg-transparent text-3xl font-black font-mono text-center w-24 outline-none" style={{ color }} />
-        <span className="text-[10px] uppercase tracking-widest opacity-40 font-bold mt-1 font-sans">{label}</span>
-      </div>
-    </div>
-  );
-};
-
 const App = () => {
   const [view, setView] = useState('splash');
   const [role, setRole] = useState('sentinel');
-  const [activeTab, setActiveTab] = useState('sovereign'); // 核心控制分頁
+  const [activeTab, setActiveTab] = useState('sovereign'); 
   const [loginInput, setLoginInput] = useState({ phone: '', pwd: '' });
   const [drivers, setDrivers] = useState([]);
-  const [activeSentinel, setActiveSentinel] = useState(null);
-  const [matrix, setMatrix] = useState({ admin_rate_edit: false, kill_switch: false, empire_dial: true, ai_audit_active: true });
-  const [auditLogs, setAuditLogs] = useState([]);
+  const [matrix, setMatrix] = useState({ admin_rate_edit: true, kill_switch: false, empire_dial: true, ai_audit_active: true });
   const [isAddingPersonnel, setIsAddingPersonnel] = useState(false);
   const [newDriver, setNewDriver] = useState({ name: '', phone: '' });
-
-  const logAction = (action, details) => {
-    const newEntry = { time: new Date().toLocaleTimeString(), action, details, id: Math.random() };
-    setAuditLogs(prev => [newEntry, ...prev].slice(0, 12));
-  };
 
   useEffect(() => {
     const q = query(collection(db, "drivers"), orderBy("timestamp", "desc"));
@@ -113,140 +49,130 @@ const App = () => {
     return () => { unsubDrivers(); unsubMatrix(); };
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = (e) => {
+    e?.preventDefault();
     const { phone, pwd } = loginInput;
     if (phone === SYSTEM_AUTH.sovereign.phone && pwd === SYSTEM_AUTH.sovereign.key) { 
-      setRole('sovereign'); setActiveTab('sovereign'); setView('core'); logAction('主權認證', '指揮官進入核心'); 
+      setRole('sovereign'); setActiveTab('sovereign'); setView('core'); 
     } else if (phone === SYSTEM_AUTH.admin.phone && pwd === SYSTEM_AUTH.admin.key) { 
-      setRole('admin'); setActiveTab('admin'); setView('core'); logAction('稽核連線', '合規人員已連入'); 
+      setRole('admin'); setActiveTab('admin'); setView('core'); 
     } else {
       const d = drivers.find(x => x.phone === phone && x.pwd === pwd);
-      if (d) { setActiveSentinel(d); setRole('sentinel'); setActiveTab('sentinel'); setView('core'); logAction('哨兵連網', `${d.name} 已同步`); }
+      if (d) { setRole('sentinel'); setActiveTab('sentinel'); setView('core'); }
       else alert("身分授權失敗。");
     }
   };
 
-  useEffect(() => { setTimeout(() => setView('login'), 3000); }, []);
+  useEffect(() => { setTimeout(() => setView('login'), 2000); }, []);
 
   if (view === 'splash') return (
-    <div className="h-screen w-screen bg-black flex flex-col items-center justify-center scanner-active overflow-hidden">
+    <div className="h-screen w-screen bg-black flex flex-col items-center justify-center overflow-hidden">
       <Fingerprint size={80} className="text-cyan-400 animate-pulse mb-8" />
-      <h2 className="text-2xl font-black tracking-[0.6em] text-white/90 uppercase italic">在地物流有限公司</h2>
+      <h2 className="text-xl font-black tracking-[0.5em] text-white uppercase italic">在地物流 ALPHA CORE</h2>
     </div>
   );
 
   if (view === 'login') return (
     <div className="h-screen w-screen bg-black flex flex-col items-center justify-center p-8">
-      <Building2 size={64} className="text-cyan-400 mb-12" />
-      <div className="w-full max-w-sm space-y-6 bg-white/5 border border-white/10 p-8 rounded-[3rem] backdrop-blur-3xl">
-        <input type="text" placeholder="主權手機號碼" className="manual-input" onChange={e => setLoginInput({...loginInput, phone: e.target.value})} />
-        <input type="password" placeholder="認證金鑰" className="manual-input tracking-widest" onChange={e => setLoginInput({...loginInput, pwd: e.target.value})} />
-        <button onClick={handleLogin} className="w-full py-5 rounded-2xl bg-cyan-500 text-white font-black uppercase tracking-widest active:scale-95 transition-all">啟動主權驗證</button>
-      </div>
+      <form onSubmit={handleLogin} className="w-full max-w-sm space-y-6">
+        <Building2 size={64} className="text-cyan-400 mx-auto mb-8" />
+        <input type="text" placeholder="主權手機號碼" className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-cyan-400 font-bold outline-none focus:border-cyan-500" onChange={e => setLoginInput({...loginInput, phone: e.target.value})} />
+        <input type="password" placeholder="認證金鑰" className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-cyan-400 font-bold outline-none focus:border-cyan-500" onChange={e => setLoginInput({...loginInput, pwd: e.target.value})} />
+        <button type="submit" className="w-full py-5 rounded-2xl bg-cyan-500 text-black font-black uppercase tracking-widest active:scale-95 transition-all">啟動主權驗證</button>
+      </form>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 pb-40 overflow-y-auto no-scrollbar font-sans">
-      <GlobalStyles />
-      <header className="flex justify-between items-center mb-8 shrink-0">
+    <div className="min-h-screen bg-black text-white p-6 pb-40 no-scrollbar overflow-x-hidden">
+      <header className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-2">
           <Radio size={14} className="text-cyan-400 animate-pulse" />
           <span className="text-[10px] font-black uppercase tracking-widest text-white/40 italic">Alpha Core v3.0 | Synced</span>
         </div>
-        <button onClick={() => setView('login')} className="p-3 bg-white/5 border border-white/10 rounded-full"><LogOut size={18} /></button>
+        <button onClick={() => setView('login')} className="p-3 bg-white/5 border border-white/10 rounded-full active:scale-90"><LogOut size={18} /></button>
       </header>
 
-      <main className="space-y-8 max-w-xl mx-auto">
-        
-        {/* 指揮官面板：數據終端 */}
+      <main className="max-w-xl mx-auto space-y-8">
+        {/* --- 指揮官中心 --- */}
         {activeTab === 'sovereign' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="bg-zinc-900 border border-white/5 rounded-[2.5rem] p-10 flex items-center justify-between shadow-2xl">
-              <div>
-                <p className="text-[10px] text-white/20 uppercase tracking-[0.4em] font-bold mb-2">Authenticated</p>
-                <h2 className="text-3xl font-black italic">數據終端</h2>
-              </div>
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white/5 border border-cyan-500/30 p-8 rounded-[2.5rem] flex items-center justify-between">
+              <div><p className="text-[10px] text-cyan-400/50 uppercase tracking-widest font-bold">Authenticated</p><h2 className="text-3xl font-black italic">指揮官中心</h2></div>
               <Eye size={36} className="text-cyan-400" />
             </div>
 
-            <div className="bg-white/5 border border-cyan-500/20 rounded-[2.5rem] p-8">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2"><UserPlus size={18}/> 錄入新夥伴</h3>
-                <button onClick={() => setIsAddingPersonnel(!isAddingPersonnel)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">{isAddingPersonnel ? <X size={16}/> : <Plus size={16}/>}</button>
+            <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-black text-white/60 uppercase">錄入新夥伴</h3>
+                <button onClick={() => setIsAddingPersonnel(!isAddingPersonnel)} className="p-2 bg-white/10 rounded-full">{isAddingPersonnel ? <X size={16}/> : <Plus size={16}/>}</button>
               </div>
               {isAddingPersonnel && (
-                <div className="space-y-4 animate-in zoom-in-95 duration-200">
-                  <input placeholder="人員姓名" className="manual-input !text-sm" onChange={e => setNewDriver({...newDriver, name: e.target.value})} />
-                  <input placeholder="連結電話 (10碼)" className="manual-input !text-sm" onChange={e => setNewDriver({...newDriver, phone: e.target.value})} />
+                <div className="space-y-4 pt-4">
+                  <input placeholder="人員姓名" className="w-full bg-black/50 border border-white/10 p-4 rounded-xl outline-none" onChange={e => setNewDriver({...newDriver, name: e.target.value})} />
+                  <input placeholder="連結電話" className="w-full bg-black/50 border border-white/10 p-4 rounded-xl outline-none" onChange={e => setNewDriver({...newDriver, phone: e.target.value})} />
                   <button onClick={async () => {
                     await setDoc(doc(db, "drivers", newDriver.phone), { name: newDriver.name, phone: newDriver.phone, pwd: `0${newDriver.phone.slice(-4)}`, timestamp: new Date(), delivered: 0, returned: 0 });
                     setIsAddingPersonnel(false);
-                    logAction('建檔成功', newDriver.name);
-                  }} className="w-full py-5 bg-cyan-600 rounded-2xl font-black uppercase">確認提交到雲端資料庫</button>
+                  }} className="w-full py-4 bg-cyan-500 text-black font-black rounded-xl uppercase">確認提交到雲端資料庫</button>
                 </div>
               )}
             </div>
 
-            <div className="glass-card p-8 space-y-4">
+            <div className="space-y-4">
               <h3 className="text-[10px] font-black text-white/30 uppercase tracking-widest">雲端人員名錄</h3>
               {drivers.map(d => (
-                <div key={d.id} className="flex justify-between items-center p-4 bg-black/40 rounded-2xl border border-white/5">
-                  <div className="flex flex-col">
-                    <span className="text-lg font-black">{d.name}</span>
-                    <span className="text-[10px] font-mono opacity-40">{d.phone}</span>
+                <div key={d.id} className="p-6 bg-white/5 rounded-3xl border border-white/5 flex justify-between items-center">
+                  <div><p className="text-lg font-black">{d.name}</p><p className="text-[10px] opacity-40 font-mono">{d.phone}</p></div>
+                  <div className="text-right">
+                    <p className="text-xs font-black text-cyan-400">KEY: {d.pwd}</p>
+                    <p className="text-[10px] opacity-40">已送: {d.delivered || 0}</p>
                   </div>
-                  <span className="text-[10px] font-mono text-cyan-500 font-bold tracking-widest">KEY: {d.pwd}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* 稽核面板：財務矩陣 */}
+        {/* --- 稽核中心 (功能全開開關) --- */}
         {activeTab === 'admin' && (
           <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="bg-zinc-900 border border-amber-500/20 rounded-[2.5rem] p-10 flex items-center justify-between">
-              <h2 className="text-3xl font-black italic text-amber-400">稽核核算系統</h2>
-              <Calculator size={36} className="opacity-50" />
+            <div className="bg-zinc-900 border border-amber-500/30 p-10 rounded-[2.5rem] flex items-center justify-between">
+              <h2 className="text-3xl font-black italic text-amber-400">稽核中心</h2>
+              <Calculator size={36} className="text-amber-400" />
             </div>
-            <div className="bg-zinc-900/50 border border-white/10 rounded-[2.5rem] p-8 space-y-6">
-              <h3 className="text-xs font-black text-rose-500 uppercase flex items-center gap-2.5"><LockKeyhole size={18}/> 核心維度矩陣</h3>
+
+            <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] space-y-6">
+              <h3 className="text-xs font-black text-rose-500 uppercase flex items-center gap-2"><LockKeyhole size={18}/> 維度防禦矩陣</h3>
               {Object.keys(matrix).map(k => (
-                <div key={k} className="flex justify-between items-center p-5 bg-black/60 rounded-3xl border border-white/5">
-                  <span className="text-xs font-bold text-white/80 uppercase">{k.replace(/_/g, ' ')}</span>
-                  <div onClick={async () => { const v = !matrix[k]; await setDoc(doc(db, "system", "matrix"), {...matrix, [k]: v}); }} className={`switch-matrix ${matrix[k] ? 'active' : ''}`}><div className="knob"></div></div>
+                <div key={k} className="flex justify-between items-center p-5 bg-black/40 rounded-3xl border border-white/5">
+                  <span className="text-xs font-bold uppercase">{k.replace(/_/g, ' ')}</span>
+                  <div onClick={async () => { const v = !matrix[k]; await setDoc(doc(db, "system", "matrix"), {...matrix, [k]: v}); }} 
+                       className={`w-12 h-6 rounded-full relative transition-all cursor-pointer ${matrix[k] ? 'bg-cyan-500 shadow-[0_0_10px_#22d3ee]' : 'bg-white/10'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${matrix[k] ? 'left-7' : 'left-1'}`} />
+                  </div>
                 </div>
               ))}
             </div>
+            
+            <div className="p-8 bg-white/5 rounded-[2.5rem] border border-amber-500/10">
+               <h3 className="text-xs font-black text-amber-400 mb-6 uppercase tracking-widest">實時薪資核算 (費率: 12/件)</h3>
+               {drivers.map(d => (
+                 <div key={d.id} className="flex justify-between items-center mb-4 p-4 bg-black/20 rounded-2xl">
+                    <span className="font-bold">{d.name}</span>
+                    <span className="font-mono text-amber-400 font-black">${((d.delivered || 0) * 12).toLocaleString()}</span>
+                 </div>
+               ))}
+            </div>
           </div>
         )}
-
-        {/* 哨兵面板：實體撥盤 */}
-        {activeTab === 'sentinel' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
-             <div className="bg-zinc-900 p-12 rounded-[3rem] flex justify-center gap-12 border border-white/5">
-                <EmpireDial value={activeSentinel?.delivered || 0} label="配送完成" color="#22d3ee" disabled={!matrix.empire_dial} onChange={() => {}} />
-                <EmpireDial value={activeSentinel?.returned || 0} label="逆物流回收" color="#fbbf24" disabled={!matrix.empire_dial} onChange={() => {}} />
-             </div>
-             <p className="text-center text-[10px] font-bold text-white/20 tracking-[0.5em] uppercase">Alpha Sentinel Sync Active</p>
-          </div>
-        )}
-
       </main>
 
-      {/* 底部功能導航列：一件貼上的核心組件 */}
-      <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-zinc-950/90 border border-white/10 backdrop-blur-3xl rounded-full p-2.5 flex justify-around shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-[10000]">
-          {[ 
-            { id: 'sovereign', icon: Eye, color: 'text-cyan-400', label: '中心' }, 
-            { id: 'admin', icon: Calculator, color: 'text-amber-400', label: '財務' }, 
-            { id: 'sentinel', icon: Truck, color: 'text-emerald-400', label: '物流' } 
-          ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 py-4 rounded-full flex flex-col items-center gap-1.5 transition-all duration-300 ${activeTab === tab.id ? 'bg-white/10 scale-100 opacity-100' : 'opacity-20 scale-90'}`}>
-              <tab.icon size={22} className={activeTab === tab.id ? tab.color : 'text-white/40'} />
-              <span className={`text-[9px] font-black uppercase tracking-widest ${activeTab === tab.id ? 'opacity-100' : 'opacity-0'}`}>{tab.label}</span>
-            </button>
-          ))}
+      {/* --- 底部導航 (修正後的切換邏輯) --- */}
+      <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-zinc-950/90 border border-white/10 backdrop-blur-3xl rounded-full p-2 flex justify-around shadow-2xl z-50">
+        <button onClick={() => setActiveTab('sovereign')} className={`flex-1 py-4 rounded-full flex flex-col items-center gap-1 transition-all ${activeTab === 'sovereign' ? 'bg-white/10 opacity-100' : 'opacity-20'}`}><Eye size={20} className="text-cyan-400" /><span className="text-[8px] font-black uppercase tracking-widest">中心</span></button>
+        <button onClick={() => setActiveTab('admin')} className={`flex-1 py-4 rounded-full flex flex-col items-center gap-1 transition-all ${activeTab === 'admin' ? 'bg-white/10 opacity-100' : 'opacity-20'}`}><Calculator size={20} className="text-amber-400" /><span className="text-[8px] font-black uppercase tracking-widest">稽核</span></button>
+        <button onClick={() => setActiveTab('sentinel')} className={`flex-1 py-4 rounded-full flex flex-col items-center gap-1 transition-all ${activeTab === 'sentinel' ? 'bg-white/10 opacity-100' : 'opacity-20'}`}><Truck size={20} className="text-emerald-400" /><span className="text-[8px] font-black uppercase tracking-widest">物流</span></button>
       </nav>
     </div>
   );
