@@ -101,12 +101,24 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
           <option value="調度員">調度員</option>
         </select>
       </div>
-      <div class="f-grp"><label class="f-label">駕照類別</label>
+      <div class="f-grp"><label class="f-label">駕照類別（可複選最高級別）</label>
         <select class="f-input" id="app-license">
-          <option value="普通小型車">普通小型車</option>
-          <option value="普通重型機車">普通重型機車</option>
-          <option value="職業大貨車">職業大貨車</option>
-          <option value="職業聯結車">職業聯結車</option>
+          <optgroup label="── 普通駕照 ──">
+            <option value="普通重型機車">普通重型機車駕照</option>
+            <option value="普通輕型機車">普通輕型機車駕照</option>
+            <option value="普通小型車">普通小型車駕照</option>
+            <option value="普通小型車+機車">普通小型車+機車駕照</option>
+          </optgroup>
+          <optgroup label="── 職業駕照 ──">
+            <option value="職業小型車">職業小型車駕照</option>
+            <option value="職業普通重型機車">職業普通重型機車駕照</option>
+            <option value="職業大貨車">職業大貨車駕照</option>
+            <option value="職業小型車+大貨車">職業小型車+大貨車駕照</option>
+            <option value="職業大客車">職業大客車駕照</option>
+            <option value="職業聯結車">職業聯結車駕照</option>
+            <option value="職業小型車+聯結車">職業小型車+聯結車駕照</option>
+            <option value="職業各類駕照">職業各類駕照（全照）</option>
+          </optgroup>
         </select>
       </div>
       <div class="f-grp"><label class="f-label">駕駛年資</label>
