@@ -84,6 +84,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 .mobile-user{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
 .mobile-logout{font-size:10px;color:var(--dim);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:'JetBrains Mono',monospace;}
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;}
+.bnav-tab{flex:1;min-width:0;}
 .bnav-tab{flex:1;padding:10px 0 8px;text-align:center;cursor:pointer;border:none;background:none;color:var(--dim);transition:all 0.2s;}
 .bnav-tab.active{color:var(--accent);}
 .bnav-icon{font-size:18px;display:block;}
@@ -209,6 +210,10 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
     </div>
     <button class="btn-login" id="login-btn" onclick="doLogin()">LOGIN</button>
     <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;">資料加密儲存於 Firebase · 台灣節點</div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);text-align:center">
+        <div style="font-size:11px;color:var(--dim);margin-bottom:10px">想加入我們的團隊？</div>
+        <button onclick="window.open('interview.html','_blank')" style="width:100%;padding:11px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);border-radius:8px;color:#a78bfa;font-size:13px;font-family:'Orbitron',monospace;letter-spacing:1px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(124,58,237,0.22)'" onmouseout="this.style.background='rgba(124,58,237,0.12)'">🤖 應徵面試入口</button>
+      </div>
   </div>
 </div>
  
@@ -305,6 +310,8 @@ const MODS_COMMANDER = [
   {id:'announce',  icon:'📢', name:'公告管理',   section:'作業'},
   {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
   {id:'commander', icon:'⚙️', name:'Commander',  section:'系統'},
+  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
+  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
   {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
  
@@ -316,6 +323,7 @@ const MODS_ACCOUNTANT = [
   {id:'salary',    icon:'💰', name:'薪資模組',   section:'財務薪資'},
   {id:'finance',   icon:'📊', name:'財務模組',   section:'財務薪資'},
   {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
+  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
   {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
  
@@ -344,7 +352,12 @@ onAuthStateChanged(auth, async user => {
   ldMsg('載入使用者資料...');
   try {
     const snap = await getDoc(doc(db,'users', user.uid));
-    if (!snap.exists()) { showToast('帳號未設定角色，請聯絡管理員','err'); showLogin(); return; }
+    if (!snap.exists()) { 
+    // Create basic driver profile if missing
+    showToast('帳號未設定角色，請聯絡管理員','err'); 
+    showLogin(); 
+    return; 
+  }
     CD = snap.data();
     ROLE = CD.role;
     // Load module toggles from Firestore if commander
@@ -483,6 +496,7 @@ function buildAllPanels() {
   ${panelAudit()}
   ${ROLE==='commander'?panelCommander():''}
   ${panelProfile()}
+  ${panelFiles()}
   `;
 }
  
@@ -495,7 +509,7 @@ window.showPanel = function(id) {
   if (n) n.classList.add('active');
   const names={dashboard:'總覽儀表板',recruit:'招募模組 AI',hr:'人事模組',attendance:'出勤模組',
     insurance:'勞健保模組',salary:'薪資模組',finance:'財務模組',operations:'營運模組',
-    vehicle:'車輛管理',announce:'公告管理',audit:'審計模組',commander:'Commander 控制台',profile:'個人設定'};
+    vehicle:'車輛管理',announce:'公告管理',audit:'審計模組',commander:'Commander 控制台',profile:'個人設定',files:'檔案管理'};
   const pt=document.getElementById('page-title');
   if(pt) pt.textContent=names[id]||id;
   // load dynamic data
@@ -508,6 +522,7 @@ window.showPanel = function(id) {
   if(id==='audit') loadAudit();
   if(id==='profile') loadProfile();
   if(id==='recruit') loadApplicants();
+  if(id==='files'){ loadFiles(); loadUploadPersons(); }
 };
  
 function initDesktop() {
@@ -526,6 +541,16 @@ function panelDashboard(){return `
     <div class="stat-card"><div class="stat-lbl">證件到期警示</div><div class="stat-val" id="ds-warn" style="color:#f87171">—</div><div class="pbar"><div class="pfill" style="width:20%;background:linear-gradient(90deg,#ef4444,#f97316)"></div></div><div class="stat-sub" id="ds-warn-sub">30天內</div></div>
   </div>
   <div class="g2">
+    <div class="glass-card" style="border-color:rgba(124,58,237,0.25);cursor:pointer" onclick="showPanel('recruit')">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:48px;height:48px;border-radius:10px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🤖</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:2px">招募面試入口</div>
+          <div style="font-size:11px;color:var(--dim)">點擊查看應徵者 / 複製面試連結 / 掃描 QR Code</div>
+        </div>
+        <div style="font-size:18px;color:var(--dim)">→</div>
+      </div>
+    </div>
     <div class="glass-card">
       <div class="sh"><div class="st">⚡ 警示事項</div></div>
       <div id="dash-alerts"><div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">載入中...</div></div>
@@ -650,7 +675,7 @@ async function loadHR() {
       <td><span class="badge ${licBadge}">${licExpiry||'未設定'}</span></td>
       <td><span class="badge ${insBadge}">${insExpiry||'未設定'}</span></td>
       <td><span class="badge bg">在職</span></td>
-      ${ROLE==='commander'?`<td><button class="btn btn-p" style="font-size:10px;padding:3px 8px" onclick="editUser('${d.id}')">編輯</button></td>`:''}
+      ${ROLE==='commander'?`<td style='display:flex;gap:4px'><button class="btn btn-p" style="font-size:10px;padding:3px 8px" onclick="editUser('${d.id}')">編輯</button><button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="showPanel('files');setTimeout(()=>{const s=document.getElementById('upload-person');if(s)s.value='${u.name}';const c=document.getElementById('upload-cat');if(c)c.value='hr';},300)">上傳證件</button></td>`:''}
     </tr>`;
   });
   document.getElementById('hr-table').innerHTML=`
@@ -1183,7 +1208,7 @@ window.saveRates=async()=>{
 // ── RECRUIT ───────────────────────────────────────────────
 function panelRecruit(){
   const origin = window.location.origin + window.location.pathname.replace('index.html','');
-  const interviewUrl = origin + 'interview.html';
+  const interviewUrl = window.location.href.replace('index.html','').replace(/\?.*$/,'') + 'interview.html';
   return `
 <div id="panel-recruit" class="panel">
   <div class="g2">
@@ -1248,14 +1273,14 @@ async function loadApplicants(){
     const date=a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString('zh-TW'):'';
     const badgeCls=score>=70?'bg':score>=50?'by':'br';
     const badgeTxt=score>=70?'推薦':score>=50?'待定':'不推薦';
-    return \`<tr>
+    return `<tr>
       <td>\${a.name||'—'}</td>
       <td style="font-family:'JetBrains Mono',monospace">\${a.phone||'—'}</td>
       <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">\${score}</td>
       <td><span class="badge \${badgeCls}">\${badgeTxt}</span></td>
       <td style="font-size:10px;color:var(--dim)">\${date}</td>
       <td><button class="btn btn-p btn-sm" onclick="prefillApplicant('\${d.id}')">帶入</button></td>
-    </tr>\`;
+    </tr>`;
   }).join('')+'</tbody></table>';
 }
  
@@ -1295,7 +1320,7 @@ window.createAccountAndSendEmail=async()=>{
     // Send email via EmailJS (client-side email service)
     await sendWelcomeEmail(name, email, tempPass);
  
-    await addAudit('CREATE',\`建立新帳號申請：\${name} (\${email})\`);
+    await addAudit('CREATE',`建立新帳號申請：\${name} (\${email})`);
     if(msgEl){msgEl.style.color='#34d399';msgEl.textContent='✓ 已發送！請至 Firebase Console 建立帳號，UID建立後在人事模組設定。';}
     showToast('✓ 歡迎信已發送至 '+email);
   }catch(e){
@@ -1319,14 +1344,14 @@ async function sendWelcomeEmail(name, toEmail, password){
   await addDoc(collection(db,'emailQueue'),{
     to: toEmail,
     subject: '【Supreme-V92】您的帳號已建立',
-    body: \`\${name} 您好，\n\n您的帳號已建立：\nEmail: \${toEmail}\n臨時密碼: \${password}\n\n請至以下網址登入後修改密碼：\n\${window.location.origin}\n\n謝謝！\`,
+    body: `\${name} 您好，\n\n您的帳號已建立：\nEmail: \${toEmail}\n臨時密碼: \${password}\n\n請至以下網址登入後修改密碼：\n\${window.location.origin}\n\n謝謝！`,
     createdAt: serverTimestamp(),
     status: 'pending'
   });
 }
  
 // ── PROFILE PANEL ─────────────────────────────────────────
-function panelProfile(){return \`
+function panelProfile(){return `
 <div id="panel-profile" class="panel">
   <div class="g2">
     <div class="glass-card">
@@ -1362,7 +1387,7 @@ function panelProfile(){return \`
     <button class="btn btn-p" style="width:100%" onclick="changePassword()">更新密碼</button>
     <div id="pass-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
   </div>
-</div>\`;}
+</div>`;}
  
 window.uploadPhoto=async(input)=>{
   const file=input.files[0];
@@ -1373,12 +1398,12 @@ window.uploadPhoto=async(input)=>{
   try{
     const {getStorage,ref,uploadBytes,getDownloadURL}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js');
     const storage=getStorage(fbApp);
-    const storageRef=ref(storage,\`avatars/\${CU.uid}\`);
+    const storageRef=ref(storage,`avatars/\${CU.uid}`);
     await uploadBytes(storageRef,file);
     const url=await getDownloadURL(storageRef);
     await updateDoc(doc(db,'users',CU.uid),{photoURL:url});
     const ph=document.getElementById('profile-photo');
-    if(ph)ph.innerHTML=\`<img src="\${url}" style="width:100%;height:100%;object-fit:cover">\`;
+    if(ph)ph.innerHTML=`<img src="\${url}" style="width:100%;height:100%;object-fit:cover">`;
     if(msg)msg.textContent='✓ 照片已更新';
     showToast('✓ 照片上傳成功');
   }catch(e){
@@ -1391,7 +1416,7 @@ window.savePhone=async()=>{
   const phone=document.getElementById('new-phone-profile')?.value.trim();
   if(!phone){showToast('請輸入電話','err');return;}
   await updateDoc(doc(db,'users',CU.uid),{phone});
-  await addAudit('UPDATE',\`\${CD.name} 更新電話：\${phone}\`);
+  await addAudit('UPDATE',`\${CD.name} 更新電話：\${phone}`);
   const cp=document.getElementById('current-phone');
   if(cp)cp.value=phone;
   showToast('✓ 電話已更新');
@@ -1406,7 +1431,7 @@ window.changePassword=async()=>{
   if(!newPass||newPass.length<8){showToast('密碼至少需要8位','err');return;}
   try{
     await updatePassword(CU,newPass);
-    await addAudit('UPDATE',\`\${CD.name} 更新密碼\`);
+    await addAudit('UPDATE',`\${CD.name} 更新密碼`);
     if(msgEl){msgEl.style.display='block';msgEl.style.color='#34d399';msgEl.textContent='✓ 密碼已更新';}
     showToast('✓ 密碼更新成功');
     document.getElementById('new-pass').value='';
@@ -1424,11 +1449,204 @@ async function loadProfile(){
     if(cp)cp.value=u.phone||'未設定';
     if(u.photoURL){
       const ph=document.getElementById('profile-photo');
-      if(ph)ph.innerHTML=\`<img src="\${u.photoURL}" style="width:100%;height:100%;object-fit:cover">\`;
+      if(ph)ph.innerHTML=`<img src="\${u.photoURL}" style="width:100%;height:100%;object-fit:cover">`;
     }
   }
 }
  
+ 
+ 
+// ── FILE UPLOAD MODULE ────────────────────────────────────
+const FILE_CATS = [
+  {id:'hr',       label:'👤 員工證件 / 駕照',  color:'rgba(0,212,255,0.15)'},
+  {id:'expense',  label:'🧾 費用報銷憑證',      color:'rgba(245,158,11,0.15)'},
+  {id:'vehicle',  label:'🚛 車輛照片 / 文件',   color:'rgba(124,58,237,0.15)'},
+  {id:'announce', label:'📢 公告附件',           color:'rgba(16,185,129,0.15)'},
+  {id:'other',    label:'📁 其他',               color:'rgba(100,116,139,0.15)'},
+];
+ 
+function panelFiles(){return `
+<div id="panel-files" class="panel">
+  <div class="g2" style="margin-bottom:14px">
+    <div class="glass-card">
+      <div class="sh"><div class="st">📤 上傳檔案</div></div>
+      <div class="f-grp"><label class="f-lbl">分類</label>
+        <select class="f-inp" id="upload-cat">
+          ${FILE_CATS.map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="f-grp"><label class="f-lbl">備註說明</label>
+        <input class="f-inp" id="upload-note" placeholder="例：王大明駕照、3月油資收據...">
+      </div>
+      <div class="f-grp"><label class="f-lbl">關聯人員（選填）</label>
+        <select class="f-inp" id="upload-person"><option value="">-- 不指定 --</option></select>
+      </div>
+      <div id="drop-zone" style="border:2px dashed rgba(0,212,255,0.25);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:12px"
+        onclick="document.getElementById('file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+        ondragleave="this.style.borderColor='rgba(0,212,255,0.25)'"
+        ondrop="handleDrop(event)">
+        <div style="font-size:28px;margin-bottom:8px">📂</div>
+        <div style="font-size:13px;color:var(--mid)">點擊或拖曳檔案到此處</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:4px;font-family:'JetBrains Mono',monospace">支援所有格式 · 不限大小</div>
+      </div>
+      <input type="file" id="file-input" style="display:none" multiple onchange="handleFileSelect(this)">
+      <div id="upload-queue" style="margin-bottom:10px"></div>
+      <button class="btn btn-p" id="upload-btn" onclick="uploadFiles()" style="display:none">開始上傳</button>
+    </div>
+    <div class="glass-card">
+      <div class="sh"><div class="st">📊 儲存空間</div></div>
+      <div id="storage-stats">
+        ${FILE_CATS.map(c=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
+          <span style="font-size:12px">${c.label}</span>
+          <span class="badge bb" id="count-${c.id}">0 個</span>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="glass-card">
+    <div class="sh">
+      <div class="st">📋 檔案清單</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="f-inp" style="width:160px;font-size:11px" id="filter-cat" onchange="loadFiles()">
+          <option value="">全部分類</option>
+          ${FILE_CATS.map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}
+        </select>
+        <button class="btn btn-p btn-sm" onclick="loadFiles()">重新整理</button>
+      </div>
+    </div>
+    <div id="files-list"><div style="color:var(--dim);text-align:center;padding:18px;font-size:12px">載入中...</div></div>
+  </div>
+</div>`;}
+ 
+let pendingFiles = [];
+ 
+window.handleDrop = (e) => {
+  e.preventDefault();
+  document.getElementById('drop-zone').style.borderColor='rgba(0,212,255,0.25)';
+  addToQueue([...e.dataTransfer.files]);
+};
+window.handleFileSelect = (input) => { addToQueue([...input.files]); };
+ 
+function addToQueue(files){
+  pendingFiles.push(...files);
+  renderQueue();
+  document.getElementById('upload-btn').style.display='block';
+}
+ 
+function renderQueue(){
+  const el=document.getElementById('upload-queue');
+  if(!el)return;
+  el.innerHTML=pendingFiles.map((f,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;margin-bottom:6px">
+      <span style="font-size:16px">${getFileIcon(f.name)}</span>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</div>
+      <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">${formatSize(f.size)}</div></div>
+      <div style="width:60px;text-align:right"><div class="badge bgr" id="fstatus-${i}">待上傳</div></div>
+      <span style="cursor:pointer;color:var(--dim);font-size:12px" onclick="removeFile(${i})">✕</span>
+    </div>`).join('');
+}
+ 
+window.removeFile=(i)=>{ pendingFiles.splice(i,1); renderQueue(); if(!pendingFiles.length)document.getElementById('upload-btn').style.display='none'; };
+ 
+window.uploadFiles=async()=>{
+  if(!pendingFiles.length)return;
+  const {getStorage,ref,uploadBytes,getDownloadURL}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js');
+  const storage=getStorage(fbApp);
+  const cat=document.getElementById('upload-cat')?.value||'other';
+  const note=document.getElementById('upload-note')?.value||'';
+  const person=document.getElementById('upload-person')?.value||'';
+  const btn=document.getElementById('upload-btn');
+  btn.disabled=true; btn.textContent='上傳中...';
+ 
+  for(let i=0;i<pendingFiles.length;i++){
+    const f=pendingFiles[i];
+    const statusEl=document.getElementById(`fstatus-${i}`);
+    if(statusEl){statusEl.className='badge by';statusEl.textContent='上傳中';}
+    try{
+      const path=`files/${cat}/${Date.now()}_${f.name}`;
+      const storageRef=ref(storage,path);
+      await uploadBytes(storageRef,f);
+      const url=await getDownloadURL(storageRef);
+      await addDoc(collection(db,'files'),{
+        name:f.name, size:f.size, type:f.type||'unknown',
+        category:cat, note, person, url, path,
+        uploadedBy:CD?.name||CU?.email,
+        uploadedAt:serverTimestamp()
+      });
+      await addAudit('UPLOAD',`上傳檔案：${f.name} (${cat})`);
+      if(statusEl){statusEl.className='badge bg';statusEl.textContent='✓ 完成';}
+    }catch(e){
+      if(statusEl){statusEl.className='badge br';statusEl.textContent='失敗';}
+    }
+  }
+  btn.disabled=false; btn.textContent='上傳完成 ✓';
+  pendingFiles=[];
+  setTimeout(()=>{ loadFiles(); document.getElementById('upload-note').value=''; },800);
+};
+ 
+async function loadFiles(){
+  const cat=document.getElementById('filter-cat')?.value||'';
+  const {query,where,orderBy,limit,getDocs,collection:col}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  let q;
+  if(cat) q=query(collection(db,'files'),where('category','==',cat),orderBy('uploadedAt','desc'),limit(50));
+  else q=query(collection(db,'files'),orderBy('uploadedAt','desc'),limit(50));
+  const snap=await getDocs(q);
+  const el=document.getElementById('files-list');
+  if(!el)return;
+  if(snap.empty){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:18px;font-size:12px">尚無檔案</div>';return;}
+  // Count by category
+  const counts={};
+  snap.docs.forEach(d=>{ const c=d.data().category||'other'; counts[c]=(counts[c]||0)+1; });
+  FILE_CATS.forEach(c=>{ const el2=document.getElementById('count-'+c.id); if(el2)el2.textContent=(counts[c.id]||0)+' 個'; });
+  el.innerHTML=`<table class="tbl"><thead><tr><th></th><th>檔名</th><th>分類</th><th>說明</th><th>大小</th><th>上傳者</th><th>時間</th><th></th></tr></thead><tbody>`+
+  snap.docs.map(d=>{
+    const f=d.data();
+    const date=f.uploadedAt?.toDate?f.uploadedAt.toDate().toLocaleDateString('zh-TW'):'';
+    const catLabel=FILE_CATS.find(c=>c.id===f.category)?.label||f.category;
+    return `<tr>
+      <td style="font-size:18px">${getFileIcon(f.name)}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</td>
+      <td><span class="badge bb" style="font-size:9px">${catLabel}</span></td>
+      <td style="color:var(--dim);font-size:11px">${f.note||'—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)">${formatSize(f.size)}</td>
+      <td style="font-size:11px;color:var(--dim)">${f.uploadedBy||'—'}</td>
+      <td style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">${date}</td>
+      <td style="display:flex;gap:4px">
+        <a href="${f.url}" target="_blank" class="btn btn-p btn-sm" style="text-decoration:none;font-size:10px;padding:3px 8px">開啟</a>
+        <a href="${f.url}" download="${f.name}" class="btn btn-g btn-sm" style="text-decoration:none;font-size:10px;padding:3px 8px">下載</a>
+      </td>
+    </tr>`;
+  }).join('')+'</tbody></table>';
+}
+ 
+// Load person list for upload form
+async function loadUploadPersons(){
+  const snap=await getDocs(collection(db,'users'));
+  const sel=document.getElementById('upload-person');
+  if(!sel)return;
+  snap.docs.forEach(d=>{
+    const opt=document.createElement('option');
+    opt.value=d.data().name||d.id;
+    opt.textContent=d.data().name||d.id;
+    sel.appendChild(opt);
+  });
+}
+ 
+function getFileIcon(name){
+  const ext=(name||'').split('.').pop().toLowerCase();
+  const icons={jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',webp:'🖼️',pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',mp4:'🎬',mov:'🎬',zip:'🗜️',rar:'🗜️'};
+  return icons[ext]||'📎';
+}
+function formatSize(bytes){
+  if(!bytes)return '—';
+  if(bytes<1024)return bytes+'B';
+  if(bytes<1024*1024)return (bytes/1024).toFixed(1)+'KB';
+  return (bytes/1024/1024).toFixed(1)+'MB';
+}
+ 
+// Also add upload button to HR panel
  
 function buildDriverUI(){
   const now=new Date();
@@ -1510,7 +1728,7 @@ function buildDriverUI(){
         <div class="glass-card" style="margin-bottom:14px">
           <div style="text-align:center;padding:16px 0">
             <div id="m-profile-photo" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:inline-flex;align-items:center;justify-content:center;font-size:28px;font-family:'Orbitron',monospace;color:white;margin-bottom:10px;overflow:hidden;border:2px solid rgba(0,212,255,0.3)">
-              ${CD?.name?.[0]||'?'}
+${CD?.name?.[0]||'?'}
             </div>
             <div style="font-size:15px;font-weight:700">${CD?.name||''}</div>
             <div style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">${CU?.email||''}</div>
