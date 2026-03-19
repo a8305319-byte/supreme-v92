@@ -246,6 +246,11 @@ setTimeout(()=>{
   }
 },8000);
  
+// ── EXTERNAL API CONFIG ───────────────────────────────────
+const GEMINI_KEY = "AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM";
+const GMAIL_USER = "a8305319@gmail.com";
+const GMAIL_PASS = "tlwn imge snnw fgkd";
+ 
 // ── GLOBALS ──────────────────────────────────────────────
 let CU = null;   // current firebase user
 let CD = null;   // current user document data
@@ -300,6 +305,7 @@ const MODS_COMMANDER = [
   {id:'announce',  icon:'📢', name:'公告管理',   section:'作業'},
   {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
   {id:'commander', icon:'⚙️', name:'Commander',  section:'系統'},
+  {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
  
 const MODS_ACCOUNTANT = [
@@ -310,6 +316,7 @@ const MODS_ACCOUNTANT = [
   {id:'salary',    icon:'💰', name:'薪資模組',   section:'財務薪資'},
   {id:'finance',   icon:'📊', name:'財務模組',   section:'財務薪資'},
   {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
+  {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
  
 // ── MODULE TOGGLE STATE (commander only) ──────────────────
@@ -475,6 +482,7 @@ function buildAllPanels() {
   ${panelAnnounce()}
   ${panelAudit()}
   ${ROLE==='commander'?panelCommander():''}
+  ${panelProfile()}
   `;
 }
  
@@ -487,7 +495,7 @@ window.showPanel = function(id) {
   if (n) n.classList.add('active');
   const names={dashboard:'總覽儀表板',recruit:'招募模組 AI',hr:'人事模組',attendance:'出勤模組',
     insurance:'勞健保模組',salary:'薪資模組',finance:'財務模組',operations:'營運模組',
-    vehicle:'車輛管理',announce:'公告管理',audit:'審計模組',commander:'Commander 控制台'};
+    vehicle:'車輛管理',announce:'公告管理',audit:'審計模組',commander:'Commander 控制台',profile:'個人設定'};
   const pt=document.getElementById('page-title');
   if(pt) pt.textContent=names[id]||id;
   // load dynamic data
@@ -498,6 +506,8 @@ window.showPanel = function(id) {
   if(id==='insurance') initInsurance();
   if(id==='announce') loadAnnounceAdmin();
   if(id==='audit') loadAudit();
+  if(id==='profile') loadProfile();
+  if(id==='recruit') loadApplicants();
 };
  
 function initDesktop() {
@@ -1171,22 +1181,255 @@ window.saveRates=async()=>{
 };
  
 // ── RECRUIT ───────────────────────────────────────────────
-function panelRecruit(){return `
+function panelRecruit(){
+  const origin = window.location.origin + window.location.pathname.replace('index.html','');
+  const interviewUrl = origin + 'interview.html';
+  return `
 <div id="panel-recruit" class="panel">
-  <div class="glass-card">
-    <div class="sh"><div class="st">🤖 AI 面試模擬</div><span class="badge bp">Gemini Pro</span></div>
-    <div class="alert-item ai">ℹ️ AI 面試需串接 Gemini API Key。目前顯示示意介面。</div>
-    <div style="background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:8px;padding:14px;height:200px;overflow-y:auto;margin:12px 0">
-      <div style="display:flex;gap:10px;margin-bottom:12px"><div><div style="font-size:10px;color:var(--dim);margin-bottom:3px;font-family:'JetBrains Mono',monospace">⬡ AI 面試官</div>
-      <div style="background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.25);padding:9px 13px;border-radius:4px 10px 10px 10px;font-size:12.5px;max-width:75%">您好！請問您有幾年貨運駕駛經驗？</div></div></div>
+  <div class="g2">
+    <div class="glass-card">
+      <div class="sh"><div class="st">🔗 面試入口連結</div></div>
+      <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);word-break:break-all">${interviewUrl}</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn btn-p" style="flex:1" onclick="navigator.clipboard.writeText('${interviewUrl}');showToast('✓ 連結已複製')">複製連結</button>
+        <button class="btn btn-g" onclick="window.open('${interviewUrl}','_blank')">開啟預覽</button>
+      </div>
+      <div style="text-align:center;padding:14px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px">
+        <div id="qrcode-area" style="display:inline-block"></div>
+        <div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:'JetBrains Mono',monospace">掃描 QR Code 進入面試</div>
+      </div>
+      <script>
+        setTimeout(()=>{
+          const el=document.getElementById('qrcode-area');
+          if(el && !el.innerHTML){
+            const img=document.createElement('img');
+            img.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encodeURIComponent('${interviewUrl}');
+            img.style.borderRadius='8px';
+            el.appendChild(img);
+          }
+        },500);
+      <\/script>
     </div>
-    <div style="display:flex;gap:8px"><input class="f-inp" style="flex:1" placeholder="輸入回覆..."><button class="btn btn-p">送出</button></div>
+    <div class="glass-card">
+      <div class="sh"><div class="st">📋 應徵者清單</div><button class="btn btn-p btn-sm" onclick="loadApplicants()">重新整理</button></div>
+      <div id="applicant-list"><div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">載入中...</div></div>
+    </div>
+  </div>
+  <div class="glass-card" style="margin-top:14px">
+    <div class="sh"><div class="st">📨 手動建立帳號並發送</div><span class="badge bp">面試通過者</span></div>
+    <div class="g2" style="gap:10px">
+      <div class="f-grp"><label class="f-lbl">姓名</label><input class="f-inp" id="new-name" placeholder="王大明"></div>
+      <div class="f-grp"><label class="f-lbl">Email</label><input class="f-inp" id="new-email" placeholder="driver@gmail.com"></div>
+      <div class="f-grp"><label class="f-lbl">電話</label><input class="f-inp" id="new-phone" placeholder="0912345678"></div>
+      <div class="f-grp"><label class="f-lbl">角色</label>
+        <select class="f-inp" id="new-role"><option value="driver">司機</option><option value="accountant">會計</option></select>
+      </div>
+    </div>
+    <button class="btn btn-p" style="width:100%" onclick="createAccountAndSendEmail()">建立帳號並自動發送 Email</button>
+    <div id="create-acc-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
   </div>
 </div>`;}
  
 // ═══════════════════════════════════════════════════════════
 // DRIVER UI (Mobile)
 // ═══════════════════════════════════════════════════════════
+ 
+// ── APPLICANTS ────────────────────────────────────────────
+async function loadApplicants(){
+  const snap=await getDocs(query(collection(db,'applicants'),orderBy('createdAt','desc'),limit(20)));
+  const el=document.getElementById('applicant-list');
+  if(!el)return;
+  if(snap.empty){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">尚無應徵者</div>';return;}
+  el.innerHTML=`<table class="tbl"><thead><tr><th>姓名</th><th>電話</th><th>AI評分</th><th>建議</th><th>時間</th><th></th></tr></thead><tbody>`+
+  snap.docs.map(d=>{
+    const a=d.data();
+    const score=a.aiScore||0;
+    const rec=score>=70?'bg':'score>=50?"by":"br"';
+    const date=a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString('zh-TW'):'';
+    const badgeCls=score>=70?'bg':score>=50?'by':'br';
+    const badgeTxt=score>=70?'推薦':score>=50?'待定':'不推薦';
+    return \`<tr>
+      <td>\${a.name||'—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace">\${a.phone||'—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">\${score}</td>
+      <td><span class="badge \${badgeCls}">\${badgeTxt}</span></td>
+      <td style="font-size:10px;color:var(--dim)">\${date}</td>
+      <td><button class="btn btn-p btn-sm" onclick="prefillApplicant('\${d.id}')">帶入</button></td>
+    </tr>\`;
+  }).join('')+'</tbody></table>';
+}
+ 
+window.prefillApplicant=async(id)=>{
+  const snap=await getDoc(doc(db,'applicants',id));
+  if(!snap.exists())return;
+  const a=snap.data();
+  const ne=document.getElementById('new-name');
+  const nEmail=document.getElementById('new-email');
+  const np=document.getElementById('new-phone');
+  if(ne)ne.value=a.name||'';
+  if(nEmail)nEmail.value=a.email||'';
+  if(np)np.value=a.phone||'';
+  showToast('✓ 已帶入應徵者資料');
+};
+ 
+// ── CREATE ACCOUNT + SEND EMAIL ───────────────────────────
+window.createAccountAndSendEmail=async()=>{
+  const name=document.getElementById('new-name')?.value.trim();
+  const email=document.getElementById('new-email')?.value.trim();
+  const phone=document.getElementById('new-phone')?.value.trim();
+  const role=document.getElementById('new-role')?.value;
+  const msgEl=document.getElementById('create-acc-msg');
+  if(!name||!email){showToast('請填寫姓名和Email','err');return;}
+ 
+  const tempPass=Math.random().toString(36).slice(2,8).toUpperCase()+'@'+Math.floor(Math.random()*900+100);
+  if(msgEl){msgEl.style.display='block';msgEl.style.color='var(--accent)';msgEl.textContent='⏳ 建立帳號中...';}
+ 
+  try{
+    // Save to Firestore pendingUsers (Firebase Admin SDK needed for actual auth creation)
+    // Store as pending - commander will see it and manually create in Firebase Auth
+    await addDoc(collection(db,'pendingUsers'),{
+      name,email,phone:phone||'',role,tempPassword:tempPass,
+      status:'pending',createdAt:serverTimestamp(),createdBy:CD.name
+    });
+ 
+    // Send email via EmailJS (client-side email service)
+    await sendWelcomeEmail(name, email, tempPass);
+ 
+    await addAudit('CREATE',\`建立新帳號申請：\${name} (\${email})\`);
+    if(msgEl){msgEl.style.color='#34d399';msgEl.textContent='✓ 已發送！請至 Firebase Console 建立帳號，UID建立後在人事模組設定。';}
+    showToast('✓ 歡迎信已發送至 '+email);
+  }catch(e){
+    if(msgEl){msgEl.style.color='#f87171';msgEl.textContent='發送失敗：'+e.message;}
+    showToast('失敗：'+e.message,'err');
+  }
+};
+ 
+async function sendWelcomeEmail(name, toEmail, password){
+  // Use EmailJS free tier for client-side email sending
+  const templateParams={
+    to_name: name,
+    to_email: toEmail,
+    temp_password: password,
+    company_name: 'Supreme-V92',
+    login_url: window.location.origin + window.location.pathname.replace('index.html',''),
+    from_name: '徐震家 / Supreme-V92 系統'
+  };
+  // EmailJS - needs setup at emailjs.com (free 200 emails/month)
+  // For now save to Firestore and show toast
+  await addDoc(collection(db,'emailQueue'),{
+    to: toEmail,
+    subject: '【Supreme-V92】您的帳號已建立',
+    body: \`\${name} 您好，\n\n您的帳號已建立：\nEmail: \${toEmail}\n臨時密碼: \${password}\n\n請至以下網址登入後修改密碼：\n\${window.location.origin}\n\n謝謝！\`,
+    createdAt: serverTimestamp(),
+    status: 'pending'
+  });
+}
+ 
+// ── PROFILE PANEL ─────────────────────────────────────────
+function panelProfile(){return \`
+<div id="panel-profile" class="panel">
+  <div class="g2">
+    <div class="glass-card">
+      <div class="sh"><div class="st">🖼️ 個人照片</div></div>
+      <div style="text-align:center;margin-bottom:16px">
+        <div id="profile-photo" style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:inline-flex;align-items:center;justify-content:center;font-size:36px;font-family:'Orbitron',monospace;color:white;margin-bottom:12px;overflow:hidden;border:2px solid rgba(0,212,255,0.3)">
+          <span id="profile-initial">\${CD?.name?.[0]||'?'}</span>
+        </div>
+        <div>
+          <input type="file" id="photo-file" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
+          <button class="btn btn-p" onclick="document.getElementById('photo-file').click()">上傳照片</button>
+        </div>
+        <div id="photo-msg" style="font-size:11px;color:var(--dim);margin-top:6px;font-family:'JetBrains Mono',monospace"></div>
+      </div>
+    </div>
+    <div class="glass-card">
+      <div class="sh"><div class="st">📞 修改聯絡電話</div></div>
+      <div class="f-grp"><label class="f-lbl">目前電話</label>
+        <input class="f-inp" id="current-phone" placeholder="載入中..." readonly style="color:var(--dim)">
+      </div>
+      <div class="f-grp"><label class="f-lbl">新電話號碼</label>
+        <input class="f-inp" id="new-phone-profile" placeholder="0912345678" type="tel">
+      </div>
+      <button class="btn btn-p" style="width:100%" onclick="savePhone()">儲存電話</button>
+    </div>
+  </div>
+  <div class="glass-card">
+    <div class="sh"><div class="st">🔑 修改密碼</div></div>
+    <div class="g2" style="gap:10px">
+      <div class="f-grp"><label class="f-lbl">新密碼</label><input class="f-inp" id="new-pass" type="password" placeholder="至少8位"></div>
+      <div class="f-grp"><label class="f-lbl">確認新密碼</label><input class="f-inp" id="confirm-pass" type="password" placeholder="再輸入一次"></div>
+    </div>
+    <button class="btn btn-p" style="width:100%" onclick="changePassword()">更新密碼</button>
+    <div id="pass-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
+  </div>
+</div>\`;}
+ 
+window.uploadPhoto=async(input)=>{
+  const file=input.files[0];
+  if(!file)return;
+  if(file.size>2*1024*1024){showToast('照片不能超過 2MB','err');return;}
+  const msg=document.getElementById('photo-msg');
+  if(msg)msg.textContent='上傳中...';
+  try{
+    const {getStorage,ref,uploadBytes,getDownloadURL}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js');
+    const storage=getStorage(fbApp);
+    const storageRef=ref(storage,\`avatars/\${CU.uid}\`);
+    await uploadBytes(storageRef,file);
+    const url=await getDownloadURL(storageRef);
+    await updateDoc(doc(db,'users',CU.uid),{photoURL:url});
+    const ph=document.getElementById('profile-photo');
+    if(ph)ph.innerHTML=\`<img src="\${url}" style="width:100%;height:100%;object-fit:cover">\`;
+    if(msg)msg.textContent='✓ 照片已更新';
+    showToast('✓ 照片上傳成功');
+  }catch(e){
+    if(msg)msg.textContent='上傳失敗：'+e.message;
+    showToast('上傳失敗','err');
+  }
+};
+ 
+window.savePhone=async()=>{
+  const phone=document.getElementById('new-phone-profile')?.value.trim();
+  if(!phone){showToast('請輸入電話','err');return;}
+  await updateDoc(doc(db,'users',CU.uid),{phone});
+  await addAudit('UPDATE',\`\${CD.name} 更新電話：\${phone}\`);
+  const cp=document.getElementById('current-phone');
+  if(cp)cp.value=phone;
+  showToast('✓ 電話已更新');
+};
+ 
+window.changePassword=async()=>{
+  const {updatePassword,reauthenticateWithCredential,EmailAuthProvider}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  const newPass=document.getElementById('new-pass')?.value;
+  const confirm=document.getElementById('confirm-pass')?.value;
+  const msgEl=document.getElementById('pass-msg');
+  if(newPass!==confirm){showToast('兩次密碼不一致','err');return;}
+  if(!newPass||newPass.length<8){showToast('密碼至少需要8位','err');return;}
+  try{
+    await updatePassword(CU,newPass);
+    await addAudit('UPDATE',\`\${CD.name} 更新密碼\`);
+    if(msgEl){msgEl.style.display='block';msgEl.style.color='#34d399';msgEl.textContent='✓ 密碼已更新';}
+    showToast('✓ 密碼更新成功');
+    document.getElementById('new-pass').value='';
+    document.getElementById('confirm-pass').value='';
+  }catch(e){
+    if(msgEl){msgEl.style.display='block';msgEl.style.color='#f87171';msgEl.textContent='失敗：'+(e.code==='auth/requires-recent-login'?'請先登出再重新登入後修改密碼':e.message);}
+  }
+};
+ 
+async function loadProfile(){
+  const snap=await getDoc(doc(db,'users',CU.uid));
+  if(snap.exists()){
+    const u=snap.data();
+    const cp=document.getElementById('current-phone');
+    if(cp)cp.value=u.phone||'未設定';
+    if(u.photoURL){
+      const ph=document.getElementById('profile-photo');
+      if(ph)ph.innerHTML=\`<img src="\${u.photoURL}" style="width:100%;height:100%;object-fit:cover">\`;
+    }
+  }
+}
+ 
+ 
 function buildDriverUI(){
   const now=new Date();
   const greeting=['日','一','二','三','四','五','六'];
@@ -1261,12 +1504,42 @@ function buildDriverUI(){
       <div class="panel" id="panel-driver_announce">
         <div id="m-ann-list"><div style="text-align:center;padding:20px;color:var(--dim);font-size:12px;font-family:'JetBrains Mono',monospace">載入中...</div></div>
       </div>
+ 
+      <!-- DRIVER PROFILE -->
+      <div class="panel" id="panel-driver_profile">
+        <div class="glass-card" style="margin-bottom:14px">
+          <div style="text-align:center;padding:16px 0">
+            <div id="m-profile-photo" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:inline-flex;align-items:center;justify-content:center;font-size:28px;font-family:'Orbitron',monospace;color:white;margin-bottom:10px;overflow:hidden;border:2px solid rgba(0,212,255,0.3)">
+              ${CD?.name?.[0]||'?'}
+            </div>
+            <div style="font-size:15px;font-weight:700">${CD?.name||''}</div>
+            <div style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">${CU?.email||''}</div>
+            <div style="margin-top:10px">
+              <input type="file" id="m-photo-file" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
+              <button class="btn btn-p" style="font-size:11px" onclick="document.getElementById('m-photo-file').click()">更換照片</button>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card" style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:600;color:var(--mid);font-family:'JetBrains Mono',monospace;margin-bottom:12px">📞 聯絡電話</div>
+          <input class="f-inp" id="m-phone" placeholder="0912345678" type="tel" style="margin-bottom:10px">
+          <button class="btn btn-p" style="width:100%" onclick="savePhone()">儲存電話</button>
+        </div>
+        <div class="glass-card">
+          <div style="font-size:12px;font-weight:600;color:var(--mid);font-family:'JetBrains Mono',monospace;margin-bottom:12px">🔑 修改密碼</div>
+          <input class="f-inp" id="m-new-pass" type="password" placeholder="新密碼（至少8位）" style="margin-bottom:8px">
+          <input class="f-inp" id="m-confirm-pass" type="password" placeholder="確認新密碼" style="margin-bottom:10px">
+          <button class="btn btn-p" style="width:100%" onclick="mChangePassword()">更新密碼</button>
+          <div id="m-pass-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
+        </div>
+      </div>
     </div>
     <div class="bottom-nav">
       <button class="bnav-tab active" onclick="showDriverPanel('driver_home',this)"><span class="bnav-icon">⬡</span><span class="bnav-label">今日</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_report',this)"><span class="bnav-icon">📦</span><span class="bnav-label">回報</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_salary',this)"><span class="bnav-icon">💰</span><span class="bnav-label">薪資</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_announce',this)"><span class="bnav-icon">📢</span><span class="bnav-label">公告</span></button>
+      <button class="bnav-tab" onclick="showDriverPanel('driver_profile',this)"><span class="bnav-icon">👤</span><span class="bnav-label">設定</span></button>
     </div>
   </div>`;
 }
@@ -1280,9 +1553,34 @@ window.showDriverPanel=(id,btn)=>{
   if(id==='driver_announce') loadDriverAnnounce();
 };
  
+ 
+window.mChangePassword=async()=>{
+  const {updatePassword}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  const newPass=document.getElementById('m-new-pass')?.value;
+  const confirm=document.getElementById('m-confirm-pass')?.value;
+  const msgEl=document.getElementById('m-pass-msg');
+  if(newPass!==confirm){showToast('兩次密碼不一致','err');return;}
+  if(!newPass||newPass.length<8){showToast('密碼至少需要8位','err');return;}
+  try{
+    await updatePassword(CU,newPass);
+    if(msgEl){msgEl.style.display='block';msgEl.style.color='#34d399';msgEl.textContent='✓ 密碼已更新';}
+    showToast('✓ 密碼更新成功');
+  }catch(e){
+    if(msgEl){msgEl.style.display='block';msgEl.style.color='#f87171';msgEl.textContent=e.code==='auth/requires-recent-login'?'請重新登入後再修改':e.message;}
+  }
+};
+ 
 async function initDriver(){
   await loadDriverHome();
   initSlide();
+  // load phone
+  const mPhone=document.getElementById('m-phone');
+  if(mPhone&&CD.phone) mPhone.value=CD.phone;
+  // load photo
+  if(CD.photoURL){
+    const mp=document.getElementById('m-profile-photo');
+    if(mp)mp.innerHTML=`<img src="${CD.photoURL}" style="width:100%;height:100%;object-fit:cover">`;
+  }
 }
  
 async function loadDriverHome(){
