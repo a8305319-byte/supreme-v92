@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Supreme-V92 Alpha Core</title>
+<title>在地物流有限公司</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -90,6 +90,52 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 .bnav-icon{font-size:18px;display:block;}
 .bnav-label{font-size:9px;font-family:'JetBrains Mono',monospace;margin-top:2px;}
 .mobile-content{padding:14px;}
+ 
+/* ===== MOBILE RESPONSIVE FIXES ===== */
+@media (max-width: 768px) {
+  .desktop-layout { flex-direction: column; }
+  .sidebar { 
+    width: 100% !important; 
+    height: auto !important;
+    position: relative !important;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 10px 0 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-area { 
+    width: 100%; 
+    padding: 10px 14px 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-title { font-size: 14px; }
+  .nav-section { 
+    width: 100%;
+    padding: 4px 14px 2px;
+    font-size: 8px;
+  }
+  .nav-item {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .nav-logout { 
+    width: 100%;
+    padding: 8px 14px;
+  }
+  .main-content { 
+    max-height: none !important;
+    padding: 16px 14px;
+  }
+  .g2, .g3, .g4 { grid-template-columns: 1fr !important; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+  .topbar { margin-bottom: 14px; }
+  .page-title { font-size: 15px; }
+  .tbl { font-size: 11px; }
+  .tbl th, .tbl td { padding: 7px 8px; }
+}
  
 /* ===== SHARED COMPONENTS ===== */
 .glass-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:18px;backdrop-filter:blur(20px);position:relative;overflow:hidden;transition:border-color 0.3s;}
@@ -186,7 +232,7 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
  
 <!-- LOADING -->
 <div id="loading-screen" style="display:flex">
-  <div class="ld-logo">SUPREME-V92</div>
+  <div class="ld-logo">在地物流</div>
   <div class="ld-sub">ALPHA CORE v3.1.0</div>
   <div class="ld-bar"><div class="ld-fill"></div></div>
   <div class="ld-msg" id="ld-msg">初始化系統...</div>
@@ -196,7 +242,7 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <div class="login-title">SUPREME-V92</div>
+      <div class="login-title">在地物流</div>
       <div class="login-sub">MOBILE OFFICE · ALPHA CORE</div>
     </div>
     <div class="err-box" id="err-box"></div>
@@ -208,7 +254,7 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
       <label class="f-label">密碼</label>
       <input class="f-input" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
     </div>
-    <button class="btn-login" id="login-btn" onclick="doLogin()">LOGIN</button>
+    <button class="btn-login" id="login-btn">LOGIN</button>
     <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;">資料加密儲存於 Firebase · 台灣節點</div>
       <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);text-align:center">
         <div style="font-size:11px;color:var(--dim);margin-bottom:10px">想加入我們的團隊？</div>
@@ -233,9 +279,9 @@ import {
  
 const FB = {
   apiKey:"AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
-  authDomain:"supreme-v92.firebaseapp.com",
-  projectId:"supreme-v92",
-  storageBucket:"supreme-v92.firebasestorage.app",
+  authDomain:"在地物流.firebaseapp.com",
+  projectId:"在地物流",
+  storageBucket:"在地物流.firebasestorage.app",
   messagingSenderId:"485530156296",
   appId:"1:485530156296:web:6728c0ee08b98dedd800bd"
 };
@@ -402,6 +448,7 @@ window.doLogin = async () => {
   }
 };
 document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('login-btn').addEventListener('click', doLogin);
 function showErr(m){const e=document.getElementById('err-box');e.textContent='⚠ '+m;e.style.display='block';}
 function ldMsg(m){const el=document.getElementById('ld-msg');if(el)el.textContent=m;}
  
@@ -458,8 +505,8 @@ function buildDesktopUI() {
   <div class="desktop-layout">
     <aside class="sidebar">
       <div class="logo-area">
-        <div class="logo-title">SUPREME-V92</div>
-        <div class="logo-sub">ALPHA CORE v3.1.0</div>
+        <div class="logo-title" style="font-size:11px">在地物流</div>
+        <div class="logo-sub">在地物流有限公司</div>
         ${roleBadge}
       </div>
       ${navHTML}
@@ -647,6 +694,25 @@ function panelHR(){return `
       <div class="f-grp"><label class="f-lbl">逆物流單價 ($)</label><input class="f-inp" id="u-price-r" type="number" value="35"></div>
       <div class="f-grp"><label class="f-lbl">津貼 ($)</label><input class="f-inp" id="u-allowance" type="number" value="2000"></div>
       <div class="f-grp"><label class="f-lbl">代扣費用 ($)</label><input class="f-inp" id="u-deduct" type="number" value="500"></div>
+      <div class="f-grp">
+        <label class="f-lbl">駕照類別</label>
+        <select class="f-inp" id="u-license-type">
+          <optgroup label="── 普通駕照 ──">
+            <option value="普通重型機車">普通重型機車</option>
+            <option value="普通小型車">普通小型車</option>
+            <option value="普通小型車+機車">普通小型車+機車</option>
+          </optgroup>
+          <optgroup label="── 職業駕照 ──">
+            <option value="職業小型車">職業小型車</option>
+            <option value="職業大貨車">職業大貨車</option>
+            <option value="職業小型車+大貨車">職業小型車+大貨車</option>
+            <option value="職業大客車">職業大客車</option>
+            <option value="職業聯結車">職業聯結車</option>
+            <option value="職業小型車+聯結車">職業小型車+聯結車</option>
+            <option value="職業各類駕照">職業各類（全照）</option>
+          </optgroup>
+        </select>
+      </div>
       <div class="f-grp"><label class="f-lbl">駕照到期日</label><input class="f-inp" id="u-license" type="date"></div>
       <div class="f-grp"><label class="f-lbl">險種到期日</label><input class="f-inp" id="u-insurance" type="date"></div>
     </div>
@@ -698,6 +764,8 @@ window.editUser=async(uid)=>{
   document.getElementById('u-price-r').value=u.priceReverse||35;
   document.getElementById('u-allowance').value=u.allowance||2000;
   document.getElementById('u-deduct').value=u.regularDeduct||500;
+  const lt=document.getElementById('u-license-type');
+  if(lt)lt.value=u.licenseType||'職業大貨車';
   document.getElementById('u-license').value=u.licenseExpiry||'';
   document.getElementById('u-insurance').value=u.insuranceExpiry||'';
   document.getElementById('add-user-modal').dataset.editUid=uid;
@@ -716,6 +784,7 @@ window.saveUser=async()=>{
     priceReverse:+document.getElementById('u-price-r').value,
     allowance:+document.getElementById('u-allowance').value,
     regularDeduct:+document.getElementById('u-deduct').value,
+    licenseType:document.getElementById('u-license-type')?.value||'',
     licenseExpiry:document.getElementById('u-license').value,
     insuranceExpiry:document.getElementById('u-insurance').value,
     updatedAt:serverTimestamp()
@@ -1125,6 +1194,20 @@ function panelCommander(){return `
 <div id="panel-commander" class="panel">
   <div class="warn-box">⚙️ <strong>Commander 專屬</strong> — 關閉模組後側欄變灰，資料不受影響</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-bottom:18px" id="toggle-grid"></div>
+  <div class="glass-card" style="margin-bottom:14px">
+    <div class="sh">
+      <div class="st" style="color:#a78bfa">🤖 AI 面試題目設定</div>
+      <button class="btn btn-p btn-sm" onclick="saveInterviewQuestions()">儲存題目</button>
+    </div>
+    <div class="info-box" style="margin-bottom:12px">
+      每行一個主題，AI 會依照主題自動生成問題。共 5 題，順序可自訂。
+    </div>
+    <div id="interview-questions-editor">
+      <div style="display:flex;flex-direction:column;gap:8px" id="iq-list"></div>
+    </div>
+    <button class="btn btn-g btn-sm" style="margin-top:10px;width:100%" onclick="addInterviewQuestion()">+ 新增題目主題</button>
+  </div>
+ 
   <div class="glass-card" style="border-color:rgba(245,158,11,0.2)">
     <div class="st" style="margin-bottom:14px;color:var(--yellow)">🔑 費率設定</div>
     <div class="g3">
@@ -1153,6 +1236,62 @@ const TOGGLE_DEFS=[
   {id:'vehicle',icon:'🚛',name:'車輛管理',desc:'車籍保養追蹤'},
   {id:'announce',icon:'📢',name:'公告管理',desc:'發布公告通知'},
 ];
+ 
+// ── INTERVIEW QUESTIONS ──────────────────────────────────
+const DEFAULT_IQ = [
+  '自我介紹與工作背景',
+  '配送工作經驗與駕駛技術',
+  '遇到突發狀況如何處理',
+  '對工作時間與薪資的期望',
+  '為何選擇在地物流有限公司'
+];
+ 
+async function loadInterviewQuestions(){
+  const snap = await getDoc(doc(db,'config','interviewQuestions'));
+  const questions = snap.exists() ? snap.data().questions : DEFAULT_IQ;
+  renderIQList(questions);
+}
+ 
+function renderIQList(questions){
+  const el = document.getElementById('iq-list');
+  if(!el) return;
+  el.innerHTML = questions.map((q,i) => `
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:22px;height:22px;border-radius:50%;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'JetBrains Mono',monospace;color:#a78bfa;flex-shrink:0">${i+1}</div>
+      <input class="f-inp" style="flex:1" value="${q}" id="iq-${i}" placeholder="面試題目主題">
+      <button class="btn btn-d btn-sm" onclick="removeIQ(${i})">✕</button>
+    </div>`).join('');
+}
+ 
+window.addInterviewQuestion = () => {
+  const list = document.getElementById('iq-list');
+  if(!list) return;
+  const count = list.children.length;
+  if(count >= 8){ showToast('最多 8 題','err'); return; }
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;align-items:center;gap:8px';
+  div.innerHTML = `
+    <div style="width:22px;height:22px;border-radius:50%;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'JetBrains Mono',monospace;color:#a78bfa;flex-shrink:0">${count+1}</div>
+    <input class="f-inp" style="flex:1" id="iq-${count}" placeholder="輸入面試題目主題">
+    <button class="btn btn-d btn-sm" onclick="removeIQ(${count})">✕</button>`;
+  list.appendChild(div);
+};
+ 
+window.removeIQ = (i) => {
+  const inputs = document.querySelectorAll('[id^="iq-"]');
+  const questions = [...inputs].map(inp => inp.value.trim()).filter(Boolean);
+  questions.splice(i, 1);
+  renderIQList(questions);
+};
+ 
+window.saveInterviewQuestions = async () => {
+  const inputs = document.querySelectorAll('[id^="iq-"]');
+  const questions = [...inputs].map(inp => inp.value.trim()).filter(Boolean);
+  if(questions.length < 3){ showToast('至少需要 3 題','err'); return; }
+  await setDoc(doc(db,'config','interviewQuestions'), { questions, updatedAt: serverTimestamp() });
+  await addAudit('UPDATE', `更新 AI 面試題目：${questions.length} 題`);
+  showToast('✓ 面試題目已儲存，面試頁面即時生效');
+};
  
 async function buildToggles(){
   const grid=document.getElementById('toggle-grid');
@@ -1335,15 +1474,15 @@ async function sendWelcomeEmail(name, toEmail, password){
     to_name: name,
     to_email: toEmail,
     temp_password: password,
-    company_name: 'Supreme-V92',
+    company_name: '在地物流有限公司',
     login_url: window.location.origin + window.location.pathname.replace('index.html',''),
-    from_name: '徐震家 / Supreme-V92 系統'
+    from_name: '徐震家 / 在地物流有限公司 系統'
   };
   // EmailJS - needs setup at emailjs.com (free 200 emails/month)
   // For now save to Firestore and show toast
   await addDoc(collection(db,'emailQueue'),{
     to: toEmail,
-    subject: '【Supreme-V92】您的帳號已建立',
+    subject: '【在地物流有限公司】您的帳號已建立',
     body: `\${name} 您好，\n\n您的帳號已建立：\nEmail: \${toEmail}\n臨時密碼: \${password}\n\n請至以下網址登入後修改密碼：\n\${window.location.origin}\n\n謝謝！`,
     createdAt: serverTimestamp(),
     status: 'pending'
@@ -1656,7 +1795,7 @@ function buildDriverUI(){
   return `
   <div class="mobile-layout">
     <div class="mobile-topbar">
-      <div class="mobile-logo">V92</div>
+      <div class="mobile-logo" style="font-size:11px;letter-spacing:1px">在地物流</div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="mobile-user" id="m-username">${CD.name||''}</div>
         <div class="mobile-logout" onclick="doLogout()">登出</div>
@@ -1963,7 +2102,7 @@ window.showToast=showToast;
  
 // Init Commander panel when shown
 const origShow=window.showPanel;
-window.showPanel=(id)=>{origShow(id);if(id==='commander')buildToggles();};
+window.showPanel=(id)=>{origShow(id);if(id==='commander'){buildToggles();loadInterviewQuestions();};};
 </script>
 </body>
 </html>
