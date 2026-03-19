@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Supreme-V92 · 應徵面試</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{--bg:#000;--accent:#00d4ff;--accent2:#7c3aed;--green:#10b981;--text:#e2e8f0;--dim:#64748b;--mid:#94a3b8;--border:rgba(255,255,255,0.08);}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:30px 30px;pointer-events:none;}
+
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px 40px;position:relative;z-index:1;}
+.header{text-align:center;padding:28px 0 22px;}
+.logo{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:var(--accent);letter-spacing:2px;text-shadow:0 0 20px rgba(0,212,255,0.4);}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-top:4px;letter-spacing:1px;}
+.step-title{font-size:18px;font-weight:700;margin-top:10px;}
+.step-sub{font-size:13px;color:var(--mid);margin-top:4px;}
+
+.card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.2),transparent);}
+
+.f-label{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:4px;display:block;letter-spacing:0.5px;text-transform:uppercase;}
+.f-input{width:100%;padding:11px 13px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Noto Sans TC',sans-serif;outline:none;transition:border-color 0.2s;margin-bottom:12px;}
+.f-input:focus{border-color:rgba(0,212,255,0.5);background:rgba(0,212,255,0.04);}
+select.f-input{-webkit-appearance:none;cursor:pointer;}
+.btn{width:100%;padding:13px;border-radius:8px;font-size:14px;cursor:pointer;border:none;font-family:'Orbitron',monospace;letter-spacing:1px;transition:all 0.2s;margin-top:4px;}
+.btn-p{background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.4);color:var(--accent);}
+.btn-p:hover{background:rgba(0,212,255,0.22);}
+.btn-p:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* CHAT */
+.chat-box{height:320px;overflow-y:auto;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
+.chat-box::-webkit-scrollbar{width:3px;}
+.chat-box::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.2);border-radius:2px;}
+.msg{margin-bottom:14px;}
+.msg-ai .bubble{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.25);padding:10px 14px;border-radius:4px 12px 12px 12px;font-size:13px;line-height:1.6;display:inline-block;max-width:85%;}
+.msg-user{text-align:right;}
+.msg-user .bubble{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);padding:10px 14px;border-radius:12px 4px 12px 12px;font-size:13px;line-height:1.6;display:inline-block;max-width:85%;}
+.msg-sender{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:3px;}
+.msg-user .msg-sender{text-align:right;}
+.typing{display:flex;gap:4px;padding:10px 14px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);border-radius:4px 12px 12px 12px;width:fit-content;}
+.typing span{width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:typingDot 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:0.2s;}
+.typing span:nth-child(3){animation-delay:0.4s;}
+@keyframes typingDot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.chat-input-row{display:flex;gap:8px;}
+.chat-input{flex:1;padding:11px 13px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Noto Sans TC',sans-serif;outline:none;transition:border-color 0.2s;}
+.chat-input:focus{border-color:rgba(0,212,255,0.4);}
+.send-btn{padding:11px 16px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.35);border-radius:8px;color:var(--accent);font-size:16px;cursor:pointer;flex-shrink:0;}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* PROGRESS */
+.progress{display:flex;gap:6px;margin-bottom:16px;}
+.prog-step{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,0.08);}
+.prog-step.done{background:var(--accent);}
+.prog-step.active{background:linear-gradient(90deg,var(--accent2),var(--accent));animation:progPulse 1.5s infinite;}
+@keyframes progPulse{0%,100%{opacity:1}50%{opacity:0.6}}
+
+/* RESULT */
+.result-card{text-align:center;padding:24px;}
+.result-score{font-family:'Orbitron',monospace;font-size:48px;font-weight:900;margin:12px 0;}
+.result-badge{display:inline-block;padding:6px 16px;border-radius:6px;font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:600;margin-bottom:12px;}
+
+/* SCREEN MANAGEMENT */
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">SUPREME-V92</div>
+    <div class="logo-sub">配送司機招募系統</div>
+  </div>
+
+  <!-- SCREEN 1: BASIC INFO -->
+  <div class="screen active" id="screen-info">
+    <div style="text-align:center;margin-bottom:20px">
+      <div class="step-title">👋 歡迎應徵！</div>
+      <div class="step-sub">請先填寫基本資料，完成後將進行 AI 面試</div>
+    </div>
+    <div class="progress">
+      <div class="prog-step active"></div>
+      <div class="prog-step"></div>
+      <div class="prog-step"></div>
+    </div>
+    <div class="card">
+      <div class="f-grp"><label class="f-label">姓名 *</label><input class="f-input" id="app-name" placeholder="王大明"></div>
+      <div class="f-grp"><label class="f-label">電話 *</label><input class="f-input" id="app-phone" placeholder="0912345678" type="tel"></div>
+      <div class="f-grp"><label class="f-label">Email</label><input class="f-input" id="app-email" placeholder="your@email.com" type="email"></div>
+      <div class="f-grp"><label class="f-label">應徵職位</label>
+        <select class="f-input" id="app-position">
+          <option value="配送司機">配送司機</option>
+          <option value="倉儲人員">倉儲人員</option>
+          <option value="調度員">調度員</option>
+        </select>
+      </div>
+      <div class="f-grp"><label class="f-label">駕照類別</label>
+        <select class="f-input" id="app-license">
+          <option value="普通小型車">普通小型車</option>
+          <option value="普通重型機車">普通重型機車</option>
+          <option value="職業大貨車">職業大貨車</option>
+          <option value="職業聯結車">職業聯結車</option>
+        </select>
+      </div>
+      <div class="f-grp"><label class="f-label">駕駛年資</label>
+        <select class="f-input" id="app-exp">
+          <option value="1年以下">1年以下</option>
+          <option value="1-3年">1-3年</option>
+          <option value="3-5年">3-5年</option>
+          <option value="5年以上">5年以上</option>
+        </select>
+      </div>
+      <button class="btn btn-p" onclick="startInterview()">開始 AI 面試 →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: AI INTERVIEW -->
+  <div class="screen" id="screen-interview">
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="step-title">🤖 AI 面試進行中</div>
+      <div class="step-sub" id="interview-progress-text">第 1 題，共 5 題</div>
+    </div>
+    <div class="progress">
+      <div class="prog-step done"></div>
+      <div class="prog-step active"></div>
+      <div class="prog-step"></div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="chat-box" id="chat-box"></div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="輸入您的回答..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAnswer();}">
+        <button class="send-btn" id="send-btn" onclick="sendAnswer()">➜</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="progress">
+      <div class="prog-step done"></div>
+      <div class="prog-step done"></div>
+      <div class="prog-step done"></div>
+    </div>
+    <div class="card result-card">
+      <div style="font-size:13px;color:var(--mid);font-family:'JetBrains Mono',monospace">AI 面試完成</div>
+      <div class="result-score" id="result-score">—</div>
+      <div id="result-badge"></div>
+      <div id="result-msg" style="font-size:13px;color:var(--mid);line-height:1.7;margin-top:12px"></div>
+      <div style="margin-top:20px;padding:14px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;font-size:12px;color:var(--dim)">
+        面試結果已送交負責人審核，如有錄取將以 Email 通知。感謝您的應徵！
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const FB = {
+  apiKey:"AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+  authDomain:"supreme-v92.firebaseapp.com",
+  projectId:"supreme-v92",
+  storageBucket:"supreme-v92.firebasestorage.app",
+  messagingSenderId:"485530156296",
+  appId:"1:485530156296:web:6728c0ee08b98dedd800bd"
+};
+const app = initializeApp(FB);
+const db = getFirestore(app);
+
+const GEMINI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
+
+let applicantData = {};
+let chatHistory = [];
+let questionCount = 0;
+let totalScore = 0;
+let scores = [];
+let docId = null;
+
+// ── START INTERVIEW ───────────────────────────────────────
+window.startInterview = async () => {
+  const name = document.getElementById('app-name').value.trim();
+  const phone = document.getElementById('app-phone').value.trim();
+  const email = document.getElementById('app-email').value.trim();
+  const position = document.getElementById('app-position').value;
+  const license = document.getElementById('app-license').value;
+  const exp = document.getElementById('app-exp').value;
+
+  if (!name || !phone) { alert('請填寫姓名和電話'); return; }
+
+  applicantData = { name, phone, email, position, license, exp };
+
+  // Save to Firestore
+  const ref = await addDoc(collection(db, 'applicants'), {
+    ...applicantData, status: 'interviewing',
+    createdAt: serverTimestamp(), aiScore: 0
+  });
+  docId = ref.id;
+
+  showScreen('screen-interview');
+  await askFirstQuestion();
+};
+
+// ── GEMINI AI ─────────────────────────────────────────────
+async function callGemini(messages) {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: messages,
+      generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+    })
+  });
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function askFirstQuestion() {
+  showTyping();
+  const systemPrompt = `你是一個物流公司的面試官，正在對應徵者進行面試。
+應徵者資料：姓名${applicantData.name}、應徵${applicantData.position}、駕照${applicantData.license}、駕齡${applicantData.exp}。
+請用繁體中文進行面試。請依序問5個問題，每次只問一個問題，問題要簡短。
+問題主題：1.自我介紹 2.工作經驗 3.處理突發狀況 4.工作態度 5.期望薪資。
+現在開始問第1個問題。`;
+
+  chatHistory = [{ role: 'user', parts: [{ text: systemPrompt }] }];
+  const q = await callGemini(chatHistory);
+  chatHistory.push({ role: 'model', parts: [{ text: q }] });
+
+  hideTyping();
+  addMessage('ai', q);
+  questionCount = 1;
+  updateProgress();
+}
+
+window.sendAnswer = async () => {
+  const input = document.getElementById('chat-input');
+  const answer = input.value.trim();
+  if (!answer) return;
+
+  input.value = '';
+  addMessage('user', answer);
+  document.getElementById('send-btn').disabled = true;
+
+  chatHistory.push({ role: 'user', parts: [{ text: answer }] });
+
+  if (questionCount >= 5) {
+    // Get final evaluation
+    showTyping();
+    chatHistory.push({ role: 'user', parts: [{ text: '面試結束。請對這位應徵者做出總體評分（0-100分）和建議，格式：評分:[數字] 評語:[文字]' }] });
+    const eval_ = await callGemini(chatHistory);
+    hideTyping();
+
+    const scoreMatch = eval_.match(/評分[：:]\s*(\d+)/);
+    const score = scoreMatch ? parseInt(scoreMatch[1]) : 65;
+    const commentMatch = eval_.match(/評語[：:]\s*(.+)/s);
+    const comment = commentMatch ? commentMatch[1].trim() : eval_;
+
+    // Save result to Firestore
+    const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    await updateDoc(doc(db, 'applicants', docId), {
+      aiScore: score, aiComment: comment,
+      chatHistory: chatHistory.map(m => ({ role: m.role, text: m.parts[0].text })),
+      status: score >= 70 ? 'recommended' : score >= 50 ? 'pending' : 'rejected',
+      completedAt: serverTimestamp()
+    });
+
+    showResult(score, comment);
+    return;
+  }
+
+  // Ask next question
+  showTyping();
+  chatHistory.push({ role: 'user', parts: [{ text: `繼續問第${questionCount+1}個問題，要簡短。` }] });
+  const nextQ = await callGemini(chatHistory);
+  chatHistory.push({ role: 'model', parts: [{ text: nextQ }] });
+  hideTyping();
+  addMessage('ai', nextQ);
+  questionCount++;
+  updateProgress();
+  document.getElementById('send-btn').disabled = false;
+};
+
+function addMessage(role, text) {
+  const box = document.getElementById('chat-box');
+  const div = document.createElement('div');
+  div.className = 'msg msg-' + role;
+  div.innerHTML = `<div class="msg-sender">${role === 'ai' ? '⬡ AI 面試官' : applicantData.name}</div>
+    <div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+let typingEl = null;
+function showTyping() {
+  const box = document.getElementById('chat-box');
+  typingEl = document.createElement('div');
+  typingEl.className = 'msg msg-ai';
+  typingEl.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  box.appendChild(typingEl);
+  box.scrollTop = box.scrollHeight;
+  document.getElementById('send-btn').disabled = true;
+}
+
+function hideTyping() {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+  document.getElementById('send-btn').disabled = false;
+}
+
+function updateProgress() {
+  const txt = document.getElementById('interview-progress-text');
+  if (txt) txt.textContent = `第 ${questionCount} 題，共 5 題`;
+}
+
+function showResult(score, comment) {
+  showScreen('screen-result');
+  const scoreEl = document.getElementById('result-score');
+  const badgeEl = document.getElementById('result-badge');
+  const msgEl = document.getElementById('result-msg');
+
+  scoreEl.textContent = score;
+  scoreEl.style.color = score >= 70 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
+
+  if (score >= 70) {
+    badgeEl.innerHTML = '<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">✓ AI 推薦錄用</span>';
+  } else if (score >= 50) {
+    badgeEl.innerHTML = '<span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">⏳ 待人工審核</span>';
+  } else {
+    badgeEl.innerHTML = '<span style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">✗ 暫不符合需求</span>';
+  }
+  if (msgEl) msgEl.textContent = comment;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+</script>
+</body>
+</html>
