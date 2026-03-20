@@ -77,6 +77,15 @@ textarea.fi{resize:vertical;min-height:70px;line-height:1.6;}
 </style>
 </head>
 <body>
+<script>
+// 全域橋接 - 確保 onclick 在模組載入前可呼叫
+function goStep(n){ if(window._goStep) window._goStep(n); else setTimeout(()=>goStep(n),150); }
+function nxt(n){ if(window.nxt_fn) window.nxt_fn(n); else setTimeout(()=>nxt(n),150); }
+function prv(n){ if(window.prv_fn) window.prv_fn(n); else setTimeout(()=>prv(n),150); }
+function clrSig(){ if(window.clrSig_fn) window.clrSig_fn(); }
+function submitForm(){ if(window.submitForm_fn) window.submitForm_fn(); }
+function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,i); }
+</script>
 <div id="toast"></div>
 <div class="wrap">
 <div class="hdr">
@@ -329,7 +338,7 @@ const FB={apiKey:"AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",authDomain:"supreme-v
 const app=initializeApp(FB);const db=getFirestore(app);const stor=getStorage(app);
  
 let step=1;const tot=5;
-window.goStep=n=>{if(n>step)return;setStep(n);};
+window.goStep=n=>{setStep(n);}; // Allow clicking any step tab
 window.nxt=from=>{if(!val(from))return;setStep(from+1);};
 window.prv=from=>setStep(from-1);
  
@@ -364,16 +373,20 @@ window.trig=id=>document.getElementById(id)?.click();
 window.mkDone=(boxId,inp)=>{const b=document.getElementById(boxId);if(b&&inp.files.length>0){b.classList.add('done');const l=b.querySelector('.ub-lbl');if(l)l.textContent=inp.files.length>1?`已選 ${inp.files.length} 個檔案`:inp.files[0].name;}};
  
 // SIGNATURE
-const canvas=document.getElementById('sigc');const ctx2=canvas.getContext('2d');let drawing=false;let sigData=false;
+const canvas=document.getElementById('sigc');
+const ctx2=canvas ? canvas.getContext('2d') : null;
+let drawing=false;let sigData=false;
 function resizeSig(){const r=window.devicePixelRatio||1;canvas.width=canvas.offsetWidth*r;canvas.height=canvas.offsetHeight*r;ctx2.scale(r,r);ctx2.strokeStyle='#00d4ff';ctx2.lineWidth=2.5;ctx2.lineCap='round';ctx2.lineJoin='round';}
 resizeSig();window.addEventListener('resize',resizeSig);
 function gp(e){const rc=canvas.getBoundingClientRect();const s=e.touches?e.touches[0]:e;return{x:s.clientX-rc.left,y:s.clientY-rc.top};}
+if(canvas && ctx2){
 canvas.addEventListener('mousedown',e=>{drawing=true;ctx2.beginPath();const p=gp(e);ctx2.moveTo(p.x,p.y);});
 canvas.addEventListener('mousemove',e=>{if(!drawing)return;const p=gp(e);ctx2.lineTo(p.x,p.y);ctx2.stroke();sigData=true;});
 canvas.addEventListener('mouseup',()=>drawing=false);
 canvas.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;ctx2.beginPath();const p=gp(e);ctx2.moveTo(p.x,p.y);},{passive:false});
 canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!drawing)return;const p=gp(e);ctx2.lineTo(p.x,p.y);ctx2.stroke();sigData=true;},{passive:false});
 canvas.addEventListener('touchend',()=>drawing=false);
+}
 window.clrSig=()=>{ctx2.clearRect(0,0,canvas.width,canvas.height);sigData=false;};
 function sigEmpty(){return!sigData;}
  
