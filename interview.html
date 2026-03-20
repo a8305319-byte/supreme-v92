@@ -230,21 +230,29 @@ window.startInterview = async () => {
   if (!name || !phone) { alert('請填寫姓名和電話'); return; }
  
   applicantData = { name, phone, email, position, license, exp };
+  docId = 'local_' + Date.now(); // temp ID
  
-  // Save to Firestore (non-blocking - proceed even if fails)
-  try {
-    const ref = await addDoc(collection(db, 'applicants'), {
-      ...applicantData, status: 'interviewing',
-      createdAt: serverTimestamp(), aiScore: 0
-    });
-    docId = ref.id;
-  } catch(e) {
-    console.warn('[Interview] Firestore save skipped:', e.message);
-    docId = 'local_' + Date.now();
-  }
- 
+  // Go to interview FIRST, save to Firestore in background
   showScreen('screen-interview');
-  await askFirstQuestion();
+  console.log('[Interview] 切換到面試畫面');
+  
+  // Background save (non-blocking)
+  addDoc(collection(db, 'applicants'), {
+    ...applicantData, status: 'interviewing',
+    createdAt: serverTimestamp(), aiScore: 0
+  }).then(ref => { docId = ref.id; }).catch(e => console.warn('[Interview] 儲存跳過:', e.message));
+ 
+  try {
+    await askFirstQuestion();
+  } catch(e) {
+    console.error('[Interview] askFirstQuestion 失敗:', e.message);
+    // Show fallback question
+    const fallback = '您好！請先做個自我介紹，告訴我您的姓名和過去的工作經驗。';
+    addMessage('ai', fallback);
+    chatHistory.push({ role: 'model', parts: [{ text: fallback }] });
+    questionCount = 1;
+    updateProgress();
+  }
 };
  
 // ── 面試評分引擎 ─────────────────────────────────────────────
@@ -314,12 +322,13 @@ window.sendAnswer = async () => {
  
     // Save result to Firestore
     const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    await updateDoc(doc(db, 'applicants', docId), {
+    // 非同步儲存分數（Firebase 權限不足時不影響顯示結果）
+    updateDoc(doc(db, 'applicants', docId), {
       aiScore: score, aiComment: comment,
       chatHistory: chatHistory.map(m => ({ role: m.role, text: m.parts[0].text })),
       status: score >= 70 ? 'recommended' : score >= 50 ? 'pending' : 'rejected',
       completedAt: serverTimestamp()
-    });
+    }).catch(e => console.warn('[Interview] 分數儲存跳過:', e.message));
  
     showResult(score, comment);
     return;
