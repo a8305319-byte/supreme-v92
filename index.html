@@ -590,9 +590,9 @@ const fbApp = initializeApp(FB);
 // ── API Keys ─────────────────────────────────────────
 // ── AI 模型分流（已在頂部定義）────────
 const AI_MODELS = {
-  live:    'gemini-live-2.5-flash',
-  fast:    'gemini-2.5-flash-lite',
-  pro:     'gemini-2.5-pro',          // confirmed working
+  live:    'gemini-2.0-flash',        // live fallback to flash
+  fast:    'gemini-2.0-flash',        // confirmed working GA model
+  pro:     'gemini-2.0-flash',        // use flash for now until 2.5 GA
   default: 'gemini-2.0-flash'
 };
 
@@ -868,15 +868,17 @@ async function buildApp() {
     initDesktop();
     showPanel('dashboard');
   }
-  // Commander can also switch to driver view
-  if(ROLE === 'commander' && CD?.isDualRole){
-    addDriverViewToggle();
+  // Commander can switch to driver view
+  if(ROLE === 'commander'){
+    setTimeout(addDriverViewToggle, 300);
   }
 }
 
 function addDriverViewToggle(){
-  const logo = document.querySelector('.logo-area');
-  if(!logo || document.getElementById('driver-view-toggle')) return;
+  // Try multiple selectors
+  const logo = document.querySelector('.logo-area') || document.querySelector('.nav-logout');
+  if(!logo){ setTimeout(addDriverViewToggle, 500); return; }
+  if(document.getElementById('driver-view-toggle')) return;
   const btn = document.createElement('button');
   btn.id = 'driver-view-toggle';
   btn.textContent = '📱 司機視角';
@@ -1391,8 +1393,14 @@ function panelHR(){return `
       <div class="f-grp"><label class="f-lbl">員工類型</label>
         <select class="f-inp" id="u-type"><option value="employee">員工</option><option value="contractor">承攬</option></select>
       </div>
-      <div class="f-grp"><label class="f-lbl">配送單價 ($)</label><input class="f-inp" id="u-price-d" type="number" value="50"></div>
-      <div class="f-grp"><label class="f-lbl">逆物流單價 ($)</label><input class="f-inp" id="u-price-r" type="number" value="35"></div>
+      <div class="f-grp">
+        <label class="f-lbl">配送單價 ($) ${ROLE!=="commander"?'<span style="color:#f87171;font-size:9px"> 唯讀</span>':""}</label>
+        <input class="f-inp" id="u-price-d" type="number" value="50" ${ROLE!=="commander"?"readonly style=\'opacity:0.5;cursor:not-allowed\'":" "}>
+      </div>
+      <div class="f-grp">
+        <label class="f-lbl">逆物流單價 ($) ${ROLE!=="commander"?'<span style="color:#f87171;font-size:9px"> 唯讀</span>':""}</label>
+        <input class="f-inp" id="u-price-r" type="number" value="35" ${ROLE!=="commander"?"readonly style=\'opacity:0.5;cursor:not-allowed\'":" "}>
+      </div>
       <div class="f-grp"><label class="f-lbl">津貼 ($)</label><input class="f-inp" id="u-allowance" type="number" value="2000"></div>
       <div class="f-grp"><label class="f-lbl">代扣費用 ($)</label><input class="f-inp" id="u-deduct" type="number" value="500"></div>
       <div class="f-grp">
@@ -4492,8 +4500,14 @@ window.sendCommanderAI = async () => {
     </div>`;
     box.scrollTop = box.scrollHeight;
   } catch(e) {
+    console.error('Commander AI error:', e);
     document.getElementById(typingId)?.remove();
-    box.innerHTML += `<div style="color:#f87171;font-size:12px;padding:8px">AI 暫時無法回應：${e.message}</div>`;
+    box.innerHTML += `<div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
+      <div style="padding:8px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:4px 12px 12px 12px;font-size:12px;color:#f87171">
+        ❌ ${e.message}<br><span style="font-size:10px;color:var(--dim)">請確認 API Key 或稍後再試</span>
+      </div>
+    </div>`;
   }
 };
 
