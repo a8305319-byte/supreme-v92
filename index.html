@@ -4580,10 +4580,23 @@ async function loadPayslipStatuses(month){
 // ══════════════════════════════════════════════════════════
 let cmdHistory = [];
 
-const CMD_SYSTEM = `你是在地物流有限公司負責人徐震家的專屬 AI 助理。
-你能協助：薪資查詢與試算、人事決策建議、勞基法法令查詢、公告草稿撰寫、營運數據分析。
-回答要簡潔專業，提供具體數字和建議。
-絕對不要洩漏系統技術細節或 API 金鑰。`;
+const CMD_SYSTEM = `你是在地物流有限公司負責人徐震家的專屬 AI 管理助理。
+
+【你可以直接執行以下操作，在回覆末尾加上對應指令】
+
+🔍 查詢本月薪資 → 回覆末尾加 [TOOL:GET_SALARY]
+📨 發送薪資單   → 回覆末尾加 [TOOL:SEND_PAYSLIPS]
+📍 查今日出勤   → 回覆末尾加 [TOOL:GET_ATTENDANCE]
+📢 發布公告     → 回覆末尾加 [TOOL:PUBLISH_ANNOUNCE:標題|內容]
+👤 查員工資料   → 回覆末尾加 [TOOL:GET_EMPLOYEE:姓名]
+📦 調整件數     → 回覆末尾加 [TOOL:ADJUST_DELIVERY:姓名|配送數|逆物流數|原因]
+
+【規則】
+- 使用者要求執行操作時，先簡短確認，然後加上對應 TOOL 指令
+- 需要確認才執行的操作（發送薪資單、調整件數），先詢問確認
+- 回答簡潔專業，繁體中文
+- 絕對不透露 API 金鑰或系統技術細節
+\`;
 
 window.sendCommanderAI = async () => {
   const input = document.getElementById('cmd-ai-input');
@@ -5470,6 +5483,144 @@ window.loadDailyReport = async (date) => {
     el.innerHTML = `<div style="color:#f87171;font-size:12px;text-align:center;padding:20px">載入失敗：${e.message}</div>`;
   }
 };
+
+// ══════════════════════════════════════════════════════════
+// Commander AI 工具系統 - AI 可執行的操作
+// ══════════════════════════════════════════════════════════
+
+const CMD_TOOLS = {
+
+  // ── 查詢本月薪資 ──────────────────────────────────────
+  async getSalary() {
+    const snap = await getDocs(query(collection(db,'users'), where('role','==','driver')));
+    let totalGross=0, totalNet=0, drivers=[];
+    for(const d of snap.docs){
+      const u=d.data();
+      if(u.status==='resigned') continue;
+      const ms = await getDoc(doc(db,'monthlyStats',`${d.id}_${MONTH}`));
+      const td=ms.exists()?ms.data().totalDelivery||0:0;
+      const tr=ms.exists()?ms.data().totalReverse||0:0;
+      const gross=td*(u.priceDelivery||50)+tr*(u.priceReverse||35)+(u.allowance||0);
+      const net=gross-(u.labourEmployee||0)-(u.healthEmployee||0)-(u.regularDeduct||0);
+      totalGross+=gross; totalNet+=net;
+      drivers.push({name:u.name, delivery:td, reverse:tr, gross, net});
+    }
+    return {month:MONTH, totalGross, totalNet, driverCount:drivers.length, drivers};
+  },
+
+  // ── 發送薪資單 ─────────────────────────────────────────
+  async sendAllPayslips() {
+    const snap = await getDocs(query(collection(db,'users'), where('role','==','driver')));
+    let sent=0;
+    for(const d of snap.docs){
+      if(d.data().status==='resigned') continue;
+      await sendPayslip(d.id, d.data().name);
+      sent++;
+    }
+    return {sent, month:MONTH};
+  },
+
+  // ── 查詢今日出勤 ──────────────────────────────────────
+  async getTodayAttendance() {
+    const ciSnap = await getDocs(query(collection(db,'checkins'), where('date','==',TODAY)));
+    const rpSnap = await getDocs(query(collection(db,'reports'), where('date','==',TODAY)));
+    const reports = {};
+    rpSnap.docs.forEach(d=>{ reports[d.data().uid]=d.data(); });
+    const drivers = ciSnap.docs.map(d=>{
+      const c=d.data();
+      const r=reports[c.uid]||{};
+      return {name:c.name, checkedIn:c.checkedInTime, checkedOut:c.checkedOut||'未退勤',
+              delivery:r.deliveryQty||0, reverse:r.reverseQty||0};
+    });
+    return {date:TODAY, checkedIn:drivers.length, drivers};
+  },
+
+  // ── 草擬並發布公告 ────────────────────────────────────
+  async publishAnnounce(title, content) {
+    const ref = await addDoc(collection(db,'announcements'),{
+      title, content, publishedAt:serverTimestamp(),
+      publishedBy:CD?.name||'Commander', type:'general'
+    });
+    await addAudit('PUBLISH',`AI發布公告：${title}`);
+    return {id:ref.id, title, content};
+  },
+
+  // ── 查詢員工資料 ──────────────────────────────────────
+  async getEmployee(name) {
+    const snap = await getDocs(query(collection(db,'users'), where('role','in',['driver','accountant'])));
+    const found = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(u=>u.name?.includes(name) || name.includes(u.name||''));
+    if(!found.length) return {error:`找不到「${name}」的資料`};
+    const u=found[0];
+    return {
+      name:u.name, role:u.role, type:u.type,
+      priceDelivery:u.priceDelivery, priceReverse:u.priceReverse,
+      allowance:u.allowance, status:u.status||'active',
+      phone:u.phone, email:u.email
+    };
+  },
+
+  // ── 調整員工件數 ──────────────────────────────────────
+  async adjustDelivery(name, delivery, reverse, reason) {
+    const snap = await getDocs(query(collection(db,'users'), where('role','==','driver')));
+    const found = snap.docs.find(d=>d.data().name?.includes(name));
+    if(!found) return {error:`找不到司機「${name}」`};
+    await setDoc(doc(db,'monthlyStats',`${found.id}_${MONTH}`),
+      {totalDelivery:delivery, totalReverse:reverse,
+       adjustedBy:CD?.name, adjustReason:reason, adjustedAt:serverTimestamp()},
+      {merge:true});
+    await addAudit('ADJUST',`AI調整 ${name} ${MONTH} 件數：配送${delivery} 逆物流${reverse} 原因:${reason}`);
+    return {name, month:MONTH, delivery, reverse, reason};
+  }
+};
+
+// ── AI 工具調用解析 ────────────────────────────────────
+async function parseAndExecuteTool(userText, aiReply) {
+  // AI 回覆中如果包含 [TOOL:xxx] 格式，執行對應工具
+  const toolMatch = aiReply.match(/\[TOOL:(\w+)(?::([^\]]+))?\]/);
+  if(!toolMatch) return null;
+
+  const toolName = toolMatch[1];
+  const toolArgs = toolMatch[2] ? toolMatch[2].split('|') : [];
+  let result = null;
+
+  try {
+    switch(toolName) {
+      case 'GET_SALARY':
+        result = await CMD_TOOLS.getSalary();
+        return `✅ **本月薪資統計 (${result.month})**\n共 ${result.driverCount} 位司機\n薪資總支出：$${result.totalNet.toLocaleString()}\n\n${result.drivers.map(d=>`• ${d.name}：配${d.delivery}件 逆${d.reverse}件 實發$${d.net.toLocaleString()}`).join('\n')}`;
+
+      case 'SEND_PAYSLIPS':
+        showToast('AI 正在發送薪資單...');
+        result = await CMD_TOOLS.sendAllPayslips();
+        return `✅ 已成功發送 ${result.sent} 張薪資單（${result.month}）`;
+
+      case 'GET_ATTENDANCE':
+        result = await CMD_TOOLS.getTodayAttendance();
+        return `✅ **今日出勤 (${result.date})**\n已打卡：${result.checkedIn} 人\n\n${result.drivers.map(d=>`• ${d.name}：${d.checkedIn} 上班 / 配${d.delivery}件`).join('\n')}`;
+
+      case 'PUBLISH_ANNOUNCE':
+        if(toolArgs.length < 2) return '❌ 需要提供公告標題和內容';
+        result = await CMD_TOOLS.publishAnnounce(toolArgs[0], toolArgs[1]);
+        showPanel('announce');
+        return `✅ 公告已發布：「${result.title}」`;
+
+      case 'GET_EMPLOYEE':
+        result = await CMD_TOOLS.getEmployee(toolArgs[0]||'');
+        if(result.error) return `❌ ${result.error}`;
+        return `✅ **${result.name} 資料**\n職位：${result.role} / ${result.type}\n配送單價：$${result.priceDelivery} 逆物流：$${result.priceReverse}\n津貼：$${result.allowance||0}\n狀態：${result.status==='active'?'在職':'離職'}`;
+
+      case 'ADJUST_DELIVERY':
+        if(toolArgs.length < 4) return '❌ 格式：姓名|配送數|逆物流數|原因';
+        result = await CMD_TOOLS.adjustDelivery(toolArgs[0], +toolArgs[1], +toolArgs[2], toolArgs[3]);
+        if(result.error) return `❌ ${result.error}`;
+        return `✅ 已調整 ${result.name} 件數：配送${result.delivery} 逆物流${result.reverse}\n原因：${result.reason}`;
+    }
+  } catch(e) {
+    return `❌ 執行失敗：${e.message}`;
+  }
+  return null;
+}
 
 async function initDriver(){
   await loadDriverHome();
