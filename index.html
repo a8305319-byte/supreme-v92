@@ -872,6 +872,11 @@ async function buildApp() {
   // Commander can switch to driver view
   if(ROLE === 'commander'){
     setTimeout(addDriverViewToggle, 300);
+    // 啟動 AI 管家
+    setTimeout(()=>{
+      butlerMorningBrief();
+      startButlerReminders();
+    }, 1500);
   }
 }
 
@@ -3555,9 +3560,9 @@ async function initCSChat() {
 
   // Welcome message
   const greetings = [
-    `${CD?.name||'您好'}，我是您的客服專員😊 有什麼可以幫您的嗎？`,
-    `嗨 ${CD?.name||''}！我是美玲，今天有什麼需要幫忙的呢？`,
-    `您好！我是您的客服專員，在地物流客服專員，請問有什麼事情嗎？`
+    `${CD?.name||'您好'}，您好！我是${CS_AGENT_NAME}😊 有什麼可以幫您的嗎？`,
+    `嗨 ${CD?.name||''}！我是${CS_AGENT_NAME}，今天有什麼需要幫忙的呢？`,
+    `您好！我是${CS_AGENT_NAME}，在地物流客服，請問有什麼事情嗎？`
   ];
   const greeting = greetings[Math.floor(Math.random() * greetings.length)];
   addCSMsg('agent', greeting);
@@ -4580,22 +4585,33 @@ async function loadPayslipStatuses(month){
 // ══════════════════════════════════════════════════════════
 let cmdHistory = [];
 
-const CMD_SYSTEM = `你是在地物流有限公司負責人徐震家的專屬 AI 管理助理。
+const CMD_SYSTEM = `你是「在地物流有限公司」負責人徐震家的專屬 AI 管家，名字叫「阿智」。
 
-【你可以直接執行以下操作，在回覆末尾加上對應指令】
+【個性】
+- 說話像真人助理，自然親切，簡潔有效率
+- 主動提供建議，不只回答問題
+- 記住對話中提到的事情
 
-🔍 查詢本月薪資 → 回覆末尾加 [TOOL:GET_SALARY]
-📨 發送薪資單   → 回覆末尾加 [TOOL:SEND_PAYSLIPS]
-📍 查今日出勤   → 回覆末尾加 [TOOL:GET_ATTENDANCE]
-📢 發布公告     → 回覆末尾加 [TOOL:PUBLISH_ANNOUNCE:標題|內容]
-👤 查員工資料   → 回覆末尾加 [TOOL:GET_EMPLOYEE:姓名]
-📦 調整件數     → 回覆末尾加 [TOOL:ADJUST_DELIVERY:姓名|配送數|逆物流數|原因]
+【你能直接執行的操作】
+當用戶說以下類似的話，自動在回覆末尾加上對應指令：
 
-【規則】
-- 使用者要求執行操作時，先簡短確認，然後加上對應 TOOL 指令
-- 需要確認才執行的操作（發送薪資單、調整件數），先詢問確認
-- 回答簡潔專業，繁體中文
-- 絕對不透露 API 金鑰或系統技術細節
+「薪資/薪水/工資/發薪」相關 → [TOOL:GET_SALARY]
+「發薪資單/寄薪資單/傳薪資」→ [TOOL:SEND_PAYSLIPS]
+「出勤/上班/打卡/今天誰來」→ [TOOL:GET_ATTENDANCE]
+「公告/通知/發布/告訴大家」→ [TOOL:PUBLISH_ANNOUNCE:標題|內容]
+「查XXX/XXX的資料/XXX怎麼了」→ [TOOL:GET_EMPLOYEE:姓名]
+「調整XXX件數/改件數」→ [TOOL:ADJUST_DELIVERY:姓名|配送數|逆物流數|原因]
+「XXX離職/辦理離職」→ [TOOL:RESIGN_EMPLOYEE:姓名|原因]
+「財務/損益/收入/支出/這個月賺」→ [TOOL:GET_FINANCE]
+「全部司機/所有員工/人數」→ [TOOL:GET_ALL_STAFF]
+「異常/問題/警示/有沒有問題」→ [TOOL:GET_ALERTS]
+
+【重要規則】
+- 用繁體中文回答
+- 需要確認的操作（離職、發薪資單）先問一次確認
+- 不知道的事說不知道，不要亂猜
+- 操作成功後告知結果，失敗時說明原因
+- 絕對不透露 API 金鑰
 \`;
 
 window.sendCommanderAI = async () => {
@@ -4641,7 +4657,8 @@ window.sendCommanderAI = async () => {
     const messages = [...ctxHistory, { role:'user', parts:[{text}] }];
 
     // 統一使用 callGemini（含主權金鑰 + 退避 + 1.5 模型）
-    const { reply: rawReply, model: usedModel } = await callGemini(text, ctxHistory, 'text');
+    const memCtx = getAIContext();
+    const { reply: rawReply, model: usedModel } = await callGemini(text + memCtx, ctxHistory, 'text');
     const reply = rawReply || '抱歉，目前無法回應，請稍後再試。';
     model = usedModel;
     cmdHistory.push({ role:'model', parts:[{text: reply}] });
@@ -5571,6 +5588,87 @@ const CMD_TOOLS = {
       {merge:true});
     await addAudit('ADJUST',`AI調整 ${name} ${MONTH} 件數：配送${delivery} 逆物流${reverse} 原因:${reason}`);
     return {name, month:MONTH, delivery, reverse, reason};
+  },
+
+  // ── 辦理離職 ──────────────────────────────────────────
+  async resignEmployee(name, reason) {
+    const snap = await getDocs(query(collection(db,'users'), where('role','==','driver')));
+    const found = snap.docs.find(d=>d.data().name?.includes(name));
+    if(!found) return {error:`找不到員工「${name}」`};
+    const today = TODAY;
+    await updateDoc(doc(db,'users',found.id), {
+      status:'resigned', active:false,
+      resignedAt:serverTimestamp(), resignReason:reason
+    });
+    await addDoc(collection(db,'resignations'),{
+      uid:found.id, name:found.data().name,
+      date:today, reason, processedBy:CD?.name,
+      createdAt:serverTimestamp()
+    });
+    await addAudit('RESIGN',`AI辦理離職：${name}，原因：${reason}`);
+    return {name:found.data().name, date:today, reason};
+  },
+
+  // ── 查詢財務 ──────────────────────────────────────────
+  async getFinance() {
+    const snap = await getDocs(query(collection(db,'users'), where('role','==','driver')));
+    let totalGross=0, totalNet=0, totalInsEr=0;
+    for(const d of snap.docs){
+      const u=d.data();
+      if(u.status==='resigned') continue;
+      const ms = await getDoc(doc(db,'monthlyStats',`${d.id}_${MONTH}`));
+      const td=ms.exists()?ms.data().totalDelivery||0:0;
+      const tr=ms.exists()?ms.data().totalReverse||0:0;
+      const gross=td*(u.priceDelivery||50)+tr*(u.priceReverse||35)+(u.allowance||0);
+      const net=gross-(u.labourEmployee||0)-(u.healthEmployee||0)-(u.regularDeduct||0);
+      totalGross+=gross; totalNet+=net;
+      totalInsEr+=(u.labourEmployer||0)+(u.healthEmployer||0);
+    }
+    const expSnap = await getDoc(doc(db,'financeExpenses',MONTH));
+    const exp = expSnap.exists()?expSnap.data():{fuel:0,repair:0,other:0};
+    const totalExp=(exp.fuel||0)+(exp.repair||0)+(exp.other||0);
+    const netProfit=totalGross-totalNet-totalInsEr-totalExp;
+    return {month:MONTH, totalGross, totalNet, totalInsEr, totalExp, netProfit};
+  },
+
+  // ── 查詢全部員工 ─────────────────────────────────────
+  async getAllStaff() {
+    const snap = await getDocs(collection(db,'users'));
+    const active = snap.docs.filter(d=>d.data().status!=='resigned'&&d.data().role!=='commander');
+    const drivers = active.filter(d=>d.data().role==='driver');
+    const staff = active.filter(d=>d.data().role!=='driver');
+    return {
+      total:active.length, driverCount:drivers.length, staffCount:staff.length,
+      drivers:drivers.map(d=>d.data().name),
+      staff:staff.map(d=>({name:d.data().name, role:d.data().role}))
+    };
+  },
+
+  // ── 系統警示 ─────────────────────────────────────────
+  async getAlerts() {
+    const alerts = [];
+    // 駕照到期
+    const usersSnap = await getDocs(collection(db,'users'));
+    usersSnap.docs.forEach(d=>{
+      const u=d.data();
+      if(u.status==='resigned') return;
+      if(u.licenseExpiry){
+        const days=Math.ceil((new Date(u.licenseExpiry)-new Date())/86400000);
+        if(days<=30) alerts.push({type:'駕照到期',name:u.name,days,date:u.licenseExpiry});
+      }
+    });
+    // 未回報件數
+    const rpSnap = await getDocs(query(collection(db,'reports'),where('date','==',TODAY)));
+    const reported = rpSnap.docs.map(d=>d.data().uid);
+    const driversSnap = await getDocs(query(collection(db,'users'),where('role','==','driver')));
+    const notReported = driversSnap.docs
+      .filter(d=>d.data().status!=='resigned'&&!reported.includes(d.id))
+      .map(d=>d.data().name);
+    if(notReported.length) alerts.push({type:'未回報件數',names:notReported});
+    // 未簽收薪資單
+    const psSnap = await getDocs(query(collection(db,'payslips'),where('month','==',MONTH),where('acknowledged','==',false)));
+    if(psSnap.size>0) alerts.push({type:'未簽收薪資單',count:psSnap.size});
+    return {date:TODAY, alertCount:alerts.length, alerts};
   }
 };
 
@@ -5615,11 +5713,184 @@ async function parseAndExecuteTool(userText, aiReply) {
         result = await CMD_TOOLS.adjustDelivery(toolArgs[0], +toolArgs[1], +toolArgs[2], toolArgs[3]);
         if(result.error) return `❌ ${result.error}`;
         return `✅ 已調整 ${result.name} 件數：配送${result.delivery} 逆物流${result.reverse}\n原因：${result.reason}`;
+
+      case 'RESIGN_EMPLOYEE':
+        if(!toolArgs[0]) return '❌ 請提供員工姓名';
+        result = await CMD_TOOLS.resignEmployee(toolArgs[0], toolArgs[1]||'自願離職');
+        if(result.error) return `❌ ${result.error}`;
+        return `✅ ${result.name} 離職手續已完成\n日期：${result.date}\n原因：${result.reason}`;
+
+      case 'GET_FINANCE':
+        result = await CMD_TOOLS.getFinance();
+        const profitSign = result.netProfit>=0?'+':'-';
+        return `✅ **${result.month} 財務摘要**\n配送收入：$${result.totalGross.toLocaleString()}\n薪資支出：$${result.totalNet.toLocaleString()}\n勞健保(雇主)：$${result.totalInsEr.toLocaleString()}\n其他費用：$${result.totalExp.toLocaleString()}\n**本月淨利：${profitSign}$${Math.abs(result.netProfit).toLocaleString()}**`;
+
+      case 'GET_ALL_STAFF':
+        result = await CMD_TOOLS.getAllStaff();
+        return `✅ **員工總覽**\n在職共 ${result.total} 人\n司機 ${result.driverCount} 人：${result.drivers.join('、')}\n內勤 ${result.staffCount} 人`;
+
+      case 'GET_ALERTS':
+        result = await CMD_TOOLS.getAlerts();
+        if(!result.alertCount) return `✅ 今日無異常，系統運作正常`;
+        return `⚠️ **發現 ${result.alertCount} 項警示**\n${result.alerts.map(a=>{
+          if(a.type==='駕照到期') return `🪪 ${a.name} 駕照 ${a.days} 天後到期`;
+          if(a.type==='未回報件數') return `📦 未回報件數：${a.names.join('、')}`;
+          if(a.type==='未簽收薪資單') return `💰 ${a.count} 張薪資單未簽收`;
+          return a.type;
+        }).join('\n')}`;
     }
   } catch(e) {
     return `❌ 執行失敗：${e.message}`;
   }
   return null;
+}
+
+// ── AI 管家記憶系統 ────────────────────────────────────
+const AI_MEMORY_KEY = 'v92_ai_memory';
+function loadAIMemory(){
+  try{ return JSON.parse(localStorage.getItem(AI_MEMORY_KEY)||'{}'); }
+  catch(e){ return {}; }
+}
+function saveAIMemory(key, value){
+  const mem = loadAIMemory();
+  mem[key] = value;
+  mem['_updated'] = new Date().toISOString();
+  localStorage.setItem(AI_MEMORY_KEY, JSON.stringify(mem));
+}
+function getAIContext(){
+  const mem = loadAIMemory();
+  if(!Object.keys(mem).filter(k=>k!=='_updated').length) return '';
+  return '\n【記憶】' + Object.entries(mem)
+    .filter(([k])=>k!=='_updated')
+    .map(([k,v])=>`${k}:${v}`).join('、');
+}
+
+// ══════════════════════════════════════════════════════════
+// 🤵 AI 管家主動彙報系統
+// ══════════════════════════════════════════════════════════
+
+async function butlerMorningBrief(){
+  // 每次 Commander 登入時自動執行一次彙報
+  const lastBrief = localStorage.getItem('v92_last_brief');
+  const today = TODAY;
+  if(lastBrief === today) return; // 今天已彙報過
+  localStorage.setItem('v92_last_brief', today);
+
+  // 等介面載入完成
+  await new Promise(r=>setTimeout(r, 2000));
+
+  const box = document.getElementById('cmd-chat-box');
+  if(!box) return;
+
+  // 收集資料
+  const alerts = [];
+  const items = [];
+
+  try {
+    // 1. 駕照/保險到期警示
+    const usersSnap = await getDocs(collection(db,'users'));
+    usersSnap.docs.forEach(d=>{
+      const u=d.data();
+      if(u.status==='resigned') return;
+      if(u.licenseExpiry){
+        const days=Math.ceil((new Date(u.licenseExpiry)-new Date())/86400000);
+        if(days<=30 && days>=0) alerts.push(`🪪 ${u.name} 駕照 ${days} 天後到期`);
+      }
+      if(u.insuranceExpiry){
+        const days=Math.ceil((new Date(u.insuranceExpiry)-new Date())/86400000);
+        if(days<=30 && days>=0) alerts.push(`🛡️ ${u.name} 保險 ${days} 天後到期`);
+      }
+    });
+
+    // 2. 薪資單未發送（月初提醒）
+    const day = new Date().getDate();
+    if(day >= 1 && day <= 5){
+      const psSnap = await getDocs(query(
+        collection(db,'payslips'), where('month','==',MONTH)
+      ));
+      if(psSnap.empty) items.push(`💰 本月薪資單尚未發送`);
+    }
+
+    // 3. 今日出勤
+    const rpSnap = await getDocs(query(collection(db,'reports'),where('date','==',TODAY)));
+    const drSnap = await getDocs(query(collection(db,'users'),where('role','==','driver'),where('status','!=','resigned')));
+    const reportedCount = rpSnap.size;
+    const totalDrivers = drSnap.size;
+    items.push(`📦 今日件數回報：${reportedCount}/${totalDrivers} 人`);
+
+    // 4. 未簽收薪資單
+    const unackSnap = await getDocs(query(
+      collection(db,'payslips'),
+      where('month','==',MONTH),
+      where('acknowledged','==',false)
+    ));
+    if(unackSnap.size > 0) items.push(`📋 ${unackSnap.size} 張薪資單待簽收`);
+
+  } catch(e){ console.warn('[Butler]', e.message); }
+
+  // 建立彙報訊息
+  const hasAlerts = alerts.length > 0;
+  const greeting = new Date().getHours() < 12 ? '早安' : new Date().getHours() < 18 ? '午安' : '晚安';
+
+  const briefMsg = `${greeting}，徐老闆！我是阿智，以下是今日彙報：
+
+📅 ${today}
+
+${items.map(i=>`• ${i}`).join('\n')}
+${hasAlerts ? '\n⚠️ **需要注意：**\n' + alerts.map(a=>`• ${a}`).join('\n') : '\n✅ 無異常警示'}
+
+有什麼需要我幫忙的嗎？`;
+
+  // 顯示在 Commander AI 對話框
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:10px;margin-bottom:14px;align-items:flex-start';
+  div.innerHTML = `
+    <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤵</div>
+    <div style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6;max-width:85%;white-space:pre-wrap">${briefMsg}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+
+  // 如果有警示，顯示 toast
+  if(hasAlerts){
+    showToast(`⚠️ 有 ${alerts.length} 項警示需要注意`, 'warn');
+  }
+}
+
+// ── 定時提醒系統 ──────────────────────────────────────────
+function startButlerReminders(){
+  // 每小時檢查一次
+  setInterval(async ()=>{
+    const hour = new Date().getHours();
+    const min  = new Date().getMinutes();
+
+    // 下午5點提醒件數回報
+    if(hour===17 && min===0){
+      const rpSnap = await getDocs(query(collection(db,'reports'),where('date','==',TODAY)));
+      const drSnap = await getDocs(query(collection(db,'users'),where('role','==','driver'),where('status','!=','resigned')));
+      const notReported = drSnap.size - rpSnap.size;
+      if(notReported > 0){
+        showToast(`⏰ 提醒：還有 ${notReported} 位司機未回報件數`);
+        const box = document.getElementById('cmd-chat-box');
+        if(box){
+          const div = document.createElement('div');
+          div.style.cssText='display:flex;gap:10px;margin-bottom:14px;align-items:flex-start';
+          div.innerHTML=`<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤵</div>
+            <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 14px;font-size:13px">⏰ 提醒：現在 17:00，還有 ${notReported} 位司機未回報今日件數。</div>`;
+          box.appendChild(div);
+          box.scrollTop=box.scrollHeight;
+        }
+      }
+    }
+
+    // 每月5號早上9點提醒發薪資單
+    const day = new Date().getDate();
+    if(day===5 && hour===9 && min===0){
+      const psSnap = await getDocs(query(collection(db,'payslips'),where('month','==',MONTH)));
+      if(psSnap.empty){
+        showToast('💰 提醒：本月薪資單尚未發送！');
+      }
+    }
+  }, 60000); // 每分鐘檢查
 }
 
 async function initDriver(){
