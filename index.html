@@ -1968,8 +1968,7 @@ function panelRecruit(){
       </div>
       <div style="text-align:center;padding:14px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px">
         <div id="qrcode-area" style="display:inline-block">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(interviewUrl)}" style="border-radius:10px;border:3px solid rgba(0,212,255,0.4);width:160px;height:160px;display:block" onerror="this.style.display='none';this.nextSibling.style.display='block'" alt="QR Code">
-          <div style="display:none;width:160px;height:160px;background:rgba(255,255,255,0.05);border-radius:10px;border:2px dashed rgba(0,212,255,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--dim)">QR 載入中...</div>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(interviewUrl)}" style="border-radius:10px;border:3px solid rgba(0,212,255,0.4);width:160px;height:160px;display:block" alt="QR Code">
         </div>
         <div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:'JetBrains Mono',monospace">掃描 QR Code 進入面試</div>
       </div>
@@ -1990,23 +1989,12 @@ function panelRecruit(){
       </div>
 
     </div>
-      <script>
-        setTimeout(()=>{
-          const el=document.getElementById('qrcode-area');
-          if(el && !el.innerHTML){
-            const img=document.createElement('img');
-            img.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encodeURIComponent('${interviewUrl}');
-            img.style.borderRadius='8px';
-            el.appendChild(img);
-          }
-        },500);
-      <\/script>
+
     </div>
     <div class="glass-card">
       <div class="sh"><div class="st">📋 應徵者清單</div><button class="btn btn-p btn-sm" onclick="loadApplicants()">重新整理</button></div>
       <div id="applicant-list"><div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">載入中...</div></div>
     </div>
-  </div>
   <div class="glass-card" style="margin-top:14px">
     <div class="sh"><div class="st">📨 手動建立帳號並發送</div><span class="badge bp">面試通過者</span></div>
     <div class="g2" style="gap:10px">
@@ -2019,7 +2007,7 @@ function panelRecruit(){
     </div>
     <button class="btn btn-p" style="width:100%" onclick="createAccountAndSendEmail()">建立帳號並自動發送 Email</button>
     <div id="create-acc-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
-  </div>
+</div>
 </div>`;}
 
 // ═══════════════════════════════════════════════════════════
