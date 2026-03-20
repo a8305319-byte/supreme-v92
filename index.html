@@ -2014,15 +2014,32 @@ function panelCommander(){return `
 </div>`;}
 
 const TOGGLE_DEFS=[
-  {id:'recruit',icon:'👩‍💼',name:'招募模組',desc:'面試專員、職缺管理'},
-  {id:'hr',icon:'👤',name:'人事模組',desc:'員工承攬管理'},
-  {id:'attendance',icon:'📅',name:'出勤模組',desc:'班表請假加班'},
-  {id:'insurance',icon:'🛡️',name:'勞健保模組',desc:'投保薪資選擇'},
-  {id:'salary',icon:'💰',name:'薪資模組',desc:'薪資試算結算'},
-  {id:'finance',icon:'📊',name:'財務模組',desc:'損益費用審核'},
-  {id:'operations',icon:'📦',name:'營運模組',desc:'件數回報管理'},
-  {id:'vehicle',icon:'🚛',name:'車輛管理',desc:'車籍保養追蹤'},
-  {id:'announce',icon:'📢',name:'公告管理',desc:'發布公告通知'},
+  // ── 核心模組 ──
+  {id:'recruit',   icon:'👩‍💼', name:'招募模組',     desc:'面試評測、職缺管理',      section:'core'},
+  {id:'hr',        icon:'👤',  name:'人事模組',     desc:'員工承攬、離職管理',      section:'core'},
+  {id:'attendance',icon:'📅',  name:'出勤模組',     desc:'班表請假打卡',            section:'core'},
+  {id:'insurance', icon:'🛡️', name:'勞健保模組',   desc:'投保薪資、費率計算',      section:'core'},
+  {id:'salary',    icon:'💰',  name:'薪資模組',     desc:'薪資試算、電子薪資單',    section:'core'},
+  {id:'finance',   icon:'📊',  name:'財務模組',     desc:'損益費用審核',            section:'core'},
+  // ── 作業模組 ──
+  {id:'operations',icon:'📦',  name:'營運模組',     desc:'件數回報管理',            section:'ops'},
+  {id:'vehicle',   icon:'🚛',  name:'車輛管理',     desc:'車籍保養追蹤',            section:'ops'},
+  {id:'announce',  icon:'📢',  name:'公告管理',     desc:'發布公告通知',            section:'ops'},
+  {id:'files',     icon:'🗂️', name:'檔案管理',     desc:'證件上傳、文件管理',      section:'ops'},
+  // ── 司機端功能 ──
+  {id:'driver_cs', icon:'💬',  name:'客服對話',     desc:'徐美玲 AI 客服',          section:'driver'},
+  {id:'driver_salary',icon:'📄',name:'電子薪資單',  desc:'薪資明細、簽收、異常回報',section:'driver'},
+  {id:'driver_checkin',icon:'📍',name:'打卡功能',   desc:'上下班打卡記錄',          section:'driver'},
+  {id:'driver_report',icon:'📋',name:'件數回報',    desc:'當日配送逆物流回報',      section:'driver'},
+  // ── AI 功能 ──
+  {id:'ai_interview',icon:'🤖',name:'面試評分 AI',  desc:'Gemini 面試專員',         section:'ai'},
+  {id:'ai_cs',     icon:'🧠',  name:'客服 AI',      desc:'多模型智慧分流',          section:'ai'},
+  {id:'ai_audit',  icon:'🔍',  name:'審計 AI 分析', desc:'Gemini Pro 深度審計',     section:'ai'},
+  // ── 系統功能 ──
+  {id:'excel_export',icon:'📊',name:'Excel 報表',   desc:'5 工作表會計報表',        section:'sys'},
+  {id:'pdf_export',icon:'📄',  name:'PDF 薪資單',   desc:'薪資明細 PDF 下載',       section:'sys'},
+  {id:'pwa',       icon:'📱',  name:'手機 App 模式',desc:'保存桌面、下拉更新',      section:'sys'},
+  {id:'audit',     icon:'🔒',  name:'審計模組',     desc:'操作記錄追蹤',            section:'sys'},
 ];
 
 // ── INTERVIEW QUESTIONS ──────────────────────────────────
@@ -2098,27 +2115,75 @@ async function buildToggles(){
   const roleEl=document.getElementById('user-role-list');
   if(roleEl)roleEl.innerHTML=roleRows||'<div style="color:var(--dim);text-align:center;padding:10px;font-size:12px">尚無帳號</div>';
 
-  grid.innerHTML=TOGGLE_DEFS.map(m=>`
-    <div class="glass-card" style="display:flex;align-items:center;gap:12px;padding:14px;${moduleToggles[m.id]?'border-color:rgba(0,212,255,0.15)':'opacity:0.55'}">
-      <div style="font-size:22px;width:38px;text-align:center">${m.icon}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600">${m.name}</div><div style="font-size:11px;color:var(--dim)">${m.desc}</div></div>
-      <label class="sw">
-        <input type="checkbox" ${moduleToggles[m.id]?'checked':''} onchange="toggleMod('${m.id}',this.checked)">
-        <div class="sw-track"></div><div class="sw-thumb"></div>
-      </label>
-    </div>`).join('');
+  grid.innerHTML=(()=>{
+    const sections = [
+      {id:'core',   label:'📋 核心模組',   color:'var(--accent)'},
+      {id:'ops',    label:'📦 作業模組',   color:'#fbbf24'},
+      {id:'driver', label:'📱 司機端功能', color:'#a78bfa'},
+      {id:'ai',     label:'🤖 AI 功能',    color:'#34d399'},
+      {id:'sys',    label:'⚙️ 系統功能',   color:'#64748b'},
+    ];
+    const bySection = {};
+    TOGGLE_DEFS.forEach(m=>{
+      const s=m.section||'core';
+      if(!bySection[s]) bySection[s]=[];
+      bySection[s].push(m);
+    });
+    return sections.map(sec=>{
+      const items = bySection[sec.id]||[];
+      if(!items.length) return '';
+      return `<div style="margin-bottom:16px">
+        <div style="font-size:9.5px;color:${sec.color};font-family:'JetBrains Mono',monospace;letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase;padding:0 2px">${sec.label}</div>
+        ${items.map(m=>`
+        <div class="glass-card" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:6px;${moduleToggles[m.id]!==false?'border-color:rgba(0,212,255,0.15)':'opacity:0.6'}">
+          <div style="font-size:20px;width:32px;text-align:center">${m.icon}</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;${moduleToggles[m.id]!==false?'':'color:var(--dim)'}">${m.name}</div>
+            <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">${m.desc}</div>
+          </div>
+          <label class="sw">
+            <input type="checkbox" ${moduleToggles[m.id]!==false?'checked':''} onchange="toggleMod('${m.id}',this.checked)">
+            <div class="sw-track"></div><div class="sw-thumb"></div>
+          </label>
+        </div>`).join('')}
+      </div>`;
+    }).join('');
+  })();
 }
 
 window.toggleMod=async(id,val)=>{
   moduleToggles[id]=val;
-  await setDoc(doc(db,'config','modules'),moduleToggles);
-  await addAudit('UPDATE',`模組 ${id} ${val?'啟用':'關閉'}`);
-  // Update nav
+  await setDoc(doc(db,'config','modules'),moduleToggles,{merge:true});
+  await addAudit('UPDATE',`${val?'啟用':'停用'}：${TOGGLE_DEFS.find(t=>t.id===id)?.name||id}`);
+  // Update desktop nav item
   const nav=document.getElementById('nav-'+id);
-  if(nav){nav.classList.toggle('disabled',!val);}
-  showToast(val?`✓ ${id} 已啟用`:`${id} 已關閉`);
+  if(nav) nav.classList.toggle('disabled',!val);
+  // Update driver bottom nav if driver feature toggled
+  if(id.startsWith('driver_')) buildDriverBottomNav();
+  // Update AI system if AI feature toggled
+  const name = TOGGLE_DEFS.find(t=>t.id===id)?.name||id;
+  showToast((val?'✓ 已啟用：':'✕ 已停用：')+name);
+  // Rebuild toggles display
   buildToggles();
 };
+
+function buildDriverBottomNav(){
+  const bnav = document.querySelector('.bottom-nav');
+  if(!bnav) return;
+  const tabs = [
+    {panel:'driver_home',    icon:'🏠', label:'今日',   show:true},
+    {panel:'driver_report',  icon:'📋', label:'回報',   show:moduleToggles['driver_report']!==false},
+    {panel:'driver_salary',  icon:'💰', label:'薪資單', show:moduleToggles['driver_salary']!==false, badge:true},
+    {panel:'driver_cs',      icon:'💬', label:'客服',   show:moduleToggles['driver_cs']!==false},
+    {panel:'driver_announce',icon:'📢', label:'公告',   show:true},
+    {panel:'driver_profile', icon:'👤', label:'設定',   show:true},
+  ];
+  bnav.innerHTML = tabs.filter(t=>t.show).map(t=>`
+    <button class="bnav-tab" onclick="showDriverPanel('${t.panel}',this)" style="position:relative">
+      <span class="bnav-icon">${t.icon}${t.badge?'<span id="payslip-badge" style="display:none;position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:#f87171;animation:pulse 2s infinite;border:2px solid #000"></span>':''}</span>
+      <span class="bnav-label">${t.label}</span>
+    </button>`).join('');
+}
 
 window.saveRates=async()=>{
   await setDoc(doc(db,'config','rates'),{
@@ -2893,60 +2958,7 @@ window.mChangePassword=async()=>{
 const AI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
 
 // 模型定義
-const AI_MODELS = {
-  lite:  'gemini-2.0-flash-lite',      // 日常小問題、公告查詢、一般助理
-  pro:   'gemini-2.5-pro-preview-03-25', // 薪資計算、複雜問題、法令查詢
-  live:  'gemini-2.0-flash',            // 緊急狀況、生氣升級（Flash Live fallback）
-  interview: 'gemini-2.0-flash'         // 面試評分
-};
 
-// 分流關鍵字定義
-const ROUTE_KEYWORDS = {
-  pro: [
-    // 薪資相關
-    '薪資','薪水','計算','扣款','勞保','健保','投保','二代健保','到手','實發',
-    // 法令
-    '法律','法規','勞基法','條例','規定','合法','違法','申訴','勞動局',
-    // 複雜財務
-    '報稅','所得','扣繳','憑單','年終','獎金','加班費','補償',
-  ],
-  live: [
-    // 緊急
-    '緊急','urgent','救命','出事','意外','受傷','事故','危險','馬上','立刻',
-    // 情緒
-    '生氣','不爽','爛','垃圾','幹','靠','混蛋','離職','不幹','投訴','客訴',
-    // 嚴重問題
-    '嚴重','重大','糾紛','衝突','警察','法院'
-  ]
-};
-
-// 分流函數
-function routeToModel(message, context = 'cs') {
-  const msg = message.toLowerCase();
-  
-  // 面試系統固定用 interview model
-  if (context === 'interview') return AI_MODELS.interview;
-  
-  // 檢查是否需要升級到 Pro（複雜問題）
-  const needsPro = ROUTE_KEYWORDS.pro.some(k => message.includes(k));
-  if (needsPro) {
-    console.log('[AI Router] → Pro (複雜問題)');
-    return AI_MODELS.pro;
-  }
-  
-  // 檢查是否需要升級到 Live（緊急/情緒）
-  const needsLive = ROUTE_KEYWORDS.live.some(k => message.includes(k));
-  if (needsLive) {
-    console.log('[AI Router] → Live (緊急/升級)');
-    return AI_MODELS.live;
-  }
-  
-  // 預設使用 Lite（日常小問題）
-  console.log('[AI Router] → Lite (一般問題)');
-  return AI_MODELS.lite;
-}
-
-// 統一呼叫介面
 async function callGemini(model, messages, systemPrompt, temp = 0.8) {
   const contents = [];
   if (systemPrompt) {
