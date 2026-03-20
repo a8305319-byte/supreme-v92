@@ -341,6 +341,65 @@ import {
   serverTimestamp, increment, addDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
  
+ 
+// ══════════════════════════════════════════════════════════
+// 職位系統定義
+// ══════════════════════════════════════════════════════════
+const POSITIONS = {
+  'driver_employee': {
+    label: '配送司機（員工）', icon: '🚚',
+    role: 'driver', type: 'employee', ui: 'mobile',
+    modules: ['home','salary','announce','cs','profile'],
+    desc: '正職配送司機，享勞健保'
+  },
+  'driver_contractor': {
+    label: '配送司機（承攬）', icon: '🚛',
+    role: 'driver', type: 'contractor', ui: 'mobile',
+    modules: ['home','salary','announce','cs','profile'],
+    desc: '承攬配送司機，論件計酬'
+  },
+  'courier': {
+    label: '機車外送員', icon: '🏍️',
+    role: 'driver', type: 'contractor', ui: 'mobile',
+    modules: ['home','salary','announce','cs','profile'],
+    desc: '機車外送，小件配送'
+  },
+  'warehouse': {
+    label: '倉儲人員', icon: '📦',
+    role: 'staff', type: 'employee', ui: 'desktop',
+    modules: ['dashboard','attendance','announce','files','profile'],
+    desc: '倉庫管理、揀貨、包裝'
+  },
+  'dispatcher': {
+    label: '調度員', icon: '📡',
+    role: 'staff', type: 'employee', ui: 'desktop',
+    modules: ['dashboard','hr','attendance','operations','vehicles','announce','files','profile'],
+    desc: '車輛調度、路線規劃'
+  },
+  'fleet_manager': {
+    label: '車隊管理員', icon: '🚜',
+    role: 'staff', type: 'employee', ui: 'desktop',
+    modules: ['dashboard','hr','attendance','vehicles','operations','announce','files','profile'],
+    desc: '車輛維護、車隊管理'
+  },
+  'admin': {
+    label: '行政人員', icon: '💼',
+    role: 'accountant', type: 'employee', ui: 'desktop',
+    modules: ['dashboard','hr','attendance','insurance','salary','finance','announce','files','profile'],
+    desc: '行政事務、文件管理'
+  },
+  'accountant': {
+    label: '會計人員', icon: '📊',
+    role: 'accountant', type: 'employee', ui: 'desktop',
+    modules: ['dashboard','hr','attendance','insurance','salary','finance','audit','files','profile'],
+    desc: '薪資計算、帳務管理'
+  }
+};
+ 
+function getPositionDef(posCode){
+  return POSITIONS[posCode] || POSITIONS['driver_employee'];
+}
+ 
 let _appReady = false; // global auth state flag
 let _driverStatusUnsub = null;
 let _realtimeUnsub = null;
@@ -498,6 +557,8 @@ onAuthStateChanged(auth, async user => {
   }
     CD = snap.data();
     ROLE = CD.role;
+    // Normalize 'staff' role to accountant for module access
+    if(ROLE === 'staff') ROLE = 'accountant';
     // Load module toggles from Firestore if commander
     if (ROLE === 'commander') {
       const cfgSnap = await getDoc(doc(db,'config','modules'));
@@ -521,6 +582,8 @@ onAuthStateChanged(auth, async user => {
           if(snap2.exists()){
             CD = snap2.data();
             ROLE = CD.role;
+    // Normalize 'staff' role to accountant for module access
+    if(ROLE === 'staff') ROLE = 'accountant';
             if(ROLE==='commander'){
               const cfgSnap=await getDoc(doc(db,'config','modules'));
               if(cfgSnap.exists()) Object.assign(moduleToggles,cfgSnap.data());
@@ -707,6 +770,18 @@ window.viewEscalation = async(id) => {
   alert('司機：'+e.driverName+'\n觸發訊息：'+e.triggerMessage+'\n\n最近對話：\n'+hist);
 };
  
+ 
+window.updatePositionRole = (posCode) => {
+  const def = getPositionDef(posCode);
+  const roleInput = document.getElementById('do-role');
+  const typeInput = document.getElementById('do-type');
+  const desc = document.getElementById('do-pos-desc');
+  if(roleInput) roleInput.value = def.role;
+  if(typeInput) typeInput.value = def.type;
+  if(desc) desc.textContent = def.desc;
+};
+ 
+// Update saveDirectOnboard to use position
 window.openDirectOnboard = () => {
   document.getElementById('direct-onboard-modal').style.display='block';
   document.getElementById('add-user-modal').style.display='none';
@@ -725,8 +800,9 @@ window.saveDirectOnboard = async () => {
   const data = {
     name, email,
     phone: document.getElementById('do-phone').value||'',
-    role: document.getElementById('do-role').value,
-    type: document.getElementById('do-type').value,
+    position: document.getElementById('do-position')?.value||'driver_employee',
+    role: document.getElementById('do-role').value||'driver',
+    type: document.getElementById('do-type').value||'employee',
     priceDelivery: +document.getElementById('do-price-d').value||50,
     priceReverse: +document.getElementById('do-price-r').value||35,
     allowance: +document.getElementById('do-allowance').value||2000,
@@ -931,11 +1007,23 @@ function panelHR(){return `
         <div class="f-grp"><label class="f-lbl">Email *</label><input class="f-inp" id="do-email" placeholder="driver@email.com" type="email"></div>
         <div class="f-grp"><label class="f-lbl">電話</label><input class="f-inp" id="do-phone" placeholder="0912345678" type="tel"></div>
         <div class="f-grp"><label class="f-lbl">角色</label>
-          <select class="f-inp" id="do-role">
-            <option value="driver">司機</option>
-            <option value="accountant">會計</option>
-            <option value="commander">負責人</option>
+          <select class="f-inp" id="do-position" onchange="updatePositionRole(this.value)">
+            <optgroup label="── 配送類 ──">
+              <option value="driver_employee">🚚 配送司機（員工）</option>
+              <option value="driver_contractor">🚛 配送司機（承攬）</option>
+              <option value="courier">🏍️ 機車外送員</option>
+            </optgroup>
+            <optgroup label="── 內勤類 ──">
+              <option value="warehouse">📦 倉儲人員</option>
+              <option value="dispatcher">📡 調度員</option>
+              <option value="fleet_manager">🚜 車隊管理員</option>
+              <option value="admin">💼 行政人員</option>
+              <option value="accountant">📊 會計人員</option>
+            </optgroup>
           </select>
+          <input type="hidden" id="do-role" value="driver">
+          <input type="hidden" id="do-type" value="employee">
+          <div style="margin-top:4px;font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace" id="do-pos-desc">正職配送司機，享勞健保</div>
         </div>
         <div class="f-grp"><label class="f-lbl">員工類型</label>
           <select class="f-inp" id="do-type">
@@ -1237,6 +1325,8 @@ window.editUser=async(uid)=>{
   const u=snap.data();
   document.getElementById('u-name').value=u.name||'';
   document.getElementById('u-email').value=u.email||'';
+  const posEl=document.getElementById('u-position');
+  if(posEl) posEl.value=u.position||'driver_employee';
   document.getElementById('u-role').value=u.role||'driver';
   document.getElementById('u-type').value=u.type||'employee';
   document.getElementById('u-price-d').value=u.priceDelivery||50;
@@ -1257,6 +1347,7 @@ window.saveUser=async()=>{
   const data={
     name:document.getElementById('u-name').value,
     email:document.getElementById('u-email').value,
+    position: document.getElementById('u-position')?.value||'driver_employee',
     role:document.getElementById('u-role').value,
     type:document.getElementById('u-type').value,
     priceDelivery:+document.getElementById('u-price-d').value,
