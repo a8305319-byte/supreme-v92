@@ -15,17 +15,17 @@
 :root{--bg:#000;--accent:#00d4ff;--accent2:#7c3aed;--green:#10b981;--text:#e2e8f0;--dim:#64748b;--mid:#94a3b8;--border:rgba(255,255,255,0.08);}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:30px 30px;pointer-events:none;}
- 
+
 .wrap{max-width:520px;margin:0 auto;padding:20px 16px 40px;position:relative;z-index:1;}
 .header{text-align:center;padding:28px 0 22px;}
 .logo{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:var(--accent);letter-spacing:2px;text-shadow:0 0 20px rgba(0,212,255,0.4);}
 .logo-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-top:4px;letter-spacing:1px;}
 .step-title{font-size:18px;font-weight:700;margin-top:10px;}
 .step-sub{font-size:13px;color:var(--mid);margin-top:4px;}
- 
+
 .card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.2),transparent);}
- 
+
 .f-label{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:4px;display:block;letter-spacing:0.5px;text-transform:uppercase;}
 .f-input{width:100%;padding:11px 13px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Noto Sans TC',sans-serif;outline:none;transition:border-color 0.2s;margin-bottom:12px;}
 .f-input:focus{border-color:rgba(0,212,255,0.5);background:rgba(0,212,255,0.04);}
@@ -34,7 +34,7 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
 .btn-p{background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.4);color:var(--accent);}
 .btn-p:hover{background:rgba(0,212,255,0.22);}
 .btn-p:disabled{opacity:0.4;cursor:not-allowed;}
- 
+
 /* CHAT */
 .chat-box{height:320px;overflow-y:auto;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
 .chat-box::-webkit-scrollbar{width:3px;}
@@ -55,24 +55,24 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
 .chat-input:focus{border-color:rgba(0,212,255,0.4);}
 .send-btn{padding:11px 16px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.35);border-radius:8px;color:var(--accent);font-size:16px;cursor:pointer;flex-shrink:0;}
 .send-btn:disabled{opacity:0.4;cursor:not-allowed;}
- 
+
 /* PROGRESS */
 .progress{display:flex;gap:6px;margin-bottom:16px;}
 .prog-step{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,0.08);}
 .prog-step.done{background:var(--accent);}
 .prog-step.active{background:linear-gradient(90deg,var(--accent2),var(--accent));animation:progPulse 1.5s infinite;}
 @keyframes progPulse{0%,100%{opacity:1}50%{opacity:0.6}}
- 
+
 /* RESULT */
 .result-card{text-align:center;padding:24px;}
 .result-score{font-family:'Orbitron',monospace;font-size:48px;font-weight:900;margin:12px 0;}
 .result-badge{display:inline-block;padding:6px 16px;border-radius:6px;font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:600;margin-bottom:12px;}
- 
+
 /* SCREEN MANAGEMENT */
 .screen{display:none;}
 .screen.active{display:block;animation:fadeIn 0.3s ease;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
- 
+
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
@@ -87,7 +87,7 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
     <div class="logo">在地物流</div>
     <div class="logo-sub">配送司機招募系統</div>
   </div>
- 
+
   <!-- SCREEN 1: BASIC INFO -->
   <div class="screen active" id="screen-info">
     <div style="text-align:center;margin-bottom:20px">
@@ -145,7 +145,7 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
       <button class="btn btn-p" onclick="startInterview()">開始面試評測 →</button>
     </div>
   </div>
- 
+
   <!-- SCREEN 2: INTERVIEW -->
   <div class="screen" id="screen-interview">
     <div style="text-align:center;margin-bottom:16px">
@@ -165,7 +165,7 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
       </div>
     </div>
   </div>
- 
+
   <!-- SCREEN 3: RESULT -->
   <div class="screen" id="screen-result">
     <div class="progress">
@@ -197,11 +197,11 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
     </div>
   </div>
 </div>
- 
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
- 
+
 const FB = {
   apiKey:"AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
   authDomain:"supreme-v92.firebaseapp.com",
@@ -212,17 +212,17 @@ const FB = {
 };
 const app = initializeApp(FB);
 const db = getFirestore(app);
- 
+
 const GEMINI_KEY = 'AIzaSyDhNiCiwVAiX3jbJKArXSo3fQm5NOalhBY'; // 2026穩定金鑰
 const GEMINI_MODEL = 'gemini-flash-latest'; // 穩定版 // 快速面試評分
- 
+
 let applicantData = {};
 let chatHistory = [];
 let questionCount = 0;
 let totalScore = 0;
 let scores = [];
 let docId = null;
- 
+
 // ── START INTERVIEW ───────────────────────────────────────
 window.startInterview = async () => {
   const name = document.getElementById('app-name').value.trim();
@@ -231,12 +231,12 @@ window.startInterview = async () => {
   const position = document.getElementById('app-position').value;
   const license = document.getElementById('app-license').value;
   const exp = document.getElementById('app-exp').value;
- 
+
   if (!name || !phone) { alert('請填寫姓名和電話'); return; }
- 
+
   applicantData = { name, phone, email, position, license, exp };
   docId = 'local_' + Date.now(); // temp ID
- 
+
   // Go to interview FIRST, save to Firestore in background
   showScreen('screen-interview');
   console.log('[Interview] 切換到面試畫面');
@@ -246,7 +246,7 @@ window.startInterview = async () => {
     ...applicantData, status: 'interviewing',
     createdAt: serverTimestamp(), aiScore: 0
   }).then(ref => { docId = ref.id; }).catch(e => console.warn('[Interview] 儲存跳過:', e.message));
- 
+
   try {
     await askFirstQuestion();
   } catch(e) {
@@ -259,7 +259,7 @@ window.startInterview = async () => {
     updateProgress();
   }
 };
- 
+
 // ── 面試評分引擎 ─────────────────────────────────────────────
 async function callGemini(messages) {
   // 使用唯一可用模型 gemini-flash-latest
@@ -276,7 +276,7 @@ async function callGemini(messages) {
   if(data.error) throw new Error(data.error.message);
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
- 
+
 async function askFirstQuestion() {
   showTyping();
   const systemPrompt = `你是一個物流公司的面試官，正在對應徵者進行面試。
@@ -284,7 +284,7 @@ async function askFirstQuestion() {
 請用繁體中文進行面試。請依序問5個問題，每次只問一個問題，問題要簡短。
 問題主題：1.自我介紹 2.工作經驗 3.處理突發狀況 4.工作態度 5.期望薪資。
 現在開始問第1個問題。`;
- 
+
   chatHistory = [{ role: 'user', parts: [{ text: systemPrompt }] }];
   try {
     const q = await callGemini(chatHistory);
@@ -300,18 +300,18 @@ async function askFirstQuestion() {
   questionCount = 1;
   updateProgress();
 }
- 
+
 window.sendAnswer = async () => {
   const btn = document.getElementById('send-btn');
   const input = document.getElementById('chat-input');
   const answer = input.value.trim();
   if (!answer) return;
- 
+
   btn.disabled = true;
   input.value = '';
   addMessage('user', answer);
   chatHistory.push({ role: 'user', parts: [{ text: answer }] });
- 
+
   try {
     if (questionCount >= 5) {
       // 最後一題 → 評分
@@ -319,12 +319,12 @@ window.sendAnswer = async () => {
       chatHistory.push({ role: 'user', parts: [{ text: '面試結束。請對這位應徵者做出總體評分（0-100分）和建議，格式：評分:[數字] 評語:[文字]' }] });
       const eval_ = await callGemini(chatHistory);
       hideTyping();
- 
+
       const scoreMatch = eval_.match(/評分[：:]\s*(\d+)/);
       const score = scoreMatch ? parseInt(scoreMatch[1]) : 65;
       const commentMatch = eval_.match(/評語[：:]\s*(.+)/s);
       const comment = commentMatch ? commentMatch[1].trim() : eval_;
- 
+
       // 非同步儲存（不阻擋顯示結果）
       const { updateDoc, doc: fsDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
       updateDoc(fsDoc(db, 'applicants', docId), {
@@ -333,11 +333,11 @@ window.sendAnswer = async () => {
         status: score >= 70 ? 'recommended' : score >= 50 ? 'pending' : 'rejected',
         completedAt: serverTimestamp()
       }).catch(e => console.warn('[Interview] 分數儲存跳過:', e.message));
- 
+
       showResult(score, comment);
       return;
     }
- 
+
     // 繼續下一題
     showTyping();
     chatHistory.push({ role: 'user', parts: [{ text: `繼續問第${questionCount+1}個問題，要簡短。` }] });
@@ -347,7 +347,7 @@ window.sendAnswer = async () => {
     addMessage('ai', nextQ);
     questionCount++;
     updateProgress();
- 
+
   } catch(e) {
     hideTyping();
     console.error('[sendAnswer]', e.message);
@@ -358,7 +358,7 @@ window.sendAnswer = async () => {
     btn.disabled = false;
   }
 };
- 
+
 function addMessage(role, text) {
   const box = document.getElementById('chat-box');
   const div = document.createElement('div');
@@ -368,7 +368,7 @@ function addMessage(role, text) {
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
- 
+
 let typingEl = null;
 function showTyping() {
   const box = document.getElementById('chat-box');
@@ -379,17 +379,17 @@ function showTyping() {
   box.scrollTop = box.scrollHeight;
   document.getElementById('send-btn').disabled = true;
 }
- 
+
 function hideTyping() {
   if (typingEl) { typingEl.remove(); typingEl = null; }
   document.getElementById('send-btn').disabled = false;
 }
- 
+
 function updateProgress() {
   const txt = document.getElementById('interview-progress-text');
   if (txt) txt.textContent = `第 ${questionCount} 題，共 5 題`;
 }
- 
+
 function showResult(score, comment) {
   showScreen('screen-result');
   // Show onboard link for recommended candidates (score >= 70)
@@ -404,16 +404,16 @@ function showResult(score, comment) {
     if(countdown <= 0){
       clearInterval(timer);
       // Go back to main login page
-      window.location.href = '/';
+      window.location.href = './';
     }
   }, 1000);
   const scoreEl = document.getElementById('result-score');
   const badgeEl = document.getElementById('result-badge');
   const msgEl = document.getElementById('result-msg');
- 
+
   scoreEl.textContent = score;
   scoreEl.style.color = score >= 70 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
- 
+
   if (score >= 70) {
     badgeEl.innerHTML = '<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">✓ ✓ 推薦錄用</span>';
   } else if (score >= 50) {
@@ -423,7 +423,7 @@ function showResult(score, comment) {
   }
   if (msgEl) msgEl.textContent = comment;
 }
- 
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');

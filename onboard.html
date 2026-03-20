@@ -91,8 +91,8 @@ function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,
 <div class="wrap">
 <div class="hdr">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <button onclick="if(document.referrer){history.back();}else{window.location.href='/';}" style="padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--bdr);border-radius:8px;color:var(--dim);font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">← 返回</button>
-    <button onclick="window.close();if(!window.closed)window.location.href='/';" style="padding:6px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#f87171;font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">✕ 關閉</button>
+    <button onclick="if(document.referrer){history.back();}else{window.location.href='./';}" style="padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--bdr);border-radius:8px;color:var(--dim);font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">← 返回</button>
+    <button onclick="window.close();if(!window.closed)window.location.href='./';" style="padding:6px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#f87171;font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">✕ 關閉</button>
   </div>
   <div class="co">在地物流有限公司</div>
   <div class="ft">員工入職資料表</div>
@@ -105,7 +105,7 @@ function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,
   <div class="ps" id="ps4" onclick="goStep(4)"><span class="ps-n">④</span>緊急聯絡</div>
   <div class="ps" id="ps5" onclick="goStep(5)"><span class="ps-n">⑤</span>聲明簽名</div>
 </div>
- 
+
 <!-- STEP 1 -->
 <div class="sec active" id="step-1">
 <div class="st">👤 基本個人資料</div>
@@ -170,7 +170,7 @@ function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,
 </div>
 <div class="br"><button class="btn bnx" onclick="nxt(1)">下一步：證件資料 →</button></div>
 </div>
- 
+
 <!-- STEP 2 -->
 <div class="sec" id="step-2">
 <div class="st">🪪 證件與保險資料</div>
@@ -217,7 +217,7 @@ function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,
   <button class="btn bnx" onclick="nxt(2)">下一步：薪資帳戶 →</button>
 </div>
 </div>
- 
+
 <!-- STEP 3 -->
 <div class="sec" id="step-3">
 <div class="st">💰 薪資匯款帳戶</div>
@@ -249,7 +249,7 @@ function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,
   <button class="btn bnx" onclick="nxt(3)">下一步：緊急聯絡 →</button>
 </div>
 </div>
- 
+
 <!-- STEP 4 -->
 <div class="sec" id="step-4">
 <div class="st">🆘 緊急聯絡人</div>
@@ -284,7 +284,7 @@ function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,
   <button class="btn bnx" onclick="nxt(4)">下一步：聲明簽名 →</button>
 </div>
 </div>
- 
+
 <!-- STEP 5 -->
 <div class="sec" id="step-5">
 <div class="st">✍️ 聲明事項與簽名</div>
@@ -320,7 +320,7 @@ function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,
   <button class="btn bsb" id="sub-btn" onclick="submitForm()">✓ 確認送出入職資料</button>
 </div>
 </div>
- 
+
 <!-- SUCCESS -->
 <div id="suc">
   <div class="si">✅</div>
@@ -330,22 +330,22 @@ function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,
   <div style="margin-top:16px;font-size:12px;color:#64748b;font-family:'JetBrains Mono',monospace">
     <span id="suc-countdown">10</span> 秒後自動返回首頁
   </div>
-  <button onclick="window.location.href='/'" style="margin-top:10px;padding:10px 24px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:#00d4ff;font-size:13px;cursor:pointer;font-family:'Orbitron',monospace;letter-spacing:1px">返回首頁</button>
+  <button onclick="window.location.href='./'" style="margin-top:10px;padding:10px 24px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:#00d4ff;font-size:13px;cursor:pointer;font-family:'Orbitron',monospace;letter-spacing:1px">返回首頁</button>
 </div>
 </div>
- 
+
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getFirestore,collection,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import{getStorage,ref,uploadBytes,getDownloadURL}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 const FB={apiKey:"AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",authDomain:"supreme-v92.firebaseapp.com",projectId:"supreme-v92",storageBucket:"supreme-v92.firebasestorage.app",messagingSenderId:"485530156296",appId:"1:485530156296:web:6728c0ee08b98dedd800bd"};
 const app=initializeApp(FB);const db=getFirestore(app);const stor=getStorage(app);
- 
+
 let step=1;const tot=5;
 window.goStep=n=>{setStep(n);}; // Allow clicking any step tab
 window.nxt=from=>{if(!val(from))return;setStep(from+1);};
 window.prv=from=>setStep(from-1);
- 
+
 function setStep(n){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   document.getElementById('step-'+n)?.classList.add('active');
@@ -358,7 +358,7 @@ function setStep(n){
   });
   step=n;window.scrollTo({top:0,behavior:'smooth'});
 }
- 
+
 function val(s){
   const req={1:['v-name','v-birth','v-id','v-ph','v-email','v-addr','v-pos','v-start','v-licexp'],2:[],3:['v-bank','v-brnch','v-bname','v-bacc'],4:['ec1n','ec1p'],5:[]};
   if(s===1&&!document.querySelector('input[name="gender"]:checked')){toast('請選擇性別','e');return false;}
@@ -373,11 +373,11 @@ function val(s){
   }
   return true;
 }
- 
+
 window.prevPhoto=inp=>{const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{const b=document.getElementById('ph-box');b.innerHTML=`<img src="${e.target.result}">`;};r.readAsDataURL(f);};
 window.trig=id=>document.getElementById(id)?.click();
 window.mkDone=(boxId,inp)=>{const b=document.getElementById(boxId);if(b&&inp.files.length>0){b.classList.add('done');const l=b.querySelector('.ub-lbl');if(l)l.textContent=inp.files.length>1?`已選 ${inp.files.length} 個檔案`:inp.files[0].name;}};
- 
+
 // SIGNATURE
 const canvas=document.getElementById('sigc');
 const ctx2=canvas ? canvas.getContext('2d') : null;
@@ -405,10 +405,10 @@ function sigValid(){
   if(strokeLength < 100) return {ok:false, msg:'簽名筆畫太短，請完整簽名'};
   return {ok:true};
 }
- 
+
 document.getElementById('v-date').value=new Date().toISOString().slice(0,10);
 document.getElementById('v-start').value=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
- 
+
 window.submitForm=window.submitForm_fn=async()=>{
   if(!val(5))return;
   const btn=document.getElementById('sub-btn');
@@ -489,14 +489,14 @@ window.submitForm=window.submitForm_fn=async()=>{
     const t = setInterval(()=>{
       cd--;
       if(cdEl) cdEl.textContent = cd;
-      if(cd<=0){ clearInterval(t); window.location.href='/'; }
+      if(cd<=0){ clearInterval(t); window.location.href='./'; }
     },1000);
   }catch(e){
     btn.disabled=false;btn.textContent='✓ 確認送出入職資料';
     toast('送出失敗：'+e.message,'e');
   }
 };
- 
+
 function toast(msg,type='o'){
   const t=document.getElementById('toast');
   t.textContent=msg;t.className=type==='e'?'toe':'tok';

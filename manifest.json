@@ -2,7 +2,7 @@
   "name": "在地物流有限公司",
   "short_name": "在地物流",
   "description": "在地物流有限公司移動辦公室系統",
-  "start_url": "/",
+  "start_url": "/supreme-v92/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#00d4ff",
@@ -21,6 +21,10 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "productivity"],
-  "lang": "zh-TW"
+  "categories": [
+    "business",
+    "productivity"
+  ],
+  "lang": "zh-TW",
+  "scope": "/supreme-v92/"
 }
