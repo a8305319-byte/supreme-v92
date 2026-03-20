@@ -3452,7 +3452,7 @@ async function callGemini(prompt, history=[], mode='text'){
 
   const doFetch = async (mdl) => {
     const res = await geminiWithBackoff(
-      `https://generativelanguage.googleapis.com/v1beta/models/${mdl}:generateContent?key=${SECRET_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/${mdl}:generateContent?key=${SECRET_KEY}`,
       { contents: messages, generationConfig:{ temperature:0.7, maxOutputTokens:600 } }
     );
     if(res.status === 404) throw new Error('模型名稱失效 (404)');
@@ -3595,7 +3595,7 @@ function detectEscalation(message) {
   return isAngry || isRepeated;
 }
 
-async function sendCSMessage() {
+window.sendCSMessage = async function sendCSMessage() {
   const input = document.getElementById('cs-input');
   const text = input?.value.trim();
   if (!text) return;
@@ -3627,7 +3627,7 @@ async function sendCSMessage() {
 
     const SECRET_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
     const res = await geminiWithBackoff(
-      `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.fast}:generateContent?key=${SECRET_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/${AI_MODELS.fast}:generateContent?key=${SECRET_KEY}`,
       { contents: messages, generationConfig: { temperature: 0.82, maxOutputTokens: 500 } }
     );
     const data = await res.json();
@@ -4707,7 +4707,7 @@ async function ocrDeliveryImage(imageBase64, mimeType='image/jpeg') {
 格式：每行一個完整地址（包含縣市、鄉鎮、路街、號碼）。`;
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.fast}:generateContent?key=${localStorage.getItem('V92_SECRET_KEY')||GEMINI_KEY}`,
+    `https://generativelanguage.googleapis.com/v1/models/${AI_MODELS.fast}:generateContent?key=${localStorage.getItem('V92_SECRET_KEY')||GEMINI_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5367,7 +5367,7 @@ reverse = 逆物流件數（退件/收件）
     // OCR 直接用 geminiWithBackoff（需傳圖片，callGemini 僅支援文字）
     const SECRET_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
     const res = await geminiWithBackoff(
-      `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.fast}:generateContent?key=${SECRET_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/${AI_MODELS.fast}:generateContent?key=${SECRET_KEY}`,
       {
         contents:[{ role:'user', parts:[
           { inline_data:{ mime_type: file.type, data: base64 } },
