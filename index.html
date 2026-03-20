@@ -629,7 +629,8 @@ const _hardTimeout = setTimeout(()=>{
 
 // ── EXTERNAL API CONFIG ───────────────────────────────────
 const GEMINI_KEY = "AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM";
-const GEMINI_API_KEY = GEMINI_KEY; // alias for AI routing
+// 主權防禦：優先從 localStorage 讀取，否則用內建備用金鑰
+const GEMINI_API_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
 const GMAIL_USER = "a8305319@gmail.com";
 const GMAIL_PASS = "tlwn imge snnw fgkd";
 
@@ -2028,6 +2029,23 @@ window.loadFinance = async function loadFinance(month){
   }
 }
 
+
+window.saveApiKey = () => {
+  const key = document.getElementById('api-key-input')?.value.trim();
+  if(!key){ showToast('請輸入 API Key','err'); return; }
+  if(!key.startsWith('AIza')){ showToast('格式錯誤，應以 AIza 開頭','err'); return; }
+  localStorage.setItem('V92_SECRET_KEY', key);
+  showToast('✅ API 金鑰已儲存，重新整理後生效');
+  // Reload page to apply new key
+  setTimeout(()=>location.reload(), 1500);
+};
+
+window.clearApiKey = () => {
+  localStorage.removeItem('V92_SECRET_KEY');
+  showToast('已清除自訂金鑰，使用內建備用');
+  setTimeout(()=>location.reload(), 1500);
+};
+
 window.saveFinanceExpenses = async () => {
   const month = document.getElementById('fin-month')?.value || MONTH;
   const fuel = +document.getElementById('fin-fuel')?.value||0;
@@ -2267,6 +2285,21 @@ async function addAudit(action,detail){
 function panelCommander(){return `
 <div id="panel-commander" class="panel">
   <div class="warn-box">⚙️ <strong>Commander 專屬</strong> — 關閉模組後側欄變灰，資料不受影響</div>
+
+  <!-- 🔐 AI 金鑰管理 -->
+  <div class="glass-card" style="margin-bottom:14px;border-color:rgba(0,212,255,0.15)">
+    <div class="sh">
+      <div class="st" style="font-size:12px;color:var(--accent)">🔐 Gemini AI 金鑰</div>
+      <button class="btn btn-p btn-sm" onclick="saveApiKey()">儲存</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input class="f-inp" id="api-key-input" type="password" placeholder="輸入 Gemini API Key (AIza...)" style="flex:1;font-family:'JetBrains Mono',monospace;font-size:11px">
+      <button onclick="const f=document.getElementById('api-key-input');f.type=f.type==='password'?'text':'password'"
+        style="padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--dim);font-size:13px;cursor:pointer">👁</button>
+    </div>
+    <div id="api-key-status" style="font-size:10px;color:var(--dim);margin-top:5px;font-family:'JetBrains Mono',monospace"></div>
+  </div>
+
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-bottom:18px" id="toggle-grid"></div>
   <div class="glass-card" style="margin-bottom:14px">
     <div class="sh">
@@ -2395,10 +2428,20 @@ window.addInterviewQuestion = () => {
 };
 
 window.removeIQ = (i) => {
-  const inputs = document.querySelectorAll('[id^="iq-"]');
-  const questions = [...inputs].map(inp => inp.value.trim()).filter(Boolean);
-  questions.splice(i, 1);
-  renderIQList(questions);
+  try {
+    const inputs = Array.from(document.querySelectorAll('[id^="iq-"]'));
+    const questions = inputs
+      .map(inp => inp ? (inp.value||'').trim() : '')
+      .filter(q => q !== '');
+    questions.splice(i, 1);
+    if(typeof renderIQList === 'function') renderIQList(questions);
+    else {
+      // fallback: reload
+      loadInterviewQuestions();
+    }
+  } catch(e) {
+    console.error('IQ 移除失敗:', e);
+  }
 };
 
 window.saveInterviewQuestions = async () => {
@@ -2411,6 +2454,14 @@ window.saveInterviewQuestions = async () => {
 };
 
 async function buildToggles(){
+  // Show API key status
+  const keyInput = document.getElementById('api-key-input');
+  const keyStatus = document.getElementById('api-key-status');
+  const storedKey = localStorage.getItem('V92_SECRET_KEY');
+  if(keyInput) keyInput.placeholder = storedKey ? '已設定（點擊修改）' : '輸入 Gemini API Key (AIza...)';
+  if(keyStatus) keyStatus.innerHTML = storedKey
+    ? '✅ 已設定自訂金鑰 · <button onclick="localStorage.removeItem(\'V92_SECRET_KEY\');location.reload()" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:10px;padding:0">清除</button>'
+    : '⚠️ 使用內建金鑰';
   const grid=document.getElementById('toggle-grid');
   if(!grid)return;
   // Load user list too
@@ -3117,7 +3168,10 @@ function buildDriverUI(){
         <div class="glass-card" style="margin-bottom:14px">
           <div style="font-size:19px;font-weight:700;margin-bottom:3px">${gstr}，${CD.name||'司機'}！</div>
           <div style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} 星期${greeting[now.getDay()]}</div>
-          <div style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:5px 11px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:6px;font-size:11px;color:#34d399;font-family:'JetBrains Mono',monospace"><span style="width:5px;height:5px;border-radius:50%;background:#34d399;display:inline-block;animation:pulse 2s infinite"></span>在線中</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:6px;font-size:11px;color:#34d399;font-family:'JetBrains Mono',monospace"><span style="width:5px;height:5px;border-radius:50%;background:#34d399;display:inline-block;animation:pulse 2s infinite"></span>在線中</div>
+            ${ROLE==='commander'?`<button onclick="switchToDesktop()" style="padding:5px 12px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer;font-family:'JetBrains Mono',monospace">🖥️ 返回管理端</button>`:''}
+          </div>
         </div>
         <!-- 簽到卡片 -->
         <div class="glass-card" style="margin-bottom:12px">
@@ -3142,6 +3196,21 @@ function buildDriverUI(){
             <div style="font-family:'Orbitron',monospace;font-size:28px;color:#a78bfa" id="m-today-r">—</div>
           </div>
         </div>
+        <!-- 📷 掃描貨物託運單 -->
+        <div class="glass-card" style="margin-bottom:12px;border-color:rgba(124,58,237,0.3);cursor:pointer;active:opacity:0.8" onclick="document.getElementById('scan-wb-input').click()">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📋</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;margin-bottom:2px">掃描貨物託運單</div>
+              <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">OCR 識別地址 → 自動排序路線</div>
+            </div>
+            <span style="font-size:24px">📷</span>
+          </div>
+          <div id="scan-wb-prog" style="display:none;margin-top:10px;padding:7px;background:rgba(124,58,237,0.08);border-radius:6px;font-size:11px;color:#a78bfa;text-align:center;font-family:'JetBrains Mono',monospace">⟳ OCR 解析中...</div>
+          <div id="scan-wb-result" style="display:none;margin-top:8px"></div>
+        </div>
+        <input type="file" id="scan-wb-input" accept="image/*" capture="environment" style="display:none" onchange="handleHomeScan(this)">
+
         <div class="glass-card">
           <div style="font-size:12px;color:var(--mid);margin-bottom:12px;font-family:'JetBrains Mono',monospace">本月累計</div>
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03)"><span style="font-size:13px;color:var(--mid)">配送總件</span><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)" id="m-month-d">—</span></div>
@@ -3172,6 +3241,7 @@ function buildDriverUI(){
             <div class="slide-thumb" id="m-slide-thumb">➜</div>
           </div>
           <div class="slide-done" id="m-slide-done">✓ 今日已確認回報</div>
+          <button onclick="submitReportBtn()" id="m-submit-btn" style="width:100%;margin-top:8px;padding:12px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer;font-family:'Orbitron',monospace;letter-spacing:1px">✓ 確認送出</button>
         </div>
       </div>
       <!-- SALARY -->
@@ -3531,6 +3601,8 @@ async function sendCSMessage() {
       })
     });
     const data = await res.json();
+    console.log('[CS] status:', res.status, 'candidates:', data.candidates?.length, 'error:', data.error?.message);
+    if(data.error) throw new Error('AI錯誤：'+data.error.message);
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '不好意思，我這邊稍微卡住了，可以再說一次嗎？😅';
 
     csHistory.push({ role: 'model', parts: [{ text: reply }] });
@@ -4454,63 +4526,83 @@ const CMD_SYSTEM = `你是在地物流有限公司負責人徐震家的專屬 AI
 window.sendCommanderAI = async () => {
   const input = document.getElementById('cmd-ai-input');
   const text = input?.value.trim();
-  if (!text) return;
+  if(!text) return;
   input.value = '';
-  
+
   const box = document.getElementById('cmd-ai-chat');
-  if (!box) return;
-  
-  // User bubble
+  if(!box) return;
+
+  // 確認金鑰
+  if(!GEMINI_API_KEY){
+    showToast('⚠️ 未設定 API 金鑰','err');
+    return;
+  }
+
+  // 用戶訊息泡泡
   box.innerHTML += `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
     <div style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18);padding:8px 12px;border-radius:12px 4px 12px 12px;font-size:13px;max-width:80%">${text}</div>
   </div>`;
   box.scrollTop = box.scrollHeight;
-  
-  cmdHistory.push({ role: 'user', parts: [{ text }] });
-  
-  // Typing
-  const typingId = 'cmd-typing-'+Date.now();
+
+  cmdHistory.push({ role:'user', parts:[{text}] });
+
+  // 思考中泡泡
+  const typingId = 'cmd-t-'+Date.now();
   box.innerHTML += `<div id="${typingId}" style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
     <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
     <div style="padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:4px 12px 12px 12px;font-size:12px;color:var(--dim)">思考中...</div>
   </div>`;
   box.scrollTop = box.scrollHeight;
-  
+
   try {
-    // Build history with system context (no duplicate user message)
+    // 建立對話記錄（含系統提示）
     const ctxHistory = [
-      { role:'user', parts:[{text: CMD_SYSTEM}] },
-      { role:'model', parts:[{text:'好的，我是您的專屬助理，請問有什麼需要？'}] },
-      ...cmdHistory.slice(-10, -1)  // exclude the user msg we just pushed (callGemini re-adds it)
+      { role:'user',  parts:[{text: CMD_SYSTEM}] },
+      { role:'model', parts:[{text:'好的，我是您的專屬助理。'}] },
+      ...cmdHistory.slice(-10, -1)
     ];
-    const { reply: rawReply, model: usedModel } = await callGemini(text, ctxHistory, 'text');
-    const reply = rawReply || '抱歉，目前無法回應，請稍後再試。';
-    cmdHistory.push({ role: 'model', parts: [{ text: reply }] });
-    // Show model used
-    const modelBadge = document.getElementById('cmd-model-badge');
-    if(modelBadge) modelBadge.textContent = usedModel;
-    
+
+    const model = selectModel(text, 'text');
+    const messages = [...ctxHistory, { role:'user', parts:[{text}] }];
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contents: messages, generationConfig:{ temperature:0.8, maxOutputTokens:800 }})
+      }
+    );
+    const data = await res.json();
+    console.log('[Commander AI] model:', model, 'status:', res.status, 'candidates:', data.candidates?.length);
+    if(data.error) throw new Error(data.error.message);
+
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，目前無法回應，請稍後再試。';
+    cmdHistory.push({ role:'model', parts:[{text: reply}] });
+
     document.getElementById(typingId)?.remove();
     box.innerHTML += `<div style="display:flex;gap:8px;margin-bottom:10px">
       <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
-      <div>
-        <div style="font-size:9px;color:var(--dim);margin-bottom:3px;font-family:'JetBrains Mono',monospace">AI 助理</div>
-        <div style="background:var(--glass);border:1px solid var(--border);padding:10px 13px;border-radius:4px 12px 12px 12px;font-size:13px;line-height:1.7;max-width:85%">${reply.replace(/\n/g,'<br>')}</div>
-      </div>
+      <div style="padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:4px 12px 12px 12px;font-size:13px;line-height:1.5;max-width:85%">${reply.replace(/
+/g,'<br>')}</div>
     </div>`;
+
+    const modelBadge = document.getElementById('cmd-model-badge');
+    if(modelBadge) modelBadge.textContent = model;
+
     box.scrollTop = box.scrollHeight;
+    await addAudit('AI', `Commander AI：${text.slice(0,30)}`);
+
   } catch(e) {
-    console.error('Commander AI error:', e);
+    console.error('[Commander AI] ERROR:', e.message);
     document.getElementById(typingId)?.remove();
     box.innerHTML += `<div style="display:flex;gap:8px;margin-bottom:10px">
       <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
       <div style="padding:8px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:4px 12px 12px 12px;font-size:12px;color:#f87171">
-        ❌ ${e.message}<br><span style="font-size:10px;color:var(--dim)">請確認 API Key 或稍後再試</span>
+        ❌ ${e.message}<br><span style="font-size:10px;opacity:0.7">請檢查 API 金鑰或網路連線</span>
       </div>
     </div>`;
+    box.scrollTop = box.scrollHeight;
   }
 };
-
 // ── 語音輸入（客服）────────────────────────────────────
 let _csRecognition = null;
 let _csListening = false;
@@ -5067,6 +5159,47 @@ window.saveAdjustCount = async () => {
   document.getElementById('adjust-modal')?.remove();
   showToast('✓ 件數已調整，原因已記錄');
   loadSalary();
+};
+
+// ── 司機端：返回管理端（Commander用）─────────────────
+window.switchToDesktop = () => {
+  const app = document.getElementById('app');
+  app.innerHTML = buildDesktopUI();
+  initDesktop();
+  showPanel('dashboard');
+  setTimeout(addDriverViewToggle, 300);
+};
+
+// ── 司機端：首頁掃描處理 ─────────────────────────────
+window.handleHomeScan = async (input) => {
+  const file = input.files[0];
+  if(!file) return;
+  input.value = '';
+  const prog = document.getElementById('scan-wb-prog');
+  const res = document.getElementById('scan-wb-result');
+  if(prog) prog.style.display = 'block';
+  if(res) res.style.display = 'none';
+  try {
+    const missions = await processMissionImage(CU.uid, file);
+    if(prog) prog.style.display = 'none';
+    if(missions.length > 0 && res){
+      res.style.display = 'block';
+      res.innerHTML = `<div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:10px 12px">
+        <div style="font-size:12px;font-weight:700;color:#34d399;margin-bottom:5px">✓ 識別 ${missions.length} 筆任務！</div>
+        ${missions.slice(0,2).map((m,i)=>`<div style="font-size:10px;color:var(--dim)">#${i+1} ${m.address}</div>`).join('')}
+        ${missions.length>2?`<div style="font-size:10px;color:var(--dim)">...+${missions.length-2} 筆</div>`:''}
+        <button onclick="showDriverPanel('driver_mission',null)" style="margin-top:7px;width:100%;padding:7px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer">查看任務清單 →</button>
+      </div>`;
+    }
+  } catch(e) {
+    if(prog) prog.style.display = 'none';
+    showToast('掃描失敗：'+e.message,'err');
+  }
+};
+
+// Issue 3: Report panel - add simple button fallback for non-touch devices
+window.submitReportBtn = async () => {
+  await submitReport();
 };
 
 async function initDriver(){
