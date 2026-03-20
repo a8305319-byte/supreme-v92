@@ -296,6 +296,13 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 
 <canvas id="fw"></canvas>
 <div id="toast"></div>
+<!-- 下拉更新指示器 -->
+<div id="pull-refresh" style="position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;height:56px;background:rgba(0,212,255,0.08);border-bottom:1px solid rgba(0,212,255,0.2);transform:translateY(-100%);transition:transform 0.2s;pointer-events:none">
+  <div id="pull-refresh-inner" style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--accent);font-family:'JetBrains Mono',monospace">
+    <span id="pull-icon" style="font-size:18px;transition:transform 0.3s">↓</span>
+    <span id="pull-text">下拉更新</span>
+  </div>
+</div>
 
 <!-- LOADING -->
 <div id="loading-screen" style="display:flex">
@@ -331,6 +338,25 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 </div>
 
 <!-- APP -->
+
+<!-- PWA 安裝提示 -->
+<div id="pwa-banner" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:440px;background:rgba(0,0,0,0.95);border:1px solid rgba(0,212,255,0.35);border-radius:12px;padding:14px 16px;z-index:9000;backdrop-filter:blur(20px)">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="font-size:28px">📱</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700;margin-bottom:2px">加入主畫面</div>
+      <div style="font-size:11px;color:var(--dim)">像 App 一樣快速開啟在地物流系統</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button onclick="installPWA()" style="padding:7px 14px;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);border-radius:7px;color:var(--accent);font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">安裝</button>
+      <button onclick="document.getElementById('pwa-banner').style.display='none';localStorage.setItem('pwa-dismissed','1')" style="padding:7px 10px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--dim);font-size:12px;cursor:pointer">✕</button>
+    </div>
+  </div>
+  <!-- iOS 說明 -->
+  <div id="ios-install-hint" style="display:none;margin-top:10px;padding:10px;background:rgba(0,212,255,0.05);border-radius:8px;font-size:11px;color:var(--dim);line-height:1.7">
+    iOS Safari：點底部 <strong style="color:var(--text)">□↑ 分享</strong> → <strong style="color:var(--text)">加入主畫面</strong>
+  </div>
+</div>
 <div id="app"></div>
 
 <script type="module">
@@ -401,6 +427,134 @@ const POSITIONS = {
 
 function getPositionDef(posCode){
   return POSITIONS[posCode] || POSITIONS['driver_employee'];
+}
+
+
+// ══════════════════════════════════════════════════════════
+// PWA 安裝 + 下拉更新
+// ══════════════════════════════════════════════════════════
+let _deferredInstall = null;
+
+// PWA Install prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredInstall = e;
+  // Show banner after 3s if not dismissed
+  if(!localStorage.getItem('pwa-dismissed') && !_appReady){
+    setTimeout(()=>{
+      const b = document.getElementById('pwa-banner');
+      if(b) b.style.display='block';
+    }, 3000);
+  }
+});
+
+window.installPWA = async () => {
+  if(_deferredInstall){
+    _deferredInstall.prompt();
+    const { outcome } = await _deferredInstall.userChoice;
+    _deferredInstall = null;
+    document.getElementById('pwa-banner').style.display='none';
+    if(outcome === 'accepted') showToast('✓ 已加入主畫面！');
+  }
+};
+
+// iOS detection - show different instructions
+function checkIOSInstall(){
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  if(isIOS && !isStandalone && !localStorage.getItem('pwa-dismissed')){
+    setTimeout(()=>{
+      const b = document.getElementById('pwa-banner');
+      const hint = document.getElementById('ios-install-hint');
+      if(b) b.style.display='block';
+      if(hint) hint.style.display='block';
+    }, 4000);
+  }
+}
+checkIOSInstall();
+
+// ── 下拉更新 (Pull to Refresh) ────────────────────────
+let _pullStartY = 0;
+let _pulling = false;
+const PULL_THRESHOLD = 80;
+
+document.addEventListener('touchstart', (e) => {
+  const scrollEl = document.querySelector('.mobile-content');
+  if(scrollEl && scrollEl.scrollTop === 0){
+    _pullStartY = e.touches[0].clientY;
+    _pulling = true;
+  }
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  if(!_pulling) return;
+  const pullEl = document.getElementById('pull-refresh');
+  const icon = document.getElementById('pull-icon');
+  const text = document.getElementById('pull-text');
+  const delta = e.touches[0].clientY - _pullStartY;
+  if(delta > 0 && delta < 150){
+    const pct = Math.min(delta / PULL_THRESHOLD, 1);
+    if(pullEl){
+      pullEl.style.transform = `translateY(${-100 + pct*100}%)`;
+      pullEl.style.transition = 'none';
+    }
+    if(icon) icon.style.transform = `rotate(${pct*180}deg)`;
+    if(text) text.textContent = delta > PULL_THRESHOLD ? '放開以更新' : '下拉更新';
+  }
+}, { passive: true });
+
+document.addEventListener('touchend', async (e) => {
+  if(!_pulling) return;
+  _pulling = false;
+  const delta = e.changedTouches[0].clientY - _pullStartY;
+  const pullEl = document.getElementById('pull-refresh');
+  const icon = document.getElementById('pull-icon');
+  const text = document.getElementById('pull-text');
+
+  if(delta > PULL_THRESHOLD){
+    // Trigger refresh
+    if(pullEl){ pullEl.style.transform='translateY(0)'; pullEl.style.transition='transform 0.2s'; }
+    if(icon) icon.textContent = '⟳';
+    if(text) text.textContent = '更新中...';
+    // Animate spinner
+    let angle = 0;
+    const spin = setInterval(()=>{ angle+=15; if(icon) icon.style.transform=`rotate(${angle}deg)`; },30);
+
+    // Reload current panel data
+    try {
+      if(ROLE === 'driver'){
+        await loadDriverHome();
+        if(document.getElementById('panel-driver_salary')?.classList.contains('active')) await loadDriverSalary();
+        if(document.getElementById('panel-driver_announce')?.classList.contains('active')) await loadDriverAnnounce();
+      } else {
+        const activePanel = document.querySelector('.panel.active');
+        if(activePanel){
+          const id = activePanel.id.replace('panel-','');
+          if(id === 'dashboard') await loadDashboard();
+          else if(id === 'hr') await loadHR();
+          else if(id === 'salary') await loadSalary();
+        }
+      }
+      showToast('✓ 已更新');
+    } catch(e){ showToast('更新失敗','err'); }
+
+    clearInterval(spin);
+    setTimeout(()=>{
+      if(pullEl){ pullEl.style.transform='translateY(-100%)'; pullEl.style.transition='transform 0.3s'; }
+      if(icon){ icon.textContent='↓'; icon.style.transform='rotate(0)'; }
+      if(text) text.textContent='下拉更新';
+    }, 800);
+  } else {
+    // Snap back
+    if(pullEl){ pullEl.style.transform='translateY(-100%)'; pullEl.style.transition='transform 0.2s'; }
+  }
+}, { passive: true });
+
+// Service Worker registration
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
 }
 
 let _appReady = false; // global auth state flag
@@ -1816,6 +1970,32 @@ function panelCommander(){return `
     <button class="btn btn-g btn-sm" style="margin-top:10px;width:100%" onclick="addInterviewQuestion()">+ 新增題目主題</button>
   </div>
 
+  <!-- Commander AI 助理 -->
+  <div class="glass-card" style="margin-bottom:14px;border-color:rgba(0,212,255,0.2)">
+    <div class="sh">
+      <div class="st" style="color:var(--accent)">🤖 AI 助理</div>
+      <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">自動分流 · Lite / Pro / Live</div>
+    </div>
+    <div id="cmd-ai-chat" style="height:280px;overflow-y:auto;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="text-align:center;color:var(--dim);font-size:12px;padding:20px 0">
+        <div style="font-size:24px;margin-bottom:8px">🤖</div>
+        您好，徐老闆！有什麼可以協助您的嗎？<br>
+        <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--dim)">薪資試算 · 法令查詢 · 公告撰寫 · 人事決策</span>
+      </div>
+    </div>
+    <!-- 快速指令 -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <button onclick="document.getElementById('cmd-ai-input').value='本月薪資總支出是多少？';sendCommanderAI()" class="cs-quick-btn">💰 本月薪資</button>
+      <button onclick="document.getElementById('cmd-ai-input').value='幫我草擬一則公告';sendCommanderAI()" class="cs-quick-btn">📢 草擬公告</button>
+      <button onclick="document.getElementById('cmd-ai-input').value='勞基法關於資遣的規定？';sendCommanderAI()" class="cs-quick-btn">⚖️ 法令查詢</button>
+      <button onclick="document.getElementById('cmd-ai-input').value='目前有多少在職司機？';sendCommanderAI()" class="cs-quick-btn">👥 人事概況</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input id="cmd-ai-input" class="f-inp" placeholder="問 AI 助理任何事..." style="flex:1" onkeydown="if(event.key==='Enter')sendCommanderAI()">
+      <button onclick="sendCommanderAI()" style="padding:8px 14px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.35);border-radius:8px;color:var(--accent);cursor:pointer;font-size:16px">➜</button>
+    </div>
+  </div>
+
   <div class="glass-card" style="border-color:rgba(245,158,11,0.2)">
     <div class="st" style="margin-bottom:14px;color:var(--yellow)">🔑 費率設定</div>
     <div class="g3">
@@ -2646,9 +2826,11 @@ ${CD?.name?.[0]||'?'}
         </div>
         <div id="cs-chat-box" style="height:calc(100vh - 280px);min-height:300px;overflow-y:auto;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px"></div>
         <div style="display:flex;gap:8px">
-          <input id="cs-input" class="f-inp" placeholder="請輸入您的問題..." style="flex:1;padding:11px 13px;font-size:14px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCSMessage();}">
+          <button id="cs-voice-btn" onclick="toggleVoiceCS()" style="padding:11px 14px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:8px;color:#34d399;font-size:18px;cursor:pointer;flex-shrink:0;transition:all 0.2s" title="語音輸入">🎤</button>
+          <input id="cs-input" class="f-inp" placeholder="輸入或點麥克風語音..." style="flex:1;padding:11px 13px;font-size:14px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCSMessage();}">
           <button onclick="sendCSMessage()" style="padding:11px 16px;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);border-radius:8px;color:#a78bfa;font-size:18px;cursor:pointer;flex-shrink:0">➜</button>
         </div>
+        <div id="cs-model-badge" style="text-align:right;font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:3px;opacity:0.5"></div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="cs-quick-btns">
           <button onclick="sendCSQuick('薪資問題')" class="cs-quick-btn">💰 薪資問題</button>
           <button onclick="sendCSQuick('請假申請')" class="cs-quick-btn">📅 請假申請</button>
@@ -2704,6 +2886,98 @@ window.mChangePassword=async()=>{
   }
 };
 
+
+// ══════════════════════════════════════════════════════════
+// 多模態 AI 分流路由器
+// ══════════════════════════════════════════════════════════
+const AI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
+
+// 模型定義
+const AI_MODELS = {
+  lite:  'gemini-2.0-flash-lite',      // 日常小問題、公告查詢、一般助理
+  pro:   'gemini-2.5-pro-preview-03-25', // 薪資計算、複雜問題、法令查詢
+  live:  'gemini-2.0-flash',            // 緊急狀況、生氣升級（Flash Live fallback）
+  interview: 'gemini-2.0-flash'         // 面試評分
+};
+
+// 分流關鍵字定義
+const ROUTE_KEYWORDS = {
+  pro: [
+    // 薪資相關
+    '薪資','薪水','計算','扣款','勞保','健保','投保','二代健保','到手','實發',
+    // 法令
+    '法律','法規','勞基法','條例','規定','合法','違法','申訴','勞動局',
+    // 複雜財務
+    '報稅','所得','扣繳','憑單','年終','獎金','加班費','補償',
+  ],
+  live: [
+    // 緊急
+    '緊急','urgent','救命','出事','意外','受傷','事故','危險','馬上','立刻',
+    // 情緒
+    '生氣','不爽','爛','垃圾','幹','靠','混蛋','離職','不幹','投訴','客訴',
+    // 嚴重問題
+    '嚴重','重大','糾紛','衝突','警察','法院'
+  ]
+};
+
+// 分流函數
+function routeToModel(message, context = 'cs') {
+  const msg = message.toLowerCase();
+  
+  // 面試系統固定用 interview model
+  if (context === 'interview') return AI_MODELS.interview;
+  
+  // 檢查是否需要升級到 Pro（複雜問題）
+  const needsPro = ROUTE_KEYWORDS.pro.some(k => message.includes(k));
+  if (needsPro) {
+    console.log('[AI Router] → Pro (複雜問題)');
+    return AI_MODELS.pro;
+  }
+  
+  // 檢查是否需要升級到 Live（緊急/情緒）
+  const needsLive = ROUTE_KEYWORDS.live.some(k => message.includes(k));
+  if (needsLive) {
+    console.log('[AI Router] → Live (緊急/升級)');
+    return AI_MODELS.live;
+  }
+  
+  // 預設使用 Lite（日常小問題）
+  console.log('[AI Router] → Lite (一般問題)');
+  return AI_MODELS.lite;
+}
+
+// 統一呼叫介面
+async function callGemini(model, messages, systemPrompt, temp = 0.8) {
+  const contents = [];
+  if (systemPrompt) {
+    contents.push({ role: 'user', parts: [{ text: systemPrompt }] });
+    contents.push({ role: 'model', parts: [{ text: '好的，我明白了。' }] });
+  }
+  messages.forEach(m => contents.push(m));
+  
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${AI_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        generationConfig: { temperature: temp, maxOutputTokens: 400 }
+      })
+    }
+  );
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，我現在無法回答。';
+}
+
+// 顯示模型指示器
+function getModelBadge(model) {
+  if (model.includes('pro')) return '<span style="font-size:9px;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);color:#a78bfa;padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;margin-left:4px">PRO</span>';
+  if (model.includes('live')) return '<span style="font-size:9px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#f87171;padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;margin-left:4px">LIVE</span>';
+  return '<span style="font-size:9px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);color:var(--accent);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;margin-left:4px">LITE</span>';
+}
+
 // ══════════════════════════════════════════════════════════
 // 客服專員「徐美玲」系統
 // ══════════════════════════════════════════════════════════
@@ -2717,7 +2991,48 @@ const CS_AGENTS = [
 const _csAgent = CS_AGENTS[Math.floor(Math.random() * CS_AGENTS.length)];
 const CS_AGENT_NAME = _csAgent.name;
 const CS_AGENT_EMOJI = _csAgent.emoji;
-const CS_GEMINI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
+// ── AI 分流配置 ────────────────────────────────────────
+const GEMINI_API_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
+
+// 模型分流邏輯
+const AI_MODELS = {
+  // 即時語音對話 - 客服語音模式
+  live:    'gemini-live-2.5-flash',
+  // 快速文字 - 客服文字、面試評分
+  fast:    'gemini-2.5-flash-lite',
+  // 複雜分析 - 薪資異常、深度審計
+  pro:     'gemini-3.1-pro-preview',
+  // 備用
+  default: 'gemini-2.0-flash'
+};
+
+// 智慧分流：依輸入內容選擇模型
+function selectModel(text, mode='text'){
+  if(mode === 'voice') return AI_MODELS.live;
+  const proKeywords = ['分析','異常','審計','報表','統計','趨勢','原因','比較','評估','建議'];
+  const isComplex = proKeywords.some(k => text.includes(k)) || text.length > 100;
+  return isComplex ? AI_MODELS.pro : AI_MODELS.fast;
+}
+
+// 通用 Gemini 呼叫
+async function callGemini(prompt, history=[], mode='text'){
+  const model = selectModel(prompt, mode);
+  const messages = [
+    ...history,
+    { role:'user', parts:[{text: prompt}] }
+  ];
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+    { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contents: messages, generationConfig:{ temperature:0.8, maxOutputTokens:500 }})
+    }
+  );
+  const data = await res.json();
+  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return { reply, model };
+}
+
+const CS_GEMINI_KEY = GEMINI_API_KEY;
 let csHistory = [];
 let csRepeatTracker = {}; // track repeated questions
 let csEscalated = false;  // true = escalated to boss (silent)
@@ -2805,7 +3120,7 @@ function addCSMsg(role, text, typing=false) {
     div.innerHTML = `
       <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👩</div>
       <div>
-        <div style="font-size:10px;color:var(--dim);margin-bottom:3px;font-family:'JetBrains Mono',monospace">${CS_AGENT_NAME} · 客服專員</div>
+        <div style="font-size:10px;color:var(--dim);margin-bottom:3px;font-family:'JetBrains Mono',monospace" id="cs-model-indicator">${CS_AGENT_NAME} · 客服專員</div>
         <div style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);padding:10px 14px;border-radius:4px 12px 12px 12px;font-size:13.5px;line-height:1.6;max-width:85%">${text.replace(/\n/g,'<br>')}</div>
       </div>`;
   } else {
@@ -3781,6 +4096,114 @@ async function loadPayslipStatuses(month){
   } catch(e){}
   return statuses;
 }
+
+// ══════════════════════════════════════════════════════════
+// Commander AI 助理（老闆專用）
+// ══════════════════════════════════════════════════════════
+let cmdHistory = [];
+
+const CMD_SYSTEM = `你是在地物流有限公司負責人徐震家的專屬 AI 助理。
+你能協助：薪資查詢與試算、人事決策建議、勞基法法令查詢、公告草稿撰寫、營運數據分析。
+回答要簡潔專業，提供具體數字和建議。
+絕對不要洩漏系統技術細節或 API 金鑰。`;
+
+window.sendCommanderAI = async () => {
+  const input = document.getElementById('cmd-ai-input');
+  const text = input?.value.trim();
+  if (!text) return;
+  input.value = '';
+  
+  const box = document.getElementById('cmd-ai-chat');
+  if (!box) return;
+  
+  // User bubble
+  box.innerHTML += `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <div style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18);padding:8px 12px;border-radius:12px 4px 12px 12px;font-size:13px;max-width:80%">${text}</div>
+  </div>`;
+  box.scrollTop = box.scrollHeight;
+  
+  cmdHistory.push({ role: 'user', parts: [{ text }] });
+  
+  // Typing
+  const typingId = 'cmd-typing-'+Date.now();
+  box.innerHTML += `<div id="${typingId}" style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+    <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
+    <div style="padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:4px 12px 12px 12px;font-size:12px;color:var(--dim)">思考中...</div>
+  </div>`;
+  box.scrollTop = box.scrollHeight;
+  
+  // Route to best model
+  const model = routeToModel(text, 'commander');
+  const badge = getModelBadge(model);
+  
+  try {
+    const reply = await callGemini(model, cmdHistory.slice(-10), CMD_SYSTEM, 0.7);
+    cmdHistory.push({ role: 'model', parts: [{ text: reply }] });
+    
+    document.getElementById(typingId)?.remove();
+    box.innerHTML += `<div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
+      <div>
+        <div style="font-size:9px;color:var(--dim);margin-bottom:3px;font-family:'JetBrains Mono',monospace">AI 助理 ${badge}</div>
+        <div style="background:var(--glass);border:1px solid var(--border);padding:10px 13px;border-radius:4px 12px 12px 12px;font-size:13px;line-height:1.7;max-width:85%">${reply.replace(/\n/g,'<br>')}</div>
+      </div>
+    </div>`;
+    box.scrollTop = box.scrollHeight;
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    box.innerHTML += `<div style="color:#f87171;font-size:12px;padding:8px">AI 暫時無法回應：${e.message}</div>`;
+  }
+};
+
+// ── 語音輸入（客服）────────────────────────────────────
+let _csRecognition = null;
+let _csListening = false;
+
+window.toggleVoiceCS = () => {
+  const btn = document.getElementById('cs-voice-btn');
+  const input = document.getElementById('cs-input');
+
+  if(_csListening){
+    _csRecognition?.stop();
+    _csListening = false;
+    if(btn){ btn.textContent='🎤'; btn.style.background='rgba(16,185,129,0.12)'; btn.style.borderColor='rgba(16,185,129,0.3)'; btn.style.color='#34d399'; }
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition){ showToast('此裝置不支援語音輸入','err'); return; }
+
+  _csRecognition = new SpeechRecognition();
+  _csRecognition.lang = 'zh-TW';
+  _csRecognition.continuous = false;
+  _csRecognition.interimResults = true;
+
+  _csRecognition.onstart = () => {
+    _csListening = true;
+    if(btn){ btn.textContent='🔴'; btn.style.background='rgba(239,68,68,0.15)'; btn.style.borderColor='rgba(239,68,68,0.4)'; btn.style.color='#f87171'; }
+    showToast('語音輸入中...');
+  };
+
+  _csRecognition.onresult = (e) => {
+    const transcript = [...e.results].map(r=>r[0].transcript).join('');
+    if(input) input.value = transcript;
+  };
+
+  _csRecognition.onend = () => {
+    _csListening = false;
+    if(btn){ btn.textContent='🎤'; btn.style.background='rgba(16,185,129,0.12)'; btn.style.borderColor='rgba(16,185,129,0.3)'; btn.style.color='#34d399'; }
+    // Auto-send if there's text
+    if(input?.value.trim()) sendCSMessage();
+  };
+
+  _csRecognition.onerror = (e) => {
+    _csListening = false;
+    if(btn){ btn.textContent='🎤'; btn.style.background='rgba(16,185,129,0.12)'; btn.style.borderColor='rgba(16,185,129,0.3)'; btn.style.color='#34d399'; }
+    if(e.error !== 'no-speech') showToast('語音辨識失敗：'+e.error,'err');
+  };
+
+  _csRecognition.start();
+};
 
 async function initDriver(){
   await loadDriverHome();
