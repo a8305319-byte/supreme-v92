@@ -76,8 +76,8 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
 <div class="wrap">
   <div class="header">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <button onclick="if(document.referrer){history.back();}else{window.location.href='index.html';}" style="padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">← 返回</button>
-      <button onclick="window.close();setTimeout(()=>window.location.href='index.html',200);" style="padding:6px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#f87171;font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">✕ 關閉</button>
+      <button onclick="if(document.referrer){history.back();}else{window.location.href='/';}" style="padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">← 返回</button>
+      <button onclick="window.close();setTimeout(()=>window.location.href='/',200);" style="padding:6px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#f87171;font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">✕ 關閉</button>
     </div>
     <div class="logo">在地物流</div>
     <div class="logo-sub">配送司機招募系統</div>
@@ -186,9 +186,9 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
         <button onclick="window.location.href='onboard.html'" style="width:100%;padding:11px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:8px;color:#34d399;font-size:13px;font-family:'Orbitron',monospace;cursor:pointer">📋 立即填寫入職資料表 →</button>
       </div>
       <div style="margin-top:12px;padding:10px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;text-align:center;font-size:12px;color:#a78bfa;font-family:'JetBrains Mono',monospace">
-        <span id="redirect-countdown">6</span> 秒後自動返回首頁...
+        <span id="redirect-countdown">8</span> 秒後自動跳轉回登入頁...
       </div>
-      <button onclick="window.location.href='index.html'" style="width:100%;margin-top:10px;padding:11px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;font-family:'Orbitron',monospace;letter-spacing:1px;cursor:pointer">返回首頁</button>
+      <button onclick="window.location.href='/'" style="width:100%;margin-top:10px;padding:11px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;font-family:'Orbitron',monospace;letter-spacing:1px;cursor:pointer">返回首頁</button>
     </div>
   </div>
 </div>
@@ -374,7 +374,7 @@ function showResult(score, comment) {
   const ob = document.getElementById('onboard-suggestion');
   if(ob && score >= 70) ob.style.display='block';
   // Redirect to login page after 6 seconds
-  let countdown = 6;
+  let countdown = 8;
   const timer = setInterval(()=>{
     countdown--;
     const el = document.getElementById('redirect-countdown');
@@ -382,7 +382,7 @@ function showResult(score, comment) {
     if(countdown <= 0){
       clearInterval(timer);
       // Go back to main login page
-      window.location.href = 'index.html';
+      window.location.href = '/';
     }
   }, 1000);
   const scoreEl = document.getElementById('result-score');
