@@ -4660,6 +4660,14 @@ const CMD_SYSTEM = `你是「在地物流有限公司」負責人徐震家的專
 - 絕對不透露 API 金鑰
 `;
 
+window.sendCommanderQuick = (text) => {
+  const input = document.getElementById('cmd-ai-input');
+  if(input){
+    input.value = text;
+    sendCommanderAI();
+  }
+};
+
 window.sendCommanderAI = async () => {
   const input = document.getElementById('cmd-ai-input');
   const text = input?.value.trim();
@@ -5137,6 +5145,11 @@ window.runGlobalRouteOptimize = async () => {
 };
 
 // ── window 函數曝露（供 onclick 呼叫）────────────────────
+// Commander AI 管家
+window.sendCommanderQuick = window.sendCommanderQuick || ((text) => {
+  const input = document.getElementById('cmd-ai-input');
+  if(input){ input.value = text; if(window.sendCommanderAI) window.sendCommanderAI(); }
+});
 window.loadApplicants = loadApplicants;
 window.loadInsuredList = loadInsuredList;
 window.exportDriverSalaryPDF = exportDriverSalaryPDF;
