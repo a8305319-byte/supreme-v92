@@ -591,10 +591,10 @@ const fbApp = initializeApp(FB);
 // ── AI 模型分流（已在頂部定義）────────
 // ── 🛰️ AI 模型穩定版校準 ──────────────────────────────
 const AI_MODELS = {
-  live:    'gemini-1.5-flash',   // 最穩定生產級
-  fast:    'gemini-1.5-flash',   // 速度快，適合 OCR
-  pro:     'gemini-1.5-pro',     // 薪資分析、法規查詢
-  default: 'gemini-1.5-flash'
+  live:    'gemini-flash-latest',
+  fast:    'gemini-flash-latest',
+  pro:     'gemini-flash-latest',
+  default: 'gemini-flash-latest'
 };
 
 // 智慧分流：依輸入內容與模式選擇模型
