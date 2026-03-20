@@ -606,14 +606,10 @@ function selectModel(text='', mode='text'){
 }
 
 // ── 客服隨機專員 ───────────────────────────────────────
-const CS_AGENTS = [
-  {name:'徐美玲', emoji:'👩'},
-  {name:'陳雅婷', emoji:'👩‍💼'},
-  {name:'林美君', emoji:'👩'},
-];
-const _csAgent = CS_AGENTS[Math.floor(Math.random() * CS_AGENTS.length)];
-const CS_AGENT_NAME = _csAgent.name;
-const CS_AGENT_EMOJI = _csAgent.emoji;
+// 客服人員：隨機編號（不預設真實姓名）
+const _csNum = String(Math.floor(Math.random() * 900) + 100); // 100-999
+const CS_AGENT_NAME = '客服專員 #' + _csNum;
+const CS_AGENT_EMOJI = '🎧';
 const auth  = getAuth(fbApp);
 const db    = getFirestore(fbApp);
 
@@ -2394,7 +2390,7 @@ const TOGGLE_DEFS=[
   {id:'announce',  icon:'📢',  name:'公告管理',     desc:'發布公告通知',            section:'ops'},
   {id:'files',     icon:'🗂️', name:'檔案管理',     desc:'證件上傳、文件管理',      section:'ops'},
   // ── 司機端功能 ──
-  {id:'driver_cs', icon:'💬',  name:'客服對話',     desc:'徐美玲 AI 客服',          section:'driver'},
+  {id:'driver_cs', icon:'💬',  name:'客服對話',     desc:'客服專員即時服務',          section:'driver'},
   {id:'driver_salary',icon:'📄',name:'電子薪資單',  desc:'薪資明細、簽收、異常回報',section:'driver'},
   {id:'driver_checkin',icon:'📍',name:'打卡功能',   desc:'上下班打卡記錄',          section:'driver'},
   {id:'driver_report',icon:'📋',name:'件數回報',    desc:'當日配送逆物流回報',      section:'driver'},
@@ -3362,11 +3358,9 @@ ${CD?.name?.[0]||'?'}
         </div>
         <div id="cs-chat-box" style="height:calc(100vh - 280px);min-height:300px;overflow-y:auto;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px"></div>
         <div style="display:flex;gap:8px">
-          <button id="cs-voice-btn" onclick="toggleVoiceCS()" style="padding:11px 14px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:8px;color:#34d399;font-size:18px;cursor:pointer;flex-shrink:0;transition:all 0.2s" title="語音輸入">🎤</button>
-          <input id="cs-input" class="f-inp" placeholder="輸入或點麥克風語音..." style="flex:1;padding:11px 13px;font-size:14px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCSMessage();}">
+          <input id="cs-input" class="f-inp" placeholder="輸入您的問題..." style="flex:1;padding:11px 13px;font-size:14px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCSMessage();}">
           <button onclick="sendCSMessage()" style="padding:11px 16px;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);border-radius:8px;color:#a78bfa;font-size:18px;cursor:pointer;flex-shrink:0">➜</button>
         </div>
-        <div id="cs-model-badge" style="text-align:right;font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:3px;opacity:0.5"></div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="cs-quick-btns">
           <button onclick="sendCSQuick('薪資問題')" class="cs-quick-btn">💰 薪資問題</button>
           <button onclick="sendCSQuick('請假申請')" class="cs-quick-btn">📅 請假申請</button>
@@ -3457,7 +3451,7 @@ let csRepeatTracker = {}; // track repeated questions
 let csEscalated = false;  // true = escalated to boss (silent)
 let csInitialized = false;
 
-// Topics徐美玲 handles
+// CS Topics
 const CS_SYSTEM_PROMPT = `你是在地物流有限公司的客服專員「${CS_AGENT_NAME}」。
 
 【身份】你是真人客服，絕對不能透露自己是AI、機器人或任何自動化系統。
@@ -3492,9 +3486,9 @@ async function initCSChat() {
 
   // Welcome message
   const greetings = [
-    `${CD?.name||'您好'}，我是徐美玲😊 有什麼可以幫您的嗎？`,
+    `${CD?.name||'您好'}，我是您的客服專員😊 有什麼可以幫您的嗎？`,
     `嗨 ${CD?.name||''}！我是美玲，今天有什麼需要幫忙的呢？`,
-    `您好！我是徐美玲，在地物流客服專員，請問有什麼事情嗎？`
+    `您好！我是您的客服專員，在地物流客服專員，請問有什麼事情嗎？`
   ];
   const greeting = greetings[Math.floor(Math.random() * greetings.length)];
   addCSMsg('agent', greeting);
@@ -3593,7 +3587,7 @@ window.sendCSMessage = async function sendCSMessage() {
   try {
     const messages = [
       { role: 'user', parts: [{ text: CS_SYSTEM_PROMPT + '\n\n司機資料：' + JSON.stringify({name: CD?.name, type: CD?.type, priceDelivery: CD?.priceDelivery, priceReverse: CD?.priceReverse, allowance: CD?.allowance}) }] },
-      { role: 'model', parts: [{ text: '好的，我是徐美玲，很高興為您服務！' }] },
+      { role: 'model', parts: [{ text: '好的，我是您的客服專員，很高興為您服務！' }] },
       ...csHistory.slice(-8) // keep last 8 messages for context
     ];
 
@@ -4594,59 +4588,6 @@ window.sendCommanderAI = async () => {
     box.scrollTop = box.scrollHeight;
   }
 };
-// ── 語音輸入（客服）────────────────────────────────────
-let _csRecognition = null;
-let _csListening = false;
-
-window.toggleVoiceCS = () => {
-  const btn = document.getElementById('cs-voice-btn');
-  const input = document.getElementById('cs-input');
-
-  if(_csListening){
-    _csRecognition?.stop();
-    _csListening = false;
-    if(btn){ btn.textContent='🎤'; btn.style.background='rgba(16,185,129,0.12)'; btn.style.borderColor='rgba(16,185,129,0.3)'; btn.style.color='#34d399'; }
-    return;
-  }
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SpeechRecognition){ showToast('此裝置不支援語音輸入','err'); return; }
-
-  _csRecognition = new SpeechRecognition();
-  _csRecognition.lang = 'zh-TW';
-  _csRecognition.continuous = false;
-  _csRecognition.interimResults = true;
-
-  _csRecognition.onstart = () => {
-    _csListening = true;
-    if(btn){ btn.textContent='🔴'; btn.style.background='rgba(239,68,68,0.15)'; btn.style.borderColor='rgba(239,68,68,0.4)'; btn.style.color='#f87171'; }
-    showToast('語音輸入中...');
-  };
-
-  _csRecognition.onresult = (e) => {
-    const transcript = [...e.results].map(r=>r[0].transcript).join('');
-    if(input) input.value = transcript;
-  };
-
-  _csRecognition.onend = () => {
-    _csListening = false;
-    if(btn){ btn.textContent='🎤'; btn.style.background='rgba(16,185,129,0.12)'; btn.style.borderColor='rgba(16,185,129,0.3)'; btn.style.color='#34d399'; }
-    // Auto-send if there's text
-    if(input?.value.trim()) sendCSMessage();
-  };
-
-  _csRecognition.onerror = (e) => {
-    _csListening = false;
-    if(btn){ btn.textContent='🎤'; btn.style.background='rgba(16,185,129,0.12)'; btn.style.borderColor='rgba(16,185,129,0.3)'; btn.style.color='#34d399'; }
-    if(e.error !== 'no-speech') showToast('語音辨識失敗：'+e.error,'err');
-  };
-
-  _csRecognition.start();
-};
-
-// ══════════════════════════════════════════════════════════
-// MISSION SYSTEM - 任務資料庫 + OCR + 路線優化
-// ══════════════════════════════════════════════════════════
 
 // ── Geocoding: 地址 → GPS座標 ─────────────────────────
 async function geocodeAddress(address) {
