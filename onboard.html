@@ -307,7 +307,10 @@ function previewPhoto(t,i){ if(window.previewPhoto_fn) window.previewPhoto_fn(t,
     <span class="sig-lbl">請在下方空白處親筆簽名</span>
     <button onclick="clrSig()" style="padding:4px 10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:4px;color:#f87171;font-size:11px;cursor:pointer;font-family:'JetBrains Mono',monospace">清除</button>
   </div>
-  <canvas id="sigc"></canvas>
+  <canvas id="sigc" style="width:100%;height:160px;touch-action:none;display:block;border-radius:8px"></canvas>
+<div id="sig-hint" style="font-size:10px;color:#64748b;text-align:center;margin-top:4px;font-family:monospace">
+  請親筆簽名（最少3筆，不可亂畫）
+</div>
 </div>
 <div class="fg"><label class="fl">填表日期</label><input class="fi" id="v-date" type="date"></div>
 <div class="ib">送出後資料將儲存至在地物流有限公司人事系統，人資人員將於 <strong>1-3 個工作天</strong>內與您聯繫確認入職細節。</div>
@@ -345,6 +348,8 @@ window.prv=from=>setStep(from-1);
 function setStep(n){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   document.getElementById('step-'+n)?.classList.add('active');
+  // 步驟5有簽名框，需重新計算 canvas 尺寸（解決手機0高度問題）
+  if(n===5) setTimeout(resizeSig, 50);
   document.querySelectorAll('.ps').forEach((p,i)=>{
     p.classList.remove('active','done');
     if(i+1<n)p.classList.add('done');
@@ -363,7 +368,7 @@ function val(s){
   if(s===1){const id=document.getElementById('v-id').value.trim();if(!/^[A-Z][12]\d{8}$/.test(id)){toast('身分證字號格式錯誤','e');return false;}}
   if(s===5){
     if(!document.getElementById('ag1').checked||!document.getElementById('ag2').checked||!document.getElementById('ag3').checked){toast('請勾選所有必要聲明事項','e');return false;}
-    if(sigEmpty()){toast('請完成親筆簽名','e');return false;}
+    const sv=sigValid();if(!sv.ok){alert(sv.msg);return false;}return false;}
   }
   return true;
 }
@@ -376,24 +381,34 @@ window.mkDone=(boxId,inp)=>{const b=document.getElementById(boxId);if(b&&inp.fil
 const canvas=document.getElementById('sigc');
 const ctx2=canvas ? canvas.getContext('2d') : null;
 let drawing=false;let sigData=false;
+let strokeCount=0,strokeLength=0,lastPos=null;
 function resizeSig(){const r=window.devicePixelRatio||1;canvas.width=canvas.offsetWidth*r;canvas.height=canvas.offsetHeight*r;ctx2.scale(r,r);ctx2.strokeStyle='#00d4ff';ctx2.lineWidth=2.5;ctx2.lineCap='round';ctx2.lineJoin='round';}
 resizeSig();window.addEventListener('resize',resizeSig);
 function gp(e){const rc=canvas.getBoundingClientRect();const s=e.touches?e.touches[0]:e;return{x:s.clientX-rc.left,y:s.clientY-rc.top};}
 if(canvas && ctx2){
-canvas.addEventListener('mousedown',e=>{drawing=true;ctx2.beginPath();const p=gp(e);ctx2.moveTo(p.x,p.y);});
-canvas.addEventListener('mousemove',e=>{if(!drawing)return;const p=gp(e);ctx2.lineTo(p.x,p.y);ctx2.stroke();sigData=true;});
+canvas.addEventListener('mousedown',e=>{drawing=true;strokeCount++;ctx2.beginPath();const p=gp(e);ctx2.moveTo(p.x,p.y);lastPos=p;});
+canvas.addEventListener('mousemove',e=>{if(!drawing)return;const p=gp(e);ctx2.lineTo(p.x,p.y);ctx2.stroke();sigData=true;
+  if(lastPos){strokeLength+=Math.hypot(p.x-lastPos.x,p.y-lastPos.y);}lastPos=p;});
 canvas.addEventListener('mouseup',()=>drawing=false);
-canvas.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;ctx2.beginPath();const p=gp(e);ctx2.moveTo(p.x,p.y);},{passive:false});
-canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!drawing)return;const p=gp(e);ctx2.lineTo(p.x,p.y);ctx2.stroke();sigData=true;},{passive:false});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;strokeCount++;ctx2.beginPath();const p=gp(e);ctx2.moveTo(p.x,p.y);lastPos=p;},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!drawing)return;const p=gp(e);ctx2.lineTo(p.x,p.y);ctx2.stroke();sigData=true;
+  if(lastPos){strokeLength+=Math.hypot(p.x-lastPos.x,p.y-lastPos.y);}lastPos=p;},{passive:false});
 canvas.addEventListener('touchend',()=>drawing=false);
 }
-window.clrSig=()=>{ctx2.clearRect(0,0,canvas.width,canvas.height);sigData=false;};
+window.clrSig=window.clrSig_fn=()=>{ctx2.clearRect(0,0,canvas.width,canvas.height);sigData=false;strokeCount=0;strokeLength=0;lastPos=null;};
+window.clrSig_fn=window.clrSig; // 橋接函數連結
 function sigEmpty(){return!sigData;}
+function sigValid(){
+  // 最少 3 筆畫，總長度至少 100px
+  if(strokeCount < 3) return {ok:false, msg:'簽名太簡單，請完整簽名（至少3筆）'};
+  if(strokeLength < 100) return {ok:false, msg:'簽名筆畫太短，請完整簽名'};
+  return {ok:true};
+}
  
 document.getElementById('v-date').value=new Date().toISOString().slice(0,10);
 document.getElementById('v-start').value=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
  
-window.submitForm=async()=>{
+window.submitForm=window.submitForm_fn=async()=>{
   if(!val(5))return;
   const btn=document.getElementById('sub-btn');
   btn.disabled=true;btn.textContent='送出中...';
