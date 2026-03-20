@@ -17,7 +17,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
  
 /* ===== LOADING ===== */
-#loading-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;animation:ldHide 0.6s ease 2s forwards;}
+#loading-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;}
 .ld-logo{font-family:'Orbitron',monospace;font-size:20px;color:var(--accent);letter-spacing:3px;text-shadow:0 0 30px rgba(0,212,255,0.5);margin-bottom:8px;}
 .ld-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:28px;}
 .ld-bar{width:220px;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;overflow:hidden;}
@@ -204,6 +204,8 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 .sw input:checked~.sw-thumb{left:23px;background:var(--accent);}
  
 /* TOAST */
+.cs-quick-btn{padding:5px 10px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);border-radius:20px;color:#a78bfa;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all 0.2s;}
+.cs-quick-btn:hover{background:rgba(124,58,237,0.2);}
 #toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:8px;font-size:12px;font-family:'JetBrains Mono',monospace;z-index:10000;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
 .toast-ok{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#34d399;}
 .toast-err{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;}
@@ -277,6 +279,21 @@ import {
   serverTimestamp, increment, addDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
  
+// Force hide loading after 2.5s no matter what
+let _appReady = false; // global auth state flag
+window.addEventListener('load', ()=>{
+  setTimeout(()=>{
+    const ld = document.getElementById('loading-screen');
+    const ls = document.getElementById('login-screen');
+    if(ld && getComputedStyle(ld).opacity !== '0' && !_appReady){
+      ld.style.transition='opacity 0.4s';
+      ld.style.opacity='0';
+      ld.style.pointerEvents='none';
+      if(ls) ls.style.display='flex';
+    }
+  }, 2500);
+});
+ 
 const FB = {
   apiKey:"AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
   authDomain:"在地物流.firebaseapp.com",
@@ -345,7 +362,7 @@ const MOD_PERMS = {
 // Module config for sidebar
 const MODS_COMMANDER = [
   {id:'dashboard', icon:'⬡', name:'總覽儀表板', section:'核心'},
-  {id:'recruit',   icon:'🤖', name:'招募 AI',    section:'人員管理'},
+  {id:'recruit',   icon:'🤖', name:'招募',    section:'人員管理'},
   {id:'hr',        icon:'👤', name:'人事模組',   section:'人員管理'},
   {id:'attendance',icon:'📅', name:'出勤模組',   section:'人員管理'},
   {id:'insurance', icon:'🛡️', name:'勞健保',     section:'財務薪資'},
@@ -381,11 +398,12 @@ let moduleToggles = {
 };
  
 // ── FALLBACK TIMEOUT ─────────────────────────────────────
-// Show login after 3s if Firebase hasn't responded
+// Show login after 3s if Firebase hasn't responded (only on first load)
+let _loginShown = false;
 const _fb_timeout = setTimeout(()=>{
   const ld=document.getElementById('loading-screen');
   const ls=document.getElementById('login-screen');
-  if(ld && ld.style.display!=='none'){
+  if(ld && ld.style.display!=='none' && !_loginShown){
     ld.style.display='none';
     if(ls) ls.style.display='flex';
   }
@@ -415,8 +433,10 @@ onAuthStateChanged(auth, async user => {
     await buildApp();
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('app').style.display='block';
+    _appReady = true;
   } catch(e) {
-    showToast('載入失敗：'+e.message,'err');
+    console.error('Load error:', e);
+    showToast('載入失敗，請重新整理','err');
     showLogin();
   }
 });
@@ -424,7 +444,7 @@ onAuthStateChanged(auth, async user => {
 // ── LOGIN ─────────────────────────────────────────────────
 function showLogin() {
   document.getElementById('loading-screen').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-screen').style.display='flex'; _loginShown=true;
   document.getElementById('app').style.display='none';
 }
  
@@ -437,14 +457,35 @@ window.doLogin = async () => {
   if (!email||!pass){showErr('請填寫帳號與密碼');return;}
   btn.disabled=true;
   btn.innerHTML='<span class="spin"></span>驗證中...';
+  // Timeout if no response in 10s
+  const loginTimeout = setTimeout(()=>{
+    btn.disabled=false; btn.innerHTML='LOGIN';
+    showErr('連線逾時，請重試');
+  }, 10000);
   try {
     await signInWithEmailAndPassword(auth, email, pass);
+    clearTimeout(loginTimeout);
     document.getElementById('login-screen').style.display='none';
     document.getElementById('loading-screen').style.display='flex';
+    // Timeout if buildApp takes too long
+    setTimeout(()=>{
+      if(document.getElementById('loading-screen').style.display!=='none'){
+        document.getElementById('loading-screen').style.display='none';
+        document.getElementById('login-screen').style.display='flex';
+        showErr('載入逾時，請重新登入');
+      }
+    }, 8000);
   } catch(e) {
+    clearTimeout(loginTimeout);
     btn.disabled=false; btn.innerHTML='LOGIN';
-    const msgs={'auth/invalid-credential':'帳號或密碼錯誤','auth/too-many-requests':'嘗試太多次，請稍後再試','auth/network-request-failed':'網路連線失敗'};
-    showErr(msgs[e.code]||'登入失敗');
+    const msgs={
+      'auth/invalid-credential':'帳號或密碼錯誤',
+      'auth/wrong-password':'密碼錯誤',
+      'auth/user-not-found':'找不到此帳號',
+      'auth/too-many-requests':'嘗試太多次，請稍後再試',
+      'auth/network-request-failed':'網路連線失敗'
+    };
+    showErr(msgs[e.code]||'登入失敗：'+e.message);
   }
 };
 document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -547,6 +588,23 @@ function buildAllPanels() {
   `;
 }
  
+ 
+window.viewEscalation = async(id) => {
+  const snap = await getDoc(doc(db,'csEscalations',id));
+  if(!snap.exists()) return;
+  const e = snap.data();
+  // Mark as reviewed
+  await updateDoc(doc(db,'csEscalations',id), {status:'reviewed'});
+  // Show in a simple modal-like toast with details
+  const hist = (e.csHistory||[]).slice(-4).map(m=>`${m.role==='user'?e.driverName:'徐美玲'}：${m.text}`).join('
+');
+  alert(`司機：${e.driverName}
+觸發訊息：${e.triggerMessage}
+ 
+最近對話：
+${hist}`);
+};
+ 
 window.showPanel = function(id) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -647,6 +705,22 @@ async function loadDashboard() {
   });
   if(!alertsHTML) alertsHTML='<div class="alert-item as_">✓ <div>目前無緊急警示</div></div>';
   document.getElementById('dash-alerts').innerHTML=alertsHTML;
+  // Load CS escalations
+  try {
+    const escSnap = await getDocs(query(collection(db,'csEscalations'),where('status','==','pending'),orderBy('timestamp','desc'),limit(5)));
+    if(!escSnap.empty) {
+      let escHTML = '';
+      escSnap.docs.forEach(d=>{
+        const e=d.data();
+        const t=e.timestamp?.toDate?e.timestamp.toDate().toLocaleTimeString('zh-TW'):'';
+        escHTML += `<div class="alert-item aw" style="cursor:pointer" onclick="viewEscalation('${d.id}')">
+          💬 <div><strong>${e.driverName}</strong> 客服需要關注 · ${t}
+          <div style="font-size:11px;color:var(--dim)">${e.triggerMessage?.slice(0,40)||''}...</div></div>
+        </div>`;
+      });
+      document.getElementById('dash-alerts').innerHTML = escHTML + alertsHTML;
+    }
+  } catch(e) { /* no escalations collection yet */ }
  
   // Driver status
   let drHTML = '';
@@ -1196,7 +1270,7 @@ function panelCommander(){return `
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-bottom:18px" id="toggle-grid"></div>
   <div class="glass-card" style="margin-bottom:14px">
     <div class="sh">
-      <div class="st" style="color:#a78bfa">🤖 AI 面試題目設定</div>
+      <div class="st" style="color:#a78bfa">🤖 面試專員題目設定</div>
       <button class="btn btn-p btn-sm" onclick="saveInterviewQuestions()">儲存題目</button>
     </div>
     <div class="info-box" style="margin-bottom:12px">
@@ -1214,7 +1288,7 @@ function panelCommander(){return `
       <div class="f-grp"><label class="f-lbl">二代健保率</label><input class="f-inp" value="2.11%" readonly></div>
       <div class="f-grp"><label class="f-lbl">勞保雇主費率</label><input class="f-inp" id="rate-labour" value="10.00%"></div>
       <div class="f-grp"><label class="f-lbl">健保雇主費率</label><input class="f-inp" id="rate-health" value="6.11%"></div>
-      <div class="f-grp"><label class="f-lbl">AI面試推薦門檻</label><input class="f-inp" id="rate-ai" value="70"></div>
+      <div class="f-grp"><label class="f-lbl">面試專員推薦門檻</label><input class="f-inp" id="rate-ai" value="70"></div>
       <div class="f-grp"><label class="f-lbl">證件到期預警天數</label><input class="f-inp" id="rate-warn" value="30"></div>
     </div>
     <button class="btn btn-p" onclick="saveRates()">儲存費率設定</button>
@@ -1226,7 +1300,7 @@ function panelCommander(){return `
 </div>`;}
  
 const TOGGLE_DEFS=[
-  {id:'recruit',icon:'🤖',name:'招募模組 AI',desc:'AI面試、職缺管理'},
+  {id:'recruit',icon:'🤖',name:'招募模組 AI',desc:'面試專員、職缺管理'},
   {id:'hr',icon:'👤',name:'人事模組',desc:'員工承攬管理'},
   {id:'attendance',icon:'📅',name:'出勤模組',desc:'班表請假加班'},
   {id:'insurance',icon:'🛡️',name:'勞健保模組',desc:'投保薪資選擇'},
@@ -1289,7 +1363,7 @@ window.saveInterviewQuestions = async () => {
   const questions = [...inputs].map(inp => inp.value.trim()).filter(Boolean);
   if(questions.length < 3){ showToast('至少需要 3 題','err'); return; }
   await setDoc(doc(db,'config','interviewQuestions'), { questions, updatedAt: serverTimestamp() });
-  await addAudit('UPDATE', `更新 AI 面試題目：${questions.length} 題`);
+  await addAudit('UPDATE', `更新 面試專員題目：${questions.length} 題`);
   showToast('✓ 面試題目已儲存，面試頁面即時生效');
 };
  
@@ -1404,7 +1478,7 @@ async function loadApplicants(){
   const el=document.getElementById('applicant-list');
   if(!el)return;
   if(snap.empty){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">尚無應徵者</div>';return;}
-  el.innerHTML=`<table class="tbl"><thead><tr><th>姓名</th><th>電話</th><th>AI評分</th><th>建議</th><th>時間</th><th></th></tr></thead><tbody>`+
+  el.innerHTML=`<table class="tbl"><thead><tr><th>姓名</th><th>電話</th><th>面試評分</th><th>建議</th><th>時間</th><th></th></tr></thead><tbody>`+
   snap.docs.map(d=>{
     const a=d.data();
     const score=a.aiScore||0;
@@ -1890,12 +1964,39 @@ ${CD?.name?.[0]||'?'}
           <div id="m-pass-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
         </div>
       </div>
+ 
+      <!-- CUSTOMER SERVICE -->
+      <div class="panel" id="panel-driver_cs">
+        <div style="display:flex;align-items:center;gap:10px;padding:14px 0 10px">
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👩</div>
+          <div>
+            <div style="font-size:14px;font-weight:700" id="cs-agent-name-display">客服專員</div>
+            <div style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:4px"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span>客服專員 · 線上中</div>
+          </div>
+          <div style="margin-left:auto;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">在地物流有限公司</div>
+        </div>
+        <div id="cs-chat-box" style="height:calc(100vh - 280px);min-height:300px;overflow-y:auto;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <input id="cs-input" class="f-inp" placeholder="請輸入您的問題..." style="flex:1;padding:11px 13px;font-size:14px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCSMessage();}">
+          <button onclick="sendCSMessage()" style="padding:11px 16px;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);border-radius:8px;color:#a78bfa;font-size:18px;cursor:pointer;flex-shrink:0">➜</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="cs-quick-btns">
+          <button onclick="sendCSQuick('薪資問題')" class="cs-quick-btn">💰 薪資問題</button>
+          <button onclick="sendCSQuick('請假申請')" class="cs-quick-btn">📅 請假申請</button>
+          <button onclick="sendCSQuick('上班時間')" class="cs-quick-btn">⏰ 上班時間</button>
+          <button onclick="sendCSQuick('配送路線')" class="cs-quick-btn">🗺️ 配送路線</button>
+          <button onclick="sendCSQuick('車輛問題')" class="cs-quick-btn">🚛 車輛問題</button>
+          <button onclick="sendCSQuick('查看公告')" class="cs-quick-btn">📢 查看公告</button>
+        </div>
+      </div>
+ 
     </div>
     <div class="bottom-nav">
       <button class="bnav-tab active" onclick="showDriverPanel('driver_home',this)"><span class="bnav-icon">⬡</span><span class="bnav-label">今日</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_report',this)"><span class="bnav-icon">📦</span><span class="bnav-label">回報</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_salary',this)"><span class="bnav-icon">💰</span><span class="bnav-label">薪資</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_announce',this)"><span class="bnav-icon">📢</span><span class="bnav-label">公告</span></button>
+      <button class="bnav-tab" onclick="showDriverPanel('driver_cs',this)"><span class="bnav-icon">💬</span><span class="bnav-label">客服</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_profile',this)"><span class="bnav-icon">👤</span><span class="bnav-label">設定</span></button>
     </div>
   </div>`;
@@ -1908,6 +2009,7 @@ window.showDriverPanel=(id,btn)=>{
   btn.classList.add('active');
   if(id==='driver_salary') loadDriverSalary();
   if(id==='driver_announce') loadDriverAnnounce();
+  if(id==='driver_cs') initCSChat();
 };
  
  
@@ -1926,6 +2028,209 @@ window.mChangePassword=async()=>{
     if(msgEl){msgEl.style.display='block';msgEl.style.color='#f87171';msgEl.textContent=e.code==='auth/requires-recent-login'?'請重新登入後再修改':e.message;}
   }
 };
+ 
+// ══════════════════════════════════════════════════════════
+// 客服專員「徐美玲」系統
+// ══════════════════════════════════════════════════════════
+// Random agent name pool - rotates per session
+const CS_AGENTS = [
+  {name:'徐美玲', emoji:'👩'},
+  {name:'陳美玲', emoji:'👩‍💼'},
+  {name:'林雅婷', emoji:'👩'},
+  {name:'徐美玲', emoji:'👩‍💼'},  
+];
+const _csAgent = CS_AGENTS[Math.floor(Math.random() * CS_AGENTS.length)];
+const CS_AGENT_NAME = _csAgent.name;
+const CS_AGENT_EMOJI = _csAgent.emoji;
+const CS_GEMINI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
+let csHistory = [];
+let csRepeatTracker = {}; // track repeated questions
+let csEscalated = false;  // true = escalated to boss (silent)
+let csInitialized = false;
+ 
+// Topics徐美玲 handles
+const CS_SYSTEM_PROMPT = `你是在地物流有限公司的客服專員「${CS_AGENT_NAME}」。
+你的個性：親切、耐心、專業，說話口吻像真人客服，絕對不透露自己是AI或機器人。
+你處理：薪資計算問題、請假申請、上班時間、配送路線、車輛疑問、公告查詢、一般助理。
+公司名稱：在地物流有限公司。
+回答要簡短自然，像真人傳訊息一樣，不要條列式。
+如果司機問的問題你不確定，說「我幫你確認一下，稍等」，然後給一個合理的回答。
+絕對不要說「我是AI」「我是機器人」「轉接」「升級」等字眼。
+如果用戶很生氣或問題很緊急，表現出更多關心和緊迫感，說「我馬上幫你處理」。`;
+ 
+async function initCSChat() {
+  if (csInitialized) return;
+  csInitialized = true;
+  csHistory = [];
+  csRepeatTracker = {};
+  csEscalated = false;
+ 
+  // Welcome message
+  const greetings = [
+    `${CD?.name||'您好'}，我是徐美玲😊 有什麼可以幫您的嗎？`,
+    `嗨 ${CD?.name||''}！我是美玲，今天有什麼需要幫忙的呢？`,
+    `您好！我是徐美玲，在地物流客服專員，請問有什麼事情嗎？`
+  ];
+  const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+  addCSMsg('agent', greeting);
+ 
+  // Update header with agent name
+  const nameDisplay = document.getElementById('cs-agent-name-display');
+  if (nameDisplay) nameDisplay.textContent = CS_AGENT_NAME;
+  
+  // Save opening to Firestore
+  await saveCSSession('init', greeting);
+}
+ 
+function addCSMsg(role, text, typing=false) {
+  const box = document.getElementById('cs-chat-box');
+  if (!box) return;
+ 
+  if (typing) {
+    const existing = document.getElementById('cs-typing');
+    if (existing) return;
+    const el = document.createElement('div');
+    el.id = 'cs-typing';
+    el.style.cssText = 'display:flex;gap:10px;margin-bottom:12px';
+    el.innerHTML = `
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👩</div>
+      <div style="display:flex;align-items:center;gap:4px;padding:10px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);border-radius:4px 12px 12px 12px">
+        <span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:typingDot 1s infinite"></span>
+        <span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:typingDot 1s 0.2s infinite"></span>
+        <span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:typingDot 1s 0.4s infinite"></span>
+      </div>`;
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+    return;
+  }
+ 
+  const typingEl = document.getElementById('cs-typing');
+  if (typingEl) typingEl.remove();
+ 
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:10px;margin-bottom:12px' + (role==='user'?';flex-direction:row-reverse':'');
+ 
+  if (role === 'agent') {
+    div.innerHTML = `
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👩</div>
+      <div>
+        <div style="font-size:10px;color:var(--dim);margin-bottom:3px;font-family:'JetBrains Mono',monospace">${CS_AGENT_NAME} · 客服專員</div>
+        <div style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);padding:10px 14px;border-radius:4px 12px 12px 12px;font-size:13.5px;line-height:1.6;max-width:85%">${text.replace(/\n/g,'<br>')}</div>
+      </div>`;
+  } else {
+    div.innerHTML = `
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:'Orbitron',monospace;flex-shrink:0">${(CD?.name||'我')[0]}</div>
+      <div>
+        <div style="font-size:10px;color:var(--dim);margin-bottom:3px;text-align:right;font-family:'JetBrains Mono',monospace">${CD?.name||'我'}</div>
+        <div style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18);padding:10px 14px;border-radius:12px 4px 12px 12px;font-size:13.5px;line-height:1.6;max-width:85%">${text}</div>
+      </div>`;
+  }
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+ 
+function detectEscalation(message) {
+  // Check anger / urgency keywords
+  const angryWords = ['生氣','不爽','爛','垃圾','投訴','客訴','混蛋','幹','靠','算了','不幹了','嚴重','緊急','馬上','立刻','要求'];
+  const isAngry = angryWords.some(w => message.includes(w));
+ 
+  // Check repeated questions (3+ times same topic)
+  const topic = message.slice(0,10);
+  csRepeatTracker[topic] = (csRepeatTracker[topic] || 0) + 1;
+  const isRepeated = csRepeatTracker[topic] >= 3;
+ 
+  return isAngry || isRepeated;
+}
+ 
+async function sendCSMessage() {
+  const input = document.getElementById('cs-input');
+  const text = input?.value.trim();
+  if (!text) return;
+  input.value = '';
+ 
+  addCSMsg('user', text);
+  csHistory.push({ role: 'user', parts: [{ text }] });
+ 
+  // Check escalation (silent)
+  if (detectEscalation(text) && !csEscalated) {
+    csEscalated = true;
+    // Silently notify boss via Firestore - NO UI indication
+    await saveCSEscalation(text);
+  }
+ 
+  // Show typing
+  addCSMsg('agent', '', true);
+ 
+  // Add slight random delay (1-2.5s) to feel more human
+  const delay = 1000 + Math.random() * 1500;
+  await new Promise(r => setTimeout(r, delay));
+ 
+  try {
+    const messages = [
+      { role: 'user', parts: [{ text: CS_SYSTEM_PROMPT + '\n\n司機資料：' + JSON.stringify({name: CD?.name, type: CD?.type, priceDelivery: CD?.priceDelivery, priceReverse: CD?.priceReverse, allowance: CD?.allowance}) }] },
+      { role: 'model', parts: [{ text: '好的，我是徐美玲，很高興為您服務！' }] },
+      ...csHistory.slice(-8) // keep last 8 messages for context
+    ];
+ 
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${CS_GEMINI_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: messages,
+        generationConfig: { temperature: 0.85, maxOutputTokens: 300 }
+      })
+    });
+    const data = await res.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '不好意思，我這邊稍微卡住了，可以再說一次嗎？😅';
+ 
+    csHistory.push({ role: 'model', parts: [{ text: reply }] });
+    addCSMsg('agent', reply);
+ 
+    // Save conversation
+    await saveCSSession(text, reply);
+  } catch(e) {
+    addCSMsg('agent', '不好意思，我這邊網路有點問題，可以稍後再試嗎？');
+  }
+}
+ 
+window.sendCSQuick = (topic) => {
+  const input = document.getElementById('cs-input');
+  if (input) { input.value = topic; sendCSMessage(); }
+};
+ 
+async function saveCSSession(userMsg, agentReply) {
+  try {
+    await addDoc(collection(db, 'csLogs'), {
+      driverUid: CU?.uid,
+      driverName: CD?.name,
+      userMessage: userMsg,
+      agentReply,
+      escalated: csEscalated,
+      timestamp: serverTimestamp()
+    });
+  } catch(e) { /* silent */ }
+}
+ 
+async function saveCSEscalation(triggerMsg) {
+  try {
+    await addDoc(collection(db, 'csEscalations'), {
+      driverUid: CU?.uid,
+      driverName: CD?.name,
+      triggerMessage: triggerMsg,
+      csHistory: csHistory.map(m => ({ role: m.role, text: m.parts[0].text })),
+      status: 'pending',
+      timestamp: serverTimestamp()
+    });
+  } catch(e) { /* silent */ }
+}
+ 
+// Add typing animation CSS
+const csStyle = document.createElement('style');
+csStyle.textContent = `
+@keyframes typingDot { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-4px);opacity:1} }
+`;
+document.head.appendChild(csStyle);
+ 
  
 async function initDriver(){
   await loadDriverHome();
