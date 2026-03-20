@@ -2631,8 +2631,6 @@ async function exportDriverSalaryPDF(uid, name){
 }
  
 // ── REAL-TIME DRIVER STATUS ───────────────────────────────
-let _realtimeUnsub = null;
- 
 function setupDriverRealtime(drivers){
   if(_realtimeUnsub) _realtimeUnsub(); // cleanup old listener
   
