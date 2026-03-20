@@ -2526,7 +2526,10 @@ ${CD?.name?.[0]||'?'}
     <div class="bottom-nav">
       <button class="bnav-tab active" onclick="showDriverPanel('driver_home',this)"><span class="bnav-icon">⬡</span><span class="bnav-label">今日</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_report',this)"><span class="bnav-icon">📦</span><span class="bnav-label">回報</span></button>
-      <button class="bnav-tab" onclick="showDriverPanel('driver_salary',this)"><span class="bnav-icon">💰</span><span class="bnav-label">薪資</span></button>
+      <button class="bnav-tab" onclick="showDriverPanel('driver_salary',this)" id="salary-tab-btn">
+        <span class="bnav-icon">💰<span id="payslip-badge" style="display:none;position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:#f87171;animation:pulse 2s infinite;border:2px solid #000"></span></span>
+        <span class="bnav-label">薪資單</span>
+      </button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_announce',this)"><span class="bnav-icon">📢</span><span class="bnav-label">公告</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_cs',this)"><span class="bnav-icon">💬</span><span class="bnav-label">客服</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_profile',this)"><span class="bnav-icon">👤</span><span class="bnav-label">設定</span></button>
@@ -2539,7 +2542,7 @@ window.showDriverPanel=(id,btn)=>{
   document.querySelectorAll('.bnav-tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('panel-'+id)?.classList.add('active');
   btn.classList.add('active');
-  if(id==='driver_salary') loadDriverSalary();
+  if(id==='driver_salary'){ loadDriverSalary(); loadDriverPayslip(); }
   if(id==='driver_announce') loadDriverAnnounce();
   if(id==='driver_cs') initCSChat();
 };
@@ -3064,8 +3067,315 @@ async function loadRealtimeDriverStatus(){
   );
 }
  
+// ══════════════════════════════════════════════════════════
+// 電子薪資單系統
+// ══════════════════════════════════════════════════════════
+ 
+// Send payslip to one driver
+window.sendPayslip = async (uid, name, month) => {
+  month = month || MONTH;
+  try {
+    // Get driver data
+    const uSnap = await getDoc(doc(db,'users',uid));
+    if(!uSnap.exists()){ showToast('找不到員工資料','err'); return; }
+    const u = uSnap.data();
+ 
+    // Get monthly stats
+    const mSnap = await getDoc(doc(db,'monthlyStats',`${uid}_${month}`));
+    const td = mSnap.exists() ? mSnap.data().totalDelivery||0 : 0;
+    const tr = mSnap.exists() ? mSnap.data().totalReverse||0 : 0;
+    const gross = td*(u.priceDelivery||50) + tr*(u.priceReverse||35) + (u.allowance||0);
+    const labEmp = u.labourEmployee||0;
+    const hlthEmp = u.healthEmployee||0;
+    const deduct = u.regularDeduct||0;
+    const net = gross - labEmp - hlthEmp - deduct;
+ 
+    // Get last month for comparison
+    const [yr,mn] = month.split('-').map(Number);
+    const prevMn = mn===1 ? `${yr-1}-12` : `${yr}-${String(mn-1).padStart(2,'0')}`;
+    const pmSnap = await getDoc(doc(db,'monthlyStats',`${uid}_${prevMn}`));
+    const pmTd = pmSnap.exists() ? pmSnap.data().totalDelivery||0 : 0;
+    const pmTr = pmSnap.exists() ? pmSnap.data().totalReverse||0 : 0;
+    const pmGross = pmTd*(u.priceDelivery||50) + pmTr*(u.priceReverse||35) + (u.allowance||0);
+    const pmNet = pmGross - labEmp - hlthEmp - deduct;
+ 
+    // Create payslip document in Firestore
+    const psRef = doc(db,'payslips',`${uid}_${month}`);
+    await setDoc(psRef, {
+      uid, name: u.name, month,
+      deliveryQty: td, reverseQty: tr,
+      priceDelivery: u.priceDelivery||50,
+      priceReverse: u.priceReverse||35,
+      allowance: u.allowance||0,
+      grossIncome: gross,
+      labourEmployee: labEmp,
+      healthEmployee: hlthEmp,
+      regularDeduct: deduct,
+      netIncome: net,
+      prevMonthNet: pmNet,
+      sentAt: serverTimestamp(),
+      sentBy: CD?.name||'系統',
+      read: false
+    });
+ 
+    await addAudit('PAYSLIP', `發送薪資單：${u.name} ${month} 實發 $${net.toLocaleString()}`);
+    showToast('✓ 已發送薪資單給 ' + u.name);
+    return true;
+  } catch(e) {
+    showToast('發送失敗：'+e.message,'err');
+    return false;
+  }
+};
+ 
+// Send to all drivers
+window.sendAllPayslips = async () => {
+  const btn = document.querySelector('.btn-s[onclick*="sendAllPayslips"]') ||
+    [...document.querySelectorAll('.btn-s')].find(b=>b.textContent.includes('發送薪資單'));
+  if(btn){ btn.disabled=true; btn.textContent='發送中...'; }
+ 
+  try {
+    const snap = await getDocs(query(collection(db,'users'),where('role','==','driver'),where('status','!=','resigned')));
+    let count = 0;
+    for(const d of snap.docs){
+      const ok = await sendPayslip(d.id, d.data().name, MONTH);
+      if(ok) count++;
+    }
+    showToast(`✓ 已發送 ${count} 份薪資單`);
+  } catch(e) {
+    showToast('發送失敗：'+e.message,'err');
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='📨 發送薪資單給所有司機'; }
+  }
+};
+ 
+// ── DRIVER: Load payslip detail ──────────────────────────
+async function loadDriverPayslip(month){
+  month = month || MONTH;
+  const el = document.getElementById('driver-payslip-detail');
+  if(!el) return;
+ 
+  el.innerHTML = '<div style="color:var(--dim);font-size:12px;text-align:center;padding:20px">載入中...</div>';
+ 
+  try {
+    // First try payslip record (sent by accountant)
+    const psSnap = await getDoc(doc(db,'payslips',`${CU.uid}_${month}`));
+ 
+    let data;
+    if(psSnap.exists()){
+      data = psSnap.data();
+      // Mark as read
+      if(!data.read) await updateDoc(doc(db,'payslips',`${CU.uid}_${month}`),{read:true});
+    } else {
+      // Calculate on the fly
+      const mSnap = await getDoc(doc(db,'monthlyStats',`${CU.uid}_${month}`));
+      const td = mSnap.exists() ? mSnap.data().totalDelivery||0 : 0;
+      const tr = mSnap.exists() ? mSnap.data().totalReverse||0 : 0;
+      const gross = td*(CD?.priceDelivery||50) + tr*(CD?.priceReverse||35) + (CD?.allowance||0);
+      const labEmp = CD?.labourEmployee||0;
+      const hlthEmp = CD?.healthEmployee||0;
+      const deduct = CD?.regularDeduct||0;
+      data = {
+        deliveryQty:td, reverseQty:tr,
+        priceDelivery:CD?.priceDelivery||50,
+        priceReverse:CD?.priceReverse||35,
+        allowance:CD?.allowance||0,
+        grossIncome:gross,
+        labourEmployee:labEmp,
+        healthEmployee:hlthEmp,
+        regularDeduct:deduct,
+        netIncome:gross-labEmp-hlthEmp-deduct,
+        sentAt:null
+      };
+    }
+ 
+    const issued = data.sentAt ? '已核發 · ' + data.sentAt.toDate?.().toLocaleDateString('zh-TW') : '預覽（尚未核發）';
+    const net = data.netIncome||0;
+    const gross = data.grossIncome||0;
+ 
+    // Get prev month for comparison
+    const [yr,mn] = month.split('-').map(Number);
+    const prevMn = mn===1 ? `${yr-1}-12` : `${yr}-${String(mn-1).padStart(2,'0')}`;
+    const pmSnap = await getDoc(doc(db,'payslips',`${CU.uid}_${prevMn}`));
+    const prevNet = pmSnap.exists() ? pmSnap.data().netIncome||0 : 0;
+    const diff = net - prevNet;
+    const diffColor = diff>=0 ? '#34d399' : '#f87171';
+    const diffText = diff>=0 ? `▲ +$${diff.toLocaleString()}` : `▼ -$${Math.abs(diff).toLocaleString()}`;
+ 
+    el.innerHTML = `
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.15);border-radius:12px;padding:18px;margin-bottom:12px">
+        <!-- HEADER -->
+        <div style="text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06)">
+          <div style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:4px">在地物流有限公司</div>
+          <div style="font-size:16px;font-weight:700">${month} 薪資明細</div>
+          <div style="font-size:10px;color:var(--dim);margin-top:4px;font-family:'JetBrains Mono',monospace">${issued}</div>
+        </div>
+ 
+        <!-- 實發金額 大字 -->
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:11px;color:var(--dim);margin-bottom:4px">本月實發金額</div>
+          <div style="font-family:'Orbitron',monospace;font-size:36px;font-weight:700;color:#34d399">$${net.toLocaleString()}</div>
+          ${prevNet>0 ? `<div style="font-size:11px;color:${diffColor};margin-top:4px;font-family:'JetBrains Mono',monospace">${diffText} 較上月</div>` : ''}
+        </div>
+ 
+        <!-- 收入明細 -->
+        <div style="margin-bottom:10px">
+          <div style="font-size:10px;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:8px;letter-spacing:1px">── 收入明細</div>
+          <div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);border-radius:6px;margin-bottom:5px">
+            <span style="font-size:12px;color:var(--mid)">配送件數 ${data.deliveryQty||0} 件 × $${data.priceDelivery||50}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#34d399">+$${((data.deliveryQty||0)*(data.priceDelivery||50)).toLocaleString()}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);border-radius:6px;margin-bottom:5px">
+            <span style="font-size:12px;color:var(--mid)">逆物流件數 ${data.reverseQty||0} 件 × $${data.priceReverse||35}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#34d399">+$${((data.reverseQty||0)*(data.priceReverse||35)).toLocaleString()}</span>
+          </div>
+          ${(data.allowance||0)>0 ? `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);border-radius:6px;margin-bottom:5px">
+            <span style="font-size:12px;color:var(--mid)">津貼補助</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#34d399">+$${(data.allowance||0).toLocaleString()}</span>
+          </div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:6px;margin-bottom:5px">
+            <span style="font-size:12px;font-weight:600">應發小計</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600">$${gross.toLocaleString()}</span>
+          </div>
+        </div>
+ 
+        <!-- 扣除明細 -->
+        <div style="margin-bottom:10px">
+          <div style="font-size:10px;color:#f87171;font-family:'JetBrains Mono',monospace;margin-bottom:8px;letter-spacing:1px">── 扣除明細</div>
+          ${(data.labourEmployee||0)>0 ? `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.1);border-radius:6px;margin-bottom:5px">
+            <span style="font-size:12px;color:var(--mid)">勞保（員工負擔）</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#f87171">-$${(data.labourEmployee||0).toLocaleString()}</span>
+          </div>` : ''}
+          ${(data.healthEmployee||0)>0 ? `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.1);border-radius:6px;margin-bottom:5px">
+            <span style="font-size:12px;color:var(--mid)">健保（員工負擔）</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#f87171">-$${(data.healthEmployee||0).toLocaleString()}</span>
+          </div>` : ''}
+          ${(data.regularDeduct||0)>0 ? `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.1);border-radius:6px;margin-bottom:5px">
+            <span style="font-size:12px;color:var(--mid)">代扣費用</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#f87171">-$${(data.regularDeduct||0).toLocaleString()}</span>
+          </div>` : ''}
+        </div>
+ 
+        <!-- 實發 -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:8px">
+          <span style="font-size:14px;font-weight:700">本月實發</span>
+          <span style="font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:#34d399">$${net.toLocaleString()}</span>
+        </div>
+ 
+        <!-- Download PDF -->
+        <button onclick="downloadPayslipPDF('${month}')" style="width:100%;margin-top:12px;padding:11px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer;font-family:'JetBrains Mono',monospace;letter-spacing:1px">
+          📄 下載薪資單 PDF
+        </button>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div style="color:#f87171;font-size:12px;text-align:center;padding:20px">${e.message}</div>`;
+  }
+}
+ 
+// Download payslip as PDF (print dialog)
+window.downloadPayslipPDF = async (month) => {
+  month = month || MONTH;
+  const psSnap = await getDoc(doc(db,'payslips',`${CU.uid}_${month}`));
+  const mSnap = await getDoc(doc(db,'monthlyStats',`${CU.uid}_${month}`));
+ 
+  const ps = psSnap.exists() ? psSnap.data() : {};
+  const td = mSnap.exists() ? mSnap.data().totalDelivery||0 : ps.deliveryQty||0;
+  const tr2 = mSnap.exists() ? mSnap.data().totalReverse||0 : ps.reverseQty||0;
+  const pd = ps.priceDelivery||CD?.priceDelivery||50;
+  const pr = ps.priceReverse||CD?.priceReverse||35;
+  const allow = ps.allowance||CD?.allowance||0;
+  const gross = td*pd + tr2*pr + allow;
+  const labE = ps.labourEmployee||CD?.labourEmployee||0;
+  const hlthE = ps.healthEmployee||CD?.healthEmployee||0;
+  const ded = ps.regularDeduct||CD?.regularDeduct||0;
+  const net = gross - labE - hlthE - ded;
+  const issued = ps.sentAt ? ps.sentAt.toDate?.().toLocaleDateString('zh-TW') : new Date().toLocaleDateString('zh-TW');
+ 
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Microsoft JhengHei',sans-serif;padding:30px 36px;color:#1e293b;max-width:520px;}
+    .header{text-align:center;border-bottom:2px solid #e2e8f0;padding-bottom:16px;margin-bottom:20px;}
+    .company{font-size:18px;font-weight:700;color:#0f172a;letter-spacing:1px;}
+    .title{font-size:13px;color:#64748b;margin-top:4px;}
+    .meta{display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:20px;padding:10px 14px;background:#f8fafc;border-radius:6px;}
+    .section-title{font-size:11px;font-weight:600;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;margin-top:16px;}
+    .row{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
+    .row.income .val{color:#16a34a;font-weight:600;}
+    .row.deduct .val{color:#dc2626;font-weight:600;}
+    .row.total{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-weight:700;font-size:15px;margin-top:12px;padding:12px 14px;}
+    .row.total .val{color:#16a34a;font-size:17px;}
+    .footer{text-align:center;font-size:10px;color:#94a3b8;margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;}
+    @media print{body{padding:20px;}}
+  </style></head><body>
+  <div class="header">
+    <div class="company">在地物流有限公司</div>
+    <div class="title">${month} 員工薪資明細單</div>
+  </div>
+  <div class="meta">
+    <div>員工姓名：<strong>${CD?.name||''}</strong></div>
+    <div>核發日期：${issued}</div>
+  </div>
+  <div class="section-title">收入明細</div>
+  <div class="row income"><span>配送件數 ${td}件 × $${pd}</span><span class="val">+$${(td*pd).toLocaleString()}</span></div>
+  <div class="row income"><span>逆物流件數 ${tr2}件 × $${pr}</span><span class="val">+$${(tr2*pr).toLocaleString()}</span></div>
+  ${allow>0?`<div class="row income"><span>津貼補助</span><span class="val">+$${allow.toLocaleString()}</span></div>`:''}
+  <div class="row"><span>應發小計</span><span><strong>$${gross.toLocaleString()}</strong></span></div>
+  ${labE>0||hlthE>0||ded>0?`<div class="section-title">扣除明細</div>`:''}
+  ${labE>0?`<div class="row deduct"><span>勞保（員工負擔）</span><span class="val">-$${labE.toLocaleString()}</span></div>`:''}
+  ${hlthE>0?`<div class="row deduct"><span>健保（員工負擔）</span><span class="val">-$${hlthE.toLocaleString()}</span></div>`:''}
+  ${ded>0?`<div class="row deduct"><span>代扣費用</span><span class="val">-$${ded.toLocaleString()}</span></div>`:''}
+  <div class="row total"><span>本月實發金額</span><span class="val">$${net.toLocaleString()}</span></div>
+  <div class="footer">在地物流有限公司 · 本薪資單由系統自動產生 · 如有疑問請聯繫管理人員</div>
+  </body></html>`;
+ 
+  const w = window.open('','_blank');
+  if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500); }
+};
+ 
+// Check unread payslips notification
+async function checkUnreadPayslips(){
+  try {
+    const snap = await getDocs(query(
+      collection(db,'payslips'),
+      where('uid','==',CU.uid),
+      where('read','==',false)
+    ));
+    if(!snap.empty){
+      const el = document.getElementById('payslip-badge');
+      if(el) el.style.display='block';
+      // Show notification toast
+      showToast('💰 您有 '+snap.size+' 份新薪資單，請至「薪資單」查看');
+    }
+  } catch(e) { /* silent */ }
+}
+ 
+// Real-time payslip listener - fires when new payslip arrives
+function listenPayslips(){
+  if(!CU?.uid) return;
+  onSnapshot(
+    query(collection(db,'payslips'), where('uid','==',CU.uid), where('read','==',false)),
+    (snap) => {
+      const el = document.getElementById('payslip-badge');
+      if(snap.empty){
+        if(el) el.style.display='none';
+      } else {
+        if(el) el.style.display='block';
+        // Only toast on new additions (not initial load)
+        snap.docChanges().forEach(ch=>{
+          if(ch.type==='added'){
+            const d = ch.doc.data();
+            showToast('💰 新薪資單到了！'+d.month+' 實發 $'+(d.netIncome||0).toLocaleString());
+          }
+        });
+      }
+    }
+  );
+}
+ 
 async function initDriver(){
   await loadDriverHome();
+  checkUnreadPayslips();
+  listenPayslips();
   await loadCheckinStatus();
   initSlide();
   // load phone
