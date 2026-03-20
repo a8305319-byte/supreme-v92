@@ -17,7 +17,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
  
 /* ===== LOADING ===== */
-#loading-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;animation:ldHide 0.5s ease 2s forwards;}
+#loading-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;}
 .ld-logo{font-family:'Orbitron',monospace;font-size:20px;color:var(--accent);letter-spacing:3px;text-shadow:0 0 30px rgba(0,212,255,0.5);margin-bottom:8px;}
 .ld-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:28px;}
 .ld-bar{width:220px;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;overflow:hidden;}
@@ -365,11 +365,10 @@ const fbApp = initializeApp(FB);
 const auth  = getAuth(fbApp);
 const db    = getFirestore(fbApp);
  
-// Fallback: if Firebase doesn't respond in 8s, show login screen
-setTimeout(()=>{
-  const ls=document.getElementById('loading-screen');
-  if(ls&&ls.style.display!=='none'){
-    showLogin();
+// Last resort fallback - only if Firebase never responded
+const _hardTimeout = setTimeout(()=>{
+  if(!_appReady){
+    showLoginScreen();
   }
 },8000);
  
@@ -470,7 +469,11 @@ const _fb_timeout = setTimeout(()=>{
  
 // ── AUTH LISTENER ─────────────────────────────────────────
 onAuthStateChanged(auth, async user => {
-  if (!user) { showLogin(); return; }
+  if (!user) {
+    if (_appReady) return; // app already running, ignore
+    showLogin(); // user truly not logged in
+    return;
+  }
   CU = user;
   ldMsg('載入使用者資料...');
   try {
@@ -493,10 +496,41 @@ onAuthStateChanged(auth, async user => {
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('app').style.display='block';
     _appReady = true;
+    clearTimeout(_hardTimeout);
   } catch(e) {
     console.error('Load error:', e);
-    showToast('載入失敗，請重新整理','err');
-    showLogin();
+    if(e.code === 'unavailable' || e.message?.includes('offline') || e.message?.includes('client is offline')){
+      // Network offline - retry after 3 seconds
+      ldMsg('網路連線中，請稍候...');
+      setTimeout(async()=>{
+        try {
+          const snap2 = await getDoc(doc(db,'users', CU.uid));
+          if(snap2.exists()){
+            CD = snap2.data();
+            ROLE = CD.role;
+            if(ROLE==='commander'){
+              const cfgSnap=await getDoc(doc(db,'config','modules'));
+              if(cfgSnap.exists()) Object.assign(moduleToggles,cfgSnap.data());
+            }
+            ldMsg('建立介面...');
+            await buildApp();
+            document.getElementById('loading-screen').style.display='none';
+            document.getElementById('app').style.display='block';
+            _appReady=true;
+            clearTimeout(_hardTimeout);
+          } else {
+            showToast('帳號未設定角色，請聯絡管理員','err');
+            showLogin();
+          }
+        } catch(e2){
+          showToast('網路連線失敗，請檢查網路後重試','err');
+          showLogin();
+        }
+      }, 3000);
+    } else {
+      showToast('載入失敗：'+e.message,'err');
+      showLogin();
+    }
   }
 });
  
