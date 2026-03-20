@@ -1887,17 +1887,185 @@ async function loadSalaryList(){
 // ── FINANCE ───────────────────────────────────────────────
 function panelFinance(){return `
 <div id="panel-finance" class="panel">
-  <div class="glass-card">
-    <div class="sh"><div class="st">📊 本月損益概覽</div><span class="badge bb">${MONTH}</span></div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;justify-content:space-between;padding:10px;background:rgba(16,185,129,0.06);border-radius:6px;border:1px solid rgba(16,185,129,0.15)"><span style="font-size:13px;color:var(--mid)">配送總收入</span><span style="font-family:'Orbitron',monospace;color:#34d399">+$2,974,400</span></div>
-      <div style="display:flex;justify-content:space-between;padding:10px;background:rgba(239,68,68,0.06);border-radius:6px;border:1px solid rgba(239,68,68,0.15)"><span style="font-size:13px;color:var(--mid)">薪資支出</span><span style="font-family:'Orbitron',monospace;color:#f87171">−$1,240,000</span></div>
-      <div style="display:flex;justify-content:space-between;padding:10px;background:rgba(239,68,68,0.06);border-radius:6px;border:1px solid rgba(239,68,68,0.15)"><span style="font-size:13px;color:var(--mid)">勞健保雇主負擔</span><span style="font-family:'Orbitron',monospace;color:#f87171" id="fin-ins-er">計算中</span></div>
-      <div style="display:flex;justify-content:space-between;padding:10px;background:rgba(239,68,68,0.06);border-radius:6px;border:1px solid rgba(239,68,68,0.15)"><span style="font-size:13px;color:var(--mid)">油資 + 維修</span><span style="font-family:'Orbitron',monospace;color:#f87171">−$447,400</span></div>
-      <div style="display:flex;justify-content:space-between;padding:12px;background:rgba(0,212,255,0.07);border-radius:6px;border:1px solid rgba(0,212,255,0.22)"><span style="font-size:14px;font-weight:700">本月淨利</span><span style="font-family:'Orbitron',monospace;color:var(--accent);font-size:18px">+$203,940</span></div>
+
+  <!-- 月份選擇 -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <input type="month" id="fin-month" class="f-inp" style="width:160px;padding:7px 10px" value="${MONTH}">
+    <button class="btn btn-p btn-sm" onclick="loadFinance(document.getElementById('fin-month').value)">載入</button>
+    <button class="btn btn-g btn-sm" onclick="exportFinanceExcel()">📊 匯出</button>
+    <span id="fin-loading" style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;display:none">計算中...</span>
+  </div>
+
+  <!-- 損益概覽 -->
+  <div class="glass-card" style="margin-bottom:14px">
+    <div class="sh">
+      <div class="st">📊 損益概覽</div>
+      <span class="badge bb" id="fin-month-label">${MONTH}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px" id="fin-rows">
+      <div style="color:var(--dim);font-size:12px;text-align:center;padding:20px">點擊「載入」計算本月損益</div>
     </div>
   </div>
+
+  <!-- 費用輸入（油資/維修/其他） -->
+  <div class="glass-card" style="margin-bottom:14px">
+    <div class="sh">
+      <div class="st">⛽ 費用輸入</div>
+      <button class="btn btn-p btn-sm" onclick="saveFinanceExpenses()">儲存</button>
+    </div>
+    <div class="g2" style="gap:10px">
+      <div class="f-grp"><label class="f-lbl">油資費用 ($)</label><input class="f-inp" id="fin-fuel" type="number" placeholder="0"></div>
+      <div class="f-grp"><label class="f-lbl">車輛維修 ($)</label><input class="f-inp" id="fin-repair" type="number" placeholder="0"></div>
+      <div class="f-grp"><label class="f-lbl">其他費用 ($)</label><input class="f-inp" id="fin-other" type="number" placeholder="0"></div>
+      <div class="f-grp"><label class="f-lbl">費用備註</label><input class="f-inp" id="fin-note" placeholder="說明費用內容"></div>
+    </div>
+  </div>
+
+  <!-- 月份趨勢 -->
+  <div class="glass-card">
+    <div class="sh"><div class="st">📈 近6月趨勢</div></div>
+    <div id="fin-trend" style="color:var(--dim);font-size:12px;text-align:center;padding:14px">載入中...</div>
+  </div>
 </div>`;}
+
+// ── FINANCE REAL DATA ─────────────────────────────────────
+window.loadFinance = async function loadFinance(month){
+  month = month || MONTH;
+  document.getElementById('fin-month-label').textContent = month;
+  document.getElementById('fin-loading').style.display = 'inline';
+
+  try {
+    // 1. 計算所有司機薪資（真實數據）
+    const usersSnap = await getDocs(query(collection(db,'users'), where('role','==','driver')));
+    let totalGross = 0, totalNet = 0, totalLabourEr = 0, totalHealthEr = 0;
+
+    for(const d of usersSnap.docs){
+      const u = d.data();
+      if(u.status === 'resigned') continue;
+      const mSnap = await getDoc(doc(db,'monthlyStats',`${d.id}_${month}`));
+      const td = mSnap.exists() ? mSnap.data().totalDelivery||0 : 0;
+      const tr = mSnap.exists() ? mSnap.data().totalReverse||0 : 0;
+      const gross = td*(u.priceDelivery||50) + tr*(u.priceReverse||35) + (u.allowance||0);
+      const net = gross - (u.labourEmployee||0) - (u.healthEmployee||0) - (u.regularDeduct||0);
+      totalGross += gross;
+      totalNet += net;
+      totalLabourEr += (u.labourEmployer||0);
+      totalHealthEr += (u.healthEmployer||0);
+    }
+    const totalInsEr = totalLabourEr + totalHealthEr;
+
+    // 2. 讀取費用（油資/維修/其他）
+    const expSnap = await getDoc(doc(db,'financeExpenses',month));
+    const fuel = expSnap.exists() ? expSnap.data().fuel||0 : 0;
+    const repair = expSnap.exists() ? expSnap.data().repair||0 : 0;
+    const other = expSnap.exists() ? expSnap.data().other||0 : 0;
+    const totalExp = fuel + repair + other;
+
+    // Prefill inputs
+    if(document.getElementById('fin-fuel')) document.getElementById('fin-fuel').value = fuel||'';
+    if(document.getElementById('fin-repair')) document.getElementById('fin-repair').value = repair||'';
+    if(document.getElementById('fin-other')) document.getElementById('fin-other').value = other||'';
+    if(document.getElementById('fin-note')) document.getElementById('fin-note').value = expSnap.exists()?expSnap.data().note||'':'';
+
+    // 3. Calculate P&L
+    const totalDeductions = totalNet + totalInsEr + totalExp; // total cash out
+    const netProfit = totalGross - totalNet - totalInsEr - totalExp;
+
+    // 4. Render rows
+    const rows = document.getElementById('fin-rows');
+    if(!rows) return;
+
+    const row = (label, amount, type='income') => {
+      const color = type==='income' ? '#34d399' : type==='expense' ? '#f87171' : 'var(--accent)';
+      const bg = type==='income' ? 'rgba(16,185,129,0.06)' : type==='expense' ? 'rgba(239,68,68,0.06)' : 'rgba(0,212,255,0.07)';
+      const bdr = type==='income' ? 'rgba(16,185,129,0.15)' : type==='expense' ? 'rgba(239,68,68,0.15)' : 'rgba(0,212,255,0.22)';
+      const sign = type==='income' ? '+' : type==='expense' ? '−' : (amount>=0?'+':'');
+      const absAmt = Math.abs(amount);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:${bg};border-radius:7px;border:1px solid ${bdr}">
+        <span style="font-size:13px;color:var(--mid)">${label}</span>
+        <span style="font-family:'Orbitron',monospace;color:${color};font-size:13px">${sign}$${absAmt.toLocaleString()}</span>
+      </div>`;
+    };
+
+    rows.innerHTML = `
+      ${row('配送總收入（實發前）', totalGross, 'income')}
+      ${row('薪資支出（實發合計）', totalNet, 'expense')}
+      ${row('勞健保雇主負擔', totalInsEr, 'expense')}
+      ${fuel>0||repair>0?row(`油資($${fuel.toLocaleString()}) + 維修($${repair.toLocaleString()})`, fuel+repair, 'expense'):''}
+      ${other>0?row('其他費用', other, 'expense'):''}
+      <div style="height:1px;background:var(--border);margin:4px 0"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:${netProfit>=0?'rgba(0,212,255,0.07)':'rgba(239,68,68,0.07)'};border-radius:8px;border:1px solid ${netProfit>=0?'rgba(0,212,255,0.22)':'rgba(239,68,68,0.25)'}">
+        <span style="font-size:15px;font-weight:700">本月淨利</span>
+        <span style="font-family:'Orbitron',monospace;color:${netProfit>=0?'var(--accent)':'#f87171'};font-size:20px;font-weight:700">${netProfit>=0?'+':''}$${netProfit.toLocaleString()}</span>
+      </div>
+      <div style="font-size:10px;color:var(--dim);text-align:right;margin-top:4px;font-family:'JetBrains Mono',monospace">
+        ✓ 數據來源：Firebase 即時計算 · ${new Date().toLocaleTimeString('zh-TW')}
+      </div>
+    `;
+
+    // Save monthly summary to Firestore
+    await setDoc(doc(db,'financeMonthly',month),{
+      month, totalGross, totalNet, totalInsEr, totalExp, netProfit,
+      updatedAt: serverTimestamp()
+    },{merge:true});
+
+    // Load trend
+    loadFinanceTrend();
+
+  } catch(e){
+    console.error('Finance error:', e);
+    showToast('財務計算失敗：'+e.message,'err');
+  } finally {
+    document.getElementById('fin-loading').style.display = 'none';
+  }
+}
+
+window.saveFinanceExpenses = async () => {
+  const month = document.getElementById('fin-month')?.value || MONTH;
+  const fuel = +document.getElementById('fin-fuel')?.value||0;
+  const repair = +document.getElementById('fin-repair')?.value||0;
+  const other = +document.getElementById('fin-other')?.value||0;
+  const note = document.getElementById('fin-note')?.value||'';
+  await setDoc(doc(db,'financeExpenses',month),{
+    month, fuel, repair, other, note, updatedAt:serverTimestamp()
+  });
+  await addAudit('FINANCE',`儲存 ${month} 費用：油資$${fuel} 維修$${repair} 其他$${other}`);
+  showToast('✓ 費用已儲存');
+  loadFinance(month);
+};
+
+async function loadFinanceTrend(){
+  const el = document.getElementById('fin-trend');
+  if(!el) return;
+  // Load last 6 months
+  const months = [];
+  const [yr,mn] = MONTH.split('-').map(Number);
+  for(let i=5;i>=0;i--){
+    let m=mn-i, y=yr;
+    if(m<=0){m+=12;y--;}
+    months.push(`${y}-${String(m).padStart(2,'0')}`);
+  }
+  const data = await Promise.all(months.map(m=>
+    getDoc(doc(db,'financeMonthly',m)).then(s=>({month:m,...(s.exists()?s.data():{})}))
+  ));
+  const maxProfit = Math.max(...data.map(d=>Math.abs(d.netProfit||0)),1);
+  el.innerHTML = `<div style="display:flex;gap:6px;align-items:flex-end;height:80px;padding:0 4px">
+    ${data.map(d=>{
+      const h = d.netProfit ? Math.round(Math.abs(d.netProfit)/maxProfit*70) : 2;
+      const color = d.netProfit>0?'#34d399':d.netProfit<0?'#f87171':'rgba(255,255,255,0.1)';
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace">${d.netProfit?'$'+(Math.abs(d.netProfit/1000).toFixed(0))+'K':'-'}</div>
+        <div style="width:100%;background:${color};border-radius:3px 3px 0 0;height:${h}px;min-height:2px;opacity:0.8"></div>
+        <div style="font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace">${d.month.slice(5)}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+window.exportFinanceExcel = async () => {
+  const month = document.getElementById('fin-month')?.value || MONTH;
+  await exportExcelReport(month);
+};
 
 // ── OPERATIONS ────────────────────────────────────────────
 function panelOperations(){return `
