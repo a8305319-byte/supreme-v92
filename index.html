@@ -700,6 +700,59 @@ window.viewEscalation = async(id) => {
   alert('司機：'+e.driverName+'\n觸發訊息：'+e.triggerMessage+'\n\n最近對話：\n'+hist);
 };
  
+window.openDirectOnboard = () => {
+  document.getElementById('direct-onboard-modal').style.display='block';
+  document.getElementById('add-user-modal').style.display='none';
+};
+ 
+window.saveDirectOnboard = async () => {
+  const uid = document.getElementById('do-uid').value.trim();
+  const name = document.getElementById('do-name').value.trim();
+  const email = document.getElementById('do-email').value.trim();
+  const msg = document.getElementById('do-msg');
+  
+  if(!uid){ showToast('請填寫 Firebase UID','err'); return; }
+  if(!name){ showToast('請填寫姓名','err'); return; }
+  if(!email){ showToast('請填寫 Email','err'); return; }
+ 
+  const data = {
+    name, email,
+    phone: document.getElementById('do-phone').value||'',
+    role: document.getElementById('do-role').value,
+    type: document.getElementById('do-type').value,
+    priceDelivery: +document.getElementById('do-price-d').value||50,
+    priceReverse: +document.getElementById('do-price-r').value||35,
+    allowance: +document.getElementById('do-allowance').value||2000,
+    regularDeduct: +document.getElementById('do-deduct').value||500,
+    licenseType: document.getElementById('do-license-type').value,
+    licenseExpiry: document.getElementById('do-license-exp').value,
+    insuranceExpiry: document.getElementById('do-ins-exp').value,
+    onboardedDirectly: true,
+    onboardedAt: serverTimestamp(),
+    onboardedBy: CD?.name||'Commander',
+    createdAt: serverTimestamp()
+  };
+ 
+  try {
+    await setDoc(doc(db,'users',uid), data);
+    await addAudit('CREATE', `快速入職：${name} (${email}) 角色:${data.role}`);
+    
+    if(msg){ msg.style.display='block'; msg.style.color='#34d399'; 
+      msg.textContent='✓ 入職資料已建立！請在 Firebase Console 確認帳號已建立。'; }
+    showToast('✓ '+name+' 入職資料已建立');
+    
+    // Clear form
+    ['do-name','do-email','do-phone','do-uid'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.value='';
+    });
+    
+    await loadHR();
+  } catch(e) {
+    showToast('建立失敗：'+e.message,'err');
+    if(msg){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='失敗：'+e.message; }
+  }
+};
+ 
 window.showPanel = function(id) {
   // Stop realtime listener when leaving driver status panel
   if(id !== 'driverstatus' && _driversUnsubscribe){ _driversUnsubscribe(); _driversUnsubscribe = null; }
@@ -853,7 +906,64 @@ function panelHR(){return `
   <div class="glass-card" style="margin-bottom:14px">
     <div class="sh">
       <div class="st">👤 人員清冊</div>
-      ${ROLE==='commander'?`<button class="btn btn-p" onclick="openAddUser()">+ 新增人員</button>`:''}
+      ${ROLE==='commander'?`
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-p" onclick="openAddUser()">+ 新增現職員工</button>
+          <button class="btn" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);color:#a78bfa" onclick="openDirectOnboard()">⚡ 快速入職</button>
+        </div>`:''}
+    </div>
+    <!-- 快速入職表單 -->
+    <div id="direct-onboard-modal" style="display:none;margin-bottom:14px" class="glass-card" style="border-color:rgba(124,58,237,0.3)">
+      <div class="sh">
+        <div class="st" style="color:#a78bfa">⚡ 快速入職（現職員工）</div>
+        <button class="btn btn-g btn-sm" onclick="document.getElementById('direct-onboard-modal').style.display='none'">✕</button>
+      </div>
+      <div class="info-box" style="margin-bottom:12px">直接建立人員資料，<strong>跳過面試流程</strong>。帳號密碼請另至 Firebase Console → Authentication 建立。</div>
+      <div class="g2" style="gap:10px">
+        <div class="f-grp"><label class="f-lbl">姓名 *</label><input class="f-inp" id="do-name" placeholder="王大明"></div>
+        <div class="f-grp"><label class="f-lbl">Email *</label><input class="f-inp" id="do-email" placeholder="driver@email.com" type="email"></div>
+        <div class="f-grp"><label class="f-lbl">電話</label><input class="f-inp" id="do-phone" placeholder="0912345678" type="tel"></div>
+        <div class="f-grp"><label class="f-lbl">角色</label>
+          <select class="f-inp" id="do-role">
+            <option value="driver">司機</option>
+            <option value="accountant">會計</option>
+            <option value="commander">負責人</option>
+          </select>
+        </div>
+        <div class="f-grp"><label class="f-lbl">員工類型</label>
+          <select class="f-inp" id="do-type">
+            <option value="employee">員工</option>
+            <option value="contractor">承攬</option>
+          </select>
+        </div>
+        <div class="f-grp"><label class="f-lbl">Firebase UID *</label>
+          <input class="f-inp" id="do-uid" placeholder="從 Firebase Console Authentication 複製">
+        </div>
+        <div class="f-grp"><label class="f-lbl">配送單價 ($)</label><input class="f-inp" id="do-price-d" type="number" value="50"></div>
+        <div class="f-grp"><label class="f-lbl">逆物流單價 ($)</label><input class="f-inp" id="do-price-r" type="number" value="35"></div>
+        <div class="f-grp"><label class="f-lbl">津貼 ($)</label><input class="f-inp" id="do-allowance" type="number" value="2000"></div>
+        <div class="f-grp"><label class="f-lbl">代扣費用 ($)</label><input class="f-inp" id="do-deduct" type="number" value="500"></div>
+        <div class="f-grp"><label class="f-lbl">駕照類別</label>
+          <select class="f-inp" id="do-license-type">
+            <optgroup label="── 職業駕照 ──">
+              <option value="職業大貨車">職業大貨車</option>
+              <option value="職業聯結車">職業聯結車</option>
+              <option value="職業小型車+大貨車">職業小型車+大貨車</option>
+              <option value="職業各類駕照">職業各類（全照）</option>
+            </optgroup>
+            <optgroup label="── 普通駕照 ──">
+              <option value="普通小型車">普通小型車</option>
+              <option value="普通小型車+機車">普通小型車+機車</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="f-grp"><label class="f-lbl">駕照到期日</label><input class="f-inp" id="do-license-exp" type="date"></div>
+        <div class="f-grp"><label class="f-lbl">保險到期日</label><input class="f-inp" id="do-ins-exp" type="date"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-p" style="flex:1;background:rgba(124,58,237,0.15);border-color:rgba(124,58,237,0.4);color:#a78bfa" onclick="saveDirectOnboard()">⚡ 立即建立入職資料</button>
+      </div>
+      <div id="do-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
     </div>
     <div id="hr-table"><div style="color:var(--dim);font-size:12px;text-align:center;padding:14px">載入中...</div></div>
   </div>
@@ -2469,94 +2579,7 @@ document.head.appendChild(csStyle);
  
  
 // ── PDF 薪資明細匯出 ─────────────────────────────────────
-async function exportSalaryPDF(){
-  const snap = await getDocs(collection(db,'users'));
-  const drivers = snap.docs.filter(d=>d.data().role==='driver');
-  let rows = [];
-  for(const d of drivers){
-    const u = d.data();
-    const mSnap = await getDoc(doc(db,'monthlyStats',`${d.id}_${MONTH}`));
-    const td = mSnap.exists()?mSnap.data().totalDelivery||0:0;
-    const tr = mSnap.exists()?mSnap.data().totalReverse||0:0;
-    const delivery = td*(u.priceDelivery||50);
-    const reverse  = tr*(u.priceReverse||35);
-    const allow    = u.allowance||0;
-    const gross    = delivery+reverse+allow;
-    const labEmp   = u.labourEmployee||0;
-    const healthEmp= u.healthEmployee||0;
-    const deduct   = u.regularDeduct||0;
-    const nhiDeduct= (u.type==='contractor'&&gross>=20000)?Math.round(gross*0.0211):0;
-    const net      = gross-labEmp-healthEmp-nhiDeduct-deduct;
-    rows.push({name:u.name||'—', type:u.type==='employee'?'員工':'承攬',
-      td, tr, delivery, reverse, allow, labEmp, healthEmp, nhiDeduct, deduct, gross, net});
-  }
- 
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月`;
-  
-  // Build HTML for PDF
-  const html = `<!DOCTYPE html><html><head>
-  <meta charset="UTF-8">
-  <style>
-    body{font-family:'微軟正黑體','Noto Sans TC',sans-serif;margin:30px;color:#1a1a1a;font-size:13px;}
-    h1{font-size:20px;margin-bottom:4px;color:#1a1a1a;}
-    .sub{color:#666;font-size:12px;margin-bottom:20px;}
-    table{width:100%;border-collapse:collapse;margin-top:10px;}
-    th{background:#1a1a2e;color:white;padding:9px 10px;text-align:left;font-size:11px;}
-    td{padding:8px 10px;border-bottom:1px solid #e5e5e5;font-size:12px;}
-    tr:nth-child(even) td{background:#f8f8f8;}
-    .total-row td{font-weight:700;background:#e8f4ff;border-top:2px solid #1a1a2e;}
-    .net{color:#0066cc;font-weight:700;}
-    .deduct{color:#cc0000;}
-    .footer{margin-top:24px;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:10px;}
-    .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;}
-    .emp{background:#dbeafe;color:#1d4ed8;}
-    .con{background:#ede9fe;color:#6d28d9;}
-  </style></head><body>
-  <h1>在地物流有限公司</h1>
-  <div class="sub">${dateStr} 薪資明細表　　列印時間：${now.toLocaleString('zh-TW')}　　共 ${rows.length} 人</div>
-  <table>
-    <thead><tr>
-      <th>姓名</th><th>類型</th><th>配送件</th><th>逆物流件</th>
-      <th>配送收入</th><th>逆物流收入</th><th>津貼</th>
-      <th>勞保(員)</th><th>健保(員)</th><th>二代健保</th><th>代扣</th>
-      <th>毛收入</th><th>實發金額</th>
-    </tr></thead>
-    <tbody>
-      ${rows.map(r=>`<tr>
-        <td>${r.name}</td>
-        <td><span class="badge ${r.type==='員工'?'emp':'con'}">${r.type}</span></td>
-        <td>${r.td}</td><td>${r.tr}</td>
-        <td>$${r.delivery.toLocaleString()}</td>
-        <td>$${r.reverse.toLocaleString()}</td>
-        <td>$${r.allow.toLocaleString()}</td>
-        <td class="deduct">-$${r.labEmp.toLocaleString()}</td>
-        <td class="deduct">-$${r.healthEmp.toLocaleString()}</td>
-        <td class="deduct">-$${r.nhiDeduct.toLocaleString()}</td>
-        <td class="deduct">-$${r.deduct.toLocaleString()}</td>
-        <td>$${r.gross.toLocaleString()}</td>
-        <td class="net">$${r.net.toLocaleString()}</td>
-      </tr>`).join('')}
-      <tr class="total-row">
-        <td colspan="11">本月合計</td>
-        <td>$${rows.reduce((s,r)=>s+r.gross,0).toLocaleString()}</td>
-        <td class="net">$${rows.reduce((s,r)=>s+r.net,0).toLocaleString()}</td>
-      </tr>
-    </tbody>
-  </table>
-  <div class="footer">本薪資明細由在地物流有限公司系統自動產生 · 如有疑問請聯絡管理人員</div>
-  </body></html>`;
- 
-  // Open in new window and trigger print
-  const win = window.open('','_blank','width=1100,height=800');
-  win.document.write(html);
-  win.document.close();
-  win.onload = ()=>{ win.print(); };
-  await addAudit('EXPORT', `匯出 ${dateStr} 薪資明細 PDF (${rows.length}人)`);
-  showToast('✓ PDF 已開啟，請使用瀏覽器列印');
-}
- 
-// Driver PDF - individual salary slip
+async
 async function exportDriverSalaryPDF(uid, name){
   const u = CD;
   const mSnap = await getDoc(doc(db,'monthlyStats',`${uid}_${MONTH}`));
@@ -2678,165 +2701,7 @@ window.showPanel = function(id){
 };
  
 // ── PDF 薪資明細匯出 ──────────────────────────────────────
-async function exportSalaryPDF(uid, name) {
-  // Load jsPDF dynamically
-  const { jsPDF } = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js').then(m => m.default || m);
-  
-  // Get user data
-  const uSnap = await getDoc(doc(db, 'users', uid));
-  if(!uSnap.exists()) { showToast('找不到人員資料', 'err'); return; }
-  const u = uSnap.data();
-  
-  // Get month stats
-  const mSnap = await getDoc(doc(db, 'monthlyStats', uid + '_' + MONTH));
-  const totalD = mSnap.exists() ? (mSnap.data().totalDelivery || 0) : 0;
-  const totalR = mSnap.exists() ? (mSnap.data().totalReverse || 0) : 0;
-  
-  const delivery  = totalD * (u.priceDelivery || 50);
-  const reverse   = totalR * (u.priceReverse  || 35);
-  const allowance = u.allowance || 0;
-  const gross     = delivery + reverse + allowance;
-  const labourEmp = u.labourEmployee  || 0;
-  const healthEmp = u.healthEmployee  || 0;
-  const deduct    = u.regularDeduct   || 0;
-  const nhiDeduct = (u.type === 'contractor' && gross >= 20000) ? Math.round(gross * 0.0211) : 0;
-  const net       = gross - labourEmp - healthEmp - nhiDeduct - deduct;
  
-  const doc2 = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
- 
-  // ── Header ──
-  doc2.setFillColor(0, 0, 0);
-  doc2.rect(0, 0, 210, 36, 'F');
-  doc2.setTextColor(0, 212, 255);
-  doc2.setFontSize(18);
-  doc2.setFont('helvetica', 'bold');
-  doc2.text('Zai Di Logistics', 14, 14);
-  doc2.setFontSize(10);
-  doc2.setTextColor(148, 163, 184);
-  doc2.text('ZAI DI LOGISTICS CO., LTD  |  在地物流有限公司', 14, 22);
-  doc2.setTextColor(0, 212, 255);
-  doc2.setFontSize(13);
-  doc2.text('SALARY STATEMENT  薪資明細', 14, 31);
- 
-  // ── Month badge ──
-  doc2.setFillColor(0, 212, 255);
-  doc2.roundedRect(150, 8, 46, 12, 2, 2, 'F');
-  doc2.setTextColor(0, 0, 0);
-  doc2.setFontSize(11);
-  doc2.setFont('helvetica', 'bold');
-  doc2.text(MONTH, 173, 16, { align: 'center' });
- 
-  // ── Employee Info ──
-  doc2.setTextColor(30, 30, 30);
-  doc2.setFontSize(11);
-  doc2.setFont('helvetica', 'normal');
-  doc2.setFillColor(245, 247, 250);
-  doc2.roundedRect(14, 42, 182, 28, 2, 2, 'F');
-  doc2.setFont('helvetica', 'bold');
-  doc2.setFontSize(13);
-  doc2.text(u.name || name, 20, 52);
-  doc2.setFont('helvetica', 'normal');
-  doc2.setFontSize(9);
-  doc2.setTextColor(100, 116, 139);
-  const typeLabel = u.type === 'employee' ? 'Employee  員工' : 'Contractor  承攬';
-  doc2.text(typeLabel, 20, 59);
-  doc2.text('Print Date: ' + new Date().toLocaleDateString('zh-TW'), 20, 65);
-  
-  // ── Divider ──
-  doc2.setDrawColor(220, 220, 230);
-  doc2.setLineWidth(0.3);
-  doc2.line(14, 76, 196, 76);
- 
-  // ── Earnings Section ──
-  let y = 84;
-  const drawSection = (title, color) => {
-    doc2.setFillColor(...color);
-    doc2.roundedRect(14, y - 6, 182, 8, 1, 1, 'F');
-    doc2.setFont('helvetica', 'bold');
-    doc2.setFontSize(9);
-    doc2.setTextColor(80, 80, 80);
-    doc2.text(title, 18, y);
-    y += 8;
-  };
- 
-  const drawRow = (label, value, valueColor) => {
-    doc2.setFont('helvetica', 'normal');
-    doc2.setFontSize(10);
-    doc2.setTextColor(50, 50, 50);
-    doc2.text(label, 20, y);
-    doc2.setFont('helvetica', 'bold');
-    doc2.setTextColor(...(valueColor || [30, 30, 30]));
-    doc2.text('NT$ ' + value.toLocaleString(), 196, y, { align: 'right' });
-    doc2.setDrawColor(235, 235, 235);
-    doc2.setLineWidth(0.2);
-    doc2.line(14, y + 2, 196, y + 2);
-    y += 10;
-  };
- 
-  // Earnings
-  drawSection('EARNINGS  收入項目', [230, 255, 240]);
-  drawRow('配送件數 ' + totalD + ' 件 × $' + (u.priceDelivery||50), delivery, [16, 120, 80]);
-  drawRow('逆物流件數 ' + totalR + ' 件 × $' + (u.priceReverse||35), reverse, [16, 120, 80]);
-  drawRow('津貼 Allowance', allowance, [16, 120, 80]);
-  y += 2;
- 
-  // Deductions
-  drawSection('DEDUCTIONS  扣除項目', [255, 235, 235]);
-  if(u.type === 'employee') {
-    drawRow('勞保 Labour Insurance', -labourEmp, [180, 30, 30]);
-    drawRow('健保 Health Insurance', -healthEmp, [180, 30, 30]);
-  }
-  if(nhiDeduct > 0) drawRow('二代健保補充保費 (2.11%)', -nhiDeduct, [180, 30, 30]);
-  drawRow('代扣費用 Other Deductions', -deduct, [180, 30, 30]);
-  y += 4;
- 
-  // Net Pay
-  doc2.setFillColor(0, 0, 0);
-  doc2.roundedRect(14, y - 6, 182, 18, 2, 2, 'F');
-  doc2.setFont('helvetica', 'bold');
-  doc2.setFontSize(11);
-  doc2.setTextColor(148, 163, 184);
-  doc2.text('NET PAY  實發金額', 20, y + 2);
-  doc2.setFontSize(16);
-  doc2.setTextColor(0, 212, 255);
-  doc2.text('NT$ ' + net.toLocaleString(), 192, y + 5, { align: 'right' });
-  y += 22;
- 
-  // ── Insured Salary ──
-  if(u.type === 'employee' && u.insuredSalary) {
-    doc2.setFontSize(8);
-    doc2.setTextColor(150, 150, 150);
-    doc2.setFont('helvetica', 'normal');
-    doc2.text('投保薪資 Insured Salary: NT$ ' + u.insuredSalary.toLocaleString() + ' (第' + ((u.gradeIdx||0)+1) + '級)', 14, y);
-    y += 8;
-  }
- 
-  // ── Footer ──
-  doc2.setFillColor(245, 247, 250);
-  doc2.rect(0, 272, 210, 25, 'F');
-  doc2.setFontSize(8);
-  doc2.setTextColor(150, 150, 150);
-  doc2.setFont('helvetica', 'normal');
-  doc2.text('在地物流有限公司  |  Zai Di Logistics Co., Ltd', 105, 280, { align: 'center' });
-  doc2.text('本薪資明細由系統自動產生，如有疑問請聯絡管理部門。', 105, 286, { align: 'center' });
-  doc2.text('This document is system-generated. Please contact HR for any discrepancies.', 105, 291, { align: 'center' });
- 
-  // Save
-  doc2.save(MONTH + '_' + (u.name || name) + '_薪資明細.pdf');
-  showToast('✓ PDF 已下載');
-  
-  // Audit log
-  await addAudit('EXPORT', '匯出薪資明細 PDF：' + (u.name || name) + ' ' + MONTH);
-}
- 
-// Driver self-export
-window.exportMyPayslip = async () => {
-  await exportSalaryPDF(CU.uid, CD.name);
-};
- 
-// ══════════════════════════════════════════════════════════
-// PDF 薪資明細匯出
-// ══════════════════════════════════════════════════════════
 window.exportSalaryPDF = async () => {
   showToast('產生 PDF 中...');
   const snap = await getDocs(collection(db,'users'));
