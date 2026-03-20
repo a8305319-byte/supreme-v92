@@ -17,7 +17,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
  
 /* ===== LOADING ===== */
-#loading-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;}
+#loading-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;animation:ldHide 0.5s ease 2s forwards;}
 .ld-logo{font-family:'Orbitron',monospace;font-size:20px;color:var(--accent);letter-spacing:3px;text-shadow:0 0 30px rgba(0,212,255,0.5);margin-bottom:8px;}
 .ld-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:28px;}
 .ld-bar{width:220px;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;overflow:hidden;}
@@ -341,20 +341,20 @@ import {
   serverTimestamp, increment, addDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
  
-// Force hide loading after 2.5s no matter what
 let _appReady = false; // global auth state flag
-window.addEventListener('load', ()=>{
-  setTimeout(()=>{
-    const ld = document.getElementById('loading-screen');
-    const ls = document.getElementById('login-screen');
-    if(ld && getComputedStyle(ld).opacity !== '0' && !_appReady){
-      ld.style.transition='opacity 0.4s';
-      ld.style.opacity='0';
-      ld.style.pointerEvents='none';
-      if(ls) ls.style.display='flex';
-    }
-  }, 2500);
-});
+// Multi-layer fallback to ensure login screen always appears
+function showLoginScreen(){
+  const ld = document.getElementById('loading-screen');
+  const ls = document.getElementById('login-screen');
+  if(ld){ ld.style.opacity='0'; ld.style.pointerEvents='none'; ld.style.display='none'; }
+  if(ls){ ls.style.display='flex'; ls.style.opacity='1'; }
+}
+// Fallback 1: after DOM ready
+document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(showLoginScreen, 2500); });
+// Fallback 2: after full load
+window.addEventListener('load', ()=>{ setTimeout(showLoginScreen, 2000); });
+// Fallback 3: immediate timeout
+setTimeout(showLoginScreen, 3000);
  
 const FB = {
   apiKey:"AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
