@@ -2293,7 +2293,7 @@ function panelCommander(){return `
       <button class="btn btn-p btn-sm" onclick="saveApiKey()">儲存</button>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <input class="f-inp" id="api-key-input" type="password" placeholder="輸入 Gemini API Key (AIza...)" style="flex:1;font-family:'JetBrains Mono',monospace;font-size:11px">
+      <input class="f-inp" id="api-key-input" type="password" placeholder="輸入 Gemini API Key (AIza...)" style="flex:1;font-family:'JetBrains Mono',monospace;font-size:11px" autocomplete="off">
       <button onclick="const f=document.getElementById('api-key-input');f.type=f.type==='password'?'text':'password'"
         style="padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--dim);font-size:13px;cursor:pointer">👁</button>
     </div>
@@ -2460,7 +2460,7 @@ async function buildToggles(){
   const storedKey = localStorage.getItem('V92_SECRET_KEY');
   if(keyInput) keyInput.placeholder = storedKey ? '已設定（點擊修改）' : '輸入 Gemini API Key (AIza...)';
   if(keyStatus) keyStatus.innerHTML = storedKey
-    ? '✅ 已設定自訂金鑰 · <button onclick="localStorage.removeItem(\'V92_SECRET_KEY\');location.reload()" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:10px;padding:0">清除</button>'
+    ? '✅ 已設定 · <button onclick="window.clearApiKey()" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:10px;padding:0">清除</button>'
     : '⚠️ 使用內建金鑰';
   const grid=document.getElementById('toggle-grid');
   if(!grid)return;
@@ -4581,8 +4581,7 @@ window.sendCommanderAI = async () => {
     document.getElementById(typingId)?.remove();
     box.innerHTML += `<div style="display:flex;gap:8px;margin-bottom:10px">
       <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
-      <div style="padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:4px 12px 12px 12px;font-size:13px;line-height:1.5;max-width:85%">${reply.replace(/
-/g,'<br>')}</div>
+      <div style="padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:4px 12px 12px 12px;font-size:13px;line-height:1.5;max-width:85%">${reply.replace(/\n/g,'<br>')}</div>
     </div>`;
 
     const modelBadge = document.getElementById('cmd-model-badge');
