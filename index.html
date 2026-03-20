@@ -761,6 +761,16 @@ onAuthStateChanged(auth, async user => {
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     _appReady = true;
+  // Load shared API key from Firebase for non-commander users
+  if(ROLE !== 'commander'){
+    try {
+      const ks = await getDoc(doc(db,'config','apikey'));
+      if(ks.exists() && ks.data().gemini){
+        window._sharedAPIKey = ks.data().gemini;
+        console.log('[App] Shared API key loaded');
+      }
+    } catch(e){ console.warn('[App] Key load:', e.message); }
+  }
     clearTimeout(_hardTimeout);
   } catch(e) {
     console.error('Load error:', e);
@@ -2055,14 +2065,27 @@ window.loadFinance = async function loadFinance(month){
 }
 
 
-window.saveApiKey = () => {
+window.saveApiKey = async () => {
   const key = document.getElementById('api-key-input')?.value.trim();
   if(!key){ showToast('請輸入 API Key','err'); return; }
   if(!key.startsWith('AIza')){ showToast('格式錯誤，應以 AIza 開頭','err'); return; }
+  // 存本機
   localStorage.setItem('V92_SECRET_KEY', key);
-  showToast('✅ API 金鑰已儲存，重新整理後生效');
-  // Reload page to apply new key
-  setTimeout(()=>location.reload(), 1500);
+  // 同步到 Firebase 供所有裝置（司機客服/面試）共用
+  try {
+    await setDoc(doc(db,'config','apikey'), {
+      gemini: key,
+      updatedBy: CD?.name||'Commander',
+      updatedAt: serverTimestamp()
+    });
+    showToast('✅ API 金鑰已儲存並同步到全系統！');
+  } catch(e) {
+    showToast('✅ API 金鑰已儲存（本機）');
+  }
+  const msg = document.getElementById('api-key-msg');
+  if(msg){ msg.style.color='#34d399'; msg.textContent='✅ 已設定'; }
+  const status = document.getElementById('butler-status');
+  if(status) status.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse 2s infinite"></div><span style="color:#34d399">線上</span>';
 };
 
 window.clearApiKey = () => {
@@ -2690,9 +2713,10 @@ async function loadApplicants(){
   if(!el)return;
   el.innerHTML='<div style="color:var(--dim);font-size:12px;text-align:center;padding:14px">載入中...</div>';
   try {
-    const snap=await getDocs(query(collection(db,'applicants'),orderBy('createdAt','desc'),limit(50)));
+    // No orderBy to avoid index requirement - sort client-side
+    const snap=await getDocs(query(collection(db,'applicants'),limit(50)));
     if(snap.empty){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">尚無應徵者</div>';return;}
-    const docs2 = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const docs2 = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
     const total=docs2.length;
     const rec=docs2.filter(a=>a.aiScore>=70).length;
     const pend=docs2.filter(a=>a.aiScore>=50&&a.aiScore<70).length;
