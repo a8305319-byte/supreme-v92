@@ -2340,29 +2340,43 @@ function panelCommander(){return `
     <button class="btn btn-g btn-sm" style="margin-top:10px;width:100%" onclick="addInterviewQuestion()">+ 新增題目主題</button>
   </div>
 
-  <!-- Commander AI 助理 -->
-  <div class="glass-card" style="margin-bottom:14px;border-color:rgba(0,212,255,0.2)">
+  <!-- 阿智 AI 管家 -->
+  <div class="glass-card" style="margin-bottom:14px;border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.03)">
     <div class="sh">
-      <div class="st" style="color:var(--accent)">🤖 AI 助理</div>
-      <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">自動分流 · Lite / Pro / Live</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:16px">🤵</div>
+        <div>
+          <div class="st" style="color:var(--accent)">阿智 · AI 管家</div>
+          <div style="font-size:10px;color:var(--dim)">說人話就能操作系統</div>
+        </div>
+      </div>
+      <div id="butler-status" style="display:flex;align-items:center;gap:4px;font-size:10px;color:#34d399"><div style="width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse 2s infinite"></div><span>線上</span></div>
     </div>
-    <div id="cmd-ai-chat" style="height:280px;overflow-y:auto;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
-      <div style="text-align:center;color:var(--dim);font-size:12px;padding:20px 0">
-        <div style="font-size:24px;margin-bottom:8px">🤖</div>
-        您好，徐老闆！有什麼可以協助您的嗎？<br>
-        <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--dim)">薪資試算 · 法令查詢 · 公告撰寫 · 人事決策</span>
+    <div id="cmd-ai-chat" style="height:320px;overflow-y:auto;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:10px">
+      <div class="placeholder-msg" style="text-align:center;padding:24px 10px;color:var(--dim)">
+        <div style="font-size:32px;margin-bottom:8px">🤵</div>
+        <div style="font-size:14px;font-weight:700;color:var(--fg);margin-bottom:4px">阿智 · AI 管家</div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:12px">登入後自動晨報 · 說人話直接操作系統</div>
+        <div style="display:flex;flex-direction:column;gap:4px;text-align:left;background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.1);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--dim)">
+          <div>💬 「本月薪資多少？」→ 自動查詢</div>
+          <div>💬 「今天誰來上班？」→ 自動查詢</div>
+          <div>💬 「發薪資單給大家」→ 確認後執行</div>
+          <div>💬 「系統有沒有問題？」→ 掃描警示</div>
+          <div>💬 「查一下王大明」→ 顯示員工資料</div>
+        </div>
       </div>
     </div>
-    <!-- 快速指令 -->
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-      <button onclick="document.getElementById('cmd-ai-input').value='本月薪資總支出是多少？';sendCommanderAI()" class="cs-quick-btn">💰 本月薪資</button>
-      <button onclick="document.getElementById('cmd-ai-input').value='幫我草擬一則公告';sendCommanderAI()" class="cs-quick-btn">📢 草擬公告</button>
-      <button onclick="document.getElementById('cmd-ai-input').value='勞基法關於資遣的規定？';sendCommanderAI()" class="cs-quick-btn">⚖️ 法令查詢</button>
-      <button onclick="document.getElementById('cmd-ai-input').value='目前有多少在職司機？';sendCommanderAI()" class="cs-quick-btn">👥 人事概況</button>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+      <button onclick="sendCommanderQuick('本月薪資多少？')" style="padding:5px 10px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer">💰 薪資</button>
+      <button onclick="sendCommanderQuick('今天誰來上班了？')" style="padding:5px 10px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer">📍 出勤</button>
+      <button onclick="sendCommanderQuick('系統有什麼異常嗎？')" style="padding:5px 10px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer">⚠️ 系統警示</button>
+      <button onclick="sendCommanderQuick('這個月財務狀況怎樣？')" style="padding:5px 10px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer">📊 財務</button>
+      <button onclick="sendCommanderQuick('全部員工有哪些？')" style="padding:5px 10px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer">👥 員工總覽</button>
+      <button onclick="sendCommanderQuick('發薪資單給所有司機')" style="padding:5px 10px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:6px;font-size:11px;color:#a78bfa;cursor:pointer">📨 發薪資單</button>
     </div>
     <div style="display:flex;gap:8px">
-      <input id="cmd-ai-input" class="f-inp" placeholder="問 AI 助理任何事..." style="flex:1" onkeydown="if(event.key==='Enter')sendCommanderAI()">
-      <button onclick="sendCommanderAI()" style="padding:8px 14px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.35);border-radius:8px;color:var(--accent);cursor:pointer;font-size:16px">➜</button>
+      <input id="cmd-ai-input" class="f-inp" placeholder="問阿智任何事，或說「幫我查本月薪資」..." style="flex:1;padding:10px 13px;font-size:13px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCommanderAI();}">
+      <button onclick="sendCommanderAI()" style="padding:10px 16px;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);border-radius:8px;color:var(--accent);cursor:pointer;font-size:16px">➜</button>
     </div>
   </div>
 
@@ -4601,7 +4615,7 @@ async function loadPayslipStatuses(month){
 }
 
 // ══════════════════════════════════════════════════════════
-// Commander AI 助理（老闆專用）
+// AI 管家「阿智」（老闆專用）
 // ══════════════════════════════════════════════════════════
 let cmdHistory = [];
 
@@ -4640,14 +4654,8 @@ window.sendCommanderAI = async () => {
   if(!text) return;
   input.value = '';
 
-  // Show as floating notification first (works regardless of which panel is open)
-  showButlerNotification(briefMsg);
-
-  // Save to sessionStorage for panel injection
-  sessionStorage.setItem('v92_butler_msg', briefMsg);
-  // Also try to add to Commander AI chat if panel is open
   const box = document.getElementById('cmd-ai-chat');
-  console.log('[Butler] box found:', !!box);
+  if(!box){ showToast('請先開啟 Commander 面板','err'); return; }
 
   // 確認金鑰
   if(!GEMINI_API_KEY){
@@ -4655,7 +4663,8 @@ window.sendCommanderAI = async () => {
     return;
   }
 
-  // 用戶訊息泡泡
+  // 用戶訊息泡泡 - clear placeholder on first use
+  if(box.children.length===1 && box.querySelector('.placeholder-msg')) box.innerHTML='';
   box.innerHTML += `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
     <div style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18);padding:8px 12px;border-radius:12px 4px 12px 12px;font-size:13px;max-width:80%">${text}</div>
   </div>`;
@@ -4666,7 +4675,7 @@ window.sendCommanderAI = async () => {
   // 思考中泡泡
   const typingId = 'cmd-t-'+Date.now();
   box.innerHTML += `<div id="${typingId}" style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
-    <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
+    <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤵</div>
     <div style="padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:4px 12px 12px 12px;font-size:12px;color:var(--dim)">思考中...</div>
   </div>`;
   box.scrollTop = box.scrollHeight;
@@ -4691,7 +4700,7 @@ window.sendCommanderAI = async () => {
 
     document.getElementById(typingId)?.remove();
     box.innerHTML += `<div style="display:flex;gap:8px;margin-bottom:10px">
-      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤵</div>
       <div style="padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:4px 12px 12px 12px;font-size:13px;line-height:1.5;max-width:85%">${reply.replace(/\n/g,'<br>')}</div>
     </div>`;
 
@@ -4705,7 +4714,7 @@ window.sendCommanderAI = async () => {
     console.error('[Commander AI] ERROR:', e.message);
     document.getElementById(typingId)?.remove();
     box.innerHTML += `<div style="display:flex;gap:8px;margin-bottom:10px">
-      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div>
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤵</div>
       <div style="padding:8px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:4px 12px 12px 12px;font-size:12px;color:#f87171">
         ❌ ${e.message}<br><span style="font-size:10px;opacity:0.7">請檢查 API 金鑰或網路連線</span>
       </div>
@@ -5811,14 +5820,8 @@ async function butlerMorningBrief(){
   // 等介面載入完成
   await new Promise(r=>setTimeout(r, 2000));
 
-  // Show as floating notification first (works regardless of which panel is open)
-  showButlerNotification(briefMsg);
-
-  // Save to sessionStorage for panel injection
-  sessionStorage.setItem('v92_butler_msg', briefMsg);
-  // Also try to add to Commander AI chat if panel is open
   const box = document.getElementById('cmd-ai-chat');
-  console.log('[Butler] box found:', !!box);
+  if(!box){ showToast('請先開啟 Commander 面板','err'); return; }
 
   // 收集資料
   const alerts = [];
@@ -5977,13 +5980,22 @@ function showButlerNotification(msg){
 }
 
 function injectButlerMsg(box, msg){
+  // Clear placeholder
+  const ph = box.querySelector('.placeholder-msg');
+  if(ph) ph.parentElement.innerHTML = '';
   const div = document.createElement('div');
   div.style.cssText = 'display:flex;gap:10px;margin-bottom:14px;align-items:flex-start';
-  div.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤵</div>'
-    + '<div style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;max-width:85%;white-space:pre-wrap">'
-    + msg + '</div>';
+  const avatar = '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤵</div>';
+  const bubble = document.createElement('div');
+  bubble.style.cssText = 'background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;max-width:85%;white-space:pre-wrap';
+  bubble.textContent = msg;
+  div.innerHTML = avatar;
+  div.appendChild(bubble);
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
+  // Update status
+  const st = document.getElementById('butler-status');
+  if(st) st.textContent = '✅ 線上';
 }
 
 async function initDriver(){
