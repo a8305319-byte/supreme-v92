@@ -2727,38 +2727,44 @@ window.viewApplicantDetail = async (id) => {
   if(!snap.exists()) return;
   const a = snap.data();
   const score = a.aiScore||0;
+  const scoreColor = score>=70?'#34d399':score>=50?'#fbbf24':'#f87171';
   const badgeTxt = score>=70?'✅ 推薦錄用':score>=50?'⏳ 待人工審核':'❌ 暫不符合';
   const history = (a.chatHistory||[]).filter(m=>m.role!=='user'||!m.text?.includes('面試結束')).slice(0,20);
 
   const modal = document.createElement('div');
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)';
-  modal.innerHTML=\`<div style="background:#0a0a0a;border:1px solid rgba(0,212,255,0.3);border-radius:14px;padding:24px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:16px;font-weight:700">\${a.name} 面試記錄</div>
-      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer">✕</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:12px">
-      <div>📱 \${a.phone||'—'}</div>
-      <div>📧 \${a.email||'—'}</div>
-      <div>💼 \${a.position||'—'}</div>
-      <div>🚗 駕照 \${a.license||'—'}</div>
-    </div>
-    <div style="padding:12px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;margin-bottom:14px;text-align:center">
-      <div style="font-family:'Orbitron',monospace;font-size:32px;color:\${score>=70?'#34d399':score>=50?'#fbbf24':'#f87171'}">\${score}</div>
-      <div style="font-size:13px;margin-top:4px">\${badgeTxt}</div>
-      \${a.aiComment?'<div style="font-size:11px;color:var(--dim);margin-top:8px;text-align:left">'+a.aiComment+'</div>':''}
-    </div>
-    \${history.length>0?\`<div style="font-size:11px;color:var(--dim);margin-bottom:8px">面試對話記錄：</div>
-    <div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto">
-      \${history.map(m=>\`<div style="padding:6px 10px;border-radius:6px;font-size:12px;background:\${m.role==='user'?'rgba(0,212,255,0.08)':'rgba(124,58,237,0.08)'};\${m.role==='user'?'text-align:right':''}">
-        <span style="font-size:10px;color:var(--dim)">\${m.role==='user'?'應徵者':'面試官'}</span><br>\${m.text||''}
-      </div>\`).join('')}
-    </div>\`:''}
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="btn btn-p" style="flex:1" onclick="prefillApplicant('\${a.id||id}');this.closest('[style*=fixed]').remove()">帶入快速入職</button>
-      <button class="btn btn-g" onclick="this.closest('[style*=fixed]').remove()">關閉</button>
-    </div>
-  </div>\`;
+
+  const commentHTML = a.aiComment ? '<div style="font-size:11px;color:var(--dim);margin-top:8px;text-align:left">'+a.aiComment+'</div>' : '';
+  let historyHTML = '';
+  if(history.length > 0){
+    const rows = history.map(m=>{
+      const bg = m.role==='user'?'rgba(0,212,255,0.08)':'rgba(124,58,237,0.08)';
+      const align = m.role==='user'?'text-align:right':'';
+      return '<div style="padding:6px 10px;border-radius:6px;font-size:12px;background:'+bg+';'+align+'"><span style="font-size:10px;color:var(--dim)">'+(m.role==='user'?'應徵者':'面試官')+'</span><br>'+(m.text||'')+'</div>';
+    }).join('');
+    historyHTML = '<div style="font-size:11px;color:var(--dim);margin-bottom:8px">面試對話記錄：</div>'
+      + '<div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto">'+rows+'</div>';
+  }
+
+  modal.innerHTML = '<div style="background:#0a0a0a;border:1px solid rgba(0,212,255,0.3);border-radius:14px;padding:24px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
+    + '<div style="font-size:16px;font-weight:700">'+a.name+' 面試記錄</div>'
+    + '<button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer">✕</button>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:12px">'
+    + '<div>📱 '+(a.phone||'—')+'</div><div>📧 '+(a.email||'—')+'</div>'
+    + '<div>💼 '+(a.position||'—')+'</div><div>🚗 駕照 '+(a.license||'—')+'</div>'
+    + '</div>'
+    + '<div style="padding:12px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;margin-bottom:14px;text-align:center">'
+    + '<div style="font-family:'Orbitron',monospace;font-size:32px;color:'+scoreColor+'">'+score+'</div>'
+    + '<div style="font-size:13px;margin-top:4px">'+badgeTxt+'</div>'
+    + commentHTML
+    + '</div>'
+    + historyHTML
+    + '<div style="display:flex;gap:8px;margin-top:16px">'
+    + '<button class="btn btn-p" style="flex:1" onclick="prefillApplicant(''+( a.id||id)+'');this.closest('[style*=fixed]').remove()">帶入快速入職</button>'
+    + '<button class="btn btn-g" onclick="this.closest('[style*=fixed]').remove()">關閉</button>'
+    + '</div></div>';
   document.body.appendChild(modal);
 };
 
@@ -3423,7 +3429,7 @@ ${CD?.name?.[0]||'?'}
       <!-- CUSTOMER SERVICE -->
       <div class="panel" id="panel-driver_cs">
         <div style="display:flex;align-items:center;gap:10px;padding:14px 0 10px">
-          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👩</div>
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎧</div>
           <div>
             <div style="font-size:14px;font-weight:700" id="cs-agent-name-display">客服專員</div>
             <div style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:4px"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span>客服專員 · 線上中</div>
@@ -3526,8 +3532,9 @@ let csEscalated = false;  // true = escalated to boss (silent)
 let csInitialized = false;
 
 // CS Topics
-const CS_SYSTEM_PROMPT = `你是在地物流有限公司的客服專員「${CS_AGENT_NAME}」。
+const CS_SYSTEM_PROMPT = `你是在地物流有限公司的客服，你的編號是「${CS_AGENT_NAME}」。
 
+【重要：你的名字】你叫「${CS_AGENT_NAME}」，不是美玲、不是雅婷、不是美君，就是「${CS_AGENT_NAME}」。介紹自己時說「我是${CS_AGENT_NAME}」。
 【身份】你是真人客服，絕對不能透露自己是AI、機器人或任何自動化系統。
 【個性】親切、耐心、專業，說話像真人傳訊息，簡短自然，不用條列式。
 【公司】在地物流有限公司，主要業務是物流配送。
@@ -3586,7 +3593,7 @@ function addCSMsg(role, text, typing=false) {
     el.id = 'cs-typing';
     el.style.cssText = 'display:flex;gap:10px;margin-bottom:12px';
     el.innerHTML = `
-      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👩</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🎧</div>
       <div style="display:flex;align-items:center;gap:4px;padding:10px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);border-radius:4px 12px 12px 12px">
         <span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:typingDot 1s infinite"></span>
         <span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:typingDot 1s 0.2s infinite"></span>
@@ -3605,7 +3612,7 @@ function addCSMsg(role, text, typing=false) {
 
   if (role === 'agent') {
     div.innerHTML = `
-      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👩</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🎧</div>
       <div>
         <div style="font-size:10px;color:var(--dim);margin-bottom:3px;font-family:'JetBrains Mono',monospace" id="cs-model-indicator">${CS_AGENT_NAME} · 客服專員</div>
         <div style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);padding:10px 14px;border-radius:4px 12px 12px 12px;font-size:13.5px;line-height:1.6;max-width:85%">${text.replace(/\n/g,'<br>')}</div>
@@ -5686,7 +5693,13 @@ async function parseAndExecuteTool(userText, aiReply) {
     switch(toolName) {
       case 'GET_SALARY':
         result = await CMD_TOOLS.getSalary();
-        return `✅ **本月薪資統計 (${result.month})**\n共 ${result.driverCount} 位司機\n薪資總支出：$${result.totalNet.toLocaleString()}\n\n${result.drivers.map(d=>`• ${d.name}：配${d.delivery}件 逆${d.reverse}件 實發$${d.net.toLocaleString()}`).join('\n')}`;
+        const driverLines = result.drivers.map(d=>'• '+d.name+'：配'+d.delivery+'件 逆'+d.reverse+'件 實發$'+d.net.toLocaleString()).join('
+');
+        return '✅ **本月薪資統計 (' + result.month + ')**
+共 ' + result.driverCount + ' 位司機
+薪資總支出：$' + result.totalNet.toLocaleString() + '
+
+' + driverLines;
 
       case 'SEND_PAYSLIPS':
         showToast('AI 正在發送薪資單...');
@@ -5695,7 +5708,12 @@ async function parseAndExecuteTool(userText, aiReply) {
 
       case 'GET_ATTENDANCE':
         result = await CMD_TOOLS.getTodayAttendance();
-        return `✅ **今日出勤 (${result.date})**\n已打卡：${result.checkedIn} 人\n\n${result.drivers.map(d=>`• ${d.name}：${d.checkedIn} 上班 / 配${d.delivery}件`).join('\n')}`;
+        const attendLines = result.drivers.map(d=>'• '+d.name+'：'+d.checkedIn+' 上班 / 配'+d.delivery+'件').join('
+');
+        return '✅ **今日出勤 (' + result.date + ')**
+已打卡：' + result.checkedIn + ' 人
+
+' + attendLines;
 
       case 'PUBLISH_ANNOUNCE':
         if(toolArgs.length < 2) return '❌ 需要提供公告標題和內容';
@@ -5731,13 +5749,16 @@ async function parseAndExecuteTool(userText, aiReply) {
 
       case 'GET_ALERTS':
         result = await CMD_TOOLS.getAlerts();
-        if(!result.alertCount) return `✅ 今日無異常，系統運作正常`;
-        return `⚠️ **發現 ${result.alertCount} 項警示**\n${result.alerts.map(a=>{
-          if(a.type==='駕照到期') return `🪪 ${a.name} 駕照 ${a.days} 天後到期`;
-          if(a.type==='未回報件數') return `📦 未回報件數：${a.names.join('、')}`;
-          if(a.type==='未簽收薪資單') return `💰 ${a.count} 張薪資單未簽收`;
+        if(!result.alertCount) return '✅ 今日無異常，系統運作正常';
+        const alertLines = result.alerts.map(a=>{
+          if(a.type==='駕照到期') return '🪪 ' + a.name + ' 駕照 ' + a.days + ' 天後到期';
+          if(a.type==='未回報件數') return '📦 未回報件數：' + a.names.join('、');
+          if(a.type==='未簽收薪資單') return '💰 ' + a.count + ' 張薪資單未簽收';
           return a.type;
-        }).join('\n')}`;
+        });
+        return '⚠️ **發現 ' + result.alertCount + ' 項警示**
+' + alertLines.join('
+');
     }
   } catch(e) {
     return `❌ 執行失敗：${e.message}`;
