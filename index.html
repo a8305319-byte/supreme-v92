@@ -2686,39 +2686,40 @@ async function loadApplicants(){
     const recommended = docs.filter(a=>a.aiScore>=70).length;
     const pending = docs.filter(a=>a.aiScore>=50&&a.aiScore<70).length;
 
-    el.innerHTML=`
-      <div style="display:flex;gap:10px;margin-bottom:10px;font-size:11px;font-family:'JetBrains Mono',monospace">
-        <span style="color:var(--dim)">共 ${total} 人</span>
-        <span style="color:#34d399">推薦 ${recommended}</span>
-        <span style="color:#fbbf24">待定 ${pending}</span>
-        <span style="color:#f87171">不符 ${total-recommended-pending}</span>
-      </div>
-      <div class='tbl-wrap'><table class="tbl">
-        <thead><tr><th>姓名</th><th>職位</th><th>電話</th><th>評分</th><th>結果</th><th>時間</th><th></th></tr></thead>
-        <tbody>
-      ${docs.map(a=>{
-        const score=a.aiScore||0;
-        const badgeCls=score>=70?'bg':score>=50?'by':'br';
-        const badgeTxt=score>=70?'推薦':score>=50?'待定':'不符';
-        const date=a.createdAt?.toDate?.()?a.createdAt.toDate().toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'剛剛';
-        const pos=a.position||'未填';
-        return \`<tr style="border-bottom:1px solid var(--border)">
-          <td style="font-weight:600">\${a.name||'—'}</td>
-          <td style="font-size:11px;color:var(--dim)">\${pos}</td>
-          <td style="font-family:'JetBrains Mono',monospace;font-size:11px">\${a.phone||'—'}</td>
-          <td style="font-family:'Orbitron',monospace;color:\${score>=70?'#34d399':score>=50?'#fbbf24':'#f87171'};font-size:13px">\${score}</td>
-          <td><span class="badge \${badgeCls}">\${badgeTxt}</span></td>
-          <td style="font-size:10px;color:var(--dim)">\${date}</td>
-          <td style="display:flex;gap:4px">
-            <button class="btn btn-p btn-sm" onclick="prefillApplicant('\${a.id}')">帶入</button>
-            <button class="btn btn-g btn-sm" onclick="viewApplicantDetail('\${a.id}')">詳情</button>
-          </td>
-        </tr>\`;
-      }).join('')}
-        </tbody>
-      </table></div>`;
+    let rows = '';
+    docs.forEach(a=>{
+      const score=a.aiScore||0;
+      const badgeCls=score>=70?'bg':score>=50?'by':'br';
+      const badgeTxt=score>=70?'推薦':score>=50?'待定':'不符';
+      const scoreColor=score>=70?'#34d399':score>=50?'#fbbf24':'#f87171';
+      const date=a.createdAt?.toDate?.()
+        ?a.createdAt.toDate().toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+        :'剛剛';
+      rows += '<tr style="border-bottom:1px solid var(--border)">'
+        + '<td style="font-weight:600">' + (a.name||'—') + '</td>'
+        + '<td style="font-size:11px;color:var(--dim)">' + (a.position||'—') + '</td>'
+        + '<td style="font-family:'JetBrains Mono',monospace;font-size:11px">' + (a.phone||'—') + '</td>'
+        + '<td style="font-family:'Orbitron',monospace;color:' + scoreColor + ';font-size:13px">' + score + '</td>'
+        + '<td><span class="badge ' + badgeCls + '">' + badgeTxt + '</span></td>'
+        + '<td style="font-size:10px;color:var(--dim)">' + date + '</td>'
+        + '<td style="display:flex;gap:4px">'
+        + '<button class="btn btn-p btn-sm" onclick="prefillApplicant('' + a.id + '')">帶入</button>'
+        + '<button class="btn btn-g btn-sm" onclick="viewApplicantDetail('' + a.id + '')">詳情</button>'
+        + '</td></tr>';
+    });
+
+    el.innerHTML = '<div style="display:flex;gap:10px;margin-bottom:10px;font-size:11px;font-family:'JetBrains Mono',monospace">'
+      + '<span style="color:var(--dim)">共 ' + total + ' 人</span>'
+      + '<span style="color:#34d399">推薦 ' + recommended + '</span>'
+      + '<span style="color:#fbbf24">待定 ' + pending + '</span>'
+      + '<span style="color:#f87171">不符 ' + (total-recommended-pending) + '</span>'
+      + '</div>'
+      + '<div class="tbl-wrap"><table class="tbl">'
+      + '<thead><tr><th>姓名</th><th>職位</th><th>電話</th><th>評分</th><th>結果</th><th>時間</th><th></th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table></div>';
+
   } catch(e) {
-    el.innerHTML=\`<div style="color:#f87171;font-size:12px;text-align:center;padding:14px">載入失敗：\${e.message}</div>\`;
+    el.innerHTML='<div style="color:#f87171;font-size:12px;text-align:center;padding:14px">載入失敗：'+e.message+'</div>';
   }
 }
 
@@ -4619,7 +4620,7 @@ const CMD_SYSTEM = `你是「在地物流有限公司」負責人徐震家的專
 - 不知道的事說不知道，不要亂猜
 - 操作成功後告知結果，失敗時說明原因
 - 絕對不透露 API 金鑰
-\`;
+`;
 
 window.sendCommanderAI = async () => {
   const input = document.getElementById('cmd-ai-input');
@@ -5853,14 +5854,9 @@ async function butlerMorningBrief(){
   const hasAlerts = alerts.length > 0;
   const greeting = new Date().getHours() < 12 ? '早安' : new Date().getHours() < 18 ? '午安' : '晚安';
 
-  const briefMsg = `${greeting}，徐老闆！我是阿智，以下是今日彙報：
-
-📅 ${today}
-
-${items.map(i=>`• ${i}`).join('\n')}
-${hasAlerts ? '\n⚠️ **需要注意：**\n' + alerts.map(a=>`• ${a}`).join('\n') : '\n✅ 無異常警示'}
-
-有什麼需要我幫忙的嗎？`;
+  const _itemLines = items.map(i=>'• '+i).join('\n');
+  const _alertLines = hasAlerts ? '\n⚠️ **需要注意：**\n' + alerts.map(a=>'• '+a).join('\n') : '\n✅ 無異常警示';
+  const briefMsg = greeting + '，徐老闆！我是阿智，以下是今日彙報：\n\n📅 ' + today + '\n\n' + _itemLines + '\n' + _alertLines + '\n\n有什麼需要我幫忙的嗎？';
 
   // 顯示在 Commander AI 對話框
   const div = document.createElement('div');
@@ -5895,8 +5891,7 @@ function startButlerReminders(){
         if(box){
           const div = document.createElement('div');
           div.style.cssText='display:flex;gap:10px;margin-bottom:14px;align-items:flex-start';
-          div.innerHTML=`<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤵</div>
-            <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 14px;font-size:13px">⏰ 提醒：現在 17:00，還有 ${notReported} 位司機未回報今日件數。</div>`;
+          div.innerHTML='<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤵</div><div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 14px;font-size:13px">⏰ 提醒：現在 17:00，還有 ' + notReported + ' 位司機未回報今日件數。</div>';
           box.appendChild(div);
           box.scrollTop=box.scrollHeight;
         }
