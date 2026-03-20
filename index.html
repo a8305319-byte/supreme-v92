@@ -888,7 +888,7 @@ function addDriverViewToggle(){
   const btn = document.createElement('button');
   btn.id = 'driver-view-toggle';
   btn.textContent = '📱 司機視角';
-  btn.style.cssText = 'padding:4px 10px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);border-radius:5px;color:#a78bfa;font-size:10px;cursor:pointer;font-family:'JetBrains Mono',monospace;margin-top:6px;width:100%';
+  btn.style.cssText = "padding:4px 10px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);border-radius:5px;color:#a78bfa;font-size:10px;cursor:pointer;font-family:'JetBrains Mono',monospace;margin-top:6px;width:100%";
   btn.onclick = () => {
     const app = document.getElementById('app');
     if(btn.dataset.mode === 'driver'){
@@ -2677,47 +2677,42 @@ async function loadApplicants(){
   el.innerHTML='<div style="color:var(--dim);font-size:12px;text-align:center;padding:14px">載入中...</div>';
   try {
     const snap=await getDocs(query(collection(db,'applicants'),orderBy('createdAt','desc'),limit(50)));
-    if(snap.empty){
-      el.innerHTML='<div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">尚無應徵者</div>';
-      return;
-    }
-    const docs = snap.docs.map(d=>({id:d.id,...d.data()}));
-    const total = docs.length;
-    const recommended = docs.filter(a=>a.aiScore>=70).length;
-    const pending = docs.filter(a=>a.aiScore>=50&&a.aiScore<70).length;
+    if(snap.empty){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">尚無應徵者</div>';return;}
+    const docs2 = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const total=docs2.length;
+    const rec=docs2.filter(a=>a.aiScore>=70).length;
+    const pend=docs2.filter(a=>a.aiScore>=50&&a.aiScore<70).length;
 
-    let rows = '';
-    docs.forEach(a=>{
+    const summary = '<div style="display:flex;gap:10px;margin-bottom:10px;font-size:11px">'
+      +'<span style="color:var(--dim)">共 '+total+' 人</span>'
+      +'<span style="color:#34d399">推薦 '+rec+'</span>'
+      +'<span style="color:#fbbf24">待定 '+pend+'</span>'
+      +'<span style="color:#f87171">不符 '+(total-rec-pend)+'</span></div>';
+
+    let rows='';
+    docs2.forEach(function(a){
       const score=a.aiScore||0;
-      const badgeCls=score>=70?'bg':score>=50?'by':'br';
-      const badgeTxt=score>=70?'推薦':score>=50?'待定':'不符';
-      const scoreColor=score>=70?'#34d399':score>=50?'#fbbf24':'#f87171';
-      const date=a.createdAt?.toDate?.()
-        ?a.createdAt.toDate().toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
-        :'剛剛';
-      rows += '<tr style="border-bottom:1px solid var(--border)">'
-        + '<td style="font-weight:600">' + (a.name||'—') + '</td>'
-        + '<td style="font-size:11px;color:var(--dim)">' + (a.position||'—') + '</td>'
-        + '<td style="font-family:'JetBrains Mono',monospace;font-size:11px">' + (a.phone||'—') + '</td>'
-        + '<td style="font-family:'Orbitron',monospace;color:' + scoreColor + ';font-size:13px">' + score + '</td>'
-        + '<td><span class="badge ' + badgeCls + '">' + badgeTxt + '</span></td>'
-        + '<td style="font-size:10px;color:var(--dim)">' + date + '</td>'
-        + '<td style="display:flex;gap:4px">'
-        + '<button class="btn btn-p btn-sm" onclick="prefillApplicant('' + a.id + '')">帶入</button>'
-        + '<button class="btn btn-g btn-sm" onclick="viewApplicantDetail('' + a.id + '')">詳情</button>'
-        + '</td></tr>';
+      const bc=score>=70?'bg':score>=50?'by':'br';
+      const bt2=score>=70?'推薦':score>=50?'待定':'不符';
+      const sc=score>=70?'#34d399':score>=50?'#fbbf24':'#f87171';
+      const dt=a.createdAt&&a.createdAt.toDate?a.createdAt.toDate().toLocaleDateString('zh-TW'):'—';
+      rows+='<tr style="border-bottom:1px solid var(--border)">'
+        +'<td style="font-weight:600">'+(a.name||'—')+'</td>'
+        +'<td style="font-size:11px;color:var(--dim)">'+(a.position||'—')+'</td>'
+        +'<td style="font-size:11px">'+(a.phone||'—')+'</td>'
+        +'<td style="color:'+sc+';font-size:13px;font-weight:700">'+score+'</td>'
+        +'<td><span class="badge '+bc+'">'+bt2+'</span></td>'
+        +'<td style="font-size:10px;color:var(--dim)">'+dt+'</td>'
+        +'<td style="display:flex;gap:4px">'
+        +'<button class="btn btn-p btn-sm" onclick="prefillApplicant(this.dataset.id)" data-id="'+a.id+'">帶入</button>'
+        +'<button class="btn btn-g btn-sm" onclick="viewApplicantDetail(this.dataset.id)" data-id="'+a.id+'">詳情</button>'
+        +'</td></tr>';
     });
 
-    el.innerHTML = '<div style="display:flex;gap:10px;margin-bottom:10px;font-size:11px;font-family:'JetBrains Mono',monospace">'
-      + '<span style="color:var(--dim)">共 ' + total + ' 人</span>'
-      + '<span style="color:#34d399">推薦 ' + recommended + '</span>'
-      + '<span style="color:#fbbf24">待定 ' + pending + '</span>'
-      + '<span style="color:#f87171">不符 ' + (total-recommended-pending) + '</span>'
-      + '</div>'
-      + '<div class="tbl-wrap"><table class="tbl">'
-      + '<thead><tr><th>姓名</th><th>職位</th><th>電話</th><th>評分</th><th>結果</th><th>時間</th><th></th></tr></thead>'
-      + '<tbody>' + rows + '</tbody></table></div>';
-
+    el.innerHTML=summary
+      +'<div class="tbl-wrap"><table class="tbl">'
+      +'<thead><tr><th>姓名</th><th>職位</th><th>電話</th><th>評分</th><th>結果</th><th>時間</th><th></th></tr></thead>'
+      +'<tbody>'+rows+'</tbody></table></div>';
   } catch(e) {
     el.innerHTML='<div style="color:#f87171;font-size:12px;text-align:center;padding:14px">載入失敗：'+e.message+'</div>';
   }
@@ -2728,45 +2723,62 @@ window.viewApplicantDetail = async (id) => {
   if(!snap.exists()) return;
   const a = snap.data();
   const score = a.aiScore||0;
-  const scoreColor = score>=70?'#34d399':score>=50?'#fbbf24':'#f87171';
-  const badgeTxt = score>=70?'✅ 推薦錄用':score>=50?'⏳ 待人工審核':'❌ 暫不符合';
-  const history = (a.chatHistory||[]).filter(m=>m.role!=='user'||!m.text?.includes('面試結束')).slice(0,20);
+  const sc = score>=70?'#34d399':score>=50?'#fbbf24':'#f87171';
+  const badge = score>=70?'✅ 推薦錄用':score>=50?'⏳ 待人工審核':'❌ 暫不符合';
+  const hist = (a.chatHistory||[]).slice(0,20);
 
   const modal = document.createElement('div');
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)';
+  modal.id = 'applicant-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)';
 
-  const commentHTML = a.aiComment ? '<div style="font-size:11px;color:var(--dim);margin-top:8px;text-align:left">'+a.aiComment+'</div>' : '';
-  let historyHTML = '';
-  if(history.length > 0){
-    const rows = history.map(m=>{
+  const closeBtn = '<button id="close-app-modal" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer">✕</button>';
+
+  let histHTML = '';
+  if(hist.length){
+    let rows2 = '';
+    hist.forEach(function(m){
       const bg = m.role==='user'?'rgba(0,212,255,0.08)':'rgba(124,58,237,0.08)';
       const align = m.role==='user'?'text-align:right':'';
-      return '<div style="padding:6px 10px;border-radius:6px;font-size:12px;background:'+bg+';'+align+'"><span style="font-size:10px;color:var(--dim)">'+(m.role==='user'?'應徵者':'面試官')+'</span><br>'+(m.text||'')+'</div>';
-    }).join('');
-    historyHTML = '<div style="font-size:11px;color:var(--dim);margin-bottom:8px">面試對話記錄：</div>'
-      + '<div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto">'+rows+'</div>';
+      const lbl = m.role==='user'?'應徵者':'面試官';
+      rows2 += '<div style="padding:6px 10px;border-radius:6px;font-size:12px;background:'+bg+';'+align+'">'
+        +'<span style="font-size:10px;color:var(--dim)">'+lbl+'</span><br>'+(m.text||'')+'</div>';
+    });
+    histHTML = '<div style="font-size:11px;color:var(--dim);margin-bottom:6px">面試對話：</div>'
+      +'<div style="display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto">'+rows2+'</div>';
   }
 
-  modal.innerHTML = '<div style="background:#0a0a0a;border:1px solid rgba(0,212,255,0.3);border-radius:14px;padding:24px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-    + '<div style="font-size:16px;font-weight:700">'+a.name+' 面試記錄</div>'
-    + '<button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer">✕</button>'
-    + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:12px">'
-    + '<div>📱 '+(a.phone||'—')+'</div><div>📧 '+(a.email||'—')+'</div>'
-    + '<div>💼 '+(a.position||'—')+'</div><div>🚗 駕照 '+(a.license||'—')+'</div>'
-    + '</div>'
-    + '<div style="padding:12px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;margin-bottom:14px;text-align:center">'
-    + '<div style="font-family:'Orbitron',monospace;font-size:32px;color:'+scoreColor+'">'+score+'</div>'
-    + '<div style="font-size:13px;margin-top:4px">'+badgeTxt+'</div>'
-    + commentHTML
-    + '</div>'
-    + historyHTML
-    + '<div style="display:flex;gap:8px;margin-top:16px">'
-    + '<button class="btn btn-p" style="flex:1" onclick="prefillApplicant(''+( a.id||id)+'');this.closest('[style*=fixed]').remove()">帶入快速入職</button>'
-    + '<button class="btn btn-g" onclick="this.closest('[style*=fixed]').remove()">關閉</button>'
-    + '</div></div>';
+  const commentHTML = a.aiComment?'<div style="font-size:11px;color:var(--dim);margin-top:8px">'+a.aiComment+'</div>':'';
+
+  modal.innerHTML = '<div style="background:#0a0a0a;border:1px solid rgba(0,212,255,0.3);border-radius:14px;padding:22px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-size:15px;font-weight:700">'+(a.name||'—')+' 面試記錄</div>'
+    +closeBtn
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px">'
+    +'<div>📱 '+(a.phone||'—')+'</div><div>📧 '+(a.email||'—')+'</div>'
+    +'<div>💼 '+(a.position||'—')+'</div><div>🚗 '+(a.license||'—')+'</div>'
+    +'</div>'
+    +'<div style="padding:12px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;margin-bottom:12px;text-align:center">'
+    +'<div style="font-size:32px;color:'+sc+';font-weight:700">'+score+'</div>'
+    +'<div style="font-size:13px;margin-top:4px">'+badge+'</div>'
+    +commentHTML
+    +'</div>'
+    +histHTML
+    +'<div style="display:flex;gap:8px;margin-top:14px">'
+    +'<button id="prefill-app-btn" data-id="'+id+'" class="btn btn-p" style="flex:1">帶入快速入職</button>'
+    +'<button id="close-app-btn" class="btn btn-g">關閉</button>'
+    +'</div></div>';
+
   document.body.appendChild(modal);
+
+  // Event listeners (no inline onclick to avoid quote issues)
+  document.getElementById('close-app-modal').onclick = () => modal.remove();
+  document.getElementById('close-app-btn').onclick = () => modal.remove();
+  document.getElementById('prefill-app-btn').onclick = () => {
+    prefillApplicant(id);
+    modal.remove();
+  };
+  modal.onclick = (e) => { if(e.target===modal) modal.remove(); };
 };
 
 window.prefillApplicant=async(id)=>{
@@ -5682,7 +5694,6 @@ const CMD_TOOLS = {
 
 // ── AI 工具調用解析 ────────────────────────────────────
 async function parseAndExecuteTool(userText, aiReply) {
-  // AI 回覆中如果包含 [TOOL:xxx] 格式，執行對應工具
   const toolMatch = aiReply.match(/\[TOOL:(\w+)(?::([^\]]+))?\]/);
   if(!toolMatch) return null;
 
@@ -5694,75 +5705,68 @@ async function parseAndExecuteTool(userText, aiReply) {
     switch(toolName) {
       case 'GET_SALARY':
         result = await CMD_TOOLS.getSalary();
-        const driverLines = result.drivers.map(d=>'• '+d.name+'：配'+d.delivery+'件 逆'+d.reverse+'件 實發$'+d.net.toLocaleString()).join('
-');
-        return '✅ **本月薪資統計 (' + result.month + ')**
-共 ' + result.driverCount + ' 位司機
-薪資總支出：$' + result.totalNet.toLocaleString() + '
-
-' + driverLines;
+        const driverLines = result.drivers.map(function(d){
+          return '• '+d.name+'：配'+d.delivery+'件 逆'+d.reverse+'件 實發$'+d.net.toLocaleString();
+        }).join('\n');
+        return '✅ **本月薪資統計 ('+result.month+')**\n共 '+result.driverCount+' 位司機\n薪資總支出：$'+result.totalNet.toLocaleString()+'\n\n'+driverLines;
 
       case 'SEND_PAYSLIPS':
         showToast('AI 正在發送薪資單...');
         result = await CMD_TOOLS.sendAllPayslips();
-        return `✅ 已成功發送 ${result.sent} 張薪資單（${result.month}）`;
+        return '✅ 已成功發送 '+result.sent+' 張薪資單（'+result.month+'）';
 
       case 'GET_ATTENDANCE':
         result = await CMD_TOOLS.getTodayAttendance();
-        const attendLines = result.drivers.map(d=>'• '+d.name+'：'+d.checkedIn+' 上班 / 配'+d.delivery+'件').join('
-');
-        return '✅ **今日出勤 (' + result.date + ')**
-已打卡：' + result.checkedIn + ' 人
-
-' + attendLines;
+        const attendLines = result.drivers.map(function(d){
+          return '• '+d.name+'：'+d.checkedIn+' 上班 / 配'+d.delivery+'件';
+        }).join('\n');
+        return '✅ **今日出勤 ('+result.date+')**\n已打卡：'+result.checkedIn+' 人\n\n'+attendLines;
 
       case 'PUBLISH_ANNOUNCE':
         if(toolArgs.length < 2) return '❌ 需要提供公告標題和內容';
         result = await CMD_TOOLS.publishAnnounce(toolArgs[0], toolArgs[1]);
         showPanel('announce');
-        return `✅ 公告已發布：「${result.title}」`;
+        return '✅ 公告已發布：「'+result.title+'」';
 
       case 'GET_EMPLOYEE':
         result = await CMD_TOOLS.getEmployee(toolArgs[0]||'');
-        if(result.error) return `❌ ${result.error}`;
-        return `✅ **${result.name} 資料**\n職位：${result.role} / ${result.type}\n配送單價：$${result.priceDelivery} 逆物流：$${result.priceReverse}\n津貼：$${result.allowance||0}\n狀態：${result.status==='active'?'在職':'離職'}`;
+        if(result.error) return '❌ '+result.error;
+        return '✅ **'+result.name+' 資料**\n職位：'+result.role+' / '+result.type+'\n配送單價：$'+result.priceDelivery+' 逆物流：$'+result.priceReverse+'\n狀態：'+(result.status==='active'?'在職':'離職');
 
       case 'ADJUST_DELIVERY':
         if(toolArgs.length < 4) return '❌ 格式：姓名|配送數|逆物流數|原因';
         result = await CMD_TOOLS.adjustDelivery(toolArgs[0], +toolArgs[1], +toolArgs[2], toolArgs[3]);
-        if(result.error) return `❌ ${result.error}`;
-        return `✅ 已調整 ${result.name} 件數：配送${result.delivery} 逆物流${result.reverse}\n原因：${result.reason}`;
+        if(result.error) return '❌ '+result.error;
+        return '✅ 已調整 '+result.name+' 件數：配送'+result.delivery+' 逆物流'+result.reverse+'\n原因：'+result.reason;
 
       case 'RESIGN_EMPLOYEE':
         if(!toolArgs[0]) return '❌ 請提供員工姓名';
         result = await CMD_TOOLS.resignEmployee(toolArgs[0], toolArgs[1]||'自願離職');
-        if(result.error) return `❌ ${result.error}`;
-        return `✅ ${result.name} 離職手續已完成\n日期：${result.date}\n原因：${result.reason}`;
+        if(result.error) return '❌ '+result.error;
+        return '✅ '+result.name+' 離職手續已完成\n日期：'+result.date+'\n原因：'+result.reason;
 
       case 'GET_FINANCE':
         result = await CMD_TOOLS.getFinance();
-        const profitSign = result.netProfit>=0?'+':'-';
-        return `✅ **${result.month} 財務摘要**\n配送收入：$${result.totalGross.toLocaleString()}\n薪資支出：$${result.totalNet.toLocaleString()}\n勞健保(雇主)：$${result.totalInsEr.toLocaleString()}\n其他費用：$${result.totalExp.toLocaleString()}\n**本月淨利：${profitSign}$${Math.abs(result.netProfit).toLocaleString()}**`;
+        var ps = result.netProfit>=0?'+':'-';
+        return '✅ **'+result.month+' 財務摘要**\n配送收入：$'+result.totalGross.toLocaleString()+'\n薪資支出：$'+result.totalNet.toLocaleString()+'\n勞健保(雇主)：$'+result.totalInsEr.toLocaleString()+'\n其他費用：$'+result.totalExp.toLocaleString()+'\n本月淨利：'+ps+'$'+Math.abs(result.netProfit).toLocaleString();
 
       case 'GET_ALL_STAFF':
         result = await CMD_TOOLS.getAllStaff();
-        return `✅ **員工總覽**\n在職共 ${result.total} 人\n司機 ${result.driverCount} 人：${result.drivers.join('、')}\n內勤 ${result.staffCount} 人`;
+        return '✅ **員工總覽**\n在職共 '+result.total+' 人\n司機 '+result.driverCount+' 人：'+result.drivers.join('、')+'\n內勤 '+result.staffCount+' 人';
 
       case 'GET_ALERTS':
         result = await CMD_TOOLS.getAlerts();
         if(!result.alertCount) return '✅ 今日無異常，系統運作正常';
-        const alertLines = result.alerts.map(a=>{
-          if(a.type==='駕照到期') return '🪪 ' + a.name + ' 駕照 ' + a.days + ' 天後到期';
-          if(a.type==='未回報件數') return '📦 未回報件數：' + a.names.join('、');
-          if(a.type==='未簽收薪資單') return '💰 ' + a.count + ' 張薪資單未簽收';
+        var alertLines = result.alerts.map(function(a){
+          if(a.type==='駕照到期') return '🪪 '+a.name+' 駕照 '+a.days+' 天後到期';
+          if(a.type==='未回報件數') return '📦 未回報件數：'+a.names.join('、');
+          if(a.type==='未簽收薪資單') return '💰 '+a.count+' 張薪資單未簽收';
           return a.type;
         });
-        return '⚠️ **發現 ' + result.alertCount + ' 項警示**
-' + alertLines.join('
-');
+        return '⚠️ **發現 '+result.alertCount+' 項警示**\n'+alertLines.join('\n');
     }
   } catch(e) {
-    return `❌ 執行失敗：${e.message}`;
+    return '❌ 執行失敗：'+e.message;
   }
   return null;
 }
@@ -6059,7 +6063,7 @@ async function loadDriverAnnounce(){
   const snap=await getDocs(query(collection(db,'announcements'),orderBy('createdAt','desc'),limit(10)));
   const el=document.getElementById('m-ann-list');
   if(!el)return;
-  if(snap.empty){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--dim);font-size:12px;font-family:'JetBrains Mono',monospace">目前無公告</div>';return;}
+  if(snap.empty){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--dim);font-size:12px">目前無公告</div>';return;}
   el.innerHTML=snap.docs.filter(d=>{const t=d.data().target;return t==='all'||t==='driver';}).map(d=>{
     const a=d.data();
     const date=a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString('zh-TW'):'';
