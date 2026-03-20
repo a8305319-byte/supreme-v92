@@ -1760,11 +1760,15 @@ async function loadInsuredList(){
     const u=d.data();
     const gi=u.gradeIdx>=0?u.gradeIdx:0;
     const g=GRADES[gi]||GRADES[0];
-    rows+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
-      <div style="flex:1"><div style="font-size:12.5px;font-weight:600">${u.name}</div>
-      <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">投保薪資 $${g[1].toLocaleString()}</div></div>
-      <span class="badge bg">加保中</span>
-    </div>`;
+    const deps = u.dependents||0;
+    const depTxt = deps > 0 ? ' · 眷屬 '+deps+' 人' : '';
+    rows += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.03)">'
+      + '<div style="flex:1">'
+      + '<div style="font-size:12.5px;font-weight:600">'+u.name+'</div>'
+      + '<div style="font-size:10px;color:var(--dim)">投保薪資 $'+g[1].toLocaleString()+depTxt+'</div>'
+      + '</div>'
+      + '<span class="badge bg">加保中</span>'
+      + '</div>';
   });
   const ctr=document.getElementById('insured-list');
   if(ctr) ctr.innerHTML=rows||'<div style="color:var(--dim);text-align:center;padding:10px;font-size:12px">無員工資料</div>';
@@ -1798,15 +1802,37 @@ window.applyGrade=async()=>{
   if(!uid){showToast('請先選擇人員','err');return;}
   if(selGradeIdx<0){showToast('請選擇級距','err');return;}
   const g=GRADES[selGradeIdx];
+  const deps = parseInt(document.getElementById('ins-dependents')?.value)||0;
+  // 眷屬健保：每位眷屬健保費 = 員工健保費（雇主另外付60%）
+  const depHealthEmp = Math.round(g[4] * 0.4 * deps);   // 員工付40%
+  const depHealthEr  = Math.round(g[5] * deps);          // 雇主付100%眷屬部分
   await updateDoc(doc(db,'users',uid),{
     gradeIdx:selGradeIdx,
-    labourEmployee:g[2],labourEmployer:g[3],
-    healthEmployee:g[4],healthEmployer:g[5],
-    insuredSalary:g[1]
+    labourEmployee:g[2], labourEmployer:g[3],
+    healthEmployee:g[4]+depHealthEmp,
+    healthEmployer:g[5]+depHealthEr,
+    insuredSalary:g[1],
+    dependents:deps,
+    depHealthEmp, depHealthEr
   });
-  await addAudit('UPDATE',`更新投保薪資級距：第${g[0]}級 $${g[1].toLocaleString()}`);
-  showToast('✓ 已儲存，薪資結算自動更新');
+  await addAudit('UPDATE',`更新投保薪資：第${g[0]}級 $${g[1].toLocaleString()} 眷屬${deps}人`);
+  showToast('✓ 已儲存（含眷屬'+deps+'人）');
   await loadInsuredList();
+};
+
+// 眷屬費用預覽
+window.updateDependentsPreview = () => {
+  const deps = parseInt(document.getElementById('ins-dependents')?.value)||0;
+  const note = document.getElementById('ins-dep-note');
+  const costEl = document.getElementById('ins-dep-cost');
+  if(selGradeIdx < 0 || !GRADES[selGradeIdx]){
+    if(costEl) costEl.textContent = '請先選擇級距';
+    return;
+  }
+  const g = GRADES[selGradeIdx];
+  const depCost = Math.round(g[4] * 0.4 * deps) + Math.round(g[5] * deps);
+  if(costEl) costEl.textContent = deps > 0 ? '$'+depCost.toLocaleString()+'/月' : '$0';
+  if(note) note.style.display = deps > 0 ? 'block' : 'none';
 };
 
 function calcInsuranceTotals(docs){
