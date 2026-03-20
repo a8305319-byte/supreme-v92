@@ -974,6 +974,46 @@ function panelHR(){return `
     </div>
     <div id="hr-table"><div style="color:var(--dim);font-size:12px;text-align:center;padding:14px">載入中...</div></div>
   </div>
+ 
+  <!-- RESIGN MODAL -->
+  <div id="resign-modal" style="display:none;margin-bottom:14px" class="glass-card">
+    <div class="sh">
+      <div class="st" style="color:#fbbf24">📋 離職申請處理</div>
+      <button class="btn btn-g btn-sm" onclick="document.getElementById('resign-modal').style.display='none'">✕</button>
+    </div>
+    <div id="resign-name" style="font-size:15px;font-weight:700;margin-bottom:14px;color:var(--text)"></div>
+    <div class="g2" style="gap:10px">
+      <div class="f-grp">
+        <label class="f-lbl">離職日期<span style="color:#f87171">*</span></label>
+        <input class="f-inp" id="resign-date" type="date">
+      </div>
+      <div class="f-grp">
+        <label class="f-lbl">離職原因</label>
+        <select class="f-inp" id="resign-reason">
+          <option value="自願離職">自願離職</option>
+          <option value="合約期滿">合約期滿</option>
+          <option value="協議離職">協議離職</option>
+          <option value="資遣">資遣</option>
+          <option value="解僱">解僱（違規）</option>
+          <option value="退休">退休</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="f-grp">
+      <label class="f-lbl">備註說明</label>
+      <textarea class="f-inp" id="resign-note" rows="2" placeholder="離職相關備注，如交接事項、特殊情況等"></textarea>
+    </div>
+    <div class="warn-box" style="margin-bottom:12px">
+      ⚠ 處理離職後，該員工帳號將標記為「已離職」狀態，<strong>無法再登入系統</strong>。薪資及審計記錄會保留。
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" style="flex:1" onclick="processResign()">✓ 確認離職處理</button>
+      <button class="btn btn-g" onclick="document.getElementById('resign-modal').style.display='none'">取消</button>
+    </div>
+    <div id="resign-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
+  </div>
+ 
   <!-- ADD USER MODAL -->
   <div id="add-user-modal" style="display:none" class="glass-card" style="border-color:rgba(0,212,255,0.2)">
     <div class="sh"><div class="st">新增 / 編輯人員</div><button class="btn btn-g" onclick="closeAddUser()">✕ 關閉</button></div>
@@ -1022,11 +1062,25 @@ function panelHR(){return `
   </div>
 </div>`;}
  
-async function loadHR() {
+async function loadHR(filter='active') {
+  // Update tab styles
+  ['active','resigned','all'].forEach(t=>{
+    const btn = document.getElementById('hr-tab-'+t);
+    if(btn) btn.className = t===filter ? 'btn btn-p btn-sm' : 'btn btn-g btn-sm';
+  });
+ 
   const snap = await getDocs(collection(db,'users'));
   if(snap.empty){document.getElementById('hr-table').innerHTML='<div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">尚無人員資料</div>';return;}
   let rows='';
-  snap.docs.forEach(d=>{
+  const filtered = snap.docs.filter(d=>{
+    const st = d.data().status;
+    const ac = d.data().active;
+    if(filter==='resigned') return st==='resigned' || ac===false;
+    if(filter==='active') return st!=='resigned' && ac!==false;
+    return true; // all
+  });
+ 
+  filtered.forEach(d=>{
     const u=d.data();
     const licExpiry=u.licenseExpiry;const insExpiry=u.insuranceExpiry;
     const licDays=licExpiry?Math.ceil((new Date(licExpiry)-new Date())/86400000):999;
@@ -1040,8 +1094,13 @@ async function loadHR() {
       <td><span class="badge ${u.type==='employee'?'bb':'bp'}">${u.type==='employee'?'員工':'承攬'}</span></td>
       <td><span class="badge ${licBadge}">${licExpiry||'未設定'}</span></td>
       <td><span class="badge ${insBadge}">${insExpiry||'未設定'}</span></td>
-      <td><span class="badge bg">在職</span></td>
-      ${ROLE==='commander'?`<td style='display:flex;gap:4px'><button class="btn btn-p" style="font-size:10px;padding:3px 8px" onclick="editUser('${d.id}')">編輯</button><button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="showPanel('files');setTimeout(()=>{const s=document.getElementById('upload-person');if(s)s.value='${u.name}';const c=document.getElementById('upload-cat');if(c)c.value='hr';},300)">上傳證件</button></td>`:''}
+      <td><span class="badge ${u.status==='resigned'?'br':u.active===false?'br':'bg'}">${u.status==='resigned'?'已離職':u.active===false?'停用':'在職'}</span></td>
+      ${ROLE==='commander'?`<td style='display:flex;gap:4px;flex-wrap:wrap'>
+  <button class="btn btn-p" style="font-size:10px;padding:3px 8px" onclick="editUser('${d.id}')">編輯</button>
+  <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="showPanel('files');setTimeout(()=>{const s=document.getElementById('upload-person');if(s)s.value='${u.name}';const c=document.getElementById('upload-cat');if(c)c.value='hr';},300)">上傳證件</button>
+  <button class="btn" style="font-size:10px;padding:3px 8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#fbbf24" onclick="openResign('${d.id}','${u.name}')">離職</button>
+  <button class="btn btn-d" style="font-size:10px;padding:3px 8px" onclick="confirmDelete('${d.id}','${u.name}')">刪除</button>
+</td>`:''}
     </tr>`;
   });
   document.getElementById('hr-table').innerHTML=`
@@ -1049,6 +1108,126 @@ async function loadHR() {
       <th>姓名</th><th>角色</th><th>類型</th><th>駕照到期</th><th>險種到期</th><th>狀態</th>${ROLE==='commander'?'<th></th>':''}
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+ 
+ 
+// ══════════════════════════════════════════════════════════
+// 離職處理 & 員工刪除
+// ══════════════════════════════════════════════════════════
+let _resignUid = '';
+let _resignName = '';
+ 
+window.openResign = (uid, name) => {
+  _resignUid = uid;
+  _resignName = name;
+  document.getElementById('resign-name').textContent = '員工：' + name;
+  document.getElementById('resign-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('resign-note').value = '';
+  document.getElementById('resign-msg').style.display = 'none';
+  document.getElementById('resign-modal').style.display = 'block';
+  document.getElementById('add-user-modal').style.display = 'none';
+  document.getElementById('direct-onboard-modal').style.display = 'none';
+  // Scroll to modal
+  document.getElementById('resign-modal').scrollIntoView({behavior:'smooth'});
+};
+ 
+window.processResign = async () => {
+  if(!_resignUid){ showToast('錯誤：找不到員工 UID','err'); return; }
+  const date = document.getElementById('resign-date').value;
+  const reason = document.getElementById('resign-reason').value;
+  const note = document.getElementById('resign-note').value.trim();
+  const msg = document.getElementById('resign-msg');
+ 
+  if(!date){ showToast('請填寫離職日期','err'); return; }
+ 
+  try {
+    // Update user status to resigned
+    await updateDoc(doc(db,'users',_resignUid), {
+      status: 'resigned',
+      resignDate: date,
+      resignReason: reason,
+      resignNote: note,
+      resignProcessedBy: CD?.name||'Commander',
+      resignProcessedAt: serverTimestamp(),
+      active: false
+    });
+ 
+    // Save resignation record
+    await addDoc(collection(db,'resignations'), {
+      uid: _resignUid,
+      name: _resignName,
+      resignDate: date,
+      reason,
+      note,
+      processedBy: CD?.name||'Commander',
+      createdAt: serverTimestamp()
+    });
+ 
+    await addAudit('RESIGN', _resignName + ' 離職處理完成 · 原因：' + reason + ' · 日期：' + date);
+ 
+    if(msg){ msg.style.display='block'; msg.style.color='#34d399'; msg.textContent='✓ 離職處理完成，帳號已停用'; }
+    showToast('✓ ' + _resignName + ' 已辦理離職');
+ 
+    setTimeout(()=>{
+      document.getElementById('resign-modal').style.display='none';
+      loadHR();
+    }, 1500);
+  } catch(e) {
+    showToast('處理失敗：'+e.message,'err');
+    if(msg){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='失敗：'+e.message; }
+  }
+};
+ 
+window.confirmDelete = (uid, name) => {
+  // Show custom confirm dialog
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+  modal.innerHTML = `
+    <div style="background:#0a0a0a;border:1px solid rgba(239,68,68,0.4);border-radius:14px;padding:28px;max-width:420px;width:100%;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(239,68,68,0.4),transparent)"></div>
+      <div style="font-size:32px;text-align:center;margin-bottom:12px">⚠️</div>
+      <div style="font-size:15px;font-weight:700;text-align:center;margin-bottom:8px">確認刪除員工資料</div>
+      <div style="font-size:13px;color:#94a3b8;text-align:center;margin-bottom:20px;line-height:1.7">
+        您確定要永久刪除 <strong style="color:#e2e8f0">${name}</strong> 的所有資料嗎？<br>
+        <span style="color:#f87171">此操作無法復原，審計日誌除外。</span>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:#64748b;font-family:'JetBrains Mono',monospace;display:block;margin-bottom:4px">輸入「確認刪除」以確認</label>
+        <input id="delete-confirm-input" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(239,68,68,0.3);border-radius:7px;color:#e2e8f0;font-size:13px;outline:none;font-family:'Noto Sans TC',sans-serif" placeholder="確認刪除">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="delete-confirm-btn" style="flex:1;padding:11px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);border-radius:8px;color:#f87171;font-size:13px;cursor:pointer;font-weight:700;font-family:'Noto Sans TC',sans-serif" 
+          onclick="executeDelete('${uid}','${name}',this.closest('div[style]'))">確認永久刪除</button>
+        <button style="flex:1;padding:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#94a3b8;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif"
+          onclick="this.closest('div[style*=fixed]').remove()">取消</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('delete-confirm-input')?.focus(), 100);
+};
+ 
+window.executeDelete = async (uid, name, modalEl) => {
+  const input = document.getElementById('delete-confirm-input');
+  if(!input || input.value.trim() !== '確認刪除'){
+    showToast('請輸入「確認刪除」以確認操作','err');
+    input?.focus();
+    return;
+  }
+  try {
+    // Delete user document
+    await deleteDoc(doc(db,'users',uid));
+ 
+    // Log deletion
+    await addAudit('DELETE', '永久刪除員工資料：' + name);
+ 
+    showToast('✓ ' + name + ' 的資料已永久刪除');
+    modalEl?.remove();
+    loadHR();
+  } catch(e) {
+    showToast('刪除失敗：'+e.message,'err');
+  }
+};
+ 
+// Add resigned status to HR table display
  
 window.openAddUser=()=>{ document.getElementById('add-user-modal').style.display='block'; };
 window.closeAddUser=()=>{ document.getElementById('add-user-modal').style.display='none'; };
