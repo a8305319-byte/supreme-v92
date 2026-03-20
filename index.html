@@ -1670,6 +1670,26 @@ function panelAttendance(){return `
     <div class="st" style="margin-bottom:12px">本月回報記錄</div>
     <div id="attend-table"><div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">載入中...</div></div>
   </div>
+
+  <!-- 日報表調閱 -->
+  <div class="glass-card" style="margin-top:14px">
+    <div class="sh">
+      <div class="st">📋 日報表調閱</div>
+      <button class="btn btn-p btn-sm" onclick="loadDailyReport(document.getElementById('daily-report-date').value||TODAY)">查詢</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <input type="date" id="daily-report-date" class="f-inp" style="width:160px;padding:7px 10px" value="${TODAY}">
+      <button class="btn btn-g btn-sm" onclick="document.getElementById('daily-report-date').value=TODAY;loadDailyReport(TODAY)">今日</button>
+      <button class="btn btn-g btn-sm" onclick="
+        const d=new Date(document.getElementById('daily-report-date').value||TODAY);
+        d.setDate(d.getDate()-1);
+        document.getElementById('daily-report-date').value=d.toISOString().slice(0,10);
+        loadDailyReport(d.toISOString().slice(0,10))">昨日</button>
+    </div>
+    <div id="daily-report-content">
+      <div style="color:var(--dim);font-size:12px;text-align:center;padding:14px">選擇日期後點「查詢」</div>
+    </div>
+  </div>
 </div>`;}
 
 // ── INSURANCE ─────────────────────────────────────────────
@@ -3221,10 +3241,24 @@ function buildDriverUI(){
       <!-- REPORT -->
       <div class="panel" id="panel-driver_report">
         <div class="glass-card" style="margin-bottom:14px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <span style="font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace">📦 今日件數回報</span>
-            <span style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">${TODAY}</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">${TODAY}</span>
+              <button onclick="document.getElementById('report-photo-input').click()" 
+                style="padding:6px 12px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.35);border-radius:7px;color:#a78bfa;font-size:11px;cursor:pointer;font-family:'JetBrains Mono',monospace">
+                📷 掃描截圖
+              </button>
+            </div>
           </div>
+          <!-- Photo OCR input -->
+          <input type="file" id="report-photo-input" accept="image/*" capture="environment" style="display:none" onchange="ocrReportPhoto(this)">
+          <!-- OCR progress -->
+          <div id="report-ocr-bar" style="display:none;padding:8px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;margin-bottom:10px;font-size:11px;color:#a78bfa;font-family:'JetBrains Mono',monospace;text-align:center">
+            ⟳ OCR 辨識中，自動填入件數...
+          </div>
+          <!-- Photo preview -->
+          <div id="report-photo-preview" style="display:none;margin-bottom:10px"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
             <div><label style="font-size:10px;color:var(--dim);display:block;margin-bottom:4px;font-family:'JetBrains Mono',monospace">配送件數</label>
               <input style="width:100%;padding:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:24px;font-family:'JetBrains Mono',monospace;font-weight:700;text-align:center;outline:none;transition:border-color 0.2s" type="number" inputmode="numeric" id="m-in-d" placeholder="0" min="0" oninput="mUpdateTotal()"></div>
@@ -3592,17 +3626,16 @@ async function sendCSMessage() {
       ...csHistory.slice(-8) // keep last 8 messages for context
     ];
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${CS_GEMINI_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: messages,
-        generationConfig: { temperature: 0.82, maxOutputTokens: 500 }
-      })
-    });
+    const res = await geminiWithBackoff(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${CS_GEMINI_KEY}`,
+      { contents: messages, generationConfig: { temperature: 0.82, maxOutputTokens: 500 } }
+    );
     const data = await res.json();
     console.log('[CS] status:', res.status, 'candidates:', data.candidates?.length, 'error:', data.error?.message);
-    if(data.error) throw new Error('AI錯誤：'+data.error.message);
+    if(data.error){
+      if(data.error.code===429) throw new Error('QUOTA_EXCEEDED');
+      throw new Error('AI錯誤：'+data.error.message);
+    }
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '不好意思，我這邊稍微卡住了，可以再說一次嗎？😅';
 
     csHistory.push({ role: 'model', parts: [{ text: reply }] });
@@ -4430,9 +4463,11 @@ async function loadDisputeNotifications(){
   try {
     const snap = await getDocs(query(
       collection(db,'payslipDisputes'),
-      where('status','==','pending'),
-      orderBy('createdAt','desc')
+      where('status','==','pending')
+      // orderBy removed - add Firebase index if needed
     ));
+    // Sort client-side instead
+    const sortedDocs = snap.docs.sort((a,b) => (b.data().createdAt?.seconds||0) - (a.data().createdAt?.seconds||0));
     const badge = document.getElementById('dispute-badge');
     const card = document.getElementById('dispute-list-card');
     const listEl = document.getElementById('dispute-list-content');
@@ -4444,7 +4479,7 @@ async function loadDisputeNotifications(){
       // Build dispute list
       if(card && listEl){
         card.style.display='block';
-        listEl.innerHTML = snap.docs.map(d=>{
+        listEl.innerHTML = (sortedDocs||snap.docs).map(d=>{
           const e=d.data();
           const t=e.createdAt?.toDate?.().toLocaleDateString('zh-TW')||'';
           return `<div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:8px">
@@ -4795,7 +4830,7 @@ window.processMissionImage = async (driverUid, imageFile) => {
     // Geocode all addresses
     const missions = [];
     for (const addr of addresses) {
-      const coord = await geocodeAddress(addr);
+      const coord = await geocodeAddressCached(addr);
       // MOMO delivery price ~ $50, shadow profit = 23.4%
       const price = 50;
       missions.push({
@@ -5201,6 +5236,272 @@ window.submitReportBtn = async () => {
   await submitReport();
 };
 
+// ══════════════════════════════════════════════════════════
+// 指數退避 + 請求佇列 + 429 防護系統
+// ══════════════════════════════════════════════════════════
+
+// ── 座標緩存（避免重複 Geocoding）────────────────────────
+const _geoCache = {};
+const GEO_CACHE_KEY = 'geo_cache_v1';
+
+// Load cache from localStorage
+try {
+  const saved = localStorage.getItem(GEO_CACHE_KEY);
+  if(saved) Object.assign(_geoCache, JSON.parse(saved));
+} catch(e){}
+
+function saveGeoCache(){
+  try { localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(_geoCache)); } catch(e){}
+}
+
+// ── 指數退避 Gemini 呼叫 ─────────────────────────────────
+async function geminiWithBackoff(url, body, maxRetries=3){
+  let delay = 2000; // start 2s
+  for(let attempt=0; attempt<=maxRetries; attempt++){
+    try {
+      const res = await fetch(url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      if(res.status === 429){
+        // Rate limited - read retry-after if available
+        const data = await res.json().catch(()=>({}));
+        const retryAfter = data.error?.details?.find(d=>d['@type']?.includes('RetryInfo'))?.retryDelay;
+        const waitMs = retryAfter ? parseInt(retryAfter)*1000 : delay;
+        console.warn(`[Gemini] 429 Rate limit. Retry ${attempt+1}/${maxRetries} in ${waitMs/1000}s`);
+        if(attempt < maxRetries){
+          showToast(`⏳ API 限流，${Math.round(waitMs/1000)}秒後重試...`);
+          await new Promise(r=>setTimeout(r, waitMs));
+          delay = Math.min(delay * 2, 30000); // exponential: 2s→4s→8s→max30s
+          continue;
+        }
+        throw new Error('API_QUOTA_EXCEEDED');
+      }
+      return res;
+    } catch(e){
+      if(e.message === 'API_QUOTA_EXCEEDED') throw e;
+      if(attempt < maxRetries){
+        await new Promise(r=>setTimeout(r, delay));
+        delay = Math.min(delay*2, 30000);
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
+// ── 請求佇列（控制並發）──────────────────────────────────
+class RequestQueue {
+  constructor(concurrency=1, delayMs=1200){
+    this.queue = [];
+    this.running = 0;
+    this.concurrency = concurrency;
+    this.delayMs = delayMs;
+  }
+  add(fn){ return new Promise((res,rej)=>{ this.queue.push({fn,res,rej}); this._run(); }); }
+  async _run(){
+    if(this.running >= this.concurrency || !this.queue.length) return;
+    this.running++;
+    const {fn,res,rej} = this.queue.shift();
+    try { res(await fn()); } catch(e){ rej(e); }
+    finally {
+      await new Promise(r=>setTimeout(r, this.delayMs));
+      this.running--;
+      this._run();
+    }
+  }
+}
+const geminiQueue = new RequestQueue(1, 1500); // 1 request per 1.5s
+const geocodeQueue = new RequestQueue(1, 500); // 1 geocode per 0.5s
+
+// ── 帶緩存的 Geocoding ────────────────────────────────────
+async function geocodeAddressCached(address){
+  const key = address.trim();
+  if(_geoCache[key]){
+    console.log('[GeoCache] HIT:', key.slice(0,20));
+    return _geoCache[key];
+  }
+  // Queue the geocoding request
+  const result = await geocodeQueue.add(async () => {
+    try {
+      const query = encodeURIComponent(key + ', 台灣');
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+        { headers: { 'Accept-Language':'zh-TW', 'User-Agent':'ZaLogiApp/1.0' } }
+      );
+      const data = await res.json();
+      if(data.length > 0){
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name };
+      }
+    } catch(e){ console.warn('[Geocode]', e.message); }
+    return null;
+  });
+  if(result){
+    _geoCache[key] = result;
+    saveGeoCache();
+  }
+  return result;
+}
+
+// ── 司機端：掃描回報截圖 → 自動填入件數 ─────────────────
+window.ocrReportPhoto = async (input) => {
+  const file = input.files[0];
+  if(!file) return;
+  input.value = '';
+
+  const bar = document.getElementById('report-ocr-bar');
+  if(bar) bar.style.display = 'block';
+
+  try {
+    // Convert to base64
+    const base64 = await new Promise((res,rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+
+    // OCR prompt - extract delivery count
+    const prompt = `這是一張配送單據截圖或手機畫面截圖。
+請只輸出以下 JSON 格式，不要其他文字：
+{"delivery": 數字, "reverse": 數字, "note": "備註"}
+
+delivery = 配送件數（正向配送）
+reverse = 逆物流件數（退件/收件）
+如果看不到某個數字，填 0。`;
+
+    const res = await geminiWithBackoff(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        contents:[{ role:'user', parts:[
+          { inline_data:{ mime_type: file.type, data: base64 } },
+          { text: prompt }
+        ]}],
+        generationConfig:{ temperature:0.1, maxOutputTokens:200 }
+      }
+    );
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    console.log('[Report OCR]', text);
+
+    // Parse JSON
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    // Store photo as evidence for report submission
+    window._reportPhotoData = base64;
+    // Show photo preview
+    const preview = document.getElementById('report-photo-preview');
+    if(preview){
+      preview.innerHTML = `<img src="data:${file.type};base64,${base64}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;border:1px solid rgba(0,212,255,0.3)">
+        <div style="font-size:10px;color:#34d399;text-align:center;margin-top:4px;font-family:'JetBrains Mono',monospace">✓ 照片已附加為回報憑證</div>`;
+      preview.style.display='block';
+    }
+
+    // Fill in the form fields
+    const dInput = document.getElementById('m-in-d');
+    const rInput = document.getElementById('m-in-r');
+    if(dInput && parsed.delivery >= 0){
+      dInput.value = parsed.delivery;
+      dInput.style.borderColor = 'rgba(0,212,255,0.5)';
+      dInput.style.background = 'rgba(0,212,255,0.05)';
+    }
+    if(rInput && parsed.reverse >= 0){
+      rInput.value = parsed.reverse;
+      rInput.style.borderColor = 'rgba(0,212,255,0.5)';
+      rInput.style.background = 'rgba(0,212,255,0.05)';
+    }
+    if(typeof mUpdateTotal === 'function') mUpdateTotal();
+    showToast(`✓ OCR：配送 ${parsed.delivery} 件，逆物流 ${parsed.reverse} 件`);
+
+  } catch(e) {
+    console.error('[Report OCR]', e.message);
+    if(e.message.includes('QUOTA') || e.message.includes('429')){
+      showToast('API 暫時限流，請手動輸入件數','err');
+    } else {
+      showToast('OCR 辨識失敗，請手動輸入','err');
+    }
+  } finally {
+    const bar = document.getElementById('report-ocr-bar');
+    if(bar) bar.style.display = 'none';
+  }
+};
+
+// ══════════════════════════════════════════════════════════
+// 會計端：調閱日報表 (含照片憑證)
+// ══════════════════════════════════════════════════════════
+window.loadDailyReport = async (date) => {
+  date = date || TODAY;
+  const el = document.getElementById('daily-report-content');
+  if(!el) return;
+  el.innerHTML = '<div style="color:var(--dim);font-size:12px;text-align:center;padding:20px">載入中...</div>';
+
+  try {
+    // Query all reports for this date (no orderBy to avoid index requirement)
+    const snap = await getDocs(query(
+      collection(db,'reports'),
+      where('date','==',date)
+    ));
+
+    if(snap.empty){
+      el.innerHTML = `<div style="color:var(--dim);font-size:12px;text-align:center;padding:20px">📭 ${date} 無回報資料</div>`;
+      return;
+    }
+
+    // Sort by name client-side
+    const reports = snap.docs.map(d=>d.data()).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    const totalD = reports.reduce((s,r)=>s+r.deliveryQty,0);
+    const totalR = reports.reduce((s,r)=>s+r.reverseQty,0);
+    const withPhoto = reports.filter(r=>r.photoEvidence).length;
+
+    el.innerHTML = `
+      <!-- Summary -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+        <div style="padding:10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:8px;text-align:center">
+          <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">配送合計</div>
+          <div style="font-family:'Orbitron',monospace;font-size:20px;color:var(--accent)">${totalD}</div>
+        </div>
+        <div style="padding:10px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.15);border-radius:8px;text-align:center">
+          <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">逆物流合計</div>
+          <div style="font-family:'Orbitron',monospace;font-size:20px;color:#a78bfa">${totalR}</div>
+        </div>
+        <div style="padding:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:8px;text-align:center">
+          <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">附憑證</div>
+          <div style="font-family:'Orbitron',monospace;font-size:20px;color:#34d399">${withPhoto}/${reports.length}</div>
+        </div>
+      </div>
+      <!-- Individual Reports -->
+      ${reports.map(r => `
+        <div style="padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:rgba(0,0,0,0.2)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:13px;font-weight:700">${r.name||'—'}</div>
+            <div style="display:flex;gap:12px">
+              <span style="font-size:12px;color:var(--accent);font-family:'JetBrains Mono',monospace">配 <strong>${r.deliveryQty}</strong></span>
+              <span style="font-size:12px;color:#a78bfa;font-family:'JetBrains Mono',monospace">逆 <strong>${r.reverseQty}</strong></span>
+              <span style="font-size:11px;color:${r.photoEvidence?'#34d399':'var(--dim)'}">${r.photoEvidence?'📷 有憑證':'无憑證'}</span>
+            </div>
+          </div>
+          ${r.photoBase64 ? `
+            <div>
+              <details>
+                <summary style="font-size:11px;color:#34d399;cursor:pointer;font-family:'JetBrains Mono',monospace">📷 查看照片憑證</summary>
+                <img src="data:image/jpeg;base64,${r.photoBase64}" style="width:100%;max-height:250px;object-fit:contain;border-radius:8px;margin-top:8px;border:1px solid rgba(0,212,255,0.2)">
+              </details>
+            </div>` : ''}
+          <div style="font-size:10px;color:var(--dim);margin-top:4px;font-family:'JetBrains Mono',monospace">
+            ${r.confirmedAt?.toDate?.().toLocaleTimeString('zh-TW')||'—'} 回報
+          </div>
+        </div>`).join('')}
+    `;
+  } catch(e) {
+    console.error('[DailyReport]', e);
+    el.innerHTML = `<div style="color:#f87171;font-size:12px;text-align:center;padding:20px">載入失敗：${e.message}</div>`;
+  }
+};
+
 async function initDriver(){
   await loadDriverHome();
   checkUnreadPayslips();
@@ -5285,9 +5586,15 @@ async function submitReport(){
   if(qd===0&&qr===0){showToast('請填寫件數','err');return;}
   try {
     // Save today's report
+    // Get photo evidence base64 if captured
+    const photoData = window._reportPhotoData || null;
+    window._reportPhotoData = null; // clear after use
+
     await setDoc(doc(db,'reports',`${CU.uid}_${TODAY}`),{
       uid:CU.uid,name:CD.name,date:TODAY,month:MONTH,
-      deliveryQty:qd,reverseQty:qr,confirmedAt:serverTimestamp()
+      deliveryQty:qd,reverseQty:qr,confirmedAt:serverTimestamp(),
+      photoEvidence: photoData ? true : false,
+      photoBase64: photoData || null
     });
     // Update monthly stats (upsert)
     const mRef=doc(db,'monthlyStats',`${CU.uid}_${MONTH}`);
