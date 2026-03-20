@@ -91,50 +91,112 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 .bnav-label{font-size:9px;font-family:'JetBrains Mono',monospace;margin-top:2px;}
 .mobile-content{padding:14px;}
  
-/* ===== MOBILE RESPONSIVE FIXES ===== */
+/* ===== RESPONSIVE: MOBILE / TABLET / DESKTOP ===== */
+ 
+/* --- Tablet (768px - 1024px) --- */
+@media (max-width: 1024px) {
+  .sidebar { width: 200px; }
+  .nav-item { font-size: 11.5px; padding: 8px 14px; }
+  .g3 { grid-template-columns: 1fr 1fr !important; }
+  .g4 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .main-content { padding: 18px 18px; }
+}
+ 
+/* --- Mobile (< 768px) --- */
 @media (max-width: 768px) {
-  .desktop-layout { flex-direction: column; }
-  .sidebar { 
-    width: 100% !important; 
+  /* Sidebar becomes top navigation */
+  .desktop-layout { flex-direction: column; min-height: 100vh; }
+  .sidebar {
+    width: 100% !important;
     height: auto !important;
-    position: relative !important;
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 10px 0 0;
+    position: sticky !important;
+    top: 0;
+    z-index: 200;
+    flex-direction: column;
+    padding: 0;
     border-right: none;
     border-bottom: 1px solid var(--border);
+    overflow: visible;
   }
-  .logo-area { 
-    width: 100%; 
-    padding: 10px 14px 8px;
+  .logo-area {
+    padding: 10px 14px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+    flex-direction: row;
+    border-bottom: none;
   }
-  .logo-title { font-size: 14px; }
-  .nav-section { 
-    width: 100%;
-    padding: 4px 14px 2px;
-    font-size: 8px;
+  .logo-title { font-size: 13px; }
+  .logo-sub { display: none; }
+  .role-badge { margin-top: 0; padding: 2px 8px; font-size: 9px; }
+ 
+  /* Collapse nav into horizontal scroll */
+  .nav-sections-wrap {
+    display: flex;
+    overflow-x: auto;
+    padding: 4px 10px 8px;
+    gap: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+  .nav-sections-wrap::-webkit-scrollbar { display: none; }
+  .nav-section { display: none; }
   .nav-item {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 6px 10px;
+    border-left: none !important;
+    border-radius: 6px;
+    white-space: nowrap;
+    font-size: 11px;
+    background: var(--glass);
+    border: 1px solid var(--border) !important;
+    flex-shrink: 0;
   }
+  .nav-item.active {
+    background: rgba(0,212,255,0.12);
+    border-color: rgba(0,212,255,0.35) !important;
+  }
+  .nav-item.disabled { display: none; }
   .nav-logout { 
-    width: 100%;
-    padding: 8px 14px;
+    margin-top: auto;
+    border-top: none;
+    padding: 4px 10px 8px;
   }
-  .main-content { 
+  .btn-logout { padding: 5px 10px; font-size: 10px; }
+ 
+  /* Main content */
+  .main-content {
     max-height: none !important;
-    padding: 16px 14px;
+    padding: 14px 12px 20px;
+    overflow-y: auto;
   }
-  .g2, .g3, .g4 { grid-template-columns: 1fr !important; }
-  .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
-  .topbar { margin-bottom: 14px; }
-  .page-title { font-size: 15px; }
-  .tbl { font-size: 11px; }
+  .topbar { margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .page-title { font-size: 14px; }
+  .topbar-right { flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 10px; padding: 4px 8px; }
+ 
+  /* Grids */
+  .g2, .g3, .g4 { grid-template-columns: 1fr !important; gap: 10px !important; }
+  .stat-card { padding: 12px; }
+  .stat-val { font-size: 18px !important; }
+ 
+  /* Tables */
+  .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl { font-size: 11px; min-width: 500px; }
   .tbl th, .tbl td { padding: 7px 8px; }
+ 
+  /* Glass cards */
+  .glass-card { padding: 14px; }
+  
+  /* Forms */
+  .f-inp { font-size: 16px; } /* prevent iOS zoom */
+}
+ 
+/* --- Small mobile (< 430px) --- */
+@media (max-width: 430px) {
+  .main-content { padding: 10px 10px 16px; }
+  .page-title { font-size: 13px; }
+  .stat-val { font-size: 16px !important; }
+  .glass-card { padding: 12px; border-radius: 10px; }
 }
  
 /* ===== SHARED COMPONENTS ===== */
@@ -550,7 +612,7 @@ function buildDesktopUI() {
         <div class="logo-sub">在地物流有限公司</div>
         ${roleBadge}
       </div>
-      ${navHTML}
+      <div class="nav-sections-wrap">${navHTML}</div>
       <div class="nav-logout">
         <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:8px;text-align:center;">${CD.name||CU.email}</div>
         <button class="btn-logout" onclick="doLogout()">登出系統</button>
@@ -596,13 +658,8 @@ window.viewEscalation = async(id) => {
   // Mark as reviewed
   await updateDoc(doc(db,'csEscalations',id), {status:'reviewed'});
   // Show in a simple modal-like toast with details
-  const hist = (e.csHistory||[]).slice(-4).map(m=>`${m.role==='user'?e.driverName:'徐美玲'}：${m.text}`).join('
-');
-  alert(`司機：${e.driverName}
-觸發訊息：${e.triggerMessage}
- 
-最近對話：
-${hist}`);
+  const hist = (e.csHistory||[]).slice(-4).map(m=>(m.role==='user'?e.driverName:'客服')+': '+m.text).join('\n');
+  alert('司機：'+e.driverName+'\n觸發訊息：'+e.triggerMessage+'\n\n最近對話：\n'+hist);
 };
  
 window.showPanel = function(id) {
@@ -821,7 +878,7 @@ async function loadHR() {
   document.getElementById('hr-table').innerHTML=`
     <table class="tbl"><thead><tr>
       <th>姓名</th><th>角色</th><th>類型</th><th>駕照到期</th><th>險種到期</th><th>狀態</th>${ROLE==='commander'?'<th></th>':''}
-    </tr></thead><tbody>${rows}</tbody></table>`;
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
  
 window.openAddUser=()=>{ document.getElementById('add-user-modal').style.display='block'; };
@@ -1090,7 +1147,7 @@ async function loadSalaryList(){
     rows+=`<tr><td>${u.name}</td><td><span class="badge ${u.type==='employee'?'bb':'bp'}">${u.type==='employee'?'員工':'承攬'}</span></td><td style="color:var(--mid)">$${gross.toLocaleString()}</td><td style="color:var(--accent);font-family:'JetBrains Mono',monospace">$${net.toLocaleString()}</td></tr>`;
   }
   const el=document.getElementById('sal-list');
-  if(el)el.innerHTML=`<table class="tbl"><thead><tr><th>姓名</th><th>類型</th><th>毛收入</th><th>預估實發</th></tr></thead><tbody>${rows}</tbody></table>`;
+  if(el)el.innerHTML=`<div class='tbl-wrap'><table class="tbl"><thead><tr><th>姓名</th><th>類型</th><th>毛收入</th><th>預估實發</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
  
 // ── FINANCE ───────────────────────────────────────────────
@@ -1133,7 +1190,7 @@ async function loadOperations(){
     </tr>`;
   }
   const el=document.getElementById('ops-table');
-  if(el)el.innerHTML=`<table class="tbl"><thead><tr><th>司機</th><th>配送件</th><th>逆物流件</th><th>確認狀態</th><th>時間</th></tr></thead><tbody>${rows}</tbody></table>`;
+  if(el)el.innerHTML=`<div class='tbl-wrap'><table class="tbl"><thead><tr><th>司機</th><th>配送件</th><th>逆物流件</th><th>確認狀態</th><th>時間</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
  
 // ── VEHICLE ───────────────────────────────────────────────
@@ -1168,7 +1225,7 @@ async function loadVehicles(){
     const v=d.data();
     rows+=`<tr><td style="font-family:'JetBrains Mono',monospace">${v.plate}</td><td>${v.vehicleType}</td><td>${v.insuranceExpiry||'未設定'}</td><td>${v.nextMaintenance||'未設定'}</td><td><span class="badge bg">正常</span></td></tr>`;
   });
-  document.getElementById('vehicle-table').innerHTML=`<table class="tbl"><thead><tr><th>車牌</th><th>車型</th><th>強制險到期</th><th>下次保養</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('vehicle-table').innerHTML=`<table class="tbl"><thead><tr><th>車牌</th><th>車型</th><th>強制險到期</th><th>下次保養</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 window.saveVehicle=async()=>{
   await addDoc(collection(db,'vehicles'),{plate:document.getElementById('v-plate').value,vehicleType:document.getElementById('v-type').value,insuranceExpiry:document.getElementById('v-ins').value,nextMaintenance:document.getElementById('v-maint').value,createdAt:serverTimestamp()});
@@ -1478,7 +1535,7 @@ async function loadApplicants(){
   const el=document.getElementById('applicant-list');
   if(!el)return;
   if(snap.empty){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">尚無應徵者</div>';return;}
-  el.innerHTML=`<table class="tbl"><thead><tr><th>姓名</th><th>電話</th><th>面試評分</th><th>建議</th><th>時間</th><th></th></tr></thead><tbody>`+
+  el.innerHTML=`<div class='tbl-wrap'><table class="tbl"><thead><tr><th>姓名</th><th>電話</th><th>面試評分</th><th>建議</th><th>時間</th><th></th></tr></thead><tbody>`+
   snap.docs.map(d=>{
     const a=d.data();
     const score=a.aiScore||0;
@@ -1813,7 +1870,7 @@ async function loadFiles(){
   const counts={};
   snap.docs.forEach(d=>{ const c=d.data().category||'other'; counts[c]=(counts[c]||0)+1; });
   FILE_CATS.forEach(c=>{ const el2=document.getElementById('count-'+c.id); if(el2)el2.textContent=(counts[c.id]||0)+' 個'; });
-  el.innerHTML=`<table class="tbl"><thead><tr><th></th><th>檔名</th><th>分類</th><th>說明</th><th>大小</th><th>上傳者</th><th>時間</th><th></th></tr></thead><tbody>`+
+  el.innerHTML=`<div class='tbl-wrap'><table class="tbl"><thead><tr><th></th><th>檔名</th><th>分類</th><th>說明</th><th>大小</th><th>上傳者</th><th>時間</th><th></th></tr></thead><tbody>`+
   snap.docs.map(d=>{
     const f=d.data();
     const date=f.uploadedAt?.toDate?f.uploadedAt.toDate().toLocaleDateString('zh-TW'):'';
