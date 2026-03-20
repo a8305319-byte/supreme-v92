@@ -83,7 +83,7 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
   <div class="screen active" id="screen-info">
     <div style="text-align:center;margin-bottom:20px">
       <div class="step-title">👋 歡迎應徵！</div>
-      <div class="step-sub">請先填寫基本資料，完成後將進行 AI 面試</div>
+      <div class="step-sub">請先填寫基本資料，完成後將進行面試評測</div>
     </div>
     <div class="progress">
       <div class="prog-step active"></div>
@@ -129,14 +129,14 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
           <option value="5年以上">5年以上</option>
         </select>
       </div>
-      <button class="btn btn-p" onclick="startInterview()">開始 AI 面試 →</button>
+      <button class="btn btn-p" onclick="startInterview()">開始面試評測 →</button>
     </div>
   </div>
  
-  <!-- SCREEN 2: AI INTERVIEW -->
+  <!-- SCREEN 2: INTERVIEW -->
   <div class="screen" id="screen-interview">
     <div style="text-align:center;margin-bottom:16px">
-      <div class="step-title">🤖 AI 面試進行中</div>
+      <div class="step-title">🤖 面試評測進行中</div>
       <div class="step-sub" id="interview-progress-text">第 1 題，共 5 題</div>
     </div>
     <div class="progress">
@@ -161,7 +161,7 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
       <div class="prog-step done"></div>
     </div>
     <div class="card result-card">
-      <div style="font-size:13px;color:var(--mid);font-family:'JetBrains Mono',monospace">AI 面試完成</div>
+      <div style="font-size:13px;color:var(--mid);font-family:'JetBrains Mono',monospace">面試評測完成</div>
       <div class="result-score" id="result-score">—</div>
       <div id="result-badge"></div>
       <div id="result-msg" style="font-size:13px;color:var(--mid);line-height:1.7;margin-top:12px"></div>
@@ -227,7 +227,7 @@ window.startInterview = async () => {
   await askFirstQuestion();
 };
  
-// ── GEMINI AI ─────────────────────────────────────────────
+// ── 面試評分引擎 ─────────────────────────────────────────────
 async function callGemini(messages) {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
     method: 'POST',
@@ -312,7 +312,7 @@ function addMessage(role, text) {
   const box = document.getElementById('chat-box');
   const div = document.createElement('div');
   div.className = 'msg msg-' + role;
-  div.innerHTML = `<div class="msg-sender">${role === 'ai' ? '⬡ AI 面試官' : applicantData.name}</div>
+  div.innerHTML = `<div class="msg-sender">${role === 'ai' ? '⬡ 面試專員' : applicantData.name}</div>
     <div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
@@ -361,7 +361,7 @@ function showResult(score, comment) {
   scoreEl.style.color = score >= 70 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
  
   if (score >= 70) {
-    badgeEl.innerHTML = '<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">✓ AI 推薦錄用</span>';
+    badgeEl.innerHTML = '<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">✓ ✓ 推薦錄用</span>';
   } else if (score >= 50) {
     badgeEl.innerHTML = '<span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">⏳ 待人工審核</span>';
   } else {
@@ -377,4 +377,3 @@ function showScreen(id) {
 </script>
 </body>
 </html>
- 
