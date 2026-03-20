@@ -589,18 +589,20 @@ const fbApp = initializeApp(FB);
 
 // ── API Keys ─────────────────────────────────────────
 // ── AI 模型分流（已在頂部定義）────────
+// ── 🛰️ AI 模型穩定版校準 ──────────────────────────────
 const AI_MODELS = {
-  live:    'gemini-2.0-flash',        // live fallback to flash
-  fast:    'gemini-2.0-flash',        // confirmed working GA model
-  pro:     'gemini-2.0-flash',        // use flash for now until 2.5 GA
-  default: 'gemini-2.0-flash'
+  live:    'gemini-1.5-flash',   // 最穩定生產級
+  fast:    'gemini-1.5-flash',   // 速度快，適合 OCR
+  pro:     'gemini-1.5-pro',     // 薪資分析、法規查詢
+  default: 'gemini-1.5-flash'
 };
 
 // 智慧分流：依輸入內容與模式選擇模型
 function selectModel(text='', mode='text'){
   if(mode === 'voice') return AI_MODELS.live;
-  const proKW = ['分析','異常','審計','報表','統計','趨勢','原因','比較','評估','建議','為何','預測'];
-  return (proKW.some(k=>text.includes(k)) || text.length > 120) ? AI_MODELS.pro : AI_MODELS.fast;
+  if(mode === 'pro')   return AI_MODELS.pro;
+  const proKW = ['分析','異常','審計','報表','統計','趨勢','原因','比較','評估','建議','為何','預測','法規','薪資'];
+  return (proKW.some(k=>text.includes(k)) || text.length > 50) ? AI_MODELS.pro : AI_MODELS.fast;
 }
 
 // ── 客服隨機專員 ───────────────────────────────────────
@@ -3430,51 +3432,48 @@ const AI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
 
 
 async function callGemini(prompt, history=[], mode='text'){
-  const model = selectModel(prompt, mode);
-  // Ensure history alternates user/model (Gemini requirement)
+  // 1. 讀取主權金鑰（優先 localStorage，其次內建備用）
+  const SECRET_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
+  if(!SECRET_KEY) throw new Error('尚未設定 API 金鑰');
+
+  // 2. 智慧模型選擇
+  const isComplex = mode === 'pro' || prompt.length > 50 ||
+    /分析|薪資|法規|趨勢|審計|統計|建議|比較/.test(prompt);
+  const model = mode === 'voice' ? AI_MODELS.live :
+                isComplex ? AI_MODELS.pro : AI_MODELS.fast;
+
+  // 3. 清理歷史（確保角色交替）
   const cleanHistory = [];
   let lastRole = null;
   for(const msg of history){
-    if(msg.role !== lastRole){
-      cleanHistory.push(msg);
-      lastRole = msg.role;
-    }
+    if(msg.role !== lastRole){ cleanHistory.push(msg); lastRole = msg.role; }
   }
-  const messages = [
-    ...cleanHistory,
-    { role:'user', parts:[{text: prompt}] }
-  ];
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-      { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ contents: messages, generationConfig:{ temperature:0.8, maxOutputTokens:600 }})
-      }
+  const messages = [...cleanHistory, { role:'user', parts:[{text: prompt}] }];
+
+  const doFetch = async (mdl) => {
+    const res = await geminiWithBackoff(
+      `https://generativelanguage.googleapis.com/v1beta/models/${mdl}:generateContent?key=${SECRET_KEY}`,
+      { contents: messages, generationConfig:{ temperature:0.7, maxOutputTokens:600 } }
     );
-    if(!res.ok){
-      const errData = await res.json().catch(()=>({}));
-      throw new Error(errData.error?.message || `HTTP ${res.status}`);
-    }
+    if(res.status === 404) throw new Error('模型名稱失效 (404)');
+    if(res.status === 429) throw new Error('流量觸發冷卻期，請稍候 30 秒');
     const data = await res.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    if(!reply && data.promptFeedback?.blockReason){
-      throw new Error('內容被安全過濾器阻擋');
-    }
+    if(data.error) throw new Error(data.error.message);
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '大腦思考異常';
+  };
+
+  try {
+    const reply = await doFetch(model);
     return { reply, model };
   } catch(e) {
-    console.error('[callGemini]', model, e.message);
-    // Fallback to default model if pro/live fails
-    if(model !== AI_MODELS.default){
-      console.warn('Falling back to default model');
-      const res2 = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.default}:generateContent?key=${GEMINI_API_KEY}`,
-        { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ contents: messages, generationConfig:{ temperature:0.8, maxOutputTokens:600 }})
-        }
-      );
-      const data2 = await res2.json();
-      const fallbackReply = data2.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      return { reply: fallbackReply, model: AI_MODELS.default + '(fallback)' };
+    console.error('[AI引擎]', model, e.message);
+    // Pro 失敗 → 自動 fallback 到 Flash
+    if(model === AI_MODELS.pro){
+      console.warn('[AI引擎] Pro fallback → Flash');
+      try {
+        const reply2 = await doFetch(AI_MODELS.fast);
+        return { reply: reply2, model: AI_MODELS.fast };
+      } catch(e2){ throw e2; }
     }
     throw e;
   }
@@ -3626,8 +3625,9 @@ async function sendCSMessage() {
       ...csHistory.slice(-8) // keep last 8 messages for context
     ];
 
+    const SECRET_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
     const res = await geminiWithBackoff(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${CS_GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.fast}:generateContent?key=${SECRET_KEY}`,
       { contents: messages, generationConfig: { temperature: 0.82, maxOutputTokens: 500 } }
     );
     const data = await res.json();
@@ -4597,20 +4597,13 @@ window.sendCommanderAI = async () => {
       ...cmdHistory.slice(-10, -1)
     ];
 
-    const model = selectModel(text, 'text');
+    let model = selectModel(text, 'text');
     const messages = [...ctxHistory, { role:'user', parts:[{text}] }];
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-      { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ contents: messages, generationConfig:{ temperature:0.8, maxOutputTokens:800 }})
-      }
-    );
-    const data = await res.json();
-    console.log('[Commander AI] model:', model, 'status:', res.status, 'candidates:', data.candidates?.length);
-    if(data.error) throw new Error(data.error.message);
-
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，目前無法回應，請稍後再試。';
+    // 統一使用 callGemini（含主權金鑰 + 退避 + 1.5 模型）
+    const { reply: rawReply, model: usedModel } = await callGemini(text, ctxHistory, 'text');
+    const reply = rawReply || '抱歉，目前無法回應，請稍後再試。';
+    model = usedModel;
     cmdHistory.push({ role:'model', parts:[{text: reply}] });
 
     document.getElementById(typingId)?.remove();
@@ -4714,7 +4707,7 @@ async function ocrDeliveryImage(imageBase64, mimeType='image/jpeg') {
 格式：每行一個完整地址（包含縣市、鄉鎮、路街、號碼）。`;
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.fast}:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.fast}:generateContent?key=${localStorage.getItem('V92_SECRET_KEY')||GEMINI_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5371,8 +5364,10 @@ delivery = 配送件數（正向配送）
 reverse = 逆物流件數（退件/收件）
 如果看不到某個數字，填 0。`;
 
+    // OCR 直接用 geminiWithBackoff（需傳圖片，callGemini 僅支援文字）
+    const SECRET_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
     const res = await geminiWithBackoff(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.fast}:generateContent?key=${SECRET_KEY}`,
       {
         contents:[{ role:'user', parts:[
           { inline_data:{ mime_type: file.type, data: base64 } },
