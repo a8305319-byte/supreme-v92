@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="build" content="1774014263">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23000'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='%2300d4ff' font-family='Arial' font-weight='bold'>V</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>在地物流有限公司 · 應徵面試</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{--bg:#000;--accent:#00d4ff;--accent2:#7c3aed;--green:#10b981;--text:#e2e8f0;--dim:#64748b;--mid:#94a3b8;--border:rgba(255,255,255,0.08);}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:30px 30px;pointer-events:none;}
+
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px 40px;position:relative;z-index:1;}
+.header{text-align:center;padding:28px 0 22px;}
+.logo{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:var(--accent);letter-spacing:2px;text-shadow:0 0 20px rgba(0,212,255,0.4);}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-top:4px;letter-spacing:1px;}
+.step-title{font-size:18px;font-weight:700;margin-top:10px;}
+.step-sub{font-size:13px;color:var(--mid);margin-top:4px;}
+
+.card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.2),transparent);}
+
+.f-label{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:4px;display:block;letter-spacing:0.5px;text-transform:uppercase;}
+.f-input{width:100%;padding:11px 13px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Noto Sans TC',sans-serif;outline:none;transition:border-color 0.2s;margin-bottom:12px;}
+.f-input:focus{border-color:rgba(0,212,255,0.5);background:rgba(0,212,255,0.04);}
+select.f-input{-webkit-appearance:none;cursor:pointer;}
+.btn{width:100%;padding:13px;border-radius:8px;font-size:14px;cursor:pointer;border:none;font-family:'Orbitron',monospace;letter-spacing:1px;transition:all 0.2s;margin-top:4px;}
+.btn-p{background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.4);color:var(--accent);}
+.btn-p:hover{background:rgba(0,212,255,0.22);}
+.btn-p:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* CHAT */
+.chat-box{height:320px;overflow-y:auto;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
+.chat-box::-webkit-scrollbar{width:3px;}
+.chat-box::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.2);border-radius:2px;}
+.msg{margin-bottom:14px;}
+.msg-ai .bubble{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.25);padding:10px 14px;border-radius:4px 12px 12px 12px;font-size:13px;line-height:1.6;display:inline-block;max-width:85%;}
+.msg-user{text-align:right;}
+.msg-user .bubble{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);padding:10px 14px;border-radius:12px 4px 12px 12px;font-size:13px;line-height:1.6;display:inline-block;max-width:85%;}
+.msg-sender{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:3px;}
+.msg-user .msg-sender{text-align:right;}
+.typing{display:flex;gap:4px;padding:10px 14px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);border-radius:4px 12px 12px 12px;width:fit-content;}
+.typing span{width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:typingDot 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:0.2s;}
+.typing span:nth-child(3){animation-delay:0.4s;}
+@keyframes typingDot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.chat-input-row{display:flex;gap:8px;}
+.chat-input{flex:1;padding:11px 13px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Noto Sans TC',sans-serif;outline:none;transition:border-color 0.2s;}
+.chat-input:focus{border-color:rgba(0,212,255,0.4);}
+.send-btn{padding:11px 16px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.35);border-radius:8px;color:var(--accent);font-size:16px;cursor:pointer;flex-shrink:0;}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* PROGRESS */
+.progress{display:flex;gap:6px;margin-bottom:16px;}
+.prog-step{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,0.08);}
+.prog-step.done{background:var(--accent);}
+.prog-step.active{background:linear-gradient(90deg,var(--accent2),var(--accent));animation:progPulse 1.5s infinite;}
+@keyframes progPulse{0%,100%{opacity:1}50%{opacity:0.6}}
+
+/* RESULT */
+.result-card{text-align:center;padding:24px;}
+.result-score{font-family:'Orbitron',monospace;font-size:48px;font-weight:900;margin:12px 0;}
+.result-badge{display:inline-block;padding:6px 16px;border-radius:6px;font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:600;margin-bottom:12px;}
+
+/* SCREEN MANAGEMENT */
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <button onclick="if(document.referrer){history.back();}else{window.location.href='/';}" style="padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">← 返回</button>
+      <button onclick="window.close();setTimeout(()=>window.location.href='/',200);" style="padding:6px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#f87171;font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">✕ 關閉</button>
+    </div>
+    <div class="logo">在地物流</div>
+    <div class="logo-sub">配送司機招募系統</div>
+  </div>
+
+  <!-- SCREEN 1: BASIC INFO -->
+  <div class="screen active" id="screen-info">
+    <div style="text-align:center;margin-bottom:20px">
+      <div class="step-title">👋 歡迎應徵！</div>
+      <div class="step-sub">請先填寫基本資料，完成後將進行面試評測</div>
+    </div>
+    <div class="progress">
+      <div class="prog-step active"></div>
+      <div class="prog-step"></div>
+      <div class="prog-step"></div>
+    </div>
+    <div class="card">
+      <div class="f-grp"><label class="f-label">姓名 *</label><input class="f-input" id="app-name" placeholder="王大明"></div>
+      <div class="f-grp"><label class="f-label">電話 *</label><input class="f-input" id="app-phone" placeholder="0912345678" type="tel"></div>
+      <div class="f-grp"><label class="f-label">Email</label><input class="f-input" id="app-email" placeholder="your@email.com" type="email"></div>
+      <div class="f-grp"><label class="f-label">應徵職位</label>
+        <select class="f-input" id="app-position">
+          <option value="driver_employee">配送司機（員工）</option>
+          <option value="driver_contractor">配送司機（承攬）</option>
+          <option value="courier">機車外送員</option>
+          <option value="warehouse">倉儲人員</option>
+          <option value="dispatcher">調度員</option>
+          <option value="倉儲人員">倉儲人員</option>
+          <option value="調度員">調度員</option>
+        </select>
+      </div>
+      <div class="f-grp"><label class="f-label">駕照類別（可複選最高級別）</label>
+        <select class="f-input" id="app-license">
+          <optgroup label="── 普通駕照 ──">
+            <option value="普通重型機車">普通重型機車駕照</option>
+            <option value="普通輕型機車">普通輕型機車駕照</option>
+            <option value="普通小型車">普通小型車駕照</option>
+            <option value="普通小型車+機車">普通小型車+機車駕照</option>
+          </optgroup>
+          <optgroup label="── 職業駕照 ──">
+            <option value="職業小型車">職業小型車駕照</option>
+            <option value="職業普通重型機車">職業普通重型機車駕照</option>
+            <option value="職業大貨車">職業大貨車駕照</option>
+            <option value="職業小型車+大貨車">職業小型車+大貨車駕照</option>
+            <option value="職業大客車">職業大客車駕照</option>
+            <option value="職業聯結車">職業聯結車駕照</option>
+            <option value="職業小型車+聯結車">職業小型車+聯結車駕照</option>
+            <option value="職業各類駕照">職業各類駕照（全照）</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="f-grp"><label class="f-label">駕駛年資</label>
+        <select class="f-input" id="app-exp">
+          <option value="1年以下">1年以下</option>
+          <option value="1-3年">1-3年</option>
+          <option value="3-5年">3-5年</option>
+          <option value="5年以上">5年以上</option>
+        </select>
+      </div>
+      <button class="btn btn-p" onclick="startInterview()">開始面試評測 →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: INTERVIEW -->
+  <div class="screen" id="screen-interview">
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="step-title">🤖 面試評測進行中</div>
+      <div class="step-sub" id="interview-progress-text">第 1 題，共 5 題</div>
+    </div>
+    <div class="progress">
+      <div class="prog-step done"></div>
+      <div class="prog-step active"></div>
+      <div class="prog-step"></div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="chat-box" id="chat-box"></div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="輸入您的回答..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAnswer();}">
+        <button class="send-btn" id="send-btn" onclick="sendAnswer()">➜</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="progress">
+      <div class="prog-step done"></div>
+      <div class="prog-step done"></div>
+      <div class="prog-step done"></div>
+    </div>
+    <div class="card result-card">
+      <div style="font-size:13px;color:var(--mid);font-family:'JetBrains Mono',monospace">面試評測完成</div>
+      <div class="result-score" id="result-score">—</div>
+      <div id="result-badge"></div>
+      <div id="result-msg" style="font-size:13px;color:var(--mid);line-height:1.7;margin-top:12px"></div>
+      <div style="margin-top:20px;padding:14px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;font-size:12px;color:var(--dim);line-height:1.8">
+        ✅ 面試結果已自動送交負責人審核<br>
+        📧 如有錄取將以 Email 通知您的帳號密碼<br>
+        ⏱️ 通常 1-3 個工作天內回覆<br><br>
+        感謝您應徵 在地物流有限公司！
+      </div>
+      <!-- Onboard suggestion for recommended candidates -->
+      <div id="onboard-suggestion" style="display:none;margin-bottom:12px;padding:12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:8px;text-align:center">
+        <div style="font-size:13px;font-weight:700;color:#34d399;margin-bottom:6px">🎉 恭喜通過初步評估！</div>
+        <div style="font-size:12px;color:var(--mid);margin-bottom:10px">請繼續填寫入職資料表，完成入職申請</div>
+        <button onclick="window.location.href='onboard.html'" style="width:100%;padding:11px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:8px;color:#34d399;font-size:13px;font-family:'Orbitron',monospace;cursor:pointer">📋 立即填寫入職資料表 →</button>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;text-align:center;font-size:12px;color:#a78bfa;font-family:'JetBrains Mono',monospace">
+        <span id="redirect-countdown">8</span> 秒後自動跳轉回登入頁...
+      </div>
+      <button onclick="window.location.href='/'" style="width:100%;margin-top:10px;padding:11px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;font-family:'Orbitron',monospace;letter-spacing:1px;cursor:pointer">返回首頁</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const FB = {
+  apiKey:"AIzaSyDfasGmYqUso1SajNSs71ZjNf9R343QViI",
+  authDomain:"supreme-v92.firebaseapp.com",
+  projectId:"supreme-v92",
+  storageBucket:"supreme-v92.firebasestorage.app",
+  messagingSenderId:"485530156296",
+  appId:"1:485530156296:web:6728c0ee08b98dedd800bd"
+};
+const app = initializeApp(FB);
+const db = getFirestore(app);
+
+const GEMINI_KEY = 'AIzaSyDhNiCiwVAiX3jbJKArXSo3fQm5NOalhBY'; // 2026穩定金鑰
+const GEMINI_MODEL = 'gemini-flash-latest'; // 穩定版 // 快速面試評分
+
+let applicantData = {};
+let chatHistory = [];
+let questionCount = 0;
+let totalScore = 0;
+let scores = [];
+let docId = null;
+
+// ── START INTERVIEW ───────────────────────────────────────
+window.startInterview = async () => {
+  const name = document.getElementById('app-name').value.trim();
+  const phone = document.getElementById('app-phone').value.trim();
+  const email = document.getElementById('app-email').value.trim();
+  const position = document.getElementById('app-position').value;
+  const license = document.getElementById('app-license').value;
+  const exp = document.getElementById('app-exp').value;
+
+  if (!name || !phone) { alert('請填寫姓名和電話'); return; }
+
+  applicantData = { name, phone, email, position, license, exp };
+  docId = 'local_' + Date.now(); // temp ID
+
+  // Go to interview FIRST, save to Firestore in background
+  showScreen('screen-interview');
+  console.log('[Interview] 切換到面試畫面');
+  
+  // Background save (non-blocking)
+  addDoc(collection(db, 'applicants'), {
+    ...applicantData, status: 'interviewing',
+    createdAt: serverTimestamp(), aiScore: 0
+  }).then(ref => { docId = ref.id; }).catch(e => console.warn('[Interview] 儲存跳過:', e.message));
+
+  try {
+    await askFirstQuestion();
+  } catch(e) {
+    console.error('[Interview] askFirstQuestion 失敗:', e.message);
+    // Show fallback question
+    const fallback = '您好！請先做個自我介紹，告訴我您的姓名和過去的工作經驗。';
+    addMessage('ai', fallback);
+    chatHistory.push({ role: 'model', parts: [{ text: fallback }] });
+    questionCount = 1;
+    updateProgress();
+  }
+};
+
+// ── 面試評分引擎 ─────────────────────────────────────────────
+async function callGemini(messages) {
+  // 使用唯一可用模型 gemini-flash-latest
+  const KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY; // active: AIzaSyDhNiCiwVA...
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: messages,
+      generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+    })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function askFirstQuestion() {
+  showTyping();
+  const systemPrompt = `你是一個物流公司的面試官，正在對應徵者進行面試。
+應徵者資料：姓名${applicantData.name}、應徵${applicantData.position}、駕照${applicantData.license}、駕齡${applicantData.exp}。
+請用繁體中文進行面試。請依序問5個問題，每次只問一個問題，問題要簡短。
+問題主題：1.自我介紹 2.工作經驗 3.處理突發狀況 4.工作態度 5.期望薪資。
+現在開始問第1個問題。`;
+
+  chatHistory = [{ role: 'user', parts: [{ text: systemPrompt }] }];
+  try {
+    const q = await callGemini(chatHistory);
+    chatHistory.push({ role: 'model', parts: [{ text: q }] });
+    hideTyping();
+    addMessage('ai', q);
+  } catch(e) {
+    hideTyping();
+    console.error('[Interview AI]', e.message);
+    addMessage('ai', '您好！請先進行自我介紹，包括您的姓名和工作經驗。');
+    chatHistory.push({ role: 'model', parts: [{ text: '請進行自我介紹。' }] });
+  }
+  questionCount = 1;
+  updateProgress();
+}
+
+window.sendAnswer = async () => {
+  const btn = document.getElementById('send-btn');
+  const input = document.getElementById('chat-input');
+  const answer = input.value.trim();
+  if (!answer) return;
+
+  btn.disabled = true;
+  input.value = '';
+  addMessage('user', answer);
+  chatHistory.push({ role: 'user', parts: [{ text: answer }] });
+
+  try {
+    if (questionCount >= 5) {
+      // 最後一題 → 評分
+      showTyping();
+      chatHistory.push({ role: 'user', parts: [{ text: '面試結束。請對這位應徵者做出總體評分（0-100分）和建議，格式：評分:[數字] 評語:[文字]' }] });
+      const eval_ = await callGemini(chatHistory);
+      hideTyping();
+
+      const scoreMatch = eval_.match(/評分[：:]\s*(\d+)/);
+      const score = scoreMatch ? parseInt(scoreMatch[1]) : 65;
+      const commentMatch = eval_.match(/評語[：:]\s*(.+)/s);
+      const comment = commentMatch ? commentMatch[1].trim() : eval_;
+
+      // 非同步儲存（不阻擋顯示結果）
+      const { updateDoc, doc: fsDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      updateDoc(fsDoc(db, 'applicants', docId), {
+        aiScore: score, aiComment: comment,
+        chatHistory: chatHistory.map(m => ({ role: m.role, text: m.parts[0].text })),
+        status: score >= 70 ? 'recommended' : score >= 50 ? 'pending' : 'rejected',
+        completedAt: serverTimestamp()
+      }).catch(e => console.warn('[Interview] 分數儲存跳過:', e.message));
+
+      showResult(score, comment);
+      return;
+    }
+
+    // 繼續下一題
+    showTyping();
+    chatHistory.push({ role: 'user', parts: [{ text: `繼續問第${questionCount+1}個問題，要簡短。` }] });
+    const nextQ = await callGemini(chatHistory);
+    hideTyping();
+    chatHistory.push({ role: 'model', parts: [{ text: nextQ }] });
+    addMessage('ai', nextQ);
+    questionCount++;
+    updateProgress();
+
+  } catch(e) {
+    hideTyping();
+    console.error('[sendAnswer]', e.message);
+    // 顯示錯誤訊息但讓用戶可以重試
+    addMessage('ai', '抱歉，連線發生問題，請再試一次。');
+  } finally {
+    // 無論成功失敗都重新啟用按鈕
+    btn.disabled = false;
+  }
+};
+
+function addMessage(role, text) {
+  const box = document.getElementById('chat-box');
+  const div = document.createElement('div');
+  div.className = 'msg msg-' + role;
+  div.innerHTML = `<div class="msg-sender">${role === 'ai' ? '⬡ 面試專員' : applicantData.name}</div>
+    <div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+let typingEl = null;
+function showTyping() {
+  const box = document.getElementById('chat-box');
+  typingEl = document.createElement('div');
+  typingEl.className = 'msg msg-ai';
+  typingEl.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  box.appendChild(typingEl);
+  box.scrollTop = box.scrollHeight;
+  document.getElementById('send-btn').disabled = true;
+}
+
+function hideTyping() {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+  document.getElementById('send-btn').disabled = false;
+}
+
+function updateProgress() {
+  const txt = document.getElementById('interview-progress-text');
+  if (txt) txt.textContent = `第 ${questionCount} 題，共 5 題`;
+}
+
+function showResult(score, comment) {
+  showScreen('screen-result');
+  // Show onboard link for recommended candidates (score >= 70)
+  const ob = document.getElementById('onboard-suggestion');
+  if(ob && score >= 70) ob.style.display='block';
+  // Redirect to login page after 6 seconds
+  let countdown = 8;
+  const timer = setInterval(()=>{
+    countdown--;
+    const el = document.getElementById('redirect-countdown');
+    if(el) el.textContent = countdown;
+    if(countdown <= 0){
+      clearInterval(timer);
+      // Go back to main login page
+      window.location.href = './';
+    }
+  }, 1000);
+  const scoreEl = document.getElementById('result-score');
+  const badgeEl = document.getElementById('result-badge');
+  const msgEl = document.getElementById('result-msg');
+
+  scoreEl.textContent = score;
+  scoreEl.style.color = score >= 70 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
+
+  if (score >= 70) {
+    badgeEl.innerHTML = '<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">✓ ✓ 推薦錄用</span>';
+  } else if (score >= 50) {
+    badgeEl.innerHTML = '<span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">⏳ 待人工審核</span>';
+  } else {
+    badgeEl.innerHTML = '<span style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">✗ 暫不符合需求</span>';
+  }
+  if (msgEl) msgEl.textContent = comment;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+</script>
+</body>
+</html>
