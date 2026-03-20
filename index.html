@@ -4641,6 +4641,7 @@ window.sendCommanderAI = async () => {
   input.value = '';
 
   const box = document.getElementById('cmd-ai-chat');
+  console.log('[Butler] box found:', !!box, 'today:', today, 'lastBrief:', lastBrief);
   if(!box) return;
 
   // 確認金鑰
@@ -5799,13 +5800,14 @@ async function butlerMorningBrief(){
   // 每次 Commander 登入時自動執行一次彙報
   const lastBrief = localStorage.getItem('v92_last_brief');
   const today = TODAY;
-  if(lastBrief === today) return; // 今天已彙報過
+  // Run every login (not just once per day)
   localStorage.setItem('v92_last_brief', today);
 
   // 等介面載入完成
   await new Promise(r=>setTimeout(r, 2000));
 
-  const box = document.getElementById('cmd-chat-box');
+  const box = document.getElementById('cmd-ai-chat');
+  console.log('[Butler] box found:', !!box, 'today:', today, 'lastBrief:', lastBrief);
   if(!box) return;
 
   // 收集資料
@@ -5891,7 +5893,7 @@ function startButlerReminders(){
       const notReported = drSnap.size - rpSnap.size;
       if(notReported > 0){
         showToast(`⏰ 提醒：還有 ${notReported} 位司機未回報件數`);
-        const box = document.getElementById('cmd-chat-box');
+        const box = document.getElementById('cmd-ai-chat');
         if(box){
           const div = document.createElement('div');
           div.style.cssText='display:flex;gap:10px;margin-bottom:14px;align-items:flex-start';
