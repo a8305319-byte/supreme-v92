@@ -2,6 +2,10 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="build" content="1774014263">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23000'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='%2300d4ff' font-family='Arial' font-weight='bold'>V</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>在地物流有限公司 · 應徵面試</title>
@@ -259,7 +263,7 @@ window.startInterview = async () => {
 // ── 面試評分引擎 ─────────────────────────────────────────────
 async function callGemini(messages) {
   // 使用唯一可用模型 gemini-flash-latest
-  const KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
+  const KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY; // active: AIzaSyDhNiCiwVA...
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -298,53 +302,61 @@ async function askFirstQuestion() {
 }
  
 window.sendAnswer = async () => {
-  document.getElementById('send-btn').disabled = true;
+  const btn = document.getElementById('send-btn');
   const input = document.getElementById('chat-input');
   const answer = input.value.trim();
   if (!answer) return;
  
+  btn.disabled = true;
   input.value = '';
   addMessage('user', answer);
-  document.getElementById('send-btn').disabled = true;
- 
   chatHistory.push({ role: 'user', parts: [{ text: answer }] });
  
-  if (questionCount >= 5) {
-    // Get final evaluation
+  try {
+    if (questionCount >= 5) {
+      // 最後一題 → 評分
+      showTyping();
+      chatHistory.push({ role: 'user', parts: [{ text: '面試結束。請對這位應徵者做出總體評分（0-100分）和建議，格式：評分:[數字] 評語:[文字]' }] });
+      const eval_ = await callGemini(chatHistory);
+      hideTyping();
+ 
+      const scoreMatch = eval_.match(/評分[：:]\s*(\d+)/);
+      const score = scoreMatch ? parseInt(scoreMatch[1]) : 65;
+      const commentMatch = eval_.match(/評語[：:]\s*(.+)/s);
+      const comment = commentMatch ? commentMatch[1].trim() : eval_;
+ 
+      // 非同步儲存（不阻擋顯示結果）
+      const { updateDoc, doc: fsDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      updateDoc(fsDoc(db, 'applicants', docId), {
+        aiScore: score, aiComment: comment,
+        chatHistory: chatHistory.map(m => ({ role: m.role, text: m.parts[0].text })),
+        status: score >= 70 ? 'recommended' : score >= 50 ? 'pending' : 'rejected',
+        completedAt: serverTimestamp()
+      }).catch(e => console.warn('[Interview] 分數儲存跳過:', e.message));
+ 
+      showResult(score, comment);
+      return;
+    }
+ 
+    // 繼續下一題
     showTyping();
-    chatHistory.push({ role: 'user', parts: [{ text: '面試結束。請對這位應徵者做出總體評分（0-100分）和建議，格式：評分:[數字] 評語:[文字]' }] });
-    const eval_ = await callGemini(chatHistory);
+    chatHistory.push({ role: 'user', parts: [{ text: `繼續問第${questionCount+1}個問題，要簡短。` }] });
+    const nextQ = await callGemini(chatHistory);
     hideTyping();
+    chatHistory.push({ role: 'model', parts: [{ text: nextQ }] });
+    addMessage('ai', nextQ);
+    questionCount++;
+    updateProgress();
  
-    const scoreMatch = eval_.match(/評分[：:]\s*(\d+)/);
-    const score = scoreMatch ? parseInt(scoreMatch[1]) : 65;
-    const commentMatch = eval_.match(/評語[：:]\s*(.+)/s);
-    const comment = commentMatch ? commentMatch[1].trim() : eval_;
- 
-    // Save result to Firestore
-    const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    // 非同步儲存分數（Firebase 權限不足時不影響顯示結果）
-    updateDoc(doc(db, 'applicants', docId), {
-      aiScore: score, aiComment: comment,
-      chatHistory: chatHistory.map(m => ({ role: m.role, text: m.parts[0].text })),
-      status: score >= 70 ? 'recommended' : score >= 50 ? 'pending' : 'rejected',
-      completedAt: serverTimestamp()
-    }).catch(e => console.warn('[Interview] 分數儲存跳過:', e.message));
- 
-    showResult(score, comment);
-    return;
+  } catch(e) {
+    hideTyping();
+    console.error('[sendAnswer]', e.message);
+    // 顯示錯誤訊息但讓用戶可以重試
+    addMessage('ai', '抱歉，連線發生問題，請再試一次。');
+  } finally {
+    // 無論成功失敗都重新啟用按鈕
+    btn.disabled = false;
   }
- 
-  // Ask next question
-  showTyping();
-  chatHistory.push({ role: 'user', parts: [{ text: `繼續問第${questionCount+1}個問題，要簡短。` }] });
-  const nextQ = await callGemini(chatHistory);
-  chatHistory.push({ role: 'model', parts: [{ text: nextQ }] });
-  hideTyping();
-  addMessage('ai', nextQ);
-  questionCount++;
-  updateProgress();
-  document.getElementById('send-btn').disabled = false;
 };
  
 function addMessage(role, text) {
@@ -419,4 +431,3 @@ function showScreen(id) {
 </script>
 </body>
 </html>
- 
