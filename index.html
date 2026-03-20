@@ -1799,6 +1799,39 @@ function panelFinance(){return `
 // ── OPERATIONS ────────────────────────────────────────────
 function panelOperations(){return `
 <div id="panel-operations" class="panel">
+
+    <!-- MISSION MAP SECTION -->
+    <div class="glass-card" style="margin-bottom:14px">
+      <div class="sh">
+        <div class="st">🗺️ 任務地圖派工</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-p btn-sm" onclick="loadMissionMap()">重新整理地圖</button>
+          <button class="btn btn-s btn-sm" onclick="runGlobalRouteOptimize()">⚡ 全域路線優化</button>
+        </div>
+      </div>
+      <!-- Date picker -->
+      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+        <label style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">日期</label>
+        <input type="date" id="mission-map-date" class="f-inp" style="width:150px;padding:6px 10px" value="">
+        <button class="btn btn-p btn-sm" onclick="loadMissionMap(document.getElementById('mission-map-date').value)">載入</button>
+        <span id="mission-map-stats" style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace"></span>
+      </div>
+      <!-- Map container -->
+      <div id="admin-mission-map" style="width:100%;height:420px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:rgba(0,0,0,0.3)">
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);font-size:12px;font-family:'JetBrains Mono',monospace">點擊「重新整理地圖」載入任務點位</div>
+      </div>
+      <!-- Legend -->
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--dim)">
+        <span>🔴 待送</span><span>🟢 已送</span><span>🔵 已指派</span><span>⚫ 無座標</span>
+      </div>
+    </div>
+
+    <!-- MISSION LIST by driver -->
+    <div class="glass-card">
+      <div class="sh"><div class="st">📋 任務清冊</div><button class="btn btn-g btn-sm" onclick="loadAdminMissions()">重新整理</button></div>
+      <div id="admin-mission-list"><div style="color:var(--dim);font-size:12px;text-align:center;padding:20px">點擊載入</div></div>
+    </div>
+
   <div class="glass-card">
     <div class="sh"><div class="st">📦 今日件數回報</div><span class="badge bg">即時</span></div>
     <div id="ops-table"><div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">載入中...</div></div>
@@ -2850,6 +2883,36 @@ function buildDriverUI(){
         <div id="m-ann-list"><div style="text-align:center;padding:20px;color:var(--dim);font-size:12px;font-family:'JetBrains Mono',monospace">載入中...</div></div>
       </div>
 
+
+      <!-- MISSION PANEL -->
+      <div class="panel" id="panel-driver_mission">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px">
+          <div>
+            <div style="font-size:15px;font-weight:700">今日任務清單</div>
+            <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace" id="mission-meta">載入中...</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button onclick="document.getElementById('mission-upload').click()" style="padding:8px 12px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.35);border-radius:8px;color:#a78bfa;font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">📷 上傳配送單</button>
+            <input type="file" id="mission-upload" accept="image/*" style="display:none" onchange="handleMissionUpload(this)">
+          </div>
+        </div>
+
+        <!-- Upload progress -->
+        <div id="mission-ocr-progress" style="display:none;padding:12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;margin-bottom:12px;font-size:12px;color:#a78bfa;font-family:'JetBrains Mono',monospace;text-align:center">
+          <div style="animation:pulse 1.5s infinite">⟳ OCR 解析中，請稍候...</div>
+        </div>
+
+        <!-- Mission list -->
+        <div id="driver-mission-list"></div>
+
+        <!-- Shadow profit summary -->
+        <div id="shadow-profit-card" style="display:none;margin-top:14px;padding:14px;background:rgba(0,0,0,0.4);border:1px solid rgba(245,158,11,0.2);border-radius:10px">
+          <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:6px">影子利潤試算（MOMO 23.4%）</div>
+          <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:#fbbf24" id="shadow-profit-total">$0</div>
+          <div style="font-size:10px;color:var(--dim);margin-top:2px" id="shadow-profit-sub"></div>
+        </div>
+      </div>
+
       <!-- DRIVER PROFILE -->
       <div class="panel" id="panel-driver_profile">
         <div class="glass-card" style="margin-bottom:14px">
@@ -2918,6 +2981,7 @@ ${CD?.name?.[0]||'?'}
         <span class="bnav-label">薪資單</span>
       </button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_announce',this)"><span class="bnav-icon">📢</span><span class="bnav-label">公告</span></button>
+      <button class="bnav-tab" onclick="showDriverPanel('driver_mission',this)"><span class="bnav-icon">📦</span><span class="bnav-label">任務</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_cs',this)"><span class="bnav-icon">💬</span><span class="bnav-label">客服</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_profile',this)"><span class="bnav-icon">👤</span><span class="bnav-label">設定</span></button>
     </div>
@@ -2932,6 +2996,7 @@ window.showDriverPanel=(id,btn)=>{
   if(id==='driver_salary'){ loadDriverSalary(); loadDriverPayslip(); }
   if(id==='driver_announce') loadDriverAnnounce();
   if(id==='driver_cs') initCSChat();
+  if(id==='driver_mission') loadDriverMissions();
 };
 
 
@@ -2959,74 +3024,7 @@ const AI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
 
 // 模型定義
 
-async function callGemini(model, messages, systemPrompt, temp = 0.8) {
-  const contents = [];
-  if (systemPrompt) {
-    contents.push({ role: 'user', parts: [{ text: systemPrompt }] });
-    contents.push({ role: 'model', parts: [{ text: '好的，我明白了。' }] });
-  }
-  messages.forEach(m => contents.push(m));
-  
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${AI_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents,
-        generationConfig: { temperature: temp, maxOutputTokens: 400 }
-      })
-    }
-  );
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，我現在無法回答。';
-}
 
-// 顯示模型指示器
-function getModelBadge(model) {
-  if (model.includes('pro')) return '<span style="font-size:9px;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);color:#a78bfa;padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;margin-left:4px">PRO</span>';
-  if (model.includes('live')) return '<span style="font-size:9px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#f87171;padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;margin-left:4px">LIVE</span>';
-  return '<span style="font-size:9px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);color:var(--accent);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;margin-left:4px">LITE</span>';
-}
-
-// ══════════════════════════════════════════════════════════
-// 客服專員「徐美玲」系統
-// ══════════════════════════════════════════════════════════
-// Random agent name pool - rotates per session
-const CS_AGENTS = [
-  {name:'徐美玲', emoji:'👩'},
-  {name:'陳美玲', emoji:'👩‍💼'},
-  {name:'林雅婷', emoji:'👩'},
-  {name:'徐美玲', emoji:'👩‍💼'},  
-];
-const _csAgent = CS_AGENTS[Math.floor(Math.random() * CS_AGENTS.length)];
-const CS_AGENT_NAME = _csAgent.name;
-const CS_AGENT_EMOJI = _csAgent.emoji;
-// ── AI 分流配置 ────────────────────────────────────────
-const GEMINI_API_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
-
-// 模型分流邏輯
-const AI_MODELS = {
-  // 即時語音對話 - 客服語音模式
-  live:    'gemini-live-2.5-flash',
-  // 快速文字 - 客服文字、面試評分
-  fast:    'gemini-2.5-flash-lite',
-  // 複雜分析 - 薪資異常、深度審計
-  pro:     'gemini-3.1-pro-preview',
-  // 備用
-  default: 'gemini-2.0-flash'
-};
-
-// 智慧分流：依輸入內容選擇模型
-function selectModel(text, mode='text'){
-  if(mode === 'voice') return AI_MODELS.live;
-  const proKeywords = ['分析','異常','審計','報表','統計','趨勢','原因','比較','評估','建議'];
-  const isComplex = proKeywords.some(k => text.includes(k)) || text.length > 100;
-  return isComplex ? AI_MODELS.pro : AI_MODELS.fast;
-}
-
-// 通用 Gemini 呼叫
 async function callGemini(prompt, history=[], mode='text'){
   const model = selectModel(prompt, mode);
   const messages = [
@@ -4215,6 +4213,411 @@ window.toggleVoiceCS = () => {
   };
 
   _csRecognition.start();
+};
+
+// ══════════════════════════════════════════════════════════
+// MISSION SYSTEM - 任務資料庫 + OCR + 路線優化
+// ══════════════════════════════════════════════════════════
+
+// ── Geocoding: 地址 → GPS座標 ─────────────────────────
+async function geocodeAddress(address) {
+  try {
+    const query = encodeURIComponent(address + ', 台灣');
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'zh-TW', 'User-Agent': 'ZaLogiApp/1.0' } }
+    );
+    const data = await res.json();
+    if (data.length > 0) {
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name };
+    }
+  } catch(e) { console.warn('Geocode failed:', e); }
+  return null;
+}
+
+// ── OCR: 截圖 → 地址清單 (Gemini Flash Lite) ─────────
+async function ocrDeliveryImage(imageBase64, mimeType='image/jpeg') {
+  const prompt = `這是一張配送單截圖或照片。
+請提取所有收件地址，每行一個，只輸出地址，不要其他文字。
+格式：每行一個完整地址（包含縣市、鄉鎮、路街、號碼）。`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.fast}:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          role: 'user',
+          parts: [
+            { inline_data: { mime_type: mimeType, data: imageBase64 } },
+            { text: prompt }
+          ]
+        }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+      })
+    }
+  );
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+}
+
+// ── Nearest Neighbor Route Optimizer ─────────────────
+function optimizeRoute(missions, startLat=25.0330, startLng=121.5654) {
+  if (!missions.length) return missions;
+  const withCoord = missions.filter(m => m.coordinate?.lat);
+  const noCoord = missions.filter(m => !m.coordinate?.lat);
+
+  let remaining = [...withCoord];
+  const ordered = [];
+  let curLat = startLat, curLng = startLng;
+
+  while (remaining.length) {
+    let minDist = Infinity, minIdx = 0;
+    remaining.forEach((m, i) => {
+      const d = Math.hypot(m.coordinate.lat - curLat, m.coordinate.lng - curLng);
+      if (d < minDist) { minDist = d; minIdx = i; }
+    });
+    const next = remaining.splice(minIdx, 1)[0];
+    ordered.push(next);
+    curLat = next.coordinate.lat;
+    curLng = next.coordinate.lng;
+  }
+  return [...ordered, ...noCoord];
+}
+
+// ── Save missions to Firestore ─────────────────────────
+async function saveMissions(driverUid, missions, date) {
+  date = date || TODAY;
+  const batch = [];
+  for (let i = 0; i < missions.length; i++) {
+    const m = missions[i];
+    const mRef = doc(db, 'missions', `${driverUid}_${date}_${String(i+1).padStart(3,'0')}`);
+    batch.push(setDoc(mRef, {
+      uid: driverUid,
+      date,
+      seq: i + 1,
+      address: m.address,
+      coordinate: m.coordinate || null,
+      status: m.status || 'pending',
+      note: m.note || '',
+      type: m.type || 'delivery',  // delivery | reverse
+      price: m.price || 0,
+      shadowProfit: m.shadowProfit || 0,
+      createdAt: serverTimestamp()
+    }, { merge: true }));
+  }
+  await Promise.all(batch);
+}
+
+// ── Load driver missions ───────────────────────────────
+async function loadMissions(driverUid, date) {
+  date = date || TODAY;
+  const snap = await getDocs(
+    query(collection(db,'missions'),
+      where('uid','==',driverUid),
+      where('date','==',date),
+      orderBy('seq','asc'))
+  );
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+// ── Update mission status ──────────────────────────────
+window.updateMissionStatus = async (missionId, status) => {
+  await updateDoc(doc(db,'missions',missionId), {
+    status,
+    completedAt: status === 'done' ? serverTimestamp() : null
+  });
+};
+
+// ── Shadow Profit: 23.4% of MOMO price ───────────────
+function calcShadowProfit(price) {
+  return Math.round(price * 0.234);
+}
+
+// ── Process uploaded screenshot ───────────────────────
+window.processMissionImage = async (driverUid, imageFile) => {
+  const toastId = showToast('OCR 解析中...');
+
+  try {
+    // Convert to base64
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(imageFile);
+    });
+
+    // OCR
+    const addresses = await ocrDeliveryImage(base64, imageFile.type);
+    if (!addresses.length) { showToast('未識別到地址，請重試', 'err'); return []; }
+
+    showToast(`✓ 識別 ${addresses.length} 個地址，Geocoding中...`);
+
+    // Geocode all addresses
+    const missions = [];
+    for (const addr of addresses) {
+      const coord = await geocodeAddress(addr);
+      // MOMO delivery price ~ $50, shadow profit = 23.4%
+      const price = 50;
+      missions.push({
+        address: addr,
+        coordinate: coord,
+        status: 'pending',
+        type: 'delivery',
+        price,
+        shadowProfit: calcShadowProfit(price)
+      });
+      await new Promise(r => setTimeout(r, 300)); // rate limit
+    }
+
+    // Optimize route
+    const optimized = optimizeRoute(missions);
+
+    // Save to Firestore
+    await saveMissions(driverUid, optimized);
+
+    // Update sovereign dashboard
+    await updateSovereignStats(driverUid, optimized);
+
+    showToast(`✓ ${optimized.length} 筆任務已排序並儲存`);
+    return optimized;
+
+  } catch(e) {
+    showToast('處理失敗：' + e.message, 'err');
+    console.error(e);
+    return [];
+  }
+};
+
+// ── Sovereign stats (shadow profit tracking) ──────────
+async function updateSovereignStats(driverUid, missions) {
+  const totalShadow = missions.reduce((s, m) => s + (m.shadowProfit||0), 0);
+  const totalRevenue = missions.reduce((s, m) => s + (m.price||0), 0);
+  await setDoc(doc(db, 'sovereignStats', `${driverUid}_${TODAY}`), {
+    uid: driverUid,
+    date: TODAY,
+    missionCount: missions.length,
+    totalRevenue,
+    shadowProfit: totalShadow,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+}
+
+// ── Driver: Handle mission upload ─────────────────────
+window.handleMissionUpload = async (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  const prog = document.getElementById('mission-ocr-progress');
+  if (prog) prog.style.display = 'block';
+  input.value = '';
+  await processMissionImage(CU.uid, file);
+  if (prog) prog.style.display = 'none';
+  loadDriverMissions();
+};
+
+// ── Driver: Load and render missions ──────────────────
+async function loadDriverMissions() {
+  const el = document.getElementById('driver-mission-list');
+  const meta = document.getElementById('mission-meta');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--dim);font-size:12px;text-align:center;padding:20px">載入中...</div>';
+
+  const missions = await loadMissions(CU.uid);
+  const pending = missions.filter(m => m.status === 'pending').length;
+  const done = missions.filter(m => m.status === 'done').length;
+
+  if (meta) meta.textContent = `${missions.length} 筆 · 待送 ${pending} · 完成 ${done}`;
+
+  if (!missions.length) {
+    el.innerHTML = '<div style="color:var(--dim);font-size:12px;text-align:center;padding:30px">📭 今日無任務<br><span style="font-size:10px">請上傳配送單截圖</span></div>';
+    return;
+  }
+
+  let totalShadow = 0;
+  el.innerHTML = missions.map((m, i) => {
+    totalShadow += m.shadowProfit || 0;
+    const isDone = m.status === 'done';
+    const hasCoord = m.coordinate?.lat;
+    return `<div style="padding:12px;border:1px solid ${isDone ? 'rgba(16,185,129,0.25)' : 'var(--border)'};border-radius:10px;margin-bottom:8px;background:${isDone ? 'rgba(16,185,129,0.05)' : 'rgba(0,0,0,0.25)'};transition:all 0.2s">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="width:28px;height:28px;border-radius:50%;background:${isDone ? 'rgba(16,185,129,0.2)' : 'rgba(0,212,255,0.12)'};border:1px solid ${isDone ? 'rgba(16,185,129,0.4)' : 'rgba(0,212,255,0.3)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Orbitron',monospace;flex-shrink:0;color:${isDone ? '#34d399' : 'var(--accent)'}">${m.seq}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;${isDone ? 'text-decoration:line-through;color:var(--dim)' : ''};word-break:break-all">${m.address}</div>
+          <div style="font-size:10px;color:var(--dim);margin-top:3px;font-family:'JetBrains Mono',monospace">
+            ${hasCoord ? `📍 ${m.coordinate.lat.toFixed(4)}, ${m.coordinate.lng.toFixed(4)}` : '⚫ 無座標'}
+            ${m.shadowProfit ? ` · 影子 $${m.shadowProfit}` : ''}
+          </div>
+        </div>
+        ${isDone ?
+          `<span style="font-size:18px">✅</span>` :
+          `<button onclick="markMissionDone('${m.id}')" style="padding:6px 10px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:6px;color:#34d399;font-size:11px;cursor:pointer;white-space:nowrap;font-family:'JetBrains Mono',monospace;flex-shrink:0">已送達</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+
+  // Shadow profit card
+  const spCard = document.getElementById('shadow-profit-card');
+  const spTotal = document.getElementById('shadow-profit-total');
+  const spSub = document.getElementById('shadow-profit-sub');
+  if (spCard && missions.length) {
+    spCard.style.display = 'block';
+    if (spTotal) spTotal.textContent = '$' + totalShadow.toLocaleString();
+    if (spSub) spSub.textContent = `共 ${missions.length} 筆 × 23.4% MOMO影子提取`;
+  }
+}
+
+window.markMissionDone = async (missionId) => {
+  await updateMissionStatus(missionId, 'done');
+  showToast('✓ 已標記送達');
+  loadDriverMissions();
+};
+
+// ── Admin: Load mission map with Leaflet ──────────────
+async function loadMissionMap(date) {
+  date = date || TODAY;
+  document.getElementById('mission-map-date').value = date;
+  const mapEl = document.getElementById('admin-mission-map');
+  if (!mapEl) return;
+
+  // Load Leaflet if not loaded
+  if (!window.L) {
+    await new Promise((res, rej) => {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+      document.head.appendChild(css);
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  // Get all missions for date
+  const snap = await getDocs(query(
+    collection(db, 'missions'),
+    where('date', '==', date),
+    orderBy('seq', 'asc')
+  ));
+  const missions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const withCoord = missions.filter(m => m.coordinate?.lat);
+
+  document.getElementById('mission-map-stats').textContent = `${missions.length} 筆任務 · ${withCoord.length} 有座標`;
+
+  // Init or reset map
+  if (window._missionMap) { window._missionMap.remove(); window._missionMap = null; }
+  mapEl.innerHTML = '';
+
+  const map = L.map(mapEl).setView([25.0330, 121.5654], 11);
+  window._missionMap = map;
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  // Add markers
+  const driverColors = {};
+  const colorList = ['#f87171','#60a5fa','#34d399','#fbbf24','#a78bfa','#fb923c'];
+  let colorIdx = 0;
+
+  withCoord.forEach(m => {
+    // Assign color per driver
+    if (!driverColors[m.uid]) {
+      driverColors[m.uid] = colorList[colorIdx++ % colorList.length];
+    }
+    const color = m.status === 'done' ? '#34d399' : (m.assignedDriver ? '#60a5fa' : '#f87171');
+
+    const icon = L.divIcon({
+      html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.4)">${m.seq}</div>`,
+      className: '',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+
+    L.marker([m.coordinate.lat, m.coordinate.lng], { icon })
+      .bindPopup(`<b>#${m.seq}</b><br>${m.address}<br>狀態：${m.status === 'done' ? '✅ 已送' : '📦 待送'}`)
+      .addTo(map);
+  });
+
+  if (withCoord.length > 0) {
+    map.fitBounds(withCoord.map(m => [m.coordinate.lat, m.coordinate.lng]));
+  }
+}
+
+// ── Admin: Mission list ────────────────────────────────
+async function loadAdminMissions() {
+  const el = document.getElementById('admin-mission-list');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--dim);font-size:12px;text-align:center;padding:20px">載入中...</div>';
+
+  const snap = await getDocs(query(
+    collection(db, 'missions'),
+    where('date', '==', TODAY),
+    orderBy('seq', 'asc')
+  ));
+
+  if (snap.empty) {
+    el.innerHTML = '<div style="color:var(--dim);font-size:12px;text-align:center;padding:20px">今日無任務資料</div>';
+    return;
+  }
+
+  // Group by driver
+  const byDriver = {};
+  snap.docs.forEach(d => {
+    const m = d.data();
+    if (!byDriver[m.uid]) byDriver[m.uid] = [];
+    byDriver[m.uid].push({ id: d.id, ...m });
+  });
+
+  // Get driver names
+  const driverNames = {};
+  for (const uid of Object.keys(byDriver)) {
+    const uSnap = await getDoc(doc(db, 'users', uid));
+    driverNames[uid] = uSnap.exists() ? uSnap.data().name : uid.slice(0,8);
+  }
+
+  el.innerHTML = Object.entries(byDriver).map(([uid, missions]) => {
+    const pending = missions.filter(m => m.status === 'pending').length;
+    const done = missions.filter(m => m.status === 'done').length;
+    const shadow = missions.reduce((s, m) => s + (m.shadowProfit||0), 0);
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between">
+        <span>🚚 ${driverNames[uid]}</span>
+        <span style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">待${pending} · 完${done} · 影$${shadow}</span>
+      </div>
+      ${missions.map(m => `<div style="display:flex;gap:8px;padding:7px 10px;border-radius:7px;border:1px solid ${m.status==='done'?'rgba(16,185,129,0.2)':'var(--border)'};margin-bottom:5px;font-size:12px;background:${m.status==='done'?'rgba(16,185,129,0.04)':'rgba(0,0,0,0.2)'}">
+        <span style="font-family:'JetBrains Mono',monospace;color:var(--accent);width:20px;flex-shrink:0">#${m.seq}</span>
+        <span style="flex:1;${m.status==='done'?'color:var(--dim);text-decoration:line-through':''}">${m.address}</span>
+        <span>${m.status==='done'?'✅':'📦'}</span>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+window.runGlobalRouteOptimize = async () => {
+  showToast('路線優化中...');
+  const snap = await getDocs(query(
+    collection(db,'missions'), where('date','==',TODAY), where('status','==','pending')
+  ));
+  // Group by driver and re-optimize
+  const byDriver = {};
+  snap.docs.forEach(d => {
+    const m = { id: d.id, ...d.data() };
+    if (!byDriver[m.uid]) byDriver[m.uid] = [];
+    byDriver[m.uid].push(m);
+  });
+  for (const [uid, missions] of Object.entries(byDriver)) {
+    const optimized = optimizeRoute(missions);
+    for (let i = 0; i < optimized.length; i++) {
+      await updateDoc(doc(db,'missions',optimized[i].id), { seq: i+1 });
+    }
+  }
+  showToast('✓ 路線已優化，重新載入地圖');
+  loadMissionMap();
+  loadAdminMissions();
 };
 
 async function initDriver(){
