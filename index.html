@@ -342,6 +342,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
  
 let _appReady = false; // global auth state flag
+let _driverStatusUnsub = null;
+let _realtimeUnsub = null;
 // Show login screen only if app hasn't loaded yet
 function showLoginScreen(){
   if(_appReady) return; // app already loaded, do nothing
@@ -500,6 +502,7 @@ onAuthStateChanged(auth, async user => {
     ldMsg('建立介面...');
     await buildApp();
     document.getElementById('loading-screen').style.display='none';
+    document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     _appReady = true;
     clearTimeout(_hardTimeout);
@@ -908,7 +911,7 @@ function panelHR(){return `
       <div class="st">👤 人員清冊</div>
       ${ROLE==='commander'?`
         <div style="display:flex;gap:8px">
-          <button class="btn btn-p" onclick="openAddUser()">+ 新增現職員工</button>
+          <button class="btn btn-p" onclick="openAddUser()">+ 新增現職員工</button><button class='btn' style='background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399' onclick="window.open('onboard.html','_blank')">📋 入職資料表</button>
           <button class="btn" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);color:#a78bfa" onclick="openDirectOnboard()">⚡ 快速入職</button>
         </div>`:''}
     </div>
@@ -2579,7 +2582,6 @@ document.head.appendChild(csStyle);
  
  
 // ── PDF 薪資明細匯出 ─────────────────────────────────────
-async
 async function exportDriverSalaryPDF(uid, name){
   const u = CD;
   const mSnap = await getDoc(doc(db,'monthlyStats',`${uid}_${MONTH}`));
@@ -2829,8 +2831,6 @@ async function loadCheckinStatus(){
 // ══════════════════════════════════════════════════════════
 // 即時司機狀態（老闆端）
 // ══════════════════════════════════════════════════════════
-let _driverStatusUnsub = null;
- 
 async function loadRealtimeDriverStatus(){
   const el = document.getElementById('realtime-drivers');
   if(!el) return;
