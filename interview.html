@@ -231,12 +231,17 @@ window.startInterview = async () => {
  
   applicantData = { name, phone, email, position, license, exp };
  
-  // Save to Firestore
-  const ref = await addDoc(collection(db, 'applicants'), {
-    ...applicantData, status: 'interviewing',
-    createdAt: serverTimestamp(), aiScore: 0
-  });
-  docId = ref.id;
+  // Save to Firestore (non-blocking - proceed even if fails)
+  try {
+    const ref = await addDoc(collection(db, 'applicants'), {
+      ...applicantData, status: 'interviewing',
+      createdAt: serverTimestamp(), aiScore: 0
+    });
+    docId = ref.id;
+  } catch(e) {
+    console.warn('[Interview] Firestore save skipped:', e.message);
+    docId = 'local_' + Date.now();
+  }
  
   showScreen('screen-interview');
   await askFirstQuestion();
@@ -268,11 +273,17 @@ async function askFirstQuestion() {
 現在開始問第1個問題。`;
  
   chatHistory = [{ role: 'user', parts: [{ text: systemPrompt }] }];
-  const q = await callGemini(chatHistory);
-  chatHistory.push({ role: 'model', parts: [{ text: q }] });
- 
-  hideTyping();
-  addMessage('ai', q);
+  try {
+    const q = await callGemini(chatHistory);
+    chatHistory.push({ role: 'model', parts: [{ text: q }] });
+    hideTyping();
+    addMessage('ai', q);
+  } catch(e) {
+    hideTyping();
+    console.error('[Interview AI]', e.message);
+    addMessage('ai', '您好！請先進行自我介紹，包括您的姓名和工作經驗。');
+    chatHistory.push({ role: 'model', parts: [{ text: '請進行自我介紹。' }] });
+  }
   questionCount = 1;
   updateProgress();
 }
