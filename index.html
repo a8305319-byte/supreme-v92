@@ -342,18 +342,15 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
  
 let _appReady = false; // global auth state flag
-// Multi-layer fallback to ensure login screen always appears
+// Show login screen only if app hasn't loaded yet
 function showLoginScreen(){
+  if(_appReady) return; // app already loaded, do nothing
   const ld = document.getElementById('loading-screen');
   const ls = document.getElementById('login-screen');
   if(ld){ ld.style.opacity='0'; ld.style.pointerEvents='none'; ld.style.display='none'; }
   if(ls){ ls.style.display='flex'; ls.style.opacity='1'; }
 }
-// Fallback 1: after DOM ready
-document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(showLoginScreen, 2500); });
-// Fallback 2: after full load
-window.addEventListener('load', ()=>{ setTimeout(showLoginScreen, 2000); });
-// Fallback 3: immediate timeout
+// Fallback: show login after 3s if Firebase hasn't responded
 setTimeout(showLoginScreen, 3000);
  
 const FB = {
