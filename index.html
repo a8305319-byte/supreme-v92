@@ -596,6 +596,13 @@ const AI_MODELS = {
   default: 'gemini-2.0-flash'
 };
 
+// 智慧分流：依輸入內容與模式選擇模型
+function selectModel(text='', mode='text'){
+  if(mode === 'voice') return AI_MODELS.live;
+  const proKW = ['分析','異常','審計','報表','統計','趨勢','原因','比較','評估','建議','為何','預測'];
+  return (proKW.some(k=>text.includes(k)) || text.length > 120) ? AI_MODELS.pro : AI_MODELS.fast;
+}
+
 // ── 客服隨機專員 ───────────────────────────────────────
 const CS_AGENTS = [
   {name:'徐美玲', emoji:'👩'},
@@ -622,6 +629,7 @@ const _hardTimeout = setTimeout(()=>{
 
 // ── EXTERNAL API CONFIG ───────────────────────────────────
 const GEMINI_KEY = "AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM";
+const GEMINI_API_KEY = GEMINI_KEY; // alias for AI routing
 const GMAIL_USER = "a8305319@gmail.com";
 const GMAIL_PASS = "tlwn imge snnw fgkd";
 
@@ -3069,8 +3077,6 @@ window.mChangePassword=async()=>{
 // ══════════════════════════════════════════════════════════
 const AI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
 
-// 模型定義
-
 
 async function callGemini(prompt, history=[], mode='text'){
   const model = selectModel(prompt, mode);
@@ -4676,6 +4682,18 @@ window.runGlobalRouteOptimize = async () => {
   loadMissionMap();
   loadAdminMissions();
 };
+
+// ── window 函數曝露（供 onclick 呼叫）────────────────────
+window.loadApplicants = loadApplicants;
+window.loadInsuredList = loadInsuredList;
+window.exportDriverSalaryPDF = exportDriverSalaryPDF;
+window.loadSalaryList = loadSalaryList;
+window.checkInDriver = checkInDriver;
+window.loadAdminMissions = loadAdminMissions;
+window.loadMissionMap = loadMissionMap;
+
+// 司機薪資單下載（self）
+window.exportMyPayslip = () => downloadPayslipPDF(MONTH);
 
 async function initDriver(){
   await loadDriverHome();
