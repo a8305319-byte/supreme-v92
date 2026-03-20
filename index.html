@@ -3431,28 +3431,25 @@ window.mChangePassword=async()=>{
 const AI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
 
 
-async function callGemini(prompt, history=[], mode='text'){
+async function callGemini(prompt, history = [], mode = 'text') {
   const SECRET_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
-  if(!SECRET_KEY) throw new Error('尚未設定 API 金鑰，請至 Commander → 🔐 設定');
-
-  // 1. 模型 ID 分流 (2026 穩定版)
-  const isComplex = mode==='pro' || prompt.length>50 || /分析|薪資|法規|趨勢|審計|統計|建議/.test(prompt);
+  if (!SECRET_KEY) throw new Error('尚未設定 API 金鑰，請至 Commander → 🔐 設定');
+  const isComplex = mode === 'pro' || prompt.length > 50 || /分析|薪資|法規|趨勢|審計|統計|建議/.test(prompt);
   const modelId = isComplex ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
-
-  // 2. 核心修正：v1 端點
-  const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${SECRET_KEY}`;
-
-  // 3. 請求佇列與退避防禦
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${SECRET_KEY}`;
   try {
     const res = await geminiWithBackoff(url, {
-      contents: [...history, { role:'user', parts:[{text: prompt}] }],
-      generationConfig: { temperature:0.7, maxOutputTokens:800 }
+      contents: [...history, { role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.75, maxOutputTokens: 800 }
     });
     const data = await res.json();
-    if(data.error) throw new Error(data.error.message);
+    if (data.error) {
+      if (data.error.code === 404) throw new Error(`模型 ${modelId} 在 v1beta 路徑下找不到，請檢查金鑰權限。`);
+      throw new Error(data.error.message);
+    }
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     return { reply, model: modelId };
-  } catch(e){
+  } catch (e) {
     console.error('[AI引擎崩潰]', e.message);
     throw e;
   }
