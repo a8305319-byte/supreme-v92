@@ -224,6 +224,17 @@ let scores = [];
 let docId = null;
 
 // ── START INTERVIEW ───────────────────────────────────────
+// Fetch API key from Firebase config
+async function fetchAPIKey() {
+  try {
+    const snap = await getDoc(doc(db, 'config', 'apikey'));
+    if(snap.exists() && snap.data().gemini) {
+      return snap.data().gemini;
+    }
+  } catch(e) { console.warn('[Key] Firebase fetch failed:', e.message); }
+  return localStorage.getItem('V92_SECRET_KEY') || '';
+}
+
 window.startInterview = async () => {
   const name = document.getElementById('app-name').value.trim();
   const phone = document.getElementById('app-phone').value.trim();
@@ -238,8 +249,13 @@ window.startInterview = async () => {
   docId = 'local_' + Date.now(); // temp ID
 
   // Go to interview FIRST, save to Firestore in background
+  // Fetch shared API key from Firebase
+  if(!window._sharedAPIKey){
+    window._sharedAPIKey = await fetchAPIKey();
+  }
+
   showScreen('screen-interview');
-  console.log('[Interview] 切換到面試畫面');
+  console.log('[Interview] 切換到面試畫面, key:', !!window._sharedAPIKey);
   
   // Background save (non-blocking)
   addDoc(collection(db, 'applicants'), {
@@ -262,8 +278,9 @@ window.startInterview = async () => {
 
 // ── 面試評分引擎 ─────────────────────────────────────────────
 async function callGemini(messages) {
-  // 使用唯一可用模型 gemini-flash-latest
-  const KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY; // active: AIzaSyDhNiCiwVA...
+  // 優先 localStorage，其次 Firebase config
+  const KEY = localStorage.getItem('V92_SECRET_KEY') || window._sharedAPIKey || GEMINI_KEY;
+  if(!KEY) throw new Error('AI 金鑰未設定，請聯絡管理員');
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
