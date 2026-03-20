@@ -3435,7 +3435,7 @@ async function callGemini(prompt, history = [], mode = 'text') {
   const SECRET_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
   if (!SECRET_KEY) throw new Error('尚未設定 API 金鑰');
   const isComplex = mode === 'pro' || prompt.length > 50;
-  const modelId = isComplex ? 'gemini-1.5-pro' : 'gemini-flash-latest';
+  const modelId = isComplex ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${SECRET_KEY}`;
   try {
     const res = await geminiWithBackoff(url, {
@@ -3444,21 +3444,19 @@ async function callGemini(prompt, history = [], mode = 'text') {
     });
     const data = await res.json();
     if (data.error && data.error.code === 404) {
-      console.warn('[AI] 最新標籤失效，嘗試原始標籤...');
-      const finalUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${SECRET_KEY}`;
-      const res2 = await fetch(finalUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] })
-      });
+      console.warn('[Supreme-V92] 標籤衝突，啟動備用大腦...');
+      const res2 = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${SECRET_KEY}`,
+        { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ contents:[{ role:'user', parts:[{text:prompt}] }] }) }
+      );
       const data2 = await res2.json();
       return { reply: data2.candidates?.[0]?.content?.parts?.[0]?.text || '', model: 'gemini-pro' };
     }
     if (data.error) throw new Error(data.error.message);
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    return { reply, model: modelId };
+    return { reply: data.candidates?.[0]?.content?.parts?.[0]?.text || '', model: modelId };
   } catch (e) {
-    console.error('[大腦嚴重斷線]', e.message);
+    console.error('[Supreme-V92 訊號中斷]', e.message);
     throw e;
   }
 }
