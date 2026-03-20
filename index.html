@@ -630,7 +630,7 @@ const _hardTimeout = setTimeout(()=>{
 },8000);
 
 // ── EXTERNAL API CONFIG ───────────────────────────────────
-const GEMINI_KEY = "AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM";
+const GEMINI_KEY = "AIzaSyCELH3aud8kQ1DViNWr0SRXLeLq1PHdz5Q"; // 2026穩定金鑰
 // 主權防禦：優先從 localStorage 讀取，否則用內建備用金鑰
 const GEMINI_API_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
 const GMAIL_USER = "a8305319@gmail.com";
@@ -3597,18 +3597,10 @@ window.sendCSMessage = async function sendCSMessage() {
       ...csHistory.slice(-8) // keep last 8 messages for context
     ];
 
-    const SECRET_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
-    const res = await geminiWithBackoff(
-      `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.fast}:generateContent?key=${SECRET_KEY}`,
-      { contents: messages, generationConfig: { temperature: 0.82, maxOutputTokens: 500 } }
-    );
-    const data = await res.json();
-    console.log('[CS] status:', res.status, 'candidates:', data.candidates?.length, 'error:', data.error?.message);
-    if(data.error){
-      if(data.error.code===429) throw new Error('QUOTA_EXCEEDED');
-      throw new Error('AI錯誤：'+data.error.message);
-    }
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '不好意思，我這邊稍微卡住了，可以再說一次嗎？😅';
+    // 使用 callGemini（統一金鑰 + gemini-flash-latest）
+    const csCtx = messages.slice(0, -1);
+    const { reply: csReply } = await callGemini(text, csCtx, 'text');
+    const reply = csReply || '不好意思，我這邊稍微卡住了，可以再說一次嗎？😅';
 
     csHistory.push({ role: 'model', parts: [{ text: reply }] });
     addCSMsg('agent', reply);
