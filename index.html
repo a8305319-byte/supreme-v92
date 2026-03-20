@@ -3434,29 +3434,19 @@ const AI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
 async function callGemini(prompt, history = [], mode = 'text') {
   const SECRET_KEY = localStorage.getItem('V92_SECRET_KEY') || GEMINI_KEY;
   if (!SECRET_KEY) throw new Error('尚未設定 API 金鑰');
-  const isComplex = mode === 'pro' || prompt.length > 50;
-  const modelId = isComplex ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+  // 【確認可用】gemini-flash-latest 是此 Key 唯一可用模型
+  const modelId = 'gemini-flash-latest';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${SECRET_KEY}`;
   try {
     const res = await geminiWithBackoff(url, {
       contents: [...history, { role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.75, maxOutputTokens: 800 }
+      generationConfig: { temperature: 0.75, maxOutputTokens: 1000 }
     });
     const data = await res.json();
-    if (data.error && data.error.code === 404) {
-      console.warn('[Supreme-V92] 標籤衝突，啟動備用大腦...');
-      const res2 = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${SECRET_KEY}`,
-        { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ contents:[{ role:'user', parts:[{text:prompt}] }] }) }
-      );
-      const data2 = await res2.json();
-      return { reply: data2.candidates?.[0]?.content?.parts?.[0]?.text || '', model: 'gemini-pro' };
-    }
-    if (data.error) throw new Error(data.error.message);
+    if (data.error) throw new Error(`[${data.error.code}] ${data.error.message}`);
     return { reply: data.candidates?.[0]?.content?.parts?.[0]?.text || '', model: modelId };
   } catch (e) {
-    console.error('[Supreme-V92 訊號中斷]', e.message);
+    console.error('[Supreme-V92]', e.message);
     throw e;
   }
 }
