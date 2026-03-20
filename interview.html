@@ -75,6 +75,10 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
 <body>
 <div class="wrap">
   <div class="header">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <button onclick="if(document.referrer){history.back();}else{window.location.href='index.html';}" style="padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">← 返回</button>
+      <button onclick="window.close();setTimeout(()=>window.location.href='index.html',200);" style="padding:6px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#f87171;font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace">✕ 關閉</button>
+    </div>
     <div class="logo">在地物流</div>
     <div class="logo-sub">配送司機招募系統</div>
   </div>
@@ -205,6 +209,7 @@ const app = initializeApp(FB);
 const db = getFirestore(app);
  
 const GEMINI_KEY = 'AIzaSyDlOOSYQyuU272sq9KGZTKwsAhbjVMeoKM';
+const GEMINI_MODEL = 'gemini-2.0-flash'; // 快速面試評分
  
 let applicantData = {};
 let chatHistory = [];
