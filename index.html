@@ -7,7 +7,13 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <title>在地物流有限公司</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="在地物流">
+  <meta name="theme-color" content="#000000">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{
@@ -580,6 +586,25 @@ const FB = {
   appId:"1:485530156296:web:6728c0ee08b98dedd800bd"
 };
 const fbApp = initializeApp(FB);
+
+// ── API Keys ─────────────────────────────────────────
+// ── AI 模型分流（已在頂部定義）────────
+const AI_MODELS = {
+  live:    'gemini-live-2.5-flash',
+  fast:    'gemini-2.5-flash-lite',
+  pro:     'gemini-3.1-pro-preview',
+  default: 'gemini-2.0-flash'
+};
+
+// ── 客服隨機專員 ───────────────────────────────────────
+const CS_AGENTS = [
+  {name:'徐美玲', emoji:'👩'},
+  {name:'陳雅婷', emoji:'👩‍💼'},
+  {name:'林美君', emoji:'👩'},
+];
+const _csAgent = CS_AGENTS[Math.floor(Math.random() * CS_AGENTS.length)];
+const CS_AGENT_NAME = _csAgent.name;
+const CS_AGENT_EMOJI = _csAgent.emoji;
 const auth  = getAuth(fbApp);
 const db    = getFirestore(fbApp);
 
@@ -1028,6 +1053,15 @@ function generateQRCodes(){
   }
 }
 
+
+window.toggleCard = (id, btn) => {
+  const el = document.getElementById(id);
+  if(!el) return;
+  const isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? '' : 'none';
+  if(btn) btn.textContent = isHidden ? '收合' : '展開';
+};
+
 window.showPanel = function(id) {
   // Stop realtime listener when leaving driver status panel
   if(id !== 'driverstatus' && _driversUnsubscribe){ _driversUnsubscribe(); _driversUnsubscribe = null; }
@@ -1180,10 +1214,18 @@ function panelHR(){return `
 <div id="panel-hr" class="panel">
   <div class="glass-card" style="margin-bottom:14px">
     <div class="sh">
-      <div class="st">👤 人員清冊</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="st">👤 人員清冊</div>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-p btn-sm" id="hr-tab-active" onclick="loadHR('active')">在職</button>
+          <button class="btn btn-g btn-sm" id="hr-tab-resigned" onclick="loadHR('resigned')">已離職</button>
+          <button class="btn btn-g btn-sm" id="hr-tab-all" onclick="loadHR('all')">全部</button>
+        </div>
+      </div>
       ${ROLE==='commander'?`
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-p" onclick="openAddUser()">+ 新增現職員工</button><button class='btn' style='background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399' onclick="window.open('onboard.html','_blank')">📋 入職資料表</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-p" onclick="openAddUser()">+ 新增員工</button>
+          <button class='btn' style='background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399' onclick="window.open('onboard.html','_blank')">📋 入職資料表</button>
           <button class="btn" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);color:#a78bfa" onclick="openDirectOnboard()">⚡ 快速入職</button>
         </div>`:''}
     </div>
@@ -1343,6 +1385,11 @@ function panelHR(){return `
 </div>`;}
 
 async function loadHR(filter='active') {
+  // Update tab UI
+  ['active','resigned','all'].forEach(t=>{
+    const btn=document.getElementById('hr-tab-'+t);
+    if(btn) btn.className = t===filter ? 'btn btn-p btn-sm' : 'btn btn-g btn-sm';
+  });
   // Update tab styles
   ['active','resigned','all'].forEach(t=>{
     const btn = document.getElementById('hr-tab-'+t);
@@ -4147,8 +4194,18 @@ window.sendCommanderAI = async () => {
   const badge = getModelBadge(model);
   
   try {
-    const reply = await callGemini(model, cmdHistory.slice(-10), CMD_SYSTEM, 0.7);
+    // Build context with system prompt
+    const ctxHistory = [
+      { role:'user', parts:[{text: CMD_SYSTEM}] },
+      { role:'model', parts:[{text:'好的，我是您的專屬助理。'}] },
+      ...cmdHistory.slice(-10)
+    ];
+    const { reply: rawReply, model: usedModel } = await callGemini(text, ctxHistory.slice(0,-1), 'text');
+    const reply = rawReply || '抱歉，目前無法回應，請稍後再試。';
     cmdHistory.push({ role: 'model', parts: [{ text: reply }] });
+    // Show model used
+    const modelBadge = document.getElementById('cmd-model-badge');
+    if(modelBadge) modelBadge.textContent = usedModel;
     
     document.getElementById(typingId)?.remove();
     box.innerHTML += `<div style="display:flex;gap:8px;margin-bottom:10px">
