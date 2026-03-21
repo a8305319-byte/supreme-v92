@@ -1047,105 +1047,142 @@ window.saveDirectOnboard = async () => {
   if(!uid){ showToast('請填寫 Firebase UID','err'); return; }
   if(!name){ showToast('請填寫姓名','err'); return; }
   if(!email){ showToast('請填寫 Email','err'); return; }
+// ============================================================
+// ⚡ 快速入職處理 (整合 Resend 自動發信)
+// ============================================================
+window.saveDirectOnboard = async () => {
+  const uid = document.getElementById('do-uid').value.trim();
+  const name = document.getElementById('do-name').value.trim();
+  const email = document.getElementById('do-email').value.trim();
+  const msg = document.getElementById('do-msg');
+  
+  if(!uid || !name || !email){ 
+    showToast('請填寫必填欄位','err'); 
+    return; 
+  }
 
   const data = {
     name, email,
-    phone: document.getElementById('do-phone').value||'',
-    position: document.getElementById('do-position')?.value||'driver_employee',
-    role: document.getElementById('do-role').value||'driver',
-    type: document.getElementById('do-type').value||'employee',
-    priceDelivery: +document.getElementById('do-price-d').value||50,
-    priceReverse: +document.getElementById('do-price-r').value||35,
-    allowance: +document.getElementById('do-allowance').value||2000,
-    regularDeduct: +document.getElementById('do-deduct').value||500,
+    phone: document.getElementById('do-phone').value || '',
+    position: document.getElementById('do-position')?.value || 'driver_employee',
+    role: document.getElementById('do-role').value || 'driver',
+    type: document.getElementById('do-type').value || 'employee',
+    priceDelivery: +document.getElementById('do-price-d').value || 50,
+    priceReverse: +document.getElementById('do-price-r').value || 35,
+    allowance: +document.getElementById('do-allowance').value || 2000,
+    regularDeduct: +document.getElementById('do-deduct').value || 500,
     licenseType: document.getElementById('do-license-type').value,
     licenseExpiry: document.getElementById('do-license-exp').value,
     insuranceExpiry: document.getElementById('do-ins-exp').value,
     onboardedDirectly: true,
     onboardedAt: serverTimestamp(),
-    onboardedBy: CD?.name||'Commander',
+    onboardedBy: CD?.name || 'Commander',
     createdAt: serverTimestamp()
   };
 
   try {
-    await setDoc(doc(db,'users',uid), data);
+    // 1. 寫入資料庫
+    await setDoc(doc(db, 'users', uid), data);
+    
+    // 2. 記錄審計日誌
     await addAudit('CREATE', `快速入職：${name} (${email}) 角色:${data.role}`);
     
-    if(msg){ msg.style.display='block'; msg.style.color='#34d399'; 
-      msg.textContent='✓ 入職資料已建立！請在 Firebase Console 確認帳號已建立。'; }
-    showToast('✓ '+name+' 入職資料已建立');
+    // 3. 💡 自動發送 Resend 歡迎信
+    const tempPass = "請洽管理員取得初始密碼"; 
+    if (typeof sendWelcomeEmail === 'function') {
+      await sendWelcomeEmail(name, email, tempPass);
+    }
+
+    // 4. UI 回饋
+    if(msg){ 
+      msg.style.display = 'block'; 
+      msg.style.color = '#34d399'; 
+      msg.textContent = '✓ 入職資料已建立並嘗試發信！請至 Firebase 確認帳號權限。'; 
+    }
+    showToast('✓ ' + name + ' 入職資料已建立');
     
-    // Clear form
-    ['do-name','do-email','do-phone','do-uid'].forEach(id=>{
-      const el=document.getElementById(id);if(el)el.value='';
+    // 5. 清空表單
+    ['do-name','do-email','do-phone','do-uid'].forEach(id => {
+      const el = document.getElementById(id); 
+      if(el) el.value = '';
     });
     
+    // 6. 重新載入列表
     await loadHR();
+    
   } catch(e) {
-    showToast('建立失敗：'+e.message,'err');
-    if(msg){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='失敗：'+e.message; }
+    console.error('[saveDirectOnboard]', e);
+    showToast('建立失敗：' + e.message, 'err');
+    if(msg){ 
+      msg.style.display = 'block'; 
+      msg.style.color = '#f87171'; 
+      msg.textContent = '失敗：' + e.message; 
+    }
   }
 };
 
+// ============================================================
+// 🔗 QR Code 生成邏輯 — Supreme-V92 版
+// ============================================================
 function generateQRCodes(){
-  const base = window.location.href
-    .replace('index.html','')
-    .replace(/\?.*$/,'')
-    .replace(/#.*/,'');
+  const base = window.location.href.replace('index.html','').replace(/\?.*$/,'').replace(/#.*/,'');
   const iUrl = base + 'interview.html';
   const oUrl = base + 'onboard.html';
 
-  // Interview QR
+  // 1. 面試 QR (電光藍)
   const el1 = document.getElementById('qrcode-area');
   if(el1 && !el1.querySelector('img')){
     el1.innerHTML = '';
     const img1 = document.createElement('img');
-    img1.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=00d4ff&bgcolor=0a0a0a&data=' + encodeURIComponent(iUrl);
-    img1.style.cssText = 'border-radius:10px;border:3px solid rgba(0,212,255,0.4);width:160px;height:160px;display:block';
-    img1.onerror = () => {
-      img1.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(iUrl);
-    };
+    img1.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=00d4ff&bgcolor=0a0a0a&data=${encodeURIComponent(iUrl)}`;
+    img1.style.cssText = 'border-radius:10px;border:3px solid rgba(0,212,255,0.4);width:160px;height:160px;display:block;margin:auto;';
     el1.appendChild(img1);
   }
 
-  // Onboard QR
+  // 2. 入職 QR (螢光綠)
   const el2 = document.getElementById('qrcode-onboard');
   if(el2 && !el2.querySelector('img')){
     el2.innerHTML = '';
     const img2 = document.createElement('img');
-    img2.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=10b981&bgcolor=0a0a0a&data=' + encodeURIComponent(oUrl);
-    img2.style.cssText = 'border-radius:10px;border:3px solid rgba(16,185,129,0.4);width:160px;height:160px;display:block';
-    img2.onerror = () => {
-      img2.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(oUrl);
-    };
+    img2.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=10b981&bgcolor=0a0a0a&data=${encodeURIComponent(oUrl)}`;
+    img2.style.cssText = 'border-radius:10px;border:3px solid rgba(16,185,129,0.4);width:160px;height:160px;display:block;margin:auto;';
     el2.appendChild(img2);
   }
-}
+} // <--- 確保這裡只有一個關閉括號
 
-
+// ── 下一個函式銜接 ──────────────────────────────────────────
 window.toggleCard = (id, btn) => {
   const el = document.getElementById(id);
-  if(!el) return;
+  if (!el) return;
   const isHidden = el.style.display === 'none';
   el.style.display = isHidden ? '' : 'none';
-  if(btn) btn.textContent = isHidden ? '收合' : '展開';
+  if (btn) btn.textContent = isHidden ? '收合' : '展開';
 };
+// ============================================================
+// 🖥️ 面板切換控制 (整合 Resend 狀態讀取)
+// ============================================================
 
-window.showPanel = function(id) {
-  // Stop realtime listener when leaving driver status panel
   if(id !== 'driverstatus' && _driversUnsubscribe){ _driversUnsubscribe(); _driversUnsubscribe = null; }
+  
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  
   const p = document.getElementById('panel-'+id);
   if (p) p.classList.add('active');
   const n = document.getElementById('nav-'+id);
   if (n) n.classList.add('active');
-  const names={dashboard:'總覽儀表板',recruit:'招募模組 AI',hr:'人事模組',attendance:'出勤模組',
-    insurance:'勞健保模組',salary:'薪資模組',finance:'財務模組',operations:'營運模組',
-    vehicle:'車輛管理',announce:'公告管理',audit:'審計模組',commander:'Commander 控制台',profile:'個人設定',files:'檔案管理', driverstatus:'🚗 司機即時狀態'};
+  
+  const names={
+    dashboard:'總覽儀表板', recruit:'招募模組 AI', hr:'人事模組', 
+    attendance:'出勤模組', insurance:'勞健保模組', salary:'薪資模組', 
+    finance:'財務模組', operations:'營運模組', vehicle:'車輛管理', 
+    announce:'公告管理', audit:'審計模組', commander:'Commander 控制台', 
+    profile:'個人設定', files:'檔案管理', driverstatus:'🚗 司機即時狀態'
+  };
   const pt=document.getElementById('page-title');
   if(pt) pt.textContent=names[id]||id;
-  // load dynamic data
+
+  // ── 數據載入 ──
   if(id==='dashboard') loadDashboard();
   if(id==='hr') loadHR();
   if(id==='operations') loadOperations();
@@ -1157,52 +1194,62 @@ window.showPanel = function(id) {
   if(id==='recruit') loadApplicants();
   if(id==='files'){ loadFiles(); loadUploadPersons(); }
   if(id==='driverstatus') loadDriverStatus();
+
+  // ── 💡 手術植入：進入 Commander 面板時自動初始化 Resend 狀態 ──
+  if (id === 'commander') {
+    if(typeof updateResendStatus === 'function') updateResendStatus();
+    
+    const storedKey = localStorage.getItem('V92_RESEND_KEY');
+    const input = document.getElementById('resend-key');
+    if (storedKey && input && input.value === '') {
+      // 遮罩顯示：只顯示前後，中間隱藏
+      input.value = storedKey.slice(0,6) + '••••••••' + storedKey.slice(-4);
+      input.placeholder = '已設定（重新輸入可修改）';
+    }
+  }
 };
 
-function initDesktop() {
-  const d=new Date();
-  const el=document.getElementById('live-date');
-  if(el) el.textContent=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+// ============================================================
+// 📊 總覽儀表板 UI
+// ============================================================
+function panelDashboard(){
+  return `
+  <div id="panel-dashboard" class="panel">
+    <div class="g4" id="dash-stats">
+      <div class="stat-card"><div class="stat-lbl">今日配送總件</div><div class="stat-val" id="ds-deliv">—</div><div class="pbar"><div class="pfill" style="width:70%"></div></div><div class="stat-sub" id="ds-deliv-sub">載入中</div></div>
+      <div class="stat-card"><div class="stat-lbl">在職人員</div><div class="stat-val" id="ds-staff">—</div><div class="pbar"><div class="pfill" style="width:90%;background:linear-gradient(90deg,#10b981,#06b6d4)"></div></div><div class="stat-sub" id="ds-staff-sub">載入中</div></div>
+      <div class="stat-card"><div class="stat-lbl">本月預估薪資</div><div class="stat-val" id="ds-salary" style="font-size:18px">—</div><div class="pbar"><div class="pfill" style="width:60%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div></div><div class="stat-sub">含勞健保扣除</div></div>
+      <div class="stat-card"><div class="stat-lbl">證件到期警示</div><div class="stat-val" id="ds-warn" style="color:#f87171">—</div><div class="pbar"><div class="pfill" style="width:20%;background:linear-gradient(90deg,#ef4444,#f97316)"></div></div><div class="stat-sub" id="ds-warn-sub">30天內</div></div>
+    </div>
+    <div class="g2">
+      <div class="glass-card" style="border-color:rgba(124,58,237,0.25);cursor:pointer" onclick="showPanel('recruit')">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:10px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🤖</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:2px">招募面試入口</div>
+            <div style="font-size:11px;color:var(--dim)">點擊查看應徵者 / 複製面試連結 / 掃描 QR Code</div>
+          </div>
+          <div style="font-size:18px;color:var(--dim)">→</div>
+        </div>
+      </div>
+      <div class="glass-card">
+        <div class="sh"><div class="st">⚡ 警示事項</div></div>
+        <div id="dash-alerts"><div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">載入中...</div></div>
+      </div>
+      <div class="glass-card">
+        <div class="sh">
+          <div class="st">🚗 即時司機狀態</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;animation:pulse 2s infinite"></span>
+            <span style="font-size:10px;color:#34d399;font-family:'JetBrains Mono',monospace">即時更新</span>
+          </div>
+        </div>
+        <div id="dash-drivers"><div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">載入中...</div></div>
+        <div id="realtime-drivers"></div>
+      </div>
+    </div>
+  </div>`;
 }
-
-// ── DASHBOARD ─────────────────────────────────────────────
-function panelDashboard(){return `
-<div id="panel-dashboard" class="panel">
-  <div class="g4" id="dash-stats">
-    <div class="stat-card"><div class="stat-lbl">今日配送總件</div><div class="stat-val" id="ds-deliv">—</div><div class="pbar"><div class="pfill" style="width:70%"></div></div><div class="stat-sub" id="ds-deliv-sub">載入中</div></div>
-    <div class="stat-card"><div class="stat-lbl">在職人員</div><div class="stat-val" id="ds-staff">—</div><div class="pbar"><div class="pfill" style="width:90%;background:linear-gradient(90deg,#10b981,#06b6d4)"></div></div><div class="stat-sub" id="ds-staff-sub">載入中</div></div>
-    <div class="stat-card"><div class="stat-lbl">本月預估薪資</div><div class="stat-val" id="ds-salary" style="font-size:18px">—</div><div class="pbar"><div class="pfill" style="width:60%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div></div><div class="stat-sub">含勞健保扣除</div></div>
-    <div class="stat-card"><div class="stat-lbl">證件到期警示</div><div class="stat-val" id="ds-warn" style="color:#f87171">—</div><div class="pbar"><div class="pfill" style="width:20%;background:linear-gradient(90deg,#ef4444,#f97316)"></div></div><div class="stat-sub" id="ds-warn-sub">30天內</div></div>
-  </div>
-  <div class="g2">
-    <div class="glass-card" style="border-color:rgba(124,58,237,0.25);cursor:pointer" onclick="showPanel('recruit')">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:48px;height:48px;border-radius:10px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🤖</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:2px">招募面試入口</div>
-          <div style="font-size:11px;color:var(--dim)">點擊查看應徵者 / 複製面試連結 / 掃描 QR Code</div>
-        </div>
-        <div style="font-size:18px;color:var(--dim)">→</div>
-      </div>
-    </div>
-    <div class="glass-card">
-      <div class="sh"><div class="st">⚡ 警示事項</div></div>
-      <div id="dash-alerts"><div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">載入中...</div></div>
-    </div>
-    <div class="glass-card">
-      <div class="sh">
-        <div class="st">🚗 即時司機狀態</div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;animation:pulse 2s infinite"></span>
-          <span style="font-size:10px;color:#34d399;font-family:'JetBrains Mono',monospace">即時更新</span>
-        </div>
-      </div>
-      <div id="dash-drivers"><div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">載入中...</div></div>
-      <div id="realtime-drivers"></div>
-    </div>
-  </div>
-</div>`;}
-
 async function loadDashboard() {
   // Staff count
   const staffSnap = await getDocs(collection(db,'users'));
@@ -4030,7 +4077,7 @@ function setupDriverRealtime(drivers){
 
 // Clean up listener when leaving dashboard
 const _origShowPanel = window.showPanel;
-window.showPanel = function(id){
+
   if(id !== 'dashboard' && _realtimeUnsub){
     _realtimeUnsub();
     _realtimeUnsub = null;
@@ -6259,11 +6306,12 @@ window.saveResendKey = () => {
   showToast('✅ Resend 設定完成');
 };
 
+// ── LINE 通知權杖儲存與測試 ──────────────────────────────
 window.saveLineToken = async () => {
   const token = document.getElementById('line-token')?.value.trim();
   if(!token){ showToast('請輸入 LINE Token','err'); return; }
   localStorage.setItem('V92_LINE_TOKEN', token);
-  // 測試連線
+  
   try {
     const form = new FormData();
     form.append('message', '\n✅ 在地物流系統 LINE 通知已連線！');
@@ -6283,183 +6331,195 @@ window.saveLineToken = async () => {
   }
 };
 
-
-
+// ── 司機端初始化 ──────────────────────────────────────────
 async function initDriver(){
   await loadDriverHome();
-  checkUnreadPayslips();
-  listenPayslips();
+  if(typeof checkUnreadPayslips === 'function') checkUnreadPayslips();
+  if(typeof listenPayslips === 'function') listenPayslips();
   await loadCheckinStatus();
-  initSlide();
-  // load phone
-  const mPhone=document.getElementById('m-phone');
-  if(mPhone&&CD.phone) mPhone.value=CD.phone;
-  // load photo
-  if(CD.photoURL){
-    const mp=document.getElementById('m-profile-photo');
-    if(mp)mp.innerHTML=`<img src="${CD.photoURL}" style="width:100%;height:100%;object-fit:cover">`;
+  if(typeof initSlide === 'function') initSlide();
+  
+  const mPhone = document.getElementById('m-phone');
+  if(mPhone && CD?.phone) mPhone.value = CD.phone;
+  if(CD?.photoURL){
+    const mp = document.getElementById('m-profile-photo');
+    if(mp) mp.innerHTML = `<img src="${CD.photoURL}" style="width:100%;height:100%;object-fit:cover">`;
   }
 }
 
+// ── 司機首頁數據載入 ──────────────────────────────────────
 async function loadDriverHome(){
-  // Today
-  const rSnap=await getDoc(doc(db,'reports',`${CU.uid}_${TODAY}`));
+  const rSnap = await getDoc(doc(db,'reports',`${CU.uid}_${TODAY}`));
   if(rSnap.exists()){
-    const r=rSnap.data();
-    const d=document.getElementById('m-today-d'),rv=document.getElementById('m-today-r');
-    if(d)d.textContent=r.deliveryQty;if(rv)rv.textContent=r.reverseQty;
-    // Mark confirmed
-    const sw=document.getElementById('m-slide-wrap'),sd=document.getElementById('m-slide-done');
-    if(sw)sw.style.display='none';if(sd)sd.style.display='block';
-    const id=document.getElementById('m-in-d'),ir=document.getElementById('m-in-r');
-    if(id)id.value=r.deliveryQty;if(ir)ir.value=r.reverseQty;
+    const r = rSnap.data();
+    const d = document.getElementById('m-today-d'), rv = document.getElementById('m-today-r');
+    if(d) d.textContent = r.deliveryQty; 
+    if(rv) rv.textContent = r.reverseQty;
+    const sw = document.getElementById('m-slide-wrap'), sd = document.getElementById('m-slide-done');
+    if(sw) sw.style.display = 'none'; 
+    if(sd) sd.style.display = 'block';
+    const id = document.getElementById('m-in-d'), ir = document.getElementById('m-in-r');
+    if(id) id.value = r.deliveryQty; 
+    if(ir) ir.value = r.reverseQty;
     mUpdateTotal();
   }
-  // Month
-  const mSnap=await getDoc(doc(db,'monthlyStats',`${CU.uid}_${MONTH}`));
-  const md=document.getElementById('m-month-d'),mr=document.getElementById('m-month-r'),ms=document.getElementById('m-month-sal');
+  const mSnap = await getDoc(doc(db,'monthlyStats',`${CU.uid}_${MONTH}`));
+  const md = document.getElementById('m-month-d'), mr = document.getElementById('m-month-r'), ms = document.getElementById('m-month-sal');
   if(mSnap.exists()){
-    const m=mSnap.data();
-    const td=m.totalDelivery||0,tr2=m.totalReverse||0;
-    const gross=td*(CD.priceDelivery||50)+tr2*(CD.priceReverse||35)+(CD.allowance||0);
-    const net=gross-(CD.labourEmployee||0)-(CD.healthEmployee||0)-(CD.regularDeduct||0);
-    if(md)md.textContent=td+' 件';if(mr)mr.textContent=tr2+' 件';if(ms)ms.textContent='$'+net.toLocaleString();
+    const m = mSnap.data();
+    const td = m.totalDelivery || 0, tr2 = m.totalReverse || 0;
+    const gross = td * (CD?.priceDelivery || 50) + tr2 * (CD?.priceReverse || 35) + (CD?.allowance || 0);
+    const net = gross - (CD?.labourEmployee || 0) - (CD?.healthEmployee || 0) - (CD?.regularDeduct || 0);
+    if(md) md.textContent = td + ' 件';
+    if(mr) mr.textContent = tr2 + ' 件';
+    if(ms) ms.textContent = '$' + net.toLocaleString();
   } else {
-    if(md)md.textContent='0 件';if(mr)mr.textContent='0 件';if(ms)ms.textContent='$0';
+    if(md) md.textContent = '0 件'; if(mr) mr.textContent = '0 件'; if(ms) ms.textContent = '$0';
   }
 }
 
-window.mUpdateTotal=()=>{
-  const d=+document.getElementById('m-in-d')?.value||0;
-  const r=+document.getElementById('m-in-r')?.value||0;
-  const inc=d*(CD.priceDelivery||50)+r*(CD.priceReverse||35);
-  const el=document.getElementById('m-est');if(el)el.textContent='$'+inc.toLocaleString();
+// ── 件數即時試算 ──────────────────────────────────────────
+window.mUpdateTotal = () => {
+  const d = +document.getElementById('m-in-d')?.value || 0;
+  const r = +document.getElementById('m-in-r')?.value || 0;
+  const inc = d * (CD?.priceDelivery || 50) + r * (CD?.priceReverse || 35);
+  const el = document.getElementById('m-est');
+  if(el) el.textContent = '$' + inc.toLocaleString();
 };
 
+// ── 滑動確認回報初始化 ──────────────────────────────────────
 function initSlide(){
-  const wrap=document.getElementById('m-slide-wrap');
-  const thumb=document.getElementById('m-slide-thumb');
-  if(!wrap||!thumb)return;
-  let dragging=false,startX=0,curX=0;
-  const maxX=()=>wrap.offsetWidth-thumb.offsetWidth-8;
-  const onStart=(x)=>{dragging=true;startX=x-curX;};
-  const onMove=(x)=>{
-    if(!dragging)return;
-    curX=Math.max(0,Math.min(x-startX,maxX()));
-    thumb.style.left=(4+curX)+'px';
-    const pct=curX/maxX();
-    thumb.style.opacity=0.6+pct*0.4;
+  const wrap = document.getElementById('m-slide-wrap');
+  const thumb = document.getElementById('m-slide-thumb');
+  if(!wrap || !thumb) return;
+  let dragging = false, startX = 0, curX = 0;
+  const maxX = () => wrap.offsetWidth - thumb.offsetWidth - 8;
+  const onStart = (x) => { dragging = true; startX = x - curX; thumb.style.transition = 'none'; };
+  const onMove = (x) => {
+    if(!dragging) return;
+    curX = Math.max(0, Math.min(x - startX, maxX()));
+    thumb.style.left = (4 + curX) + 'px';
+    thumb.style.opacity = 0.6 + (curX / maxX()) * 0.4;
   };
-  const onEnd=async()=>{
-    if(!dragging)return;dragging=false;
-    if(curX>=maxX()*0.85){await submitReport();}
-    else{curX=0;thumb.style.left='4px';}
+  const onEnd = async () => {
+    if(!dragging) return; dragging = false;
+    if(curX >= maxX() * 0.85){ await submitReport(); }
+    else { curX = 0; thumb.style.left = '4px'; thumb.style.transition = 'left 0.3s ease'; }
   };
-  thumb.addEventListener('touchstart',e=>{onStart(e.touches[0].clientX);},{passive:true});
-  thumb.addEventListener('touchmove',e=>{onMove(e.touches[0].clientX);},{passive:true});
-  thumb.addEventListener('touchend',onEnd);
-  thumb.addEventListener('mousedown',e=>{onStart(e.clientX);});
-  document.addEventListener('mousemove',e=>{onMove(e.clientX);});
-  document.addEventListener('mouseup',onEnd);
+  thumb.addEventListener('touchstart', e => onStart(e.touches[0].clientX), {passive:true});
+  thumb.addEventListener('touchmove', e => onMove(e.touches[0].clientX), {passive:true});
+  thumb.addEventListener('touchend', onEnd);
+  thumb.addEventListener('mousedown', e => onStart(e.clientX));
+  document.addEventListener('mousemove', e => onMove(e.clientX));
+  document.addEventListener('mouseup', onEnd);
 }
 
+// ── 送出件數回報 ──────────────────────────────────────────
 async function submitReport(){
-  const qd=+document.getElementById('m-in-d')?.value||0;
-  const qr=+document.getElementById('m-in-r')?.value||0;
-  if(qd===0&&qr===0){showToast('請填寫件數','err');return;}
+  const qd = +document.getElementById('m-in-d')?.value || 0;
+  const qr = +document.getElementById('m-in-r')?.value || 0;
+  if(qd === 0 && qr === 0){ showToast('請填寫件數','err'); return; }
   try {
-    // Save today's report
-    // Get photo evidence base64 if captured
     const photoData = window._reportPhotoData || null;
-    window._reportPhotoData = null; // clear after use
-
     await setDoc(doc(db,'reports',`${CU.uid}_${TODAY}`),{
-      uid:CU.uid,name:CD.name,date:TODAY,month:MONTH,
-      deliveryQty:qd,reverseQty:qr,confirmedAt:serverTimestamp(),
-      photoEvidence: photoData ? true : false,
-      photoBase64: photoData || null
+      uid:CU.uid, name:CD.name, date:TODAY, month:MONTH,
+      deliveryQty:qd, reverseQty:qr, confirmedAt:serverTimestamp(),
+      photoEvidence: !!photoData, photoBase64: photoData
     });
-    // Update monthly stats (upsert)
-    const mRef=doc(db,'monthlyStats',`${CU.uid}_${MONTH}`);
-    const mSnap=await getDoc(mRef);
+    const mRef = doc(db,'monthlyStats',`${CU.uid}_${MONTH}`);
+    const mSnap = await getDoc(mRef);
     if(mSnap.exists()){
-      await updateDoc(mRef,{totalDelivery:increment(qd),totalReverse:increment(qr),lastUpdated:serverTimestamp()});
+      await updateDoc(mRef,{ totalDelivery:increment(qd), totalReverse:increment(qr), lastUpdated:serverTimestamp() });
     } else {
-      const gross=qd*(CD.priceDelivery||50)+qr*(CD.priceReverse||35)+(CD.allowance||0);
-      const net=gross-(CD.labourEmployee||0)-(CD.healthEmployee||0)-(CD.regularDeduct||0);
-      await setDoc(mRef,{uid:CU.uid,name:CD.name,month:MONTH,totalDelivery:qd,totalReverse:qr,estimatedNet:net,lastUpdated:serverTimestamp()});
+      const gross = qd * (CD?.priceDelivery || 50) + qr * (CD?.priceReverse || 35) + (CD?.allowance || 0);
+      const net = gross - (CD?.labourEmployee || 0) - (CD?.healthEmployee || 0) - (CD?.regularDeduct || 0);
+      await setDoc(mRef,{ uid:CU.uid, name:CD.name, month:MONTH, totalDelivery:qd, totalReverse:qr, estimatedNet:net, lastUpdated:serverTimestamp() });
     }
-    await addDoc(collection(db,'auditLog'),{action:'CONFIRM',detail:`${CD.name} 確認回報 配${qd}件/逆${qr}件`,timestamp:serverTimestamp(),hash:Math.random().toString(36).slice(2,8)+'...'});
-    // Update UI
-    const sw=document.getElementById('m-slide-wrap'),sd=document.getElementById('m-slide-done');
-    if(sw)sw.style.display='none';if(sd)sd.style.display='block';
-    const td=document.getElementById('m-today-d'),tr2=document.getElementById('m-today-r');
-    if(td)td.textContent=qd;if(tr2)tr2.textContent=qr;
+    await addAudit('CONFIRM',`${CD.name} 確認回報 配${qd}/逆${qr}`);
     showToast('✓ 件數已回報確認！');
+    window._reportPhotoData = null;
     await loadDriverHome();
-  } catch(e){showToast('回報失敗：'+e.message,'err');}
+  } catch(e){
+    showToast('回報失敗：'+e.message,'err');
+  }
 }
 
+// ── 薪資明細載入 ──────────────────────────────────────────
 async function loadDriverSalary(){
-  const mSnap=await getDoc(doc(db,'monthlyStats',`${CU.uid}_${MONTH}`));
-  const td=mSnap.exists()?mSnap.data().totalDelivery||0:0;
-  const tr2=mSnap.exists()?mSnap.data().totalReverse||0:0;
-  const delivery=td*(CD.priceDelivery||50),reverse=tr2*(CD.priceReverse||35),allowance=CD.allowance||0;
-  const gross=delivery+reverse+allowance;
-  const labEmp=CD.labourEmployee||0,healthEmp=CD.healthEmployee||0,deduct=CD.regularDeduct||0;
-  const nhiDeduct=(CD.type==='contractor'&&gross>=20000)?Math.round(gross*0.0211):0;
-  const net=gross-labEmp-healthEmp-nhiDeduct-deduct;
-  const el=document.getElementById('m-salary-detail');
-  if(!el)return;
-  el.innerHTML=`
-    <div style="font-size:12px;font-weight:600;color:var(--mid);font-family:'JetBrains Mono',monospace;margin-bottom:14px">💰 ${MONTH} 薪資明細</div>
-    ${[
-      {l:'配送收入 ('+td+'件)',v:'+$'+delivery.toLocaleString(),c:'#34d399'},
-      {l:'逆物流收入 ('+tr2+'件)',v:'+$'+reverse.toLocaleString(),c:'#34d399'},
-      {l:'津貼',v:'+$'+allowance.toLocaleString(),c:'#34d399'},
-      CD.type==='employee'?{l:'勞保員工負擔',v:'-$'+labEmp.toLocaleString(),c:'#f87171'}:null,
-      CD.type==='employee'?{l:'健保員工負擔',v:'-$'+healthEmp.toLocaleString(),c:'#f87171'}:null,
-      nhiDeduct>0?{l:'二代健保(2.11%)',v:'-$'+nhiDeduct.toLocaleString(),c:'#f87171'}:null,
-      {l:'代扣費用',v:'-$'+deduct.toLocaleString(),c:'#f87171'},
-    ].filter(Boolean).map(r=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.03)"><span style="font-size:13px;color:var(--mid)">${r.l}</span><span style="font-family:'JetBrains Mono',monospace;color:${r.c}">${r.v}</span></div>`).join('')}
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.2);border-radius:10px;margin-top:12px">
-      <span style="font-size:14px;font-weight:700">預估實發</span>
-      <span style="font-family:'Orbitron',monospace;font-size:22px;color:var(--accent)">$${net.toLocaleString()}</span>
-    </div>
-    <div style="text-align:center;margin-top:10px;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">以實際結算為準 · 勞健保由管理端設定</div>
-    <button onclick="exportMyPayslip()" style="width:100%;margin-top:12px;padding:11px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;font-family:'JetBrains Mono',monospace;cursor:pointer">📄 下載薪資明細 PDF</button>
-    <button onclick="exportDriverSalaryPDF('${CU.uid}','${CD.name}')" style="width:100%;margin-top:12px;padding:10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:12px;font-family:'JetBrains Mono',monospace;cursor:pointer">📄 下載本月薪資明細</button>`;
+  const mSnap = await getDoc(doc(db,'monthlyStats',`${CU.uid}_${MONTH}`));
+  const td = mSnap.exists() ? mSnap.data().totalDelivery || 0 : 0;
+  const tr2 = mSnap.exists() ? mSnap.data().totalReverse || 0 : 0;
+  const delivery = td * (CD?.priceDelivery || 50), reverse = tr2 * (CD?.priceReverse || 35), allowance = CD?.allowance || 0;
+  const gross = delivery + reverse + allowance;
+  const labEmp = CD?.labourEmployee || 0, healthEmp = CD?.healthEmployee || 0, deduct = CD?.regularDeduct || 0;
+  const nhiDeduct = (CD?.type === 'contractor' && gross >= 20000) ? Math.round(gross * 0.0211) : 0;
+  const net = gross - labEmp - healthEmp - nhiDeduct - deduct;
+  const el = document.getElementById('m-salary-detail');
+  if(!el) return;
+  let rows = [{l:'配送收入 ('+td+'件)', v:'+$'+delivery.toLocaleString(), c:'#34d399'},{l:'逆物流收入 ('+tr2+'件)', v:'+$'+reverse.toLocaleString(), c:'#34d399'},{l:'津貼', v:'+$'+allowance.toLocaleString(), c:'#34d399'}];
+  if(CD?.type === 'employee'){
+    rows.push({l:'勞保員工負擔', v:'-$'+labEmp.toLocaleString(), c:'#f87171'});
+    rows.push({l:'健保員工負擔', v:'-$'+healthEmp.toLocaleString(), c:'#f87171'});
+  }
+  if(nhiDeduct > 0) rows.push({l:'二代健保(2.11%)', v:'-$'+nhiDeduct.toLocaleString(), c:'#f87171'});
+  rows.push({l:'代扣費用', v:'-$'+deduct.toLocaleString(), c:'#f87171'});
+  el.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--mid);margin-bottom:14px">💰 ${MONTH} 薪資明細</div>${rows.map(r => `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.03)"><span style="font-size:13px;color:var(--mid)">${r.l}</span><span style="font-family:'JetBrains Mono',monospace;color:${r.c}">${r.v}</span></div>`).join('')}<div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.2);border-radius:10px;margin-top:12px"><span style="font-size:14px;font-weight:700">預估實發</span><span style="font-family:'Orbitron',monospace;font-size:22px;color:var(--accent)">$${net.toLocaleString()}</span></div><div style="text-align:center;margin-top:10px;font-size:10px;color:var(--dim)">以實際結算為準</div><button onclick="exportMyPayslip()" style="width:100%;margin-top:12px;padding:11px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer">📄 下載薪資明細 PDF</button>`;
 }
 
-async function loadDriverAnnounce(){
-  const snap=await getDocs(query(collection(db,'announcements'),orderBy('createdAt','desc'),limit(10)));
-  const el=document.getElementById('m-ann-list');
-  if(!el)return;
-  if(snap.empty){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--dim);font-size:12px">目前無公告</div>';return;}
-  el.innerHTML=snap.docs.filter(d=>{const t=d.data().target;return t==='all'||t==='driver';}).map(d=>{
-    const a=d.data();
-    const date=a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString('zh-TW'):'';
-    return `<div class="glass-card" style="margin-bottom:10px">
-      <div style="font-size:14px;font-weight:600;margin-bottom:6px">${a.title}</div>
-      <div style="font-size:12.5px;color:var(--mid);line-height:1.7">${a.body}</div>
-      <div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:'JetBrains Mono',monospace">${date} · ${a.createdBy||''}</div>
-    </div>`;
-  }).join('')||'<div style="text-align:center;padding:20px;color:var(--dim);font-size:12px">無您可查看的公告</div>';
+// ── 提示系統 ─────────────────────────────────────────────
+function showToast(msg, type='ok'){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg; 
+  t.className = type === 'err' ? 'toast-err' : 'toast-ok';
+  t.style.opacity = 1; t.style.pointerEvents = 'auto';
+  setTimeout(() => { t.style.opacity = 0; t.style.pointerEvents = 'none'; }, 2800);
 }
+window.showToast = showToast;
 
-// ── TOAST ────────────────────────────────────────────────
-function showToast(msg,type='ok'){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className=type==='err'?'toast-err':'toast-ok';
-  t.style.opacity=1;setTimeout(()=>{t.style.opacity=0;},2800);
-}
-window.showToast=showToast;
+// ── 面板切換主控邏輯 ──────────────────────────────────────────
+window.showPanel = function(id) {
+  if(id !== 'driverstatus' && window._driversUnsubscribe){ window._driversUnsubscribe(); window._driversUnsubscribe = null; }
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const p = document.getElementById('panel-' + id);
+  if(p) p.classList.add('active');
+  const n = document.getElementById('nav-' + id);
+  if(n) n.classList.add('active');
+  const pt = document.getElementById('page-title');
+  if(pt){
+    const names = { dashboard:'總覽儀表板', recruit:'招募模組 AI', hr:'人事模組', attendance:'出勤模組', insurance:'勞健保模組', salary:'薪資模組', finance:'財務模組', operations:'營運模組', vehicle:'車輛管理', announce:'公告管理', audit:'審計模組', commander:'Commander 控制台', profile:'個人設定', files:'檔案管理', driverstatus:'🚗 司機即時狀態' };
+    pt.textContent = names[id] || id;
+  }
+  if(id === 'dashboard') loadDashboard();
+  if(id === 'hr') loadHR();
+  if(id === 'operations') typeof loadOperations === 'function' && loadOperations();
+  if(id === 'salary') typeof initSalaryCalc === 'function' && initSalaryCalc();
+  if(id === 'insurance') typeof initInsurance === 'function' && initInsurance();
+  if(id === 'announce') typeof loadAnnounceAdmin === 'function' && loadAnnounceAdmin();
+  if(id === 'audit') typeof loadAudit === 'function' && loadAudit();
+  if(id === 'profile') typeof loadProfile === 'function' && loadProfile();
+  if(id === 'recruit') loadApplicants();
+  if(id === 'driverstatus') loadDriverStatus();
+  if(id === 'files'){ if(typeof loadFiles === 'function') loadFiles(); if(typeof loadUploadPersons === 'function') loadUploadPersons(); }
 
+  if (id === 'commander') {
+    if(typeof buildToggles === 'function') buildToggles();
+    if(typeof loadInterviewQuestions === 'function') loadInterviewQuestions();
+    if(typeof updateResendStatus === 'function') updateResendStatus();
+    const storedKey = localStorage.getItem('V92_RESEND_KEY');
+    const input = document.getElementById('resend-key');
+    if (storedKey && input && input.value === '') {
+      input.value = storedKey.slice(0,6) + '••••••••' + storedKey.slice(-4);
+      input.placeholder = '已設定（重新輸入可修改）';
+    }
+  }
+};
 
+// ── 初始化事件綁定 ──────────────────────────────────────────
+const origShow = window.showPanel;
+window.showPanel = (id) => { origShow(id); };
 
-// Init Commander panel when shown
-const origShow=window.showPanel;
-window.showPanel=(id)=>{origShow(id);if(id==='commander'){buildToggles();loadInterviewQuestions();};};
 </script>
 </body>
 </html>
