@@ -2949,10 +2949,12 @@ async function sendWelcomeEmail(name, toEmail, password){
     // EmailJS 未設定 - 備用：用 mailto 開啟
     const subject = encodeURIComponent('【在地物流有限公司】您的帳號已建立');
     const body = encodeURIComponent(
-      name + ' 您好，\n\n您的帳號已建立：\nEmail: ' + toEmail +
+      name + ' 您好，\n\n恭喜您通過面試！HR 已為您建立系統帳號。\n\n' +
+      '【帳號資訊】\nEmail: ' + toEmail +
       '\n臨時密碼: ' + password +
-      '\n\n請至以下網址登入：\n' + loginUrl +
-      '\n\n登入後請立即修改密碼。\n\n在地物流有限公司'
+      '\n\n【入職資料表】\n請先填寫入職資料表：\n' + loginUrl.replace('index.html','').replace(/\/?$/, '/') + 'onboard.html' +
+      '\n\n【系統登入】\n填完入職資料後，請至以下網址登入：\n' + loginUrl +
+      '\n\n登入後請立即修改密碼。\n\n在地物流有限公司 敬上'
     );
     window.open('mailto:'+toEmail+'?subject='+subject+'&body='+body);
     showToast('⚠️ EmailJS 未設定，已開啟 Mail App 手動發送');
