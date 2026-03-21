@@ -2433,6 +2433,22 @@ function panelCommander(){return `
     </div>
   </div>
 
+    <!-- Email 設定 -->
+  <div class="glass-card" style="margin-bottom:14px;border-color:rgba(16,185,129,0.3)">
+    <div class="sh">
+      <div class="st">📧 Email 自動發送設定</div>
+      <a href="https://www.emailjs.com" target="_blank" class="btn btn-g btn-sm">申請免費</a>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">建立員工帳號時自動寄出登入資訊（免費 200 封/月）</div>
+    <div class="f-grp"><label class="f-lbl">Service ID</label>
+      <input class="f-inp" id="ejs-service" placeholder="service_xxxxxxx" autocomplete="off"></div>
+    <div class="f-grp"><label class="f-lbl">Template ID</label>
+      <input class="f-inp" id="ejs-template" placeholder="template_xxxxxxx" autocomplete="off"></div>
+    <div class="f-grp"><label class="f-lbl">Public Key</label>
+      <input class="f-inp" id="ejs-key" placeholder="xxxxxxxxxxxxxxxxx" autocomplete="off"></div>
+    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveEmailJSConfig()">儲存</button>
+    <div id="ejs-status" style="font-size:11px;margin-top:6px;color:var(--dim);text-align:center"></div>
+  </div>
   <div class="glass-card" style="border-color:rgba(245,158,11,0.2)">
     <div class="st" style="margin-bottom:14px;color:var(--yellow)">🔑 費率設定</div>
     <div class="g3">
