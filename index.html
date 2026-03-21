@@ -2442,20 +2442,27 @@ function panelCommander(){return `
   </div>
 
     <!-- Email 設定 -->
-  <div class="glass-card" style="margin-bottom:14px;border-color:rgba(16,185,129,0.3)">
+  <div class="glass-card" style="margin-bottom:14px;border-color:rgba(6,214,160,0.3)">
     <div class="sh">
-      <div class="st">📧 Email 自動發送設定</div>
-      <a href="https://www.emailjs.com" target="_blank" class="btn btn-g btn-sm">申請免費</a>
+      <div class="st">💬 LINE 通知（員工/司機）</div>
+      <a href="https://notify-bot.line.me" target="_blank" class="btn btn-g btn-sm">取得 Token</a>
     </div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">建立員工帳號時自動寄出登入資訊（免費 200 封/月）</div>
-    <div class="f-grp"><label class="f-lbl">Service ID</label>
-      <input class="f-inp" id="ejs-service" placeholder="service_xxxxxxx" autocomplete="off"></div>
-    <div class="f-grp"><label class="f-lbl">Template ID</label>
-      <input class="f-inp" id="ejs-template" placeholder="template_xxxxxxx" autocomplete="off"></div>
-    <div class="f-grp"><label class="f-lbl">Public Key</label>
-      <input class="f-inp" id="ejs-key" placeholder="xxxxxxxxxxxxxxxxx" autocomplete="off"></div>
-    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveEmailJSConfig()">儲存</button>
-    <div id="ejs-status" style="font-size:11px;margin-top:6px;color:var(--dim);text-align:center"></div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">建立帳號時自動傳 LINE，完全免費無上限</div>
+    <div class="f-grp"><label class="f-lbl">LINE Notify Token</label>
+      <input class="f-inp" id="line-token" type="password" placeholder="貼上 Token..." autocomplete="off"></div>
+    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveLineToken()">儲存並測試</button>
+    <div id="line-status" style="font-size:11px;margin-top:6px;color:var(--dim);text-align:center"></div>
+  </div>
+  <div class="glass-card" style="margin-bottom:14px">
+    <div class="sh">
+      <div class="st">📧 Email 通知（面試者）</div>
+      <a href="https://resend.com" target="_blank" class="btn btn-g btn-sm">免費申請</a>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">免費 3,000 封/月，發送面試者帳號通知</div>
+    <div class="f-grp"><label class="f-lbl">Resend API Key</label>
+      <input class="f-inp" id="resend-key" type="password" placeholder="re_xxxxxxxxx" autocomplete="off"></div>
+    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveResendKey()">儲存</button>
+    <div id="resend-status" style="font-size:11px;margin-top:6px;color:var(--dim);text-align:center"></div>
   </div>
   <div class="glass-card" style="border-color:rgba(245,158,11,0.2)">
     <div class="st" style="margin-bottom:14px;color:var(--yellow)">🔑 費率設定</div>
