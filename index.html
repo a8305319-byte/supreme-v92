@@ -2,6 +2,14 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    // 初始化 EmailJS
+    (function(){
+      const key = localStorage.getItem('V92_EMAILJS_KEY');
+      if(key) emailjs.init({publicKey: key});
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23000'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='%2300d4ff' font-family='Arial' font-weight='bold'>V</text></svg>">
   <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23000'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='%2300d4ff' font-family='Arial' font-weight='bold'>V</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
@@ -2977,32 +2985,15 @@ async function sendWelcomeEmail(name, toEmail, password){
     return;
   }
 
-  // EmailJS 發送
-  const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      service_id: EMAILJS_SERVICE,
-      template_id: EMAILJS_TEMPLATE,
-      user_id: EMAILJS_KEY,
-      template_params: {
-        to_name: name,
-        to_email: toEmail,
-        temp_password: password,
-        login_url: loginUrl,
-        company: '在地物流有限公司'
-      }
-    })
+  // EmailJS SDK 發送
+  emailjs.init({publicKey: EMAILJS_KEY});
+  await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+    to_name: name,
+    to_email: toEmail,
+    temp_password: password,
+    login_url: loginUrl,
+    company: '在地物流有限公司'
   });
-
-  if(res.status === 200){
-    // 更新 emailQueue 狀態
-    const eq = await getDocs(query(collection(db,'emailQueue'),
-      where('to','==',toEmail), where('status','==','pending')));
-    eq.docs.forEach(d => updateDoc(d.ref, {status:'sent', sentAt: serverTimestamp()}));
-  } else {
-    throw new Error('EmailJS 發送失敗，狀態碼：'+res.status);
-  }
 }
 
 // ── PROFILE PANEL ─────────────────────────────────────────
@@ -6207,6 +6198,8 @@ window.saveEmailJSConfig = () => {
   localStorage.setItem('V92_EMAILJS_SERVICE',  svc);
   localStorage.setItem('V92_EMAILJS_TEMPLATE', tmpl);
   localStorage.setItem('V92_EMAILJS_KEY',      key);
+  // 立即初始化 EmailJS
+  if(typeof emailjs !== 'undefined') emailjs.init({publicKey: key});
   const st = document.getElementById('ejs-status');
   if(st){ st.style.color='#34d399'; st.textContent='✅ EmailJS 設定已儲存'; }
   showToast('✅ EmailJS 設定完成，之後建立帳號將自動發信');
