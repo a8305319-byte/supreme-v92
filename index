@@ -1,0 +1,44 @@
+const functions = require(‘firebase-functions’);
+const admin = require(‘firebase-admin’);
+admin.initializeApp();
+
+// 自動建立帳號 Cloud Function
+exports.createUser = functions.https.onCall(async (data, context) => {
+// 只有 Commander 可以呼叫
+if (!context.auth) throw new functions.https.HttpsError(‘unauthenticated’, ‘需要登入’);
+
+const callerDoc = await admin.firestore().doc(‘users/’ + context.auth.uid).get();
+if (callerDoc.data()?.role !== ‘commander’) {
+throw new functions.https.HttpsError(‘permission-denied’, ‘只有 Commander 可以建立帳號’);
+}
+
+const { email, password, name, phone, role } = data;
+if (!email || !password || !name) {
+throw new functions.https.HttpsError(‘invalid-argument’, ‘缺少必要欄位’);
+}
+
+// 建立 Firebase Auth 帳號
+const userRecord = await admin.auth().createUser({
+email,
+password,
+displayName: name,
+});
+
+// 建立 Firestore 用戶資料
+await admin.firestore().doc(‘users/’ + userRecord.uid).set({
+name,
+email,
+phone: phone || ‘’,
+role: role || ‘driver’,
+type: role === ‘driver’ ? ‘driver_employee’ : role,
+status: ‘active’,
+active: true,
+priceDelivery: 50,
+priceReverse: 35,
+allowance: 0,
+createdAt: admin.firestore.FieldValue.serverTimestamp(),
+createdBy: callerDoc.data()?.name || ‘Commander’,
+});
+
+return { uid: userRecord.uid, email, name };
+});
