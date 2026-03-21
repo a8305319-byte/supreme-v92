@@ -881,7 +881,15 @@ async function buildApp() {
   } else {
     app.innerHTML = buildDesktopUI();
     initDesktop();
-    showPanel('dashboard');
+   function showPanel(id) {
+  // ... 你原有代碼 ...
+
+  // 加在函數內部某處
+  if (id === 'commander') {
+    setTimeout(loadResendKeyDisplay, 100);
+  }
+}
+('dashboard');
   }
   // Commander can switch to driver view
   if(ROLE === 'commander'){
@@ -908,7 +916,15 @@ function addDriverViewToggle(){
     if(btn.dataset.mode === 'driver'){
       app.innerHTML = buildDesktopUI();
       initDesktop();
-      showPanel('dashboard');
+     function showPanel(id) {
+  // ... 你原有代碼 ...
+
+  // 加在函數內部某處
+  if (id === 'commander') {
+    setTimeout(loadResendKeyDisplay, 100);
+  }
+}
+('dashboard');
       btn.textContent = '📱 司機視角';
       btn.dataset.mode = '';
     } else {
@@ -994,7 +1010,61 @@ function buildAllPanels() {
   ${panelVehicle()}
   ${panelAnnounce()}
   ${panelAudit()}
-  ${ROLE==='commander'?panelCommander():''}
+  ${ROLE==='commander'?function panelCommander() {
+  // 先在函數頂部取值，避免模板字串嵌套問題
+  const resendKeySet = !!localStorage.getItem('V92_RESEND_KEY');
+  const resendKeyDot = resendKeySet ? '#34d399' : '#f87171';
+  const resendKeyTxt = resendKeySet ? '✓ Key 已設定' : '未設定 Key';
+  const currentEmail = CU?.email || '';
+
+  return `
+  <div id="panel-commander" class="panel">
+    
+    <!-- 你原本 panelCommander 裡的其他內容保持不動 -->
+
+    <!-- ── Email 通知設定 ── -->
+    <div class="glass-card" id="commander-email-card">
+      <div class="sh">
+        <div class="st">📧 面試者 Email 通知</div>
+        <div style="font-size:11px;color:var(--dim)">Resend API</div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${resendKeyDot}"></div>
+        <span style="font-size:11px;color:var(--dim)">${resendKeyTxt}</span>
+      </div>
+
+      <div class="f-grp">
+        <label class="f-lbl">Resend API Key</label>
+        <input class="f-inp" id="resend-key"
+          type="password"
+          placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
+          style="font-family:'JetBrains Mono',monospace;letter-spacing:1px">
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-p" style="flex:2" onclick="saveResendKey()">
+          💾 儲存 Key
+        </button>
+        <button class="btn" id="test-resend-btn"
+          style="flex:2;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399"
+          onclick="testResendEmail()">
+          📤 發送測試信
+        </button>
+        <button class="btn btn-g" style="flex:1" onclick="clearResendKey()">
+          🗑
+        </button>
+      </div>
+
+      <div class="info-box" style="margin-top:12px;font-size:11px">
+        💡 Key 僅儲存於此瀏覽器的 localStorage，更換裝置需重新設定。<br>
+        測試信將發送至目前登入帳號：<span style="color:var(--accent)">${currentEmail}</span>
+      </div>
+    </div>
+
+  </div>`;
+}
+:''}
   ${panelDriverStatus()}
   ${panelProfile()}
   ${panelFiles()}
@@ -2351,7 +2421,61 @@ async function addAudit(action,detail){
 }
 
 // ── COMMANDER PANEL ───────────────────────────────────────
-function panelCommander(){return `
+function function panelCommander() {
+  // 先在函數頂部取值，避免模板字串嵌套問題
+  const resendKeySet = !!localStorage.getItem('V92_RESEND_KEY');
+  const resendKeyDot = resendKeySet ? '#34d399' : '#f87171';
+  const resendKeyTxt = resendKeySet ? '✓ Key 已設定' : '未設定 Key';
+  const currentEmail = CU?.email || '';
+
+  return `
+  <div id="panel-commander" class="panel">
+    
+    <!-- 你原本 panelCommander 裡的其他內容保持不動 -->
+
+    <!-- ── Email 通知設定 ── -->
+    <div class="glass-card" id="commander-email-card">
+      <div class="sh">
+        <div class="st">📧 面試者 Email 通知</div>
+        <div style="font-size:11px;color:var(--dim)">Resend API</div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${resendKeyDot}"></div>
+        <span style="font-size:11px;color:var(--dim)">${resendKeyTxt}</span>
+      </div>
+
+      <div class="f-grp">
+        <label class="f-lbl">Resend API Key</label>
+        <input class="f-inp" id="resend-key"
+          type="password"
+          placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
+          style="font-family:'JetBrains Mono',monospace;letter-spacing:1px">
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-p" style="flex:2" onclick="saveResendKey()">
+          💾 儲存 Key
+        </button>
+        <button class="btn" id="test-resend-btn"
+          style="flex:2;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399"
+          onclick="testResendEmail()">
+          📤 發送測試信
+        </button>
+        <button class="btn btn-g" style="flex:1" onclick="clearResendKey()">
+          🗑
+        </button>
+      </div>
+
+      <div class="info-box" style="margin-top:12px;font-size:11px">
+        💡 Key 僅儲存於此瀏覽器的 localStorage，更換裝置需重新設定。<br>
+        測試信將發送至目前登入帳號：<span style="color:var(--accent)">${currentEmail}</span>
+      </div>
+    </div>
+
+  </div>`;
+}
+{return `
 <div id="panel-commander" class="panel">
   <div class="warn-box">⚙️ <strong>Commander 專屬</strong> — 關閉模組後側欄變灰，資料不受影響</div>
 
@@ -2885,7 +3009,15 @@ window.prefillApplicant=async(id)=>{
   const a=snap.data();
 
   // 跳轉到招募模組的快速入職區
-  showPanel('recruit');
+ function showPanel(id) {
+  // ... 你原有代碼 ...
+
+  // 加在函數內部某處
+  if (id === 'commander') {
+    setTimeout(loadResendKeyDisplay, 100);
+  }
+}
+('recruit');
 
   // 等畫面渲染
   await new Promise(r=>setTimeout(r, 300));
@@ -5494,7 +5626,15 @@ window.switchToDesktop = () => {
   const app = document.getElementById('app');
   app.innerHTML = buildDesktopUI();
   initDesktop();
-  showPanel('dashboard');
+ function showPanel(id) {
+  // ... 你原有代碼 ...
+
+  // 加在函數內部某處
+  if (id === 'commander') {
+    setTimeout(loadResendKeyDisplay, 100);
+  }
+}
+('dashboard');
   setTimeout(addDriverViewToggle, 300);
 };
 
@@ -6000,7 +6140,15 @@ async function parseAndExecuteTool(userText, aiReply) {
       case 'PUBLISH_ANNOUNCE':
         if(toolArgs.length < 2) return '❌ 需要提供公告標題和內容';
         result = await CMD_TOOLS.publishAnnounce(toolArgs[0], toolArgs[1]);
-        showPanel('announce');
+       function showPanel(id) {
+  // ... 你原有代碼 ...
+
+  // 加在函數內部某處
+  if (id === 'commander') {
+    setTimeout(loadResendKeyDisplay, 100);
+  }
+}
+('announce');
         return '✅ 公告已發布：「'+result.title+'」';
 
       case 'GET_EMPLOYEE':
@@ -6219,7 +6367,15 @@ function showButlerNotification(msg){
   openBtn.className = 'btn btn-p btn-sm';
   openBtn.textContent = '打開 AI 管家';
   openBtn.style.flex = '1';
-  openBtn.onclick = () => { showPanel('commander'); el.remove(); };
+  openBtn.onclick = () => {function showPanel(id) {
+  // ... 你原有代碼 ...
+
+  // 加在函數內部某處
+  if (id === 'commander') {
+    setTimeout(loadResendKeyDisplay, 100);
+  }
+}
+('commander'); el.remove(); };
 
   const dismissBtn = document.createElement('button');
   dismissBtn.className = 'btn btn-g btn-sm';
@@ -6442,7 +6598,6 @@ async function submitReport(){
     await loadDriverHome();
   } catch(e){showToast('回報失敗：'+e.message,'err');}
 }
-
 async function loadDriverSalary(){
   const mSnap=await getDoc(doc(db,'monthlyStats',`${CU.uid}_${MONTH}`));
   const td=mSnap.exists()?mSnap.data().totalDelivery||0:0;
