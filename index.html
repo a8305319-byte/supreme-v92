@@ -2738,6 +2738,18 @@ function panelRecruit(){
 // ═══════════════════════════════════════════════════════════
 
 // ── APPLICANTS ────────────────────────────────────────────
+window.deleteApplicant = async (id) => {
+  if(!confirm('確定要刪除此應徵者資料？此操作無法復原。')) return;
+  try {
+    await deleteDoc(doc(db,'applicants',id));
+    await addAudit('DELETE','刪除應徵者資料：'+id);
+    showToast('✅ 已刪除');
+    loadApplicants();
+  } catch(e) {
+    showToast('刪除失敗：'+e.message,'err');
+  }
+};
+
 async function loadApplicants(){
   const el=document.getElementById('applicant-list');
   if(!el)return;
@@ -2774,6 +2786,7 @@ async function loadApplicants(){
         +'<td style="display:flex;gap:4px">'
         +'<button class="btn btn-p btn-sm" onclick="prefillApplicant(this.dataset.id)" data-id="'+a.id+'">帶入</button>'
         +'<button class="btn btn-g btn-sm" onclick="viewApplicantDetail(this.dataset.id)" data-id="'+a.id+'">詳情</button>'
+        +'<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171" onclick="deleteApplicant(this.dataset.id)" data-id="'+a.id+'">刪除</button>'
         +'<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171" onclick="deleteApplicant(this.dataset.id,this.dataset.name)" data-id="'+a.id+'" data-name="'+(a.name||'此人')+'">刪除</button>'
         +'</td></tr>';
     });
