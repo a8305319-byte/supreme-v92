@@ -881,6 +881,15 @@ window.doLogout = async () => {
 };
 
 // ── BUILD APP BY ROLE ─────────────────────────────────────
+// ── 初始化桌面版 UI ───────────────────────────────────────
+function initDesktop() {
+  if (typeof generateQRCodes === 'function') generateQRCodes();
+  if (typeof buildToggles === 'function') buildToggles();
+  if (typeof loadInterviewQuestions === 'function') loadInterviewQuestions();
+  if (typeof butlerMorningBrief === 'function') butlerMorningBrief();
+  if (typeof startButlerReminders === 'function') startButlerReminders();
+}
+
 async function buildApp() {
   const app = document.getElementById('app');
   if (ROLE === 'driver') {
