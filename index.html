@@ -2442,23 +2442,18 @@ function panelCommander(){return `
   </div>
 
     <!-- Email 設定 -->
-  <div class="glass-card" style="margin-bottom:14px;border-color:rgba(6,214,160,0.3)">
-    <div class="sh">
-      <div class="st">💬 LINE 通知（員工/司機）</div>
-      <a href="https://notify-bot.line.me" target="_blank" class="btn btn-g btn-sm">取得 Token</a>
-    </div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">建立帳號時自動傳 LINE，完全免費無上限</div>
-    <div class="f-grp"><label class="f-lbl">LINE Notify Token</label>
-      <input class="f-inp" id="line-token" type="password" placeholder="貼上 Token..." autocomplete="off"></div>
-    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveLineToken()">儲存並測試</button>
-    <div id="line-status" style="font-size:11px;margin-top:6px;color:var(--dim);text-align:center"></div>
-  </div>
+  
+
+    <!-- Resend Email 設定 -->
   <div class="glass-card" style="margin-bottom:14px">
     <div class="sh">
-      <div class="st">📧 Email 通知（面試者）</div>
+      <div class="st">📧 面試者 Email 通知</div>
       <a href="https://resend.com" target="_blank" class="btn btn-g btn-sm">免費申請</a>
     </div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">免費 3,000 封/月，發送面試者帳號通知</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">
+      面試者建立帳號時自動寄出通知（免費 3,000 封/月）<br>
+      resend.com 註冊 → API Keys → Create → 複製 re_ 開頭的 Key
+    </div>
     <div class="f-grp"><label class="f-lbl">Resend API Key</label>
       <input class="f-inp" id="resend-key" type="password" placeholder="re_xxxxxxxxx" autocomplete="off"></div>
     <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveResendKey()">儲存</button>
@@ -2954,7 +2949,7 @@ window.createAccountAndSendEmail=async()=>{
 
     await addAudit('CREATE',`建立新帳號申請：\${name} (\${email})`);
     if(msgEl){msgEl.style.color='#34d399';msgEl.textContent='✓ 已發送！請至 Firebase Console 建立帳號，UID建立後在人事模組設定。';}
-    showToast('✓ 歡迎信已發送至 '+email);
+    showToast('✓ 帳號建立完成！');
   }catch(e){
     if(msgEl){msgEl.style.color='#f87171';msgEl.textContent='發送失敗：'+e.message;}
     showToast('失敗：'+e.message,'err');
@@ -2963,36 +2958,19 @@ window.createAccountAndSendEmail=async()=>{
 
 async function sendWelcomeEmail(name, toEmail, password){
   const loginUrl = 'https://a8305319-byte.github.io/supreme-v92/';
-  const msg = name + ' 您好！\n\n您的在地物流系統帳號已建立：\n'
-    + '📧 帳號：' + toEmail + '\n'
-    + '🔑 密碼：' + password + '\n'
-    + '🔗 登入：' + loginUrl + '\n'
-    + '📋 入職資料：' + loginUrl + 'onboard.html\n\n'
-    + '登入後請立即修改密碼。\n— 在地物流有限公司';
+  const msg = name + ' 您好！\n\n您的在地物流系統帳號：\n'
+    + '帳號：' + toEmail + '\n'
+    + '密碼：' + password + '\n'
+    + '登入：' + loginUrl + '\n\n'
+    + '請盡快登入並修改密碼。\n— 在地物流有限公司';
 
-  // 1. 存備份
+  // 存備份
   addDoc(collection(db,'emailQueue'),{
     to:toEmail, name, password, msg,
     status:'pending', createdAt:serverTimestamp()
   }).catch(()=>{});
 
-  // 2. LINE Notify（員工用）
-  const LINE_TOKEN = localStorage.getItem('V92_LINE_TOKEN')||'';
-  if(LINE_TOKEN){
-    try {
-      const form = new FormData();
-      form.append('message', '\n'+msg);
-      const r = await fetch('https://notify-api.line.me/api/notify',{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+LINE_TOKEN},
-        body:form
-      });
-      const d = await r.json();
-      if(d.status===200){ showToast('✅ LINE 通知已發送'); return; }
-    } catch(e){ console.warn('[LINE]',e.message); }
-  }
-
-  // 3. Resend Email（面試者用）
+  // 1. Resend Email（面試者）
   const RESEND_KEY = localStorage.getItem('V92_RESEND_KEY')||'';
   if(RESEND_KEY){
     try {
@@ -3004,16 +2982,16 @@ async function sendWelcomeEmail(name, toEmail, password){
           to: toEmail,
           subject: '【在地物流有限公司】您的帳號已建立',
           html: '<div style="font-family:sans-serif;max-width:480px;padding:24px">'
-            + '<h2 style="color:#00d4ff">在地物流有限公司</h2>'
-            + '<p>'+name+' 您好，恭喜通過面試！</p>'
-            + '<div style="background:#f5f5f5;padding:16px;border-radius:8px;margin:16px 0">'
-            + '<p>📧 <b>帳號：</b>'+toEmail+'</p>'
-            + '<p>🔑 <b>密碼：</b>'+password+'</p>'
-            + '</div>'
-            + '<p>📋 <a href="'+loginUrl+'onboard.html">填寫入職資料表</a></p>'
-            + '<p>🔗 <a href="'+loginUrl+'">系統登入</a></p>'
-            + '<p style="color:#888;font-size:12px">登入後請立即修改密碼</p>'
-            + '<hr><p style="color:#888;font-size:12px">在地物流有限公司 敬上</p></div>'
+            +'<h2 style="color:#00d4ff">在地物流有限公司</h2>'
+            +'<p>'+name+' 您好，恭喜通過面試！</p>'
+            +'<div style="background:#f5f5f5;padding:16px;border-radius:8px;margin:16px 0">'
+            +'<p>📧 <b>帳號：</b>'+toEmail+'</p>'
+            +'<p>🔑 <b>密碼：</b>'+password+'</p>'
+            +'</div>'
+            +'<p>📋 <a href="'+loginUrl+'onboard.html">填寫入職資料表</a></p>'
+            +'<p>🔗 <a href="'+loginUrl+'">系統登入</a></p>'
+            +'<p style="color:#888;font-size:12px">登入後請立即修改密碼</p>'
+            +'<hr><p style="color:#888;font-size:12px">在地物流有限公司 敬上</p></div>'
         })
       });
       const d = await r.json();
@@ -3022,12 +3000,12 @@ async function sendWelcomeEmail(name, toEmail, password){
     } catch(e){ console.warn('[Resend]',e.message); }
   }
 
-  // 4. 備用：複製到剪貼板
+  // 2. 備用：複製到剪貼板（現有員工/司機用）
   try {
     await navigator.clipboard.writeText(msg);
-    showToast('📋 帳號資訊已複製！請貼到 LINE 傳給 '+name);
+    showToast('📋 帳號資訊已複製！貼到 LINE 傳給 '+name);
   } catch(e) {
-    showToast('⚠️ 請手動傳送帳號資訊給 '+name,'err');
+    showToast('帳號：'+toEmail+' 密碼：'+password);
   }
 }
 
