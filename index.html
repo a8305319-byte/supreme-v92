@@ -312,7 +312,6 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 
 <canvas id="fw"></canvas>
 <div id="toast"></div>
-<!-- 下拉更新指示器 -->
 <div id="pull-refresh" style="position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;height:56px;background:rgba(0,212,255,0.08);border-bottom:1px solid rgba(0,212,255,0.2);transform:translateY(-100%);transition:transform 0.2s;pointer-events:none">
   <div id="pull-refresh-inner" style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--accent);font-family:'JetBrains Mono',monospace">
     <span id="pull-icon" style="font-size:18px;transition:transform 0.3s">↓</span>
@@ -320,7 +319,6 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
   </div>
 </div>
 
-<!-- LOADING -->
 <div id="loading-screen" style="display:flex">
   <div class="ld-logo">在地物流</div>
   <div class="ld-sub">ALPHA CORE v3.1.0</div>
@@ -328,7 +326,6 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
   <div class="ld-msg" id="ld-msg">初始化系統...</div>
 </div>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
@@ -353,9 +350,6 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
   </div>
 </div>
 
-<!-- APP -->
-
-<!-- PWA 安裝提示 -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:440px;background:rgba(0,0,0,0.95);border:1px solid rgba(0,212,255,0.35);border-radius:12px;padding:14px 16px;z-index:9000;backdrop-filter:blur(20px)">
   <div style="display:flex;align-items:center;gap:12px">
     <div style="font-size:28px">📱</div>
@@ -368,7 +362,6 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
       <button onclick="document.getElementById('pwa-banner').style.display='none';localStorage.setItem('pwa-dismissed','1')" style="padding:7px 10px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--dim);font-size:12px;cursor:pointer">✕</button>
     </div>
   </div>
-  <!-- iOS 說明 -->
   <div id="ios-install-hint" style="display:none;margin-top:10px;padding:10px;background:rgba(0,212,255,0.05);border-radius:8px;font-size:11px;color:var(--dim);line-height:1.7">
     iOS Safari：點底部 <strong style="color:var(--text)">□↑ 分享</strong> → <strong style="color:var(--text)">加入主畫面</strong>
   </div>
@@ -692,16 +685,15 @@ const MODS_COMMANDER = [
   {id:'recruit',   icon:'🤖', name:'招募',    section:'人員管理'},
   {id:'hr',        icon:'👤', name:'人事模組',   section:'人員管理'},
   {id:'attendance',icon:'📅', name:'出勤模組',   section:'人員管理'},
-  {id:'insurance', icon:'🛡️', name:'勞健保',     section:'財務薪資'},
+  {id:'insurance', icon:'🛡️', name:'勞健保',      section:'財務薪資'},
   {id:'salary',    icon:'💰', name:'薪資模組',   section:'財務薪資'},
   {id:'finance',   icon:'📊', name:'財務模組',   section:'財務薪資'},
   {id:'operations',   icon:'📦', name:'營運模組',   section:'作業'},
   {id:'driverstatus', icon:'🚗', name:'司機即時狀態', section:'作業'},
   {id:'vehicle',   icon:'🚛', name:'車輛管理',   section:'作業'},
   {id:'announce',  icon:'📢', name:'公告管理',   section:'作業'},
-  {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
+  {id:'audit',      icon:'🔐', name:'審計模組',   section:'系統'},
   {id:'commander', icon:'⚙️', name:'Commander',  section:'系統'},
-  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
   {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
   {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
@@ -710,10 +702,10 @@ const MODS_ACCOUNTANT = [
   {id:'dashboard', icon:'⬡', name:'總覽儀表板', section:'核心'},
   {id:'hr',        icon:'👤', name:'人事模組',   section:'人員管理'},
   {id:'attendance',icon:'📅', name:'出勤模組',   section:'人員管理'},
-  {id:'insurance', icon:'🛡️', name:'勞健保',     section:'財務薪資'},
+  {id:'insurance', icon:'🛡️', name:'勞健保',      section:'財務薪資'},
   {id:'salary',    icon:'💰', name:'薪資模組',   section:'財務薪資'},
   {id:'finance',   icon:'📊', name:'財務模組',   section:'財務薪資'},
-  {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
+  {id:'audit',      icon:'🔐', name:'審計模組',   section:'系統'},
   {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
   {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
@@ -1157,6 +1149,10 @@ window.showPanel = function(id) {
   if(id==='recruit') loadApplicants();
   if(id==='files'){ loadFiles(); loadUploadPersons(); }
   if(id==='driverstatus') loadDriverStatus();
+
+  if (id === 'commander') {
+    setTimeout(loadResendKeyDisplay, 100);
+  }
 };
 
 function initDesktop() {
@@ -1298,7 +1294,6 @@ function panelHR(){return `
           <button class="btn" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);color:#a78bfa" onclick="openDirectOnboard()">⚡ 快速入職</button>
         </div>`:''}
     </div>
-    <!-- 快速入職表單 -->
     <div id="direct-onboard-modal" style="display:none;margin-bottom:14px" class="glass-card" style="border-color:rgba(124,58,237,0.3)">
       <div class="sh">
         <div class="st" style="color:#a78bfa">⚡ 快速入職（現職員工）</div>
@@ -1366,7 +1361,6 @@ function panelHR(){return `
     <div id="hr-table"><div style="color:var(--dim);font-size:12px;text-align:center;padding:14px">載入中...</div></div>
   </div>
 
-  <!-- RESIGN MODAL -->
   <div id="resign-modal" style="display:none;margin-bottom:14px" class="glass-card">
     <div class="sh">
       <div class="st" style="color:#fbbf24">📋 離職申請處理</div>
@@ -1405,7 +1399,6 @@ function panelHR(){return `
     <div id="resign-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
   </div>
 
-  <!-- ADD USER MODAL -->
   <div id="add-user-modal" style="display:none" class="glass-card" style="border-color:rgba(0,212,255,0.2)">
     <div class="sh"><div class="st">新增 / 編輯人員</div><button class="btn btn-g" onclick="closeAddUser()">✕ 關閉</button></div>
     <div class="g2">
@@ -1698,7 +1691,6 @@ function panelAttendance(){return `
     <div id="attend-table"><div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">載入中...</div></div>
   </div>
 
-  <!-- 日報表調閱 -->
   <div class="glass-card" style="margin-top:14px">
     <div class="sh">
       <div class="st">📋 日報表調閱</div>
@@ -1970,7 +1962,6 @@ async function loadSalaryList(){
 function panelFinance(){return `
 <div id="panel-finance" class="panel">
 
-  <!-- 月份選擇 -->
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
     <input type="month" id="fin-month" class="f-inp" style="width:160px;padding:7px 10px" value="${MONTH}">
     <button class="btn btn-p btn-sm" onclick="loadFinance(document.getElementById('fin-month').value)">載入</button>
@@ -1978,7 +1969,6 @@ function panelFinance(){return `
     <span id="fin-loading" style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;display:none">計算中...</span>
   </div>
 
-  <!-- 損益概覽 -->
   <div class="glass-card" style="margin-bottom:14px">
     <div class="sh">
       <div class="st">📊 損益概覽</div>
@@ -1989,7 +1979,6 @@ function panelFinance(){return `
     </div>
   </div>
 
-  <!-- 費用輸入（油資/維修/其他） -->
   <div class="glass-card" style="margin-bottom:14px">
     <div class="sh">
       <div class="st">⛽ 費用輸入</div>
@@ -2003,7 +1992,6 @@ function panelFinance(){return `
     </div>
   </div>
 
-  <!-- 月份趨勢 -->
   <div class="glass-card">
     <div class="sh"><div class="st">📈 近6月趨勢</div></div>
     <div id="fin-trend" style="color:var(--dim);font-size:12px;text-align:center;padding:14px">載入中...</div>
@@ -2183,7 +2171,6 @@ window.exportFinanceExcel = async () => {
 function panelOperations(){return `
 <div id="panel-operations" class="panel">
 
-    <!-- MISSION MAP SECTION -->
     <div class="glass-card" style="margin-bottom:14px">
       <div class="sh">
         <div class="st">🗺️ 任務地圖派工</div>
@@ -2192,24 +2179,20 @@ function panelOperations(){return `
           <button class="btn btn-s btn-sm" onclick="runGlobalRouteOptimize()">⚡ 全域路線優化</button>
         </div>
       </div>
-      <!-- Date picker -->
       <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
         <label style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">日期</label>
         <input type="date" id="mission-map-date" class="f-inp" style="width:150px;padding:6px 10px" value="">
         <button class="btn btn-p btn-sm" onclick="loadMissionMap(document.getElementById('mission-map-date').value)">載入</button>
         <span id="mission-map-stats" style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace"></span>
       </div>
-      <!-- Map container -->
       <div id="admin-mission-map" style="width:100%;height:420px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:rgba(0,0,0,0.3)">
         <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);font-size:12px;font-family:'JetBrains Mono',monospace">點擊「重新整理地圖」載入任務點位</div>
       </div>
-      <!-- Legend -->
       <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--dim)">
         <span>🔴 待送</span><span>🟢 已送</span><span>🔵 已指派</span><span>⚫ 無座標</span>
       </div>
     </div>
 
-    <!-- MISSION LIST by driver -->
     <div class="glass-card">
       <div class="sh"><div class="st">📋 任務清冊</div><button class="btn btn-g btn-sm" onclick="loadAdminMissions()">重新整理</button></div>
       <div id="admin-mission-list"><div style="color:var(--dim);font-size:12px;text-align:center;padding:20px">點擊載入</div></div>
@@ -2372,7 +2355,6 @@ function panelCommander(){return `
 <div id="panel-commander" class="panel">
   <div class="warn-box">⚙️ <strong>Commander 專屬</strong> — 關閉模組後側欄變灰，資料不受影響</div>
 
-  <!-- 🔐 AI 金鑰管理 -->
   <div class="glass-card" style="margin-bottom:14px;border-color:rgba(0,212,255,0.15)">
     <div class="sh">
       <div class="st" style="font-size:12px;color:var(--accent)">🔐 Gemini AI 金鑰</div>
@@ -2401,7 +2383,6 @@ function panelCommander(){return `
     <button class="btn btn-g btn-sm" style="margin-top:10px;width:100%" onclick="addInterviewQuestion()">+ 新增題目主題</button>
   </div>
 
-  <!-- 阿智 AI 管家 -->
   <div class="glass-card" style="margin-bottom:14px;border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.03)">
     <div class="sh">
       <div style="display:flex;align-items:center;gap:8px">
@@ -2441,24 +2422,47 @@ function panelCommander(){return `
     </div>
   </div>
 
-    <!-- Email 設定 -->
-  
-
-    <!-- Resend Email 設定 -->
-  <div class="glass-card" style="margin-bottom:14px">
+  <div class="glass-card" id="commander-email-card">
     <div class="sh">
       <div class="st">📧 面試者 Email 通知</div>
-      <a href="https://resend.com" target="_blank" class="btn btn-g btn-sm">免費申請</a>
+      <div style="font-size:11px;color:var(--dim)">Resend API</div>
     </div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">
-      面試者建立帳號時自動寄出通知（免費 3,000 封/月）<br>
-      resend.com 註冊 → API Keys → Create → 複製 re_ 開頭的 Key
+
+    <div id="resend-key-status" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${localStorage.getItem('V92_RESEND_KEY') ? '#34d399' : '#f87171'}"></div>
+      <span style="font-size:11px;color:var(--dim)">
+        ${localStorage.getItem('V92_RESEND_KEY') ? '✓ Key 已設定' : '未設定 Key'}
+      </span>
     </div>
-    <div class="f-grp"><label class="f-lbl">Resend API Key</label>
-      <input class="f-inp" id="resend-key" type="password" placeholder="re_xxxxxxxxx" autocomplete="off"></div>
-    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveResendKey()">儲存</button>
-    <div id="resend-status" style="font-size:11px;margin-top:6px;color:var(--dim);text-align:center"></div>
+
+    <div class="f-grp">
+      <label class="f-lbl">Resend API Key</label>
+      <input class="f-inp" id="resend-key"
+        type="password"
+        placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
+        style="font-family:'JetBrains Mono',monospace;letter-spacing:1px">
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-p" style="flex:2" onclick="saveResendKey()">
+        💾 儲存 Key
+      </button>
+      <button class="btn" id="test-resend-btn"
+        style="flex:2;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399"
+        onclick="testResendEmail()">
+        📤 發送測試信
+      </button>
+      <button class="btn btn-g" style="flex:1" onclick="clearResendKey()">
+        🗑
+      </button>
+    </div>
+
+    <div class="info-box" style="margin-top:12px;font-size:11px">
+      💡 Key 僅儲存於此瀏覽器的 localStorage，更換裝置需重新設定。<br>
+      測試信將發送至目前登入帳號：<span style="color:var(--accent)">${CU?.email || ''}</span>
+    </div>
   </div>
+
   <div class="glass-card" style="border-color:rgba(245,158,11,0.2)">
     <div class="st" style="margin-bottom:14px;color:var(--yellow)">🔑 費率設定</div>
     <div class="g3">
@@ -2478,31 +2482,31 @@ function panelCommander(){return `
 
 const TOGGLE_DEFS=[
   // ── 核心模組 ──
-  {id:'recruit',   icon:'👩‍💼', name:'招募模組',     desc:'面試評測、職缺管理',      section:'core'},
-  {id:'hr',        icon:'👤',  name:'人事模組',     desc:'員工承攬、離職管理',      section:'core'},
-  {id:'attendance',icon:'📅',  name:'出勤模組',     desc:'班表請假打卡',            section:'core'},
-  {id:'insurance', icon:'🛡️', name:'勞健保模組',   desc:'投保薪資、費率計算',      section:'core'},
+  {id:'recruit',   icon:'👩‍💼', name:'招募模組',     desc:'面試評測、職缺管理',       section:'core'},
+  {id:'hr',        icon:'👤',  name:'人事模組',     desc:'員工承攬、離職管理',       section:'core'},
+  {id:'attendance',icon:'📅',  name:'出勤模組',     desc:'班表請假打卡',             section:'core'},
+  {id:'insurance', icon:'🛡️', name:'勞健保模組',   desc:'投保薪資、費率計算',       section:'core'},
   {id:'salary',    icon:'💰',  name:'薪資模組',     desc:'薪資試算、電子薪資單',    section:'core'},
-  {id:'finance',   icon:'📊',  name:'財務模組',     desc:'損益費用審核',            section:'core'},
+  {id:'finance',   icon:'📊',  name:'財務模組',     desc:'損益費用審核',             section:'core'},
   // ── 作業模組 ──
-  {id:'operations',icon:'📦',  name:'營運模組',     desc:'件數回報管理',            section:'ops'},
-  {id:'vehicle',   icon:'🚛',  name:'車輛管理',     desc:'車籍保養追蹤',            section:'ops'},
-  {id:'announce',  icon:'📢',  name:'公告管理',     desc:'發布公告通知',            section:'ops'},
-  {id:'files',     icon:'🗂️', name:'檔案管理',     desc:'證件上傳、文件管理',      section:'ops'},
+  {id:'operations',icon:'📦',  name:'營運模組',     desc:'件數回報管理',             section:'ops'},
+  {id:'vehicle',   icon:'🚛',  name:'車輛管理',     desc:'車籍保養追蹤',             section:'ops'},
+  {id:'announce',  icon:'📢',  name:'公告管理',     desc:'發布公告通知',             section:'ops'},
+  {id:'files',     icon:'🗂️', name:'檔案管理',     desc:'證件上傳、文件管理',       section:'ops'},
   // ── 司機端功能 ──
-  {id:'driver_cs', icon:'💬',  name:'客服對話',     desc:'客服專員即時服務',          section:'driver'},
+  {id:'driver_cs', icon:'💬',  name:'客服對話',     desc:'客服專員即時服務',         section:'driver'},
   {id:'driver_salary',icon:'📄',name:'電子薪資單',  desc:'薪資明細、簽收、異常回報',section:'driver'},
-  {id:'driver_checkin',icon:'📍',name:'打卡功能',   desc:'上下班打卡記錄',          section:'driver'},
-  {id:'driver_report',icon:'📋',name:'件數回報',    desc:'當日配送逆物流回報',      section:'driver'},
+  {id:'driver_checkin',icon:'📍',name:'打卡功能',   desc:'上下班打卡記錄',         section:'driver'},
+  {id:'driver_report',icon:'📋',name:'件數回報',    desc:'當日配送逆物流回報',       section:'driver'},
   // ── AI 功能 ──
   {id:'ai_interview',icon:'🤖',name:'面試評分 AI',  desc:'Gemini 面試專員',         section:'ai'},
-  {id:'ai_cs',     icon:'🧠',  name:'客服 AI',      desc:'多模型智慧分流',          section:'ai'},
+  {id:'ai_cs',     icon:'🧠',  name:'客服 AI',      desc:'多模型智慧分流',         section:'ai'},
   {id:'ai_audit',  icon:'🔍',  name:'審計 AI 分析', desc:'Gemini Pro 深度審計',     section:'ai'},
   // ── 系統功能 ──
-  {id:'excel_export',icon:'📊',name:'Excel 報表',   desc:'5 工作表會計報表',        section:'sys'},
-  {id:'pdf_export',icon:'📄',  name:'PDF 薪資單',   desc:'薪資明細 PDF 下載',       section:'sys'},
-  {id:'pwa',       icon:'📱',  name:'手機 App 模式',desc:'保存桌面、下拉更新',      section:'sys'},
-  {id:'audit',     icon:'🔒',  name:'審計模組',     desc:'操作記錄追蹤',            section:'sys'},
+  {id:'excel_export',icon:'📊',name:'Excel 報表',   desc:'5 工作表會計報表',         section:'sys'},
+  {id:'pdf_export',icon:'📄',  name:'PDF 薪資單',   desc:'薪資明細 PDF 下載',        section:'sys'},
+  {id:'pwa',       icon:'📱',  name:'手機 App 模式',desc:'保存桌面、下拉更新',       section:'sys'},
+  {id:'audit',     icon:'🔒',  name:'審計模組',     desc:'操作記錄追蹤',             section:'sys'},
 ];
 
 // ── INTERVIEW QUESTIONS ──────────────────────────────────
@@ -2638,8 +2642,7 @@ window.toggleMod=async(id,val)=>{
 
   // Confirm disable for critical modules
   if(!val && ['salary','hr','insurance'].includes(id)){
-    if(!confirm(`確定要停用「${name}」嗎？
-停用後側欄選項將隱藏，資料不受影響。`)) {
+    if(!confirm(`確定要停用「${name}」嗎？\n停用後側欄選項將隱藏，資料不受影響。`)) {
       // Revert the toggle UI
       buildToggles();
       return;
@@ -2677,7 +2680,7 @@ function buildDriverBottomNav(){
   const tabs = [
     {panel:'driver_home',    icon:'🏠', label:'今日',   show:true},
     {panel:'driver_report',  icon:'📋', label:'回報',   show:moduleToggles['driver_report']!==false},
-    {panel:'driver_salary',  icon:'💰', label:'薪資單', show:moduleToggles['driver_salary']!==false, badge:true},
+    {panel:'driver_salary',  icon:'💰', label:'薪薪單', show:moduleToggles['driver_salary']!==false, badge:true},
     {panel:'driver_cs',      icon:'💬', label:'客服',   show:moduleToggles['driver_cs']!==false},
     {panel:'driver_announce',icon:'📢', label:'公告',   show:true},
     {panel:'driver_profile', icon:'👤', label:'設定',   show:true},
@@ -2722,7 +2725,6 @@ function panelRecruit(){
         <div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:'JetBrains Mono',monospace">掃描 QR Code 進入面試</div>
       </div>
     </div>
-    <!-- ONBOARD CARD -->
     <div class="glass-card" style="border-color:rgba(16,185,129,0.25)">
       <div class="sh"><div class="st" style="color:#34d399">📋 入職資料表</div></div>
       <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#34d399;word-break:break-all">${interviewUrl.replace('interview.html','onboard.html')}</div>
@@ -2736,7 +2738,6 @@ function panelRecruit(){
         </div>
         <div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:'JetBrains Mono',monospace">掃描 QR Code 填入職資料</div>
       </div>
-
     </div>
 
     </div>
@@ -2803,7 +2804,6 @@ async function loadApplicants(){
         +'<button class="btn btn-p btn-sm" onclick="prefillApplicant(this.dataset.id)" data-id="'+a.id+'">帶入</button>'
         +'<button class="btn btn-g btn-sm" onclick="viewApplicantDetail(this.dataset.id)" data-id="'+a.id+'">詳情</button>'
         +'<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171" onclick="deleteApplicant(this.dataset.id,this.dataset.name)" data-id="'+a.id+'" data-name="'+a.name+'">刪除</button>'
-        +'<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171" onclick="deleteApplicant(this.dataset.id,this.dataset.name)" data-id="'+a.id+'" data-name="'+(a.name||'此人')+'">刪除</button>'
         +'</td></tr>';
     });
 
@@ -2924,90 +2924,206 @@ window.prefillApplicant=async(id)=>{
   showToast('✓ 已帶入 '+a.name+' 的資料，請填寫帳號密碼後建立');
 };
 
-// ── CREATE ACCOUNT + SEND EMAIL ───────────────────────────
-window.createAccountAndSendEmail=async()=>{
-  const name=document.getElementById('new-name')?.value.trim();
-  const email=document.getElementById('new-email')?.value.trim();
-  const phone=document.getElementById('new-phone')?.value.trim();
-  const role=document.getElementById('new-role')?.value;
-  const msgEl=document.getElementById('create-acc-msg');
-  if(!name||!email){showToast('請填寫姓名和Email','err');return;}
+// --- 發送歡迎 Email ---
+async function sendWelcomeEmail(name, toEmail, password) {
+  const key = localStorage.getItem('V92_RESEND_KEY');
+  const loginUrl = 'https://a8305319-byte.github.io/supreme-v92/';
+  const onboardUrl = loginUrl + 'onboard.html?email=' + encodeURIComponent(toEmail);
 
-  const tempPass=Math.random().toString(36).slice(2,8).toUpperCase()+'@'+Math.floor(Math.random()*900+100);
-  if(msgEl){msgEl.style.display='block';msgEl.style.color='var(--accent)';msgEl.textContent='⏳ 建立帳號中...';}
+  // 備用方案：無 Key 時複製到剪貼簿
+  if (!key) {
+    try {
+      await navigator.clipboard.writeText(
+        `帳號: ${toEmail}\n密碼: ${password}\n入職連結: ${onboardUrl}`
+      );
+    } catch(e) {}
+    showToast('⚠ 未設定 Resend Key，帳密已複製到剪貼簿', 'err');
+    return false;
+  }
 
-  try{
-    // Save to Firestore pendingUsers (Firebase Admin SDK needed for actual auth creation)
-    // Store as pending - commander will see it and manually create in Firebase Auth
-    await addDoc(collection(db,'pendingUsers'),{
-      name,email,phone:phone||'',role,tempPassword:tempPass,
-      status:'pending',createdAt:serverTimestamp(),createdBy:CD.name
+  const html = `<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:40px 20px">
+    <tr><td align="center">
+      <table width="100%" style="max-width:560px;background:linear-gradient(135deg,#0d0d0d,#111);border:1px solid rgba(0,212,255,0.2);border-radius:16px;overflow:hidden">
+
+        <tr>
+          <td style="background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.15));padding:32px;text-align:center;border-bottom:1px solid rgba(0,212,255,0.1)">
+            <div style="font-size:28px;font-weight:800;color:#00d4ff;letter-spacing:2px">在地物流</div>
+            <div style="font-size:11px;color:rgba(0,212,255,0.6);margin-top:4px;letter-spacing:3px">SUPREME V92 · ALPHA CORE</div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:32px">
+            <p style="color:#e2e8f0;font-size:16px;margin:0 0 8px">嗨，<strong style="color:#00d4ff">${name}</strong> 👋</p>
+            <p style="color:#94a3b8;font-size:14px;line-height:1.7;margin:0 0 28px">
+              歡迎加入在地物流團隊！您的系統帳號已建立，請使用以下資訊完成入職流程。
+            </p>
+
+            <table width="100%" style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:12px;margin-bottom:24px">
+              <tr>
+                <td style="padding:20px">
+                  <div style="font-size:10px;color:rgba(0,212,255,0.6);letter-spacing:2px;margin-bottom:16px">─ 您的登入資訊 ─</div>
+                  <table width="100%">
+                    <tr>
+                      <td style="padding:6px 0;color:#64748b;font-size:12px;width:80px">帳號</td>
+                      <td style="padding:6px 0;color:#e2e8f0;font-size:14px;font-weight:600;font-family:monospace">${toEmail}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;color:#64748b;font-size:12px">臨時密碼</td>
+                      <td style="padding:6px 0">
+                        <span style="background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);color:#a78bfa;font-family:monospace;font-size:15px;font-weight:700;padding:4px 12px;border-radius:6px;letter-spacing:1px">${password}</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <table width="100%" style="margin-bottom:24px">
+              <tr>
+                <td style="padding:4px">
+                  <a href="${onboardUrl}" style="display:block;background:linear-gradient(135deg,#00d4ff,#0099bb);color:#000;text-decoration:none;text-align:center;padding:14px;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:1px">
+                    📋 填寫入職資料表
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:4px">
+                  <a href="${loginUrl}" style="display:block;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;text-decoration:none;text-align:center;padding:12px;border-radius:10px;font-size:13px">
+                    🔐 前往登入系統
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <table width="100%" style="background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.2);border-radius:10px;margin-bottom:8px">
+              <tr>
+                <td style="padding:14px;color:#fbbf24;font-size:12px;line-height:1.8">
+                  ⚠ <strong>注意事項</strong><br>
+                  · 請於收到此信後 <strong>48小時內</strong> 完成入職資料填寫<br>
+                  · 首次登入後請立即修改密碼<br>
+                  · 如有問題請聯繫管理員
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 32px;border-top:1px solid rgba(255,255,255,0.05);text-align:center">
+            <div style="color:#334155;font-size:11px;line-height:1.8">
+              此信由系統自動發送，請勿直接回覆<br>
+              © 在地物流 Supreme V92 · ALPHA CORE v3.1.0
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table></body></html>`;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'onboarding@resend.dev',
+        to: toEmail,
+        subject: `【在地物流】${name}，您的系統帳號已建立 🎉`,
+        html: html
+      })
     });
 
-    // Send email via EmailJS (client-side email service)
-    await sendWelcomeEmail(name, email, tempPass);
+    const data = await res.json();
 
-    await addAudit('CREATE',`建立新帳號申請：\${name} (\${email})`);
-    if(msgEl){msgEl.style.color='#34d399';msgEl.textContent='✓ 已發送！請至 Firebase Console 建立帳號，UID建立後在人事模組設定。';}
-    showToast('✓ 帳號建立完成！');
-  }catch(e){
-    if(msgEl){msgEl.style.color='#f87171';msgEl.textContent='發送失敗：'+e.message;}
-    showToast('失敗：'+e.message,'err');
-  }
-};
-
-async function sendWelcomeEmail(name, toEmail, password){
-  const loginUrl = 'https://a8305319-byte.github.io/supreme-v92/';
-  const msg = name + ' 您好！\n\n您的在地物流系統帳號：\n'
-    + '帳號：' + toEmail + '\n'
-    + '密碼：' + password + '\n'
-    + '登入：' + loginUrl + '\n\n'
-    + '請盡快登入並修改密碼。\n— 在地物流有限公司';
-
-  // 存備份
-  addDoc(collection(db,'emailQueue'),{
-    to:toEmail, name, password, msg,
-    status:'pending', createdAt:serverTimestamp()
-  }).catch(()=>{});
-
-  // 1. Resend Email（面試者）
-  const RESEND_KEY = localStorage.getItem('V92_RESEND_KEY')||'';
-  if(RESEND_KEY){
-    try {
-      const r = await fetch('https://api.resend.com/emails',{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+RESEND_KEY,'Content-Type':'application/json'},
-        body: JSON.stringify({
-          from: 'onboarding@resend.dev',
-          to: toEmail,
-          subject: '【在地物流有限公司】您的帳號已建立',
-          html: '<div style="font-family:sans-serif;max-width:480px;padding:24px">'
-            +'<h2 style="color:#00d4ff">在地物流有限公司</h2>'
-            +'<p>'+name+' 您好，恭喜通過面試！</p>'
-            +'<div style="background:#f5f5f5;padding:16px;border-radius:8px;margin:16px 0">'
-            +'<p>📧 <b>帳號：</b>'+toEmail+'</p>'
-            +'<p>🔑 <b>密碼：</b>'+password+'</p>'
-            +'</div>'
-            +'<p>📋 <a href="'+loginUrl+'onboard.html">填寫入職資料表</a></p>'
-            +'<p>🔗 <a href="'+loginUrl+'">系統登入</a></p>'
-            +'<p style="color:#888;font-size:12px">登入後請立即修改密碼</p>'
-            +'<hr><p style="color:#888;font-size:12px">在地物流有限公司 敬上</p></div>'
-        })
-      });
-      const d = await r.json();
-      if(r.ok && d.id){ showToast('✅ Email 已發送給 '+name); return; }
-      throw new Error(d.message||'發送失敗');
-    } catch(e){ console.warn('[Resend]',e.message); }
-  }
-
-  // 2. 備用：複製到剪貼板（現有員工/司機用）
-  try {
-    await navigator.clipboard.writeText(msg);
-    showToast('📋 帳號資訊已複製！貼到 LINE 傳給 '+name);
+    if (res.ok) {
+      showToast('✓ Email 發送成功！');
+      return true;
+    } else {
+      throw new Error(data.message || `HTTP ${res.status}`);
+    }
   } catch(e) {
-    showToast('帳號：'+toEmail+' 密碼：'+password);
+    console.error('[Resend Error]', e);
+    // 失敗備用：複製到剪貼簿
+    try {
+      await navigator.clipboard.writeText(
+        `帳號: ${toEmail}\n密碼: ${password}\n入職連結: ${onboardUrl}`
+      );
+      showToast('⚠ Email 失敗，帳密已複製，請貼至 LINE 通知', 'err');
+    } catch(ce) {
+      showToast('⚠ Email 發送失敗：' + e.message, 'err');
+    }
+    return false;
   }
 }
+
+// --- 建立帳號並發送 Email ---
+window.createAccountAndSendEmail = async () => {
+  const name  = document.getElementById('new-name')?.value.trim();
+  const email = document.getElementById('new-email')?.value.trim();
+  const phone = document.getElementById('new-phone')?.value.trim();
+  const role  = document.getElementById('new-role')?.value;
+
+  // 驗證
+  if (!name || !email) {
+    showToast('請填寫姓名和 Email', 'err');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('Email 格式不正確', 'err');
+    return;
+  }
+
+  // 產生臨時密碼
+  const tempPass = Math.random().toString(36).slice(2,8).toUpperCase()
+    + '@' + Math.floor(Math.random() * 900 + 100);
+
+  // 按鈕 Loading 狀態
+  const btn = document.querySelector('#panel-recruit button.btn-p');
+  const originalText = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 處理中...'; }
+
+  try {
+    // 1. 寫入 Firestore pendingUsers
+    await addDoc(collection(db, 'pendingUsers'), {
+      name:      name,
+      email:     email,
+      phone:     phone || '',
+      role:      role || 'driver',
+      tempPass:  tempPass,
+      status:    'pending',
+      createdAt: new Date().toISOString(),
+      createdBy: CU?.uid || 'commander'
+    });
+
+    // 2. 發送 Email
+    const emailSent = await sendWelcomeEmail(name, email, tempPass);
+
+    // 3. 成功提示
+    if (emailSent) {
+      showToast(`✓ 帳號已建立，Email 已發送給 ${name}`);
+    }
+
+    // 4. 清空表單
+    document.getElementById('new-name').value  = '';
+    document.getElementById('new-email').value = '';
+    document.getElementById('new-phone').value = '';
+
+    // 5. 刷新應徵者清單（如果有）
+    if (typeof loadApplicants === 'function') loadApplicants();
+
+  } catch(e) {
+    console.error('[createAccount Error]', e);
+    showToast('建立失敗：' + e.message, 'err');
+  } finally {
+    // 恢復按鈕狀態
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  }
+};
 
 // ── PROFILE PANEL ─────────────────────────────────────────
 function panelProfile(){return `
@@ -3436,7 +3552,6 @@ function buildDriverUI(){
       </div>
     </div>
     <div class="mobile-content">
-      <!-- HOME -->
       <div class="panel active" id="panel-driver_home">
         <div class="glass-card" style="margin-bottom:14px">
           <div style="font-size:19px;font-weight:700;margin-bottom:3px">${gstr}，${CD.name||'司機'}！</div>
@@ -3446,7 +3561,6 @@ function buildDriverUI(){
             ${ROLE==='commander'?`<button onclick="switchToDesktop()" style="padding:5px 12px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer;font-family:'JetBrains Mono',monospace">🖥️ 返回管理端</button>`:''}
           </div>
         </div>
-        <!-- 簽到卡片 -->
         <div class="glass-card" style="margin-bottom:12px">
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -3469,7 +3583,55 @@ function buildDriverUI(){
             <div style="font-family:'Orbitron',monospace;font-size:28px;color:#a78bfa" id="m-today-r">—</div>
           </div>
         </div>
-        <!-- 📷 掃描貨物託運單 -->
+        <div class="glass-card" style="margin-bottom:12px;border-color:rgba(124,58,237,0.3);cursor:pointer;active:opacity:0.8" onclick="document.getElementById('scan-wb-input').click()">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);display
+            function buildDriverUI(){
+  const now=new Date();
+  const greeting=['日','一','二','三','四','五','六'];
+  const h=now.getHours();
+  const gstr=h<6?'凌晨好':h<12?'早安':h<18?'午安':'晚安';
+  return `
+  <div class="mobile-layout">
+    <div class="mobile-topbar">
+      <div class="mobile-logo" style="font-size:11px;letter-spacing:1px">在地物流</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="mobile-user" id="m-username">${CD.name||''}</div>
+        <div class="mobile-logout" onclick="doLogout()">登出</div>
+      </div>
+    </div>
+    <div class="mobile-content">
+      <div class="panel active" id="panel-driver_home">
+        <div class="glass-card" style="margin-bottom:14px">
+          <div style="font-size:19px;font-weight:700;margin-bottom:3px">${gstr}，${CD.name||'司機'}！</div>
+          <div style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} 星期${greeting[now.getDay()]}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:6px;font-size:11px;color:#34d399;font-family:'JetBrains Mono',monospace"><span style="width:5px;height:5px;border-radius:50%;background:#34d399;display:inline-block;animation:pulse 2s infinite"></span>在線中</div>
+            ${ROLE==='commander'?`<button onclick="switchToDesktop()" style="padding:5px 12px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer;font-family:'JetBrains Mono',monospace">🖥️ 返回管理端</button>`:''}
+          </div>
+        </div>
+        <div class="glass-card" style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:700;margin-bottom:2px" id="checkin-status">● 未打卡</div>
+              <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">
+                <span id="checkin-in-time"></span>
+                <span id="checkin-out-time" style="margin-left:8px"></span>
+              </div>
+            </div>
+            <button id="checkin-btn" onclick="checkInDriver()" style="padding:10px 20px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:8px;color:#34d399;font-size:13px;font-family:'Orbitron',monospace;cursor:pointer;transition:all 0.2s">📍 上班打卡</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div class="glass-card" style="text-align:center">
+            <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:6px">今日配送</div>
+            <div style="font-family:'Orbitron',monospace;font-size:28px;color:var(--accent)" id="m-today-d">—</div>
+          </div>
+          <div class="glass-card" style="text-align:center">
+            <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:6px">今日逆物流</div>
+            <div style="font-family:'Orbitron',monospace;font-size:28px;color:#a78bfa" id="m-today-r">—</div>
+          </div>
+        </div>
         <div class="glass-card" style="margin-bottom:12px;border-color:rgba(124,58,237,0.3);cursor:pointer;active:opacity:0.8" onclick="document.getElementById('scan-wb-input').click()">
           <div style="display:flex;align-items:center;gap:14px">
             <div style="width:44px;height:44px;border-radius:10px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📋</div>
@@ -3491,7 +3653,6 @@ function buildDriverUI(){
           <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="font-size:13px;color:var(--mid)">本月預估薪資</span><span style="font-family:'JetBrains Mono',monospace;color:#34d399" id="m-month-sal">—</span></div>
         </div>
       </div>
-      <!-- REPORT -->
       <div class="panel" id="panel-driver_report">
         <div class="glass-card" style="margin-bottom:14px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -3504,13 +3665,10 @@ function buildDriverUI(){
               </button>
             </div>
           </div>
-          <!-- Photo OCR input -->
           <input type="file" id="report-photo-input" accept="image/*" capture="environment" style="display:none" onchange="ocrReportPhoto(this)">
-          <!-- OCR progress -->
           <div id="report-ocr-bar" style="display:none;padding:8px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;margin-bottom:10px;font-size:11px;color:#a78bfa;font-family:'JetBrains Mono',monospace;text-align:center">
             ⟳ OCR 辨識中，自動填入件數...
           </div>
-          <!-- Photo preview -->
           <div id="report-photo-preview" style="display:none;margin-bottom:10px"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
             <div><label style="font-size:10px;color:var(--dim);display:block;margin-bottom:4px;font-family:'JetBrains Mono',monospace">配送件數</label>
@@ -3522,7 +3680,6 @@ function buildDriverUI(){
             <span style="font-size:12px;color:var(--mid)">今日預估收入</span>
             <span style="font-family:'Orbitron',monospace;font-size:20px;color:var(--accent)" id="m-est">$0</span>
           </div>
-          <!-- SLIDE -->
           <div class="slide-wrap" id="m-slide-wrap">
             <div class="slide-track">← 滑動確認回報 →</div>
             <div class="slide-thumb" id="m-slide-thumb">➜</div>
@@ -3531,19 +3688,15 @@ function buildDriverUI(){
           <button onclick="submitReportBtn()" id="m-submit-btn" style="width:100%;margin-top:8px;padding:12px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer;font-family:'Orbitron',monospace;letter-spacing:1px">✓ 確認送出</button>
         </div>
       </div>
-      <!-- SALARY -->
       <div class="panel" id="panel-driver_salary">
         <div class="glass-card" id="m-salary-detail">
           <div style="text-align:center;padding:20px;color:var(--dim);font-size:12px;font-family:'JetBrains Mono',monospace">載入中...</div>
         </div>
       </div>
-      <!-- ANNOUNCE -->
       <div class="panel" id="panel-driver_announce">
         <div id="m-ann-list"><div style="text-align:center;padding:20px;color:var(--dim);font-size:12px;font-family:'JetBrains Mono',monospace">載入中...</div></div>
       </div>
 
-
-      <!-- MISSION PANEL -->
       <div class="panel" id="panel-driver_mission">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px">
           <div>
@@ -3556,15 +3709,12 @@ function buildDriverUI(){
           </div>
         </div>
 
-        <!-- Upload progress -->
         <div id="mission-ocr-progress" style="display:none;padding:12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;margin-bottom:12px;font-size:12px;color:#a78bfa;font-family:'JetBrains Mono',monospace;text-align:center">
           <div style="animation:pulse 1.5s infinite">⟳ OCR 解析中，請稍候...</div>
         </div>
 
-        <!-- Mission list -->
         <div id="driver-mission-list"></div>
 
-        <!-- Shadow profit summary -->
         <div id="shadow-profit-card" style="display:none;margin-top:14px;padding:14px;background:rgba(0,0,0,0.4);border:1px solid rgba(245,158,11,0.2);border-radius:10px">
           <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:6px">影子利潤試算（MOMO 23.4%）</div>
           <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:#fbbf24" id="shadow-profit-total">$0</div>
@@ -3572,7 +3722,6 @@ function buildDriverUI(){
         </div>
       </div>
 
-      <!-- DRIVER PROFILE -->
       <div class="panel" id="panel-driver_profile">
         <div class="glass-card" style="margin-bottom:14px">
           <div style="text-align:center;padding:16px 0">
@@ -3601,7 +3750,6 @@ ${CD?.name?.[0]||'?'}
         </div>
       </div>
 
-      <!-- CUSTOMER SERVICE -->
       <div class="panel" id="panel-driver_cs">
         <div style="display:flex;align-items:center;gap:10px;padding:14px 0 10px">
           <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎧</div>
@@ -3678,7 +3826,6 @@ window.mChangePassword=async()=>{
 // 多模態 AI 分流路由器
 // ══════════════════════════════════════════════════════════
 const AI_KEY = '';
-
 
 async function callGemini(prompt, history = [], mode = 'text') {
   // 三層取 Key：localStorage → _sharedAPIKey → Firebase REST
@@ -4028,89 +4175,6 @@ function setupDriverRealtime(drivers){
   }, (err)=>console.error('Realtime error:', err));
 }
 
-// Clean up listener when leaving dashboard
-const _origShowPanel = window.showPanel;
-window.showPanel = function(id){
-  if(id !== 'dashboard' && _realtimeUnsub){
-    _realtimeUnsub();
-    _realtimeUnsub = null;
-  }
-  _origShowPanel(id);
-  if(id==='commander'){
-    setTimeout(()=>{ initEmailJSSettings(); initNotifySettings(); }, 300);
-    // Check API key status
-    setTimeout(()=>{
-      const hasKey = !!localStorage.getItem('V92_SECRET_KEY');
-      const status = document.getElementById('butler-status');
-      if(status){
-        if(!hasKey){
-          status.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#f87171"></div><span style="color:#f87171">需設定 API Key ↓</span>';
-        } else {
-          status.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse 2s infinite"></div><span style="color:#34d399">線上</span>';
-        }
-      }
-    }, 300);buildToggles();loadInterviewQuestions();}
-};
-
-// ── PDF 薪資明細匯出 ──────────────────────────────────────
-
-window.exportSalaryPDF = async () => {
-  showToast('產生 PDF 中...');
-  const snap = await getDocs(collection(db,'users'));
-  const drivers = snap.docs.filter(d=>d.data().role==='driver');
-  
-  let rows = '';
-  let totalNet = 0;
-  for(const d of drivers){
-    const u=d.data();
-    const mSnap=await getDoc(doc(db,'monthlyStats',`${d.id}_${MONTH}`));
-    const td=mSnap.exists()?mSnap.data().totalDelivery||0:0;
-    const tr2=mSnap.exists()?mSnap.data().totalReverse||0:0;
-    const gross=td*(u.priceDelivery||50)+tr2*(u.priceReverse||35)+(u.allowance||0);
-    const net=gross-(u.labourEmployee||0)-(u.healthEmployee||0)-(u.regularDeduct||0);
-    totalNet+=net;
-    rows+=`<tr>
-      <td>${u.name||'—'}</td>
-      <td>${u.type==='employee'?'員工':'承攬'}</td>
-      <td style="text-align:right">${td}</td>
-      <td style="text-align:right">${tr2}</td>
-      <td style="text-align:right">$${gross.toLocaleString()}</td>
-      <td style="text-align:right">$${(u.labourEmployee||0)+(u.healthEmployee||0)+(u.regularDeduct||0)}</td>
-      <td style="text-align:right;font-weight:700;color:#1e40af">$${net.toLocaleString()}</td>
-    </tr>`;
-  }
-
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <style>
-    body{font-family:'Microsoft JhengHei',sans-serif;padding:30px;color:#1e293b;}
-    h1{font-size:20px;margin-bottom:4px;color:#0f172a;}
-    .sub{font-size:12px;color:#64748b;margin-bottom:20px;}
-    table{width:100%;border-collapse:collapse;font-size:13px;}
-    th{background:#1e293b;color:white;padding:8px 12px;text-align:left;}
-    td{padding:8px 12px;border-bottom:1px solid #e2e8f0;}
-    tr:nth-child(even){background:#f8fafc;}
-    .total{font-size:14px;font-weight:700;text-align:right;margin-top:16px;padding:10px;background:#eff6ff;border-radius:6px;}
-    .footer{font-size:11px;color:#94a3b8;margin-top:30px;text-align:center;}
-  </style></head><body>
-  <h1>在地物流有限公司 · ${MONTH} 薪資明細</h1>
-  <div class="sub">製表日期：${new Date().toLocaleDateString('zh-TW')} · 製表人：${CD?.name||''}</div>
-  <table>
-    <thead><tr><th>姓名</th><th>類型</th><th>配送件</th><th>逆物流件</th><th>毛收入</th><th>扣除合計</th><th>實發金額</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <div class="total">本月薪資總支出：$${totalNet.toLocaleString()}</div>
-  <div class="footer">在地物流有限公司 · 本文件由系統自動產生</div>
-  </body></html>`;
-
-  const blob = new Blob([html], {type:'text/html'});
-  const url = URL.createObjectURL(blob);
-  const w = window.open(url,'_blank');
-  if(w) {
-    w.onload = ()=>{ w.print(); };
-    showToast('✓ PDF 視窗已開啟，請使用列印另存為 PDF');
-  }
-};
-
 // ══════════════════════════════════════════════════════════
 // 司機簽到功能
 // ══════════════════════════════════════════════════════════
@@ -4369,21 +4433,18 @@ async function loadDriverPayslip(month){
 
     el.innerHTML = `
       <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.15);border-radius:12px;padding:18px;margin-bottom:12px">
-        <!-- HEADER -->
         <div style="text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06)">
           <div style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:4px">在地物流有限公司</div>
           <div style="font-size:16px;font-weight:700">${month} 薪資明細</div>
           <div style="font-size:10px;color:var(--dim);margin-top:4px;font-family:'JetBrains Mono',monospace">${issued}</div>
         </div>
 
-        <!-- 實發金額 大字 -->
         <div style="text-align:center;margin-bottom:16px">
           <div style="font-size:11px;color:var(--dim);margin-bottom:4px">本月實發金額</div>
           <div style="font-family:'Orbitron',monospace;font-size:36px;font-weight:700;color:#34d399">$${net.toLocaleString()}</div>
           ${prevNet>0 ? `<div style="font-size:11px;color:${diffColor};margin-top:4px;font-family:'JetBrains Mono',monospace">${diffText} 較上月</div>` : ''}
         </div>
 
-        <!-- 收入明細 -->
         <div style="margin-bottom:10px">
           <div style="font-size:10px;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:8px;letter-spacing:1px">── 收入明細</div>
           <div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);border-radius:6px;margin-bottom:5px">
@@ -4404,7 +4465,6 @@ async function loadDriverPayslip(month){
           </div>
         </div>
 
-        <!-- 扣除明細 -->
         <div style="margin-bottom:10px">
           <div style="font-size:10px;color:#f87171;font-family:'JetBrains Mono',monospace;margin-bottom:8px;letter-spacing:1px">── 扣除明細</div>
           ${(data.labourEmployee||0)>0 ? `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.1);border-radius:6px;margin-bottom:5px">
@@ -4421,13 +4481,11 @@ async function loadDriverPayslip(month){
           </div>` : ''}
         </div>
 
-        <!-- 實發 -->
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:8px">
           <span style="font-size:14px;font-weight:700">本月實發</span>
           <span style="font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:#34d399">$${net.toLocaleString()}</span>
         </div>
 
-        <!-- Download PDF -->
         <button onclick="downloadPayslipPDF('${month}')" style="width:100%;margin-top:12px;padding:11px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer;font-family:'JetBrains Mono',monospace;letter-spacing:1px">
           📄 下載薪資單 PDF
         </button>
@@ -4793,8 +4851,7 @@ async function loadPayslipStatuses(month){
   } catch(e){}
   return statuses;
 }
-
-// ══════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════
 // AI 管家「阿智」（老闆專用）
 // ══════════════════════════════════════════════════════════
 let cmdHistory = [];
@@ -5697,7 +5754,6 @@ window.loadDailyReport = async (date) => {
     const withPhoto = reports.filter(r=>r.photoEvidence).length;
 
     el.innerHTML = `
-      <!-- Summary -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
         <div style="padding:10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:8px;text-align:center">
           <div style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">配送合計</div>
@@ -5712,7 +5768,6 @@ window.loadDailyReport = async (date) => {
           <div style="font-family:'Orbitron',monospace;font-size:20px;color:#34d399">${withPhoto}/${reports.length}</div>
         </div>
       </div>
-      <!-- Individual Reports -->
       ${reports.map(r => `
         <div style="padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:rgba(0,0,0,0.2)">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -6249,16 +6304,6 @@ function initNotifySettings(){
   if(ls){ ls.style.color = lt?'#34d399':'#f87171'; ls.textContent = lt?'✅ 已設定':'⚠️ 未設定（可選）'; }
 }
 
-
-window.saveResendKey = () => {
-  const key = document.getElementById('resend-key')?.value.trim();
-  if(!key||!key.startsWith('re_')){ showToast('格式錯誤，應以 re_ 開頭','err'); return; }
-  localStorage.setItem('V92_RESEND_KEY', key);
-  const st = document.getElementById('resend-status');
-  if(st){ st.style.color='#34d399'; st.textContent='✅ 已儲存'; }
-  showToast('✅ Resend 設定完成');
-};
-
 window.saveLineToken = async () => {
   const token = document.getElementById('line-token')?.value.trim();
   if(!token){ showToast('請輸入 LINE Token','err'); return; }
@@ -6282,8 +6327,6 @@ window.saveLineToken = async () => {
     showToast('LINE Token 無效：'+e.message,'err');
   }
 };
-
-
 
 async function initDriver(){
   await loadDriverHome();
@@ -6447,7 +6490,6 @@ async function loadDriverAnnounce(){
   }).join('')||'<div style="text-align:center;padding:20px;color:var(--dim);font-size:12px">無您可查看的公告</div>';
 }
 
-// ── TOAST ────────────────────────────────────────────────
 function showToast(msg,type='ok'){
   const t=document.getElementById('toast');
   t.textContent=msg;t.className=type==='err'?'toast-err':'toast-ok';
@@ -6455,9 +6497,6 @@ function showToast(msg,type='ok'){
 }
 window.showToast=showToast;
 
-
-
-// Init Commander panel when shown
 const origShow=window.showPanel;
 window.showPanel=(id)=>{origShow(id);if(id==='commander'){buildToggles();loadInterviewQuestions();};};
 </script>
