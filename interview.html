@@ -78,6 +78,15 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
 </style>
 </head>
 <body>
+<script>
+// 頁面載入時立即取得 API Key
+(async function(){
+  try {
+    const r = await fetch('https://firestore.googleapis.com/v1/projects/supreme-v92/databases/(default)/documents/config/apikey');
+    if(r.ok){ const d=await r.json(); const k=d.fields?.gemini?.stringValue; if(k) window._sharedAPIKey=k; }
+  } catch(e){}
+})();
+</script>
 <div class="wrap">
   <div class="header">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -224,15 +233,34 @@ let scores = [];
 let docId = null;
 
 // ── START INTERVIEW ───────────────────────────────────────
-// Fetch API key from Firebase config
+// Fetch API key from Firebase config (公開讀取)
 async function fetchAPIKey() {
+  // 1. 先試 localStorage
+  const local = localStorage.getItem('V92_SECRET_KEY');
+  if(local) return local;
+
+  // 2. 試 Firebase SDK
   try {
     const snap = await getDoc(doc(db, 'config', 'apikey'));
     if(snap.exists() && snap.data().gemini) {
+      window._sharedAPIKey = snap.data().gemini;
       return snap.data().gemini;
     }
-  } catch(e) { console.warn('[Key] Firebase fetch failed:', e.message); }
-  return localStorage.getItem('V92_SECRET_KEY') || '';
+  } catch(e) { console.warn('[Key] SDK failed:', e.message); }
+
+  // 3. 試 Firebase REST API（不需要登入）
+  try {
+    const res = await fetch(
+      'https://firestore.googleapis.com/v1/projects/supreme-v92/databases/(default)/documents/config/apikey'
+    );
+    if(res.ok){
+      const data = await res.json();
+      const key = data.fields?.gemini?.stringValue;
+      if(key){ window._sharedAPIKey = key; return key; }
+    }
+  } catch(e) { console.warn('[Key] REST failed:', e.message); }
+
+  return '';
 }
 
 window.startInterview = async () => {
@@ -279,7 +307,14 @@ window.startInterview = async () => {
 // ── 面試評分引擎 ─────────────────────────────────────────────
 async function callGemini(messages) {
   // 優先 localStorage，其次 Firebase config
-  const KEY = localStorage.getItem('V92_SECRET_KEY') || window._sharedAPIKey || GEMINI_KEY;
+  // 嘗試所有方式取得 Key
+  let KEY = localStorage.getItem('V92_SECRET_KEY') || window._sharedAPIKey || '';
+  if(!KEY){
+    try {
+      const r = await fetch('https://firestore.googleapis.com/v1/projects/supreme-v92/databases/(default)/documents/config/apikey');
+      if(r.ok){ const d=await r.json(); KEY=d.fields?.gemini?.stringValue||''; window._sharedAPIKey=KEY; }
+    } catch(e){}
+  }
   if(!KEY) throw new Error('AI 金鑰未設定，請聯絡管理員');
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${KEY}`, {
     method: 'POST',
