@@ -2956,44 +2956,72 @@ window.createAccountAndSendEmail=async()=>{
 
 async function sendWelcomeEmail(name, toEmail, password){
   const loginUrl = 'https://a8305319-byte.github.io/supreme-v92/';
+  const msg = name + ' 您好！\n\n您的在地物流系統帳號已建立：\n'
+    + '📧 帳號：' + toEmail + '\n'
+    + '🔑 密碼：' + password + '\n'
+    + '🔗 登入：' + loginUrl + '\n'
+    + '📋 入職資料：' + loginUrl + 'onboard.html\n\n'
+    + '登入後請立即修改密碼。\n— 在地物流有限公司';
 
-  // 1. 先存到 Firestore emailQueue 作為備份
-  await addDoc(collection(db,'emailQueue'),{
-    to: toEmail, name, password,
-    subject: '【在地物流有限公司】您的帳號已建立',
-    status: 'pending', createdAt: serverTimestamp()
-  });
+  // 1. 存備份
+  addDoc(collection(db,'emailQueue'),{
+    to:toEmail, name, password, msg,
+    status:'pending', createdAt:serverTimestamp()
+  }).catch(()=>{});
 
-  // 2. 用 EmailJS 實際發送（需先在 emailjs.com 設定）
-  const EMAILJS_SERVICE  = localStorage.getItem('V92_EMAILJS_SERVICE')  || '';
-  const EMAILJS_TEMPLATE = localStorage.getItem('V92_EMAILJS_TEMPLATE') || '';
-  const EMAILJS_KEY      = localStorage.getItem('V92_EMAILJS_KEY')      || '';
-
-  if(!EMAILJS_SERVICE || !EMAILJS_TEMPLATE || !EMAILJS_KEY){
-    // EmailJS 未設定 - 備用：用 mailto 開啟
-    const subject = encodeURIComponent('【在地物流有限公司】您的帳號已建立');
-    const body = encodeURIComponent(
-      name + ' 您好，\n\n恭喜您通過面試！HR 已為您建立系統帳號。\n\n' +
-      '【帳號資訊】\nEmail: ' + toEmail +
-      '\n臨時密碼: ' + password +
-      '\n\n【入職資料表】\n請先填寫入職資料表：\n' + loginUrl.replace('index.html','').replace(/\/?$/, '/') + 'onboard.html' +
-      '\n\n【系統登入】\n填完入職資料後，請至以下網址登入：\n' + loginUrl +
-      '\n\n登入後請立即修改密碼。\n\n在地物流有限公司 敬上'
-    );
-    window.open('mailto:'+toEmail+'?subject='+subject+'&body='+body);
-    showToast('⚠️ EmailJS 未設定，已開啟 Mail App 手動發送');
-    return;
+  // 2. LINE Notify（員工用）
+  const LINE_TOKEN = localStorage.getItem('V92_LINE_TOKEN')||'';
+  if(LINE_TOKEN){
+    try {
+      const form = new FormData();
+      form.append('message', '\n'+msg);
+      const r = await fetch('https://notify-api.line.me/api/notify',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+LINE_TOKEN},
+        body:form
+      });
+      const d = await r.json();
+      if(d.status===200){ showToast('✅ LINE 通知已發送'); return; }
+    } catch(e){ console.warn('[LINE]',e.message); }
   }
 
-  // EmailJS SDK 發送
-  emailjs.init({publicKey: EMAILJS_KEY});
-  await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
-    to_name: name,
-    to_email: toEmail,
-    temp_password: password,
-    login_url: loginUrl,
-    company: '在地物流有限公司'
-  });
+  // 3. Resend Email（面試者用）
+  const RESEND_KEY = localStorage.getItem('V92_RESEND_KEY')||'';
+  if(RESEND_KEY){
+    try {
+      const r = await fetch('https://api.resend.com/emails',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+RESEND_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({
+          from: 'onboarding@resend.dev',
+          to: toEmail,
+          subject: '【在地物流有限公司】您的帳號已建立',
+          html: '<div style="font-family:sans-serif;max-width:480px;padding:24px">'
+            + '<h2 style="color:#00d4ff">在地物流有限公司</h2>'
+            + '<p>'+name+' 您好，恭喜通過面試！</p>'
+            + '<div style="background:#f5f5f5;padding:16px;border-radius:8px;margin:16px 0">'
+            + '<p>📧 <b>帳號：</b>'+toEmail+'</p>'
+            + '<p>🔑 <b>密碼：</b>'+password+'</p>'
+            + '</div>'
+            + '<p>📋 <a href="'+loginUrl+'onboard.html">填寫入職資料表</a></p>'
+            + '<p>🔗 <a href="'+loginUrl+'">系統登入</a></p>'
+            + '<p style="color:#888;font-size:12px">登入後請立即修改密碼</p>'
+            + '<hr><p style="color:#888;font-size:12px">在地物流有限公司 敬上</p></div>'
+        })
+      });
+      const d = await r.json();
+      if(r.ok && d.id){ showToast('✅ Email 已發送給 '+name); return; }
+      throw new Error(d.message||'發送失敗');
+    } catch(e){ console.warn('[Resend]',e.message); }
+  }
+
+  // 4. 備用：複製到剪貼板
+  try {
+    await navigator.clipboard.writeText(msg);
+    showToast('📋 帳號資訊已複製！請貼到 LINE 傳給 '+name);
+  } catch(e) {
+    showToast('⚠️ 請手動傳送帳號資訊給 '+name,'err');
+  }
 }
 
 // ── PROFILE PANEL ─────────────────────────────────────────
@@ -4024,7 +4052,7 @@ window.showPanel = function(id){
   }
   _origShowPanel(id);
   if(id==='commander'){
-    setTimeout(initEmailJSSettings, 300);
+    setTimeout(()=>{ initEmailJSSettings(); initNotifySettings(); }, 300);
     // Check API key status
     setTimeout(()=>{
       const hasKey = !!localStorage.getItem('V92_SECRET_KEY');
@@ -6221,6 +6249,56 @@ function initEmailJSSettings(){
     st.textContent = svc ? '✅ 已設定，可自動發信' : '⚠️ 未設定，將使用 mailto 備用方式';
   }
 }
+function initNotifySettings(){
+  // Resend
+  const rk = localStorage.getItem('V92_RESEND_KEY');
+  const ri = document.getElementById('resend-key');
+  const rs = document.getElementById('resend-status');
+  if(ri && rk) ri.value = rk;
+  if(rs){ rs.style.color = rk?'#34d399':'#f87171'; rs.textContent = rk?'✅ 已設定':'⚠️ 未設定'; }
+  // LINE
+  const lt = localStorage.getItem('V92_LINE_TOKEN');
+  const li = document.getElementById('line-token');
+  const ls = document.getElementById('line-status');
+  if(li && lt) li.value = lt;
+  if(ls){ ls.style.color = lt?'#34d399':'#f87171'; ls.textContent = lt?'✅ 已設定':'⚠️ 未設定（可選）'; }
+}
+
+
+window.saveResendKey = () => {
+  const key = document.getElementById('resend-key')?.value.trim();
+  if(!key||!key.startsWith('re_')){ showToast('格式錯誤，應以 re_ 開頭','err'); return; }
+  localStorage.setItem('V92_RESEND_KEY', key);
+  const st = document.getElementById('resend-status');
+  if(st){ st.style.color='#34d399'; st.textContent='✅ 已儲存'; }
+  showToast('✅ Resend 設定完成');
+};
+
+window.saveLineToken = async () => {
+  const token = document.getElementById('line-token')?.value.trim();
+  if(!token){ showToast('請輸入 LINE Token','err'); return; }
+  localStorage.setItem('V92_LINE_TOKEN', token);
+  // 測試連線
+  try {
+    const form = new FormData();
+    form.append('message', '\n✅ 在地物流系統 LINE 通知已連線！');
+    const r = await fetch('https://notify-api.line.me/api/notify',{
+      method:'POST', headers:{'Authorization':'Bearer '+token}, body:form
+    });
+    const d = await r.json();
+    const st = document.getElementById('line-status');
+    if(d.status===200){
+      if(st){ st.style.color='#34d399'; st.textContent='✅ 連線成功！'; }
+      showToast('✅ LINE 通知連線成功！');
+    } else {
+      throw new Error(d.message);
+    }
+  } catch(e) {
+    showToast('LINE Token 無效：'+e.message,'err');
+  }
+};
+
+
 
 async function initDriver(){
   await loadDriverHome();
