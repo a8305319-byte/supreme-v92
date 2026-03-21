@@ -196,8 +196,8 @@ select.f-input{-webkit-appearance:none;cursor:pointer;}
       <!-- Onboard suggestion for recommended candidates -->
       <div id="onboard-suggestion" style="display:none;margin-bottom:12px;padding:12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:8px;text-align:center">
         <div style="font-size:13px;font-weight:700;color:#34d399;margin-bottom:6px">🎉 恭喜通過初步評估！</div>
-        <div style="font-size:12px;color:var(--mid);margin-bottom:10px">請繼續填寫入職資料表，完成入職申請</div>
-        <button onclick="window.location.href='onboard.html'" style="width:100%;padding:11px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:8px;color:#34d399;font-size:13px;font-family:'Orbitron',monospace;cursor:pointer">📋 立即填寫入職資料表 →</button>
+        <div style="font-size:12px;color:var(--mid);margin-bottom:10px">HR 將審核後發送入職連結至您的 Email<br>或您可以直接點下方按鈕填寫入職資料</div>
+        <button onclick="window.location.href='./onboard.html'" style="width:100%;padding:11px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:8px;color:#34d399;font-size:13px;font-family:'Orbitron',monospace;cursor:pointer">📋 立即填寫入職資料表 →</button>
       </div>
       <div style="margin-top:12px;padding:10px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;text-align:center;font-size:12px;color:#a78bfa;font-family:'JetBrains Mono',monospace">
         <span id="redirect-countdown">8</span> 秒後自動跳轉回登入頁...
@@ -446,7 +446,7 @@ function showResult(score, comment) {
   showScreen('screen-result');
   // Show onboard link for recommended candidates (score >= 70)
   const ob = document.getElementById('onboard-suggestion');
-  if(ob && score >= 70) ob.style.display='block';
+  if(ob && score >= 50) ob.style.display='block';
   // Redirect to login page after 6 seconds
   let countdown = 8;
   const timer = setInterval(()=>{
@@ -467,11 +467,11 @@ function showResult(score, comment) {
   scoreEl.style.color = score >= 70 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
 
   if (score >= 70) {
-    badgeEl.innerHTML = '<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">✓ ✓ 推薦錄用</span>';
+    badgeEl.innerHTML = '<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;padding:5px 14px;border-radius:6px;font-size:12px">✅ 通過初審，等待 HR 聯繫</span>';
   } else if (score >= 50) {
-    badgeEl.innerHTML = '<span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">⏳ 待人工審核</span>';
+    badgeEl.innerHTML = '<span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:5px 14px;border-radius:6px;font-size:12px">⏳ HR 將進一步評估後聯繫</span>';
   } else {
-    badgeEl.innerHTML = '<span style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:5px 14px;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:12px">✗ 暫不符合需求</span>';
+    badgeEl.innerHTML = '<span style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:5px 14px;border-radius:6px;font-size:12px">感謝參與，我們將保留您的資料</span>';
   }
   if (msgEl) msgEl.textContent = comment;
 }
