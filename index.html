@@ -2931,24 +2931,60 @@ window.createAccountAndSendEmail=async()=>{
 };
 
 async function sendWelcomeEmail(name, toEmail, password){
-  // Use EmailJS free tier for client-side email sending
-  const templateParams={
-    to_name: name,
-    to_email: toEmail,
-    temp_password: password,
-    company_name: '在地物流有限公司',
-    login_url: window.location.origin + window.location.pathname.replace('index.html',''),
-    from_name: '徐震家 / 在地物流有限公司 系統'
-  };
-  // EmailJS - needs setup at emailjs.com (free 200 emails/month)
-  // For now save to Firestore and show toast
+  const loginUrl = 'https://a8305319-byte.github.io/supreme-v92/';
+
+  // 1. 先存到 Firestore emailQueue 作為備份
   await addDoc(collection(db,'emailQueue'),{
-    to: toEmail,
+    to: toEmail, name, password,
     subject: '【在地物流有限公司】您的帳號已建立',
-    body: `\${name} 您好，\n\n您的帳號已建立：\nEmail: \${toEmail}\n臨時密碼: \${password}\n\n請至以下網址登入後修改密碼：\n\${window.location.origin}\n\n謝謝！`,
-    createdAt: serverTimestamp(),
-    status: 'pending'
+    status: 'pending', createdAt: serverTimestamp()
   });
+
+  // 2. 用 EmailJS 實際發送（需先在 emailjs.com 設定）
+  const EMAILJS_SERVICE  = localStorage.getItem('V92_EMAILJS_SERVICE')  || '';
+  const EMAILJS_TEMPLATE = localStorage.getItem('V92_EMAILJS_TEMPLATE') || '';
+  const EMAILJS_KEY      = localStorage.getItem('V92_EMAILJS_KEY')      || '';
+
+  if(!EMAILJS_SERVICE || !EMAILJS_TEMPLATE || !EMAILJS_KEY){
+    // EmailJS 未設定 - 備用：用 mailto 開啟
+    const subject = encodeURIComponent('【在地物流有限公司】您的帳號已建立');
+    const body = encodeURIComponent(
+      name + ' 您好，\n\n您的帳號已建立：\nEmail: ' + toEmail +
+      '\n臨時密碼: ' + password +
+      '\n\n請至以下網址登入：\n' + loginUrl +
+      '\n\n登入後請立即修改密碼。\n\n在地物流有限公司'
+    );
+    window.open('mailto:'+toEmail+'?subject='+subject+'&body='+body);
+    showToast('⚠️ EmailJS 未設定，已開啟 Mail App 手動發送');
+    return;
+  }
+
+  // EmailJS 發送
+  const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      service_id: EMAILJS_SERVICE,
+      template_id: EMAILJS_TEMPLATE,
+      user_id: EMAILJS_KEY,
+      template_params: {
+        to_name: name,
+        to_email: toEmail,
+        temp_password: password,
+        login_url: loginUrl,
+        company: '在地物流有限公司'
+      }
+    })
+  });
+
+  if(res.status === 200){
+    // 更新 emailQueue 狀態
+    const eq = await getDocs(query(collection(db,'emailQueue'),
+      where('to','==',toEmail), where('status','==','pending')));
+    eq.docs.forEach(d => updateDoc(d.ref, {status:'sent', sentAt: serverTimestamp()}));
+  } else {
+    throw new Error('EmailJS 發送失敗，狀態碼：'+res.status);
+  }
 }
 
 // ── PROFILE PANEL ─────────────────────────────────────────
@@ -3979,6 +4015,7 @@ window.showPanel = function(id){
   }
   _origShowPanel(id);
   if(id==='commander'){
+    setTimeout(initEmailJSSettings, 300);
     // Check API key status
     setTimeout(()=>{
       const hasKey = !!localStorage.getItem('V92_SECRET_KEY');
@@ -6142,6 +6179,36 @@ function injectButlerMsg(box, msg){
   // Update status
   const st = document.getElementById('butler-status');
   if(st) st.textContent = '✅ 線上';
+}
+
+window.saveEmailJSConfig = () => {
+  const svc  = document.getElementById('ejs-service')?.value.trim();
+  const tmpl = document.getElementById('ejs-template')?.value.trim();
+  const key  = document.getElementById('ejs-key')?.value.trim();
+  if(!svc||!tmpl||!key){ showToast('請填寫所有欄位','err'); return; }
+  localStorage.setItem('V92_EMAILJS_SERVICE',  svc);
+  localStorage.setItem('V92_EMAILJS_TEMPLATE', tmpl);
+  localStorage.setItem('V92_EMAILJS_KEY',      key);
+  const st = document.getElementById('ejs-status');
+  if(st){ st.style.color='#34d399'; st.textContent='✅ EmailJS 設定已儲存'; }
+  showToast('✅ EmailJS 設定完成，之後建立帳號將自動發信');
+};
+
+function initEmailJSSettings(){
+  const svc  = localStorage.getItem('V92_EMAILJS_SERVICE');
+  const tmpl = localStorage.getItem('V92_EMAILJS_TEMPLATE');
+  const key  = localStorage.getItem('V92_EMAILJS_KEY');
+  const si = document.getElementById('ejs-service');
+  const ti = document.getElementById('ejs-template');
+  const ki = document.getElementById('ejs-key');
+  const st = document.getElementById('ejs-status');
+  if(si && svc) si.value = svc;
+  if(ti && tmpl) ti.value = tmpl;
+  if(ki && key) ki.value = key;
+  if(st){
+    st.style.color = svc ? '#34d399' : '#f87171';
+    st.textContent = svc ? '✅ 已設定，可自動發信' : '⚠️ 未設定，將使用 mailto 備用方式';
+  }
 }
 
 async function initDriver(){
