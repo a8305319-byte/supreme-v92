@@ -2756,6 +2756,8 @@ function panelRecruit(){
       <div class="f-grp"><label class="f-lbl">角色</label>
         <select class="f-inp" id="new-role"><option value="driver">司機</option><option value="accountant">會計</option></select>
       </div>
+      <div class="f-grp"><label class="f-lbl">密碼</label><input class="f-inp" id="new-pass" type="password" placeholder="至少6位"></div>
+      <div class="f-grp"><label class="f-lbl">確認密碼</label><input class="f-inp" id="confirm-pass" type="password" placeholder="再輸入一次"></div>
     </div>
     <button class="btn btn-p" style="width:100%" onclick="createAccountAndSendEmail()">建立帳號並自動發送 Email</button>
     <div id="create-acc-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
