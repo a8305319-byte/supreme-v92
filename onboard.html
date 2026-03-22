@@ -427,6 +427,9 @@ window.createOnboardAccount = async function() {
       msgEl.textContent = '✅ 帳號建立成功！即將跳轉登入頁面...';
       btn.textContent = '✅ 完成';
       setTimeout(()=>{ window.location.href = './'; }, 2000);
+    } else {
+      throw new Error('建立失敗，請聯繫HR');
+    }
   } catch(e) {
     msgEl.style.color = '#f87171';
     msgEl.textContent = '❌ ' + e.message;
