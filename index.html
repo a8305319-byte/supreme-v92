@@ -2947,8 +2947,8 @@ window.createAccountAndSendEmail=async()=>{
 
   try {
     // Cloud Function 自動建立 Firebase Auth 帳號
-    const createUser = httpsCallable(functions, 'createUser');
-    const result = await createUser({ email, password:pass1, name, phone, role });
+    const createUser = httpsCallable(fbFunctions, 'createUser');
+    const result = await createUser({ email, password:pass1, name, phone, role, secret:'supreme-v92-2026' });
     const uid = result.data.uid;
 
     await addAudit('CREATE', '自動建立帳號：'+name+' ('+email+') 角色:'+role);
