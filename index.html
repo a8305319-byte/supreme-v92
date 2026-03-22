@@ -1183,6 +1183,7 @@ window.showPanel = function(id) {
   if(id==='profile') loadProfile();
   if(id==='recruit'){ loadApplicants(); loadOnboardForms(); }
   if(id==='files'){ loadFiles(); loadUploadPersons(); }
+  if(id==='attendance') loadAttendance();
   if(id==='driverstatus') loadDriverStatus();
 };
 
@@ -6440,6 +6441,40 @@ window.viewOnboardDetail = async (id) => {
   document.getElementById('prefill-ob-btn').onclick = ()=>{ prefillFromOnboard(id); modal.remove(); };
   modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
 };
+
+async function loadAttendance(){
+  const el = document.getElementById('attend-table');
+  if(!el) return;
+  try {
+    const snap = await getDocs(query(
+      collection(db,'reports'),
+      where('date','==',TODAY),
+      orderBy('date','desc')
+    ));
+    if(snap.empty){
+      el.innerHTML = '<div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">今日尚無回報記錄</div>';
+      return;
+    }
+    let rows = '';
+    for(const d of snap.docs){
+      const r = d.data();
+      const uSnap = await getDoc(doc(db,'users',r.uid||d.id.split('_')[0]));
+      const name = uSnap.exists() ? uSnap.data().name : r.uid || '—';
+      rows += '<tr style="border-bottom:1px solid var(--border)">'
+        + '<td style="font-weight:600">'+name+'</td>'
+        + '<td style="color:var(--accent)">'+( r.deliveryQty||0)+'</td>'
+        + '<td style="color:#a78bfa">'+( r.reverseQty||0)+'</td>'
+        + '<td><span class="badge bg">已回報</span></td>'
+        + '</tr>';
+    }
+    el.innerHTML = '<div class="tbl-wrap"><table class="tbl">'
+      + '<thead><tr><th>姓名</th><th>配送件</th><th>逆物流件</th><th>狀態</th></tr></thead>'
+      + '<tbody>'+rows+'</tbody></table></div>';
+  } catch(e){
+    el.innerHTML = '<div style="color:#f87171;font-size:12px;text-align:center;padding:14px">'+e.message+'</div>';
+  }
+}
+window.loadAttendance = loadAttendance;
 
 async function initDriver(){
   await loadDriverHome();
