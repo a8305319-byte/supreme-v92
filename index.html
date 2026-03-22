@@ -763,7 +763,7 @@ const _fb_timeout = setTimeout(()=>{
 onAuthStateChanged(auth, async user => {
   if (!user) {
     if (_appReady) return; // app already running, ignore
-    showLogin(); // user truly not logged in
+    showLoginScreen(); // user truly not logged in
     return;
   }
   CU = user;
@@ -773,7 +773,7 @@ onAuthStateChanged(auth, async user => {
     if (!snap.exists()) { 
     // Create basic driver profile if missing
     showToast('帳號未設定角色，請聯絡管理員','err'); 
-    showLogin(); 
+    showLoginScreen(); 
     return; 
   }
     CD = snap.data();
@@ -831,33 +831,30 @@ onAuthStateChanged(auth, async user => {
             clearTimeout(_hardTimeout);
           } else {
             showToast('帳號未設定角色，請聯絡管理員','err');
-            showLogin();
+            showLoginScreen();
           }
         } catch(e2){
           showToast('網路連線失敗，請檢查網路後重試','err');
-          showLogin();
+          showLoginScreen();
         }
       }, 3000);
     } else {
       showToast('載入失敗：'+e.message,'err');
-      showLogin();
+      showLoginScreen();
     }
   }
 });
 
 // ── LOGIN ─────────────────────────────────────────────────
-function showLogin() {
-  document.getElementById('loading-screen').style.display='none';
-  document.getElementById('login-screen').style.display='flex'; _loginShown=true;
-  document.getElementById('app').style.display='none';
-}
+// showLogin → showLoginScreen
+
 
 window.doLogin = async () => {
   const email = document.getElementById('l-email').value.trim();
   const pass  = document.getElementById('l-pass').value;
-  const btn   = document.getElementById('login-btn');
+  const btn   = document.getElementById('login-btn'); if(!btn) return;
   const err   = document.getElementById('err-box');
-  err.style.display='none';
+  if(err) err.style.display='none';
   if (!email||!pass){showErr('請填寫帳號與密碼');return;}
   btn.disabled=true;
   btn.innerHTML='<span class="spin"></span>驗證中...';
@@ -892,8 +889,16 @@ window.doLogin = async () => {
     showErr(msgs[e.code]||'登入失敗：'+e.message);
   }
 };
-document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-document.getElementById('login-btn').addEventListener('click', doLogin);
+// Wait for DOM to be ready
+if(document.getElementById('l-pass')){
+  document.getElementById('l-pass')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  document.getElementById('login-btn')?.addEventListener('click', doLogin);
+} else {
+  document.addEventListener('DOMContentLoaded', ()=>{
+    document.getElementById('l-pass')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+    document.getElementById('login-btn')?.addEventListener('click', doLogin);
+  });
+}
 function showErr(m){const e=document.getElementById('err-box');e.textContent='⚠ '+m;e.style.display='block';}
 function ldMsg(m){const el=document.getElementById('ld-msg');if(el)el.textContent=m;}
 
