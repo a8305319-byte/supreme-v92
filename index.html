@@ -2447,21 +2447,6 @@ function panelCommander(){return `
     <!-- Email 設定 -->
   
 
-    <!-- Resend Email 設定 -->
-  <div class="glass-card" style="margin-bottom:14px">
-    <div class="sh">
-      <div class="st">📧 面試者 Email 通知</div>
-      <a href="https://resend.com" target="_blank" class="btn btn-g btn-sm">免費申請</a>
-    </div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">
-      面試者建立帳號時自動寄出通知（免費 3,000 封/月）<br>
-      resend.com 註冊 → API Keys → Create → 複製 re_ 開頭的 Key
-    </div>
-    <div class="f-grp"><label class="f-lbl">Resend API Key</label>
-      <input class="f-inp" id="resend-key" type="password" placeholder="re_xxxxxxxxx" autocomplete="off"></div>
-    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveResendKey()">儲存</button>
-    <div id="resend-status" style="font-size:11px;margin-top:6px;color:var(--dim);text-align:center"></div>
-  </div>
   <div class="glass-card" style="border-color:rgba(245,158,11,0.2)">
     <div class="st" style="margin-bottom:14px;color:var(--yellow)">🔑 費率設定</div>
     <div class="g3">
@@ -2782,7 +2767,7 @@ async function loadApplicants(){
     const docs2 = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
     const total=docs2.length;
     const rec=docs2.filter(a=>a.aiScore>=60).length;
-    const pend=docs2.filter(a=>a.aiScore>=50&&a.aiScore<70).length;
+    const pend=docs2.filter(a=>a.aiScore>=50&&a.aiScore<60).length;
 
     const summary = '<div style="display:flex;gap:10px;margin-bottom:10px;font-size:11px">'
       +'<span style="color:var(--dim)">共 '+total+' 人</span>'
@@ -2948,8 +2933,18 @@ window.createAccountAndSendEmail=async()=>{
   try {
     // Cloud Function 自動建立 Firebase Auth 帳號
     const createUser = httpsCallable(fbFunctions, 'createUser');
-    const result = await createUser({ email, password:pass1, name, phone, role, secret:'supreme-v92-2026' });
+    const resendKey = localStorage.getItem('V92_RESEND_KEY') || '';
+    const result = await createUser({ email, password:pass1, name, phone, role, secret:'supreme-v92-2026', resendKey });
     const uid = result.data.uid;
+    const emailSent = result.data.emailSent;
+
+    if(!emailSent){
+      // Cloud Function 沒發信 → 複製到剪貼板
+      const msg = name+' 您好！\n\n您的在地物流系統帳號：\n帳號：'+email+'\n密碼：'+pass1+'\n登入：https://a8305319-byte.github.io/supreme-v92/\n\n請盡快登入並修改密碼。';
+      navigator.clipboard.writeText(msg).then(()=>showToast('📋 帳號資訊已複製！貼到 LINE 傳給 '+name)).catch(()=>{});
+    } else {
+      showToast('✅ Email 已自動發送給 '+name);
+    }
 
     await addAudit('CREATE', '自動建立帳號：'+name+' ('+email+') 角色:'+role);
     if(msgEl){ msgEl.style.color='#34d399'; msgEl.textContent='✅ 帳號建立成功！'; }
@@ -2984,37 +2979,7 @@ async function sendWelcomeEmail(name, toEmail, password){
     status:'pending', createdAt:serverTimestamp()
   }).catch(()=>{});
 
-  // 1. Resend Email（面試者）
-  const RESEND_KEY = localStorage.getItem('V92_RESEND_KEY')||'';
-  if(RESEND_KEY){
-    try {
-      const r = await fetch('https://api.resend.com/emails',{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+RESEND_KEY,'Content-Type':'application/json'},
-        body: JSON.stringify({
-          from: 'onboarding@resend.dev',
-          to: toEmail,
-          subject: '【在地物流有限公司】您的帳號已建立',
-          html: '<div style="font-family:sans-serif;max-width:480px;padding:24px">'
-            +'<h2 style="color:#00d4ff">在地物流有限公司</h2>'
-            +'<p>'+name+' 您好，恭喜通過面試！</p>'
-            +'<div style="background:#f5f5f5;padding:16px;border-radius:8px;margin:16px 0">'
-            +'<p>📧 <b>帳號：</b>'+toEmail+'</p>'
-            +'<p>🔑 <b>密碼：</b>'+password+'</p>'
-            +'</div>'
-            +'<p>📋 <a href="'+loginUrl+'onboard.html">填寫入職資料表</a></p>'
-            +'<p>🔗 <a href="'+loginUrl+'">系統登入</a></p>'
-            +'<p style="color:#888;font-size:12px">登入後請立即修改密碼</p>'
-            +'<hr><p style="color:#888;font-size:12px">在地物流有限公司 敬上</p></div>'
-        })
-      });
-      const d = await r.json();
-      if(r.ok && d.id){ showToast('✅ Email 已發送給 '+name); return; }
-      throw new Error(d.message||'發送失敗');
-    } catch(e){ console.warn('[Resend]',e.message); }
-  }
-
-  // 2. 備用：複製到剪貼板（現有員工/司機用）
+  // 備用：複製到剪貼板（Email 由 Cloud Function 處理）
   try {
     await navigator.clipboard.writeText(msg);
     showToast('📋 帳號資訊已複製！貼到 LINE 傳給 '+name);
