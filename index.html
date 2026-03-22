@@ -2781,7 +2781,7 @@ async function loadApplicants(){
     if(snap.empty){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:14px;font-size:12px">尚無應徵者</div>';return;}
     const docs2 = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
     const total=docs2.length;
-    const rec=docs2.filter(a=>a.aiScore>=70).length;
+    const rec=docs2.filter(a=>a.aiScore>=60).length;
     const pend=docs2.filter(a=>a.aiScore>=50&&a.aiScore<70).length;
 
     const summary = '<div style="display:flex;gap:10px;margin-bottom:10px;font-size:11px">'
@@ -2793,9 +2793,9 @@ async function loadApplicants(){
     let rows='';
     docs2.forEach(function(a){
       const score=a.aiScore||0;
-      const bc=score>=70?'bg':score>=50?'by':'br';
-      const bt2=score>=70?'推薦':score>=50?'待定':'不符';
-      const sc=score>=70?'#34d399':score>=50?'#fbbf24':'#f87171';
+      const bc=score>=60?'bg':score>=50?'by':'br';
+      const bt2=score>=60?'推薦':score>=50?'待定':'不符';
+      const sc=score>=60?'#34d399':score>=50?'#fbbf24':'#f87171';
       const dt=a.createdAt&&a.createdAt.toDate?a.createdAt.toDate().toLocaleDateString('zh-TW'):'—';
       rows+='<tr style="border-bottom:1px solid var(--border)">'
         +'<td style="font-weight:600">'+(a.name||'—')+'</td>'
@@ -2826,8 +2826,8 @@ window.viewApplicantDetail = async (id) => {
   if(!snap.exists()) return;
   const a = snap.data();
   const score = a.aiScore||0;
-  const sc = score>=70?'#34d399':score>=50?'#fbbf24':'#f87171';
-  const badge = score>=70?'✅ 推薦錄用':score>=50?'⏳ 待人工審核':'❌ 暫不符合';
+  const sc = score>=60?'#34d399':score>=50?'#fbbf24':'#f87171';
+  const badge = score>=60?'✅ 推薦錄用':score>=50?'⏳ 待人工審核':'❌ 暫不符合';
   const hist = (a.chatHistory||[]).slice(0,20);
 
   const modal = document.createElement('div');
