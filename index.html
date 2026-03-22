@@ -622,6 +622,7 @@ const CS_AGENT_NAME = '客服專員 #' + _csNum;
 const CS_AGENT_EMOJI = '🎧';
 const auth  = getAuth(fbApp);
 const db    = getFirestore(fbApp);
+const fbFunctions = getFunctions(fbApp, 'us-central1');
 
 // Force Firestore to use network (fixes 'client is offline' error)
 import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js').then(({enableNetwork})=>{
@@ -2936,24 +2937,22 @@ window.createAccountAndSendEmail=async()=>{
 
   if(!name||!email){ showToast('請填寫姓名和 Email','err'); return; }
   if(!pass1||pass1.length<6){ showToast('密碼至少 6 位','err'); return; }
-  if(pass1!==pass2){ showToast('兩次密碼不一致','err'); return; }
+  if(pass2 && pass1!==pass2){ showToast('兩次密碼不一致','err'); return; }
 
   if(msgEl){ msgEl.style.display='block'; msgEl.style.color='var(--accent)'; msgEl.textContent='⏳ 建立帳號中...'; }
 
   try {
-    // 呼叫 Cloud Function 自動建立帳號
-    const { httpsCallable } = await import('https://www.gstatic.com/firebasejs/11.1.0/firebase-functions.js');
-    const functions = getFunctions(app);
-    const createUser = httpsCallable(functions, 'createUser');
+    // Cloud Function 自動建立 Firebase Auth 帳號
+    const createUser = httpsCallable(fbFunctions, 'createUser');
     const result = await createUser({ email, password:pass1, name, phone, role });
     const uid = result.data.uid;
 
+    await addAudit('CREATE', '自動建立帳號：'+name+' ('+email+') 角色:'+role);
+    if(msgEl){ msgEl.style.color='#34d399'; msgEl.textContent='✅ 帳號建立成功！'; }
+    showToast('✅ '+name+' 帳號已建立！');
+
     // 發送通知
     await sendWelcomeEmail(name, email, pass1);
-
-    await addAudit('CREATE', '自動建立帳號：'+name+' ('+email+') 角色:'+role);
-    if(msgEl){ msgEl.style.color='#34d399'; msgEl.textContent='✅ 帳號建立成功！UID: '+uid; }
-    showToast('✅ '+name+' 帳號已建立！');
 
     // 清空欄位
     ['new-name','new-email','new-phone','new-pass','confirm-pass'].forEach(id=>{
@@ -2962,16 +2961,10 @@ window.createAccountAndSendEmail=async()=>{
 
   } catch(e) {
     console.error('[CreateUser]', e);
-    // 如果 Cloud Function 未部署，提示手動建立
-    if(e.code==='functions/not-found' || e.message?.includes('not-found')){
-      if(msgEl){ msgEl.style.color='#fbbf24'; msgEl.textContent='⚠️ Cloud Function 未部署，請先完成部署設定'; }
-      showToast('⚠️ 請先部署 Cloud Function','err');
-    } else {
-      if(msgEl){ msgEl.style.color='#f87171'; msgEl.textContent='❌ '+e.message; }
-      showToast('失敗：'+e.message,'err');
-    }
+    if(msgEl){ msgEl.style.color='#f87171'; msgEl.textContent='❌ '+e.message; }
+    showToast('失敗：'+e.message,'err');
   }
-};;
+};;;;
 
 async function sendWelcomeEmail(name, toEmail, password){
   const loginUrl = 'https://a8305319-byte.github.io/supreme-v92/';
