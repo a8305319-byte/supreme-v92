@@ -31,7 +31,15 @@
   --bg:#000;--glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
   --accent:#00d4ff;--accent2:#7c3aed;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;
   --text:#e2e8f0;--dim:#64748b;--mid:#94a3b8;
+  --fg:#e2e8f0;
 }
+/* 亮色主題 */
+[data-theme="light"]{
+  --bg:#f0f4f8;--glass:rgba(0,0,0,0.04);--border:rgba(0,0,0,0.1);
+  --text:#1e293b;--dim:#64748b;--mid:#475569;--fg:#1e293b;
+  --accent:#0284c7;--accent2:#7c3aed;
+}
+/* 自動主題（依時間）會由 JS 動態切換 */
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
 canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
@@ -1564,6 +1572,12 @@ window.openResign = (uid, name) => {
 
 window.processResign = async () => {
   if(!_resignUid){ showToast('錯誤：找不到員工 UID','err'); return; }
+  const ok = await v92Confirm(
+    '⚠️ 確認辦理離職',
+    (_resignName||'此員工') + ' 的離職手續一旦完成將無法復原，帳號將被停用。',
+    '確認離職', '#f87171'
+  );
+  if(!ok) return;
   const date = document.getElementById('resign-date').value;
   const reason = document.getElementById('resign-reason').value;
   const note = document.getElementById('resign-note').value.trim();
@@ -2441,6 +2455,7 @@ function panelCommander(){return `
           <div style="font-size:10px;color:var(--dim)">說人話就能操作系統</div>
         </div>
       </div>
+      <button id="theme-toggle-btn" onclick="cycleTheme()" title="切換主題" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:14px;color:var(--mid)">🌙</button>
       <div id="butler-status" style="display:flex;align-items:center;gap:4px;font-size:10px;color:#34d399" data-nokey="請設定 API Key"><div style="width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse 2s infinite"></div><span>線上</span></div>
     </div>
     <div id="cmd-ai-chat" style="height:320px;overflow-y:auto;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:10px">
@@ -3538,7 +3553,7 @@ function buildDriverUI(){
             </div>
           </div>
           <!-- Photo OCR input -->
-          <input type="file" id="report-photo-input" accept="image/*" capture="environment" style="display:none" onchange="ocrReportPhoto(this)">
+          <input type="file" id="report-photo-input" accept="image/*" style="display:none" onchange="ocrReportPhoto(this)">
           <!-- OCR progress -->
           <div id="report-ocr-bar" style="display:none;padding:8px 12px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;margin-bottom:10px;font-size:11px;color:#a78bfa;font-family:'JetBrains Mono',monospace;text-align:center">
             ⟳ OCR 辨識中，自動填入件數...
@@ -3736,7 +3751,7 @@ async function callGemini(prompt, history = [], mode = 'text') {
   try {
     const res = await geminiWithBackoff(url, {
       contents: [...cleanHistory, { role:'user', parts:[{text: prompt}] }],
-      generationConfig: { temperature:0.75, maxOutputTokens:800 }
+      generationConfig: { temperature:0.9, maxOutputTokens:1500 }
     });
     const data = await res.json();
     if(data.error){
@@ -3759,31 +3774,21 @@ let csEscalated = false;  // true = escalated to boss (silent)
 let csInitialized = false;
 
 // CS Topics
-const CS_SYSTEM_PROMPT = `你是在地物流有限公司的客服，你的編號是「${CS_AGENT_NAME}」。
+const CS_SYSTEM_PROMPT = `你是在地物流有限公司的智慧客服助理，編號「${CS_AGENT_NAME}」。
 
-【重要：你的名字】你叫「${CS_AGENT_NAME}」，不是美玲、不是雅婷、不是美君，就是「${CS_AGENT_NAME}」。介紹自己時說「我是${CS_AGENT_NAME}」。
-【身份】你是真人客服，絕對不能透露自己是AI、機器人或任何自動化系統。
-【個性】親切、耐心、專業，說話像真人傳訊息，簡短自然，不用條列式。
-【公司】在地物流有限公司，主要業務是物流配送。
+你有完整的 AI 能力，可以：
+- 回答任何問題（不限於公司業務）
+- 幫司機計算薪資、解釋規定
+- 處理突發狀況、給出建議
+- 像真人一樣自然對話
+- 記住對話脈絡，不重複問
 
-【你可以回答任何問題】包括但不限於：
-- 薪資計算、件數確認、薪資疑問
-- 請假申請方式、假別規定
-- 上下班時間、排班問題
-- 配送路線、地址問題
-- 車輛問題、事故處理
-- 公告查詢、政策說明
-- 一般生活問題（天氣、法規、常識等）
-- 任何員工想問的事
+公司資訊：
+- 在地物流有限公司，物流配送
+- 薪資：配送 ${CD?.priceDelivery||50}元/件，逆物流 ${CD?.priceReverse||35}元/件
+- 對象：${CD?.name}（${CD?.type==='employee'?'正職，有勞健保':'承攬'}）
 
-【回答原則】
-- 不知道的事就說「我幫你確認一下」然後給合理答案
-- 遇到憤怒或緊急情況要更積極：「我馬上處理！」
-- 不說「我是AI」「轉接」「升級服務」等字眼
-- 回答長度適中，不超過3-4句
-- 可以用台灣常用口語，例如「沒問題唷」「好的好的」
-
-【司機資料】姓名: ${CD?.name}，薪資類型: ${CD?.type}，配送單價: ${CD?.priceDelivery||50}元/件，逆物流: ${CD?.priceReverse||35}元/件`;
+對話風格：用繁體中文，自然流暢，根據問題調整長短，不要像範本或客服機器人。`
 
 async function initCSChat() {
   if (csInitialized) return;
@@ -4329,6 +4334,12 @@ window.sendPayslip = async (uid, name, month) => {
 
 // Send to all drivers
 window.sendAllPayslips = async () => {
+  const ok = await v92Confirm(
+    '💰 確認發送薪資單',
+    '將發送本月薪資單給所有在職員工，確認嗎？',
+    '確認發送', '#34d399'
+  );
+  if(!ok) return;
   const btn = document.querySelector('.btn-s[onclick*="sendAllPayslips"]') ||
     [...document.querySelectorAll('.btn-s')].find(b=>b.textContent.includes('發送薪資單'));
   if(btn){ btn.disabled=true; btn.textContent='發送中...'; }
@@ -4587,6 +4598,8 @@ async function loadSheetJS(){
 }
 
 window.exportExcelReport = async (month) => {
+  const ok = await v92Confirm('📊 匯出 Excel 報表','確認匯出本月完整薪資報表？','確認匯出','#00d4ff');
+  if(!ok) return;
   month = month || MONTH;
   showToast('產生 Excel 報表中...');
   const XLSX = await loadSheetJS();
@@ -4833,34 +4846,27 @@ async function loadPayslipStatuses(month){
 // ══════════════════════════════════════════════════════════
 let cmdHistory = [];
 
-const CMD_SYSTEM = `你是「在地物流有限公司」負責人徐震家的專屬 AI 管家，名字叫「阿智」。
+const CMD_SYSTEM = `你是在地物流有限公司老闆徐震家的 AI 助理阿智，由 Gemini 驅動。
 
-【個性】
-- 說話像真人助理，自然親切，簡潔有效率
-- 主動提供建議，不只回答問題
-- 記住對話中提到的事情
+你有完整的 AI 智慧：
+- 分析數據、給出建議
+- 回答任何管理、法律、財務問題
+- 根據對話上下文理解意圖
+- 主動發現問題並提醒
 
-【你能直接執行的操作】
-當用戶說以下類似的話，自動在回覆末尾加上對應指令：
+可執行的系統操作（在回覆末尾加指令）：
+薪資/薪水 → [TOOL:GET_SALARY]
+發薪資單 → [TOOL:SEND_PAYSLIPS]
+出勤/誰來了 → [TOOL:GET_ATTENDANCE]
+發布公告 → [TOOL:PUBLISH_ANNOUNCE:標題|內容]
+查員工 → [TOOL:GET_EMPLOYEE:姓名]
+調整件數 → [TOOL:ADJUST_DELIVERY:姓名|配送數|逆物流數|原因]
+辦理離職 → [TOOL:RESIGN_EMPLOYEE:姓名|原因]
+財務狀況 → [TOOL:GET_FINANCE]
+員工人數 → [TOOL:GET_ALL_STAFF]
+系統警示 → [TOOL:GET_ALERTS]
 
-「薪資/薪水/工資/發薪」相關 → [TOOL:GET_SALARY]
-「發薪資單/寄薪資單/傳薪資」→ [TOOL:SEND_PAYSLIPS]
-「出勤/上班/打卡/今天誰來」→ [TOOL:GET_ATTENDANCE]
-「公告/通知/發布/告訴大家」→ [TOOL:PUBLISH_ANNOUNCE:標題|內容]
-「查XXX/XXX的資料/XXX怎麼了」→ [TOOL:GET_EMPLOYEE:姓名]
-「調整XXX件數/改件數」→ [TOOL:ADJUST_DELIVERY:姓名|配送數|逆物流數|原因]
-「XXX離職/辦理離職」→ [TOOL:RESIGN_EMPLOYEE:姓名|原因]
-「財務/損益/收入/支出/這個月賺」→ [TOOL:GET_FINANCE]
-「全部司機/所有員工/人數」→ [TOOL:GET_ALL_STAFF]
-「異常/問題/警示/有沒有問題」→ [TOOL:GET_ALERTS]
-
-【重要規則】
-- 用繁體中文回答
-- 需要確認的操作（離職、發薪資單）先問一次確認
-- 不知道的事說不知道，不要亂猜
-- 操作成功後告知結果，失敗時說明原因
-- 絕對不透露 API 金鑰
-`;
+用繁體中文，語氣自然，像真正的 AI 助理，不是預設腳本。`
 
 window.sendCommanderQuick = (text) => {
   const input = document.getElementById('cmd-ai-input');
@@ -6477,6 +6483,68 @@ async function loadAttendance(){
 }
 window.loadAttendance = loadAttendance;
 
+// ── 主題系統 ────────────────────────────────────────────
+const THEME_KEY = 'v92_theme';
+function applyTheme(theme){
+  const root = document.documentElement;
+  if(theme === 'auto'){
+    const h = new Date().getHours();
+    // 6:00-18:00 亮色，其他暗色
+    root.setAttribute('data-theme', (h >= 6 && h < 18) ? 'light' : 'dark');
+  } else {
+    root.setAttribute('data-theme', theme);
+  }
+  localStorage.setItem(THEME_KEY, theme);
+  updateThemeBtn(theme);
+}
+
+function updateThemeBtn(theme){
+  const btn = document.getElementById('theme-toggle-btn');
+  if(!btn) return;
+  const icons = {dark:'🌙', light:'☀️', auto:'🌓'};
+  btn.textContent = icons[theme] || '🌓';
+  btn.title = {dark:'深色模式', light:'亮色模式', auto:'自動（依時間）'}[theme] || '';
+}
+
+function cycleTheme(){
+  const current = localStorage.getItem(THEME_KEY) || 'dark';
+  const next = {dark:'light', light:'auto', auto:'dark'}[current] || 'dark';
+  applyTheme(next);
+  showToast({dark:'🌙 深色模式', light:'☀️ 亮色模式', auto:'🌓 自動模式'}[next]);
+}
+
+// 初始化主題
+(function initTheme(){
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(saved);
+  // 每小時檢查一次（auto 模式用）
+  setInterval(()=>{
+    if(localStorage.getItem(THEME_KEY)==='auto') applyTheme('auto');
+  }, 60 * 60 * 1000);
+})();
+
+window.cycleTheme = cycleTheme;
+
+// ── 全局防呆確認視窗 ─────────────────────────────────────
+function v92Confirm(title, msg, confirmText='確認', confirmColor='#f87171', cancelText='取消'){
+  return new Promise(resolve=>{
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    const btn_style = 'flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600';
+    modal.innerHTML = '<div style="background:#0d0d0d;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:24px;max-width:320px;width:100%;text-align:center">'
+      + '<div style="font-size:15px;font-weight:700;margin-bottom:8px">'+title+'</div>'
+      + '<div style="font-size:13px;color:#94a3b8;margin-bottom:20px;line-height:1.5">'+msg+'</div>'
+      + '<div style="display:flex;gap:8px">'
+      + '<button id="v92-cancel" style="'+btn_style+';background:rgba(255,255,255,0.06);color:#94a3b8">'+cancelText+'</button>'
+      + '<button id="v92-confirm" style="'+btn_style+';background:rgba(239,68,68,0.15);color:'+confirmColor+';border:1px solid '+confirmColor+'40">'+confirmText+'</button>'
+      + '</div></div>';
+    document.body.appendChild(modal);
+    document.getElementById('v92-confirm').onclick = ()=>{ modal.remove(); resolve(true); };
+    document.getElementById('v92-cancel').onclick  = ()=>{ modal.remove(); resolve(false); };
+    modal.onclick = e=>{ if(e.target===modal){ modal.remove(); resolve(false); } };
+  });
+}
+
 async function initDriver(){
   await loadDriverHome();
   checkUnreadPayslips();
@@ -6500,12 +6568,17 @@ async function loadDriverHome(){
     const r=rSnap.data();
     const d=document.getElementById('m-today-d'),rv=document.getElementById('m-today-r');
     if(d)d.textContent=r.deliveryQty;if(rv)rv.textContent=r.reverseQty;
-    // Mark confirmed
+    // Mark confirmed - show edit option
     const sw=document.getElementById('m-slide-wrap'),sd=document.getElementById('m-slide-done');
     if(sw)sw.style.display='none';if(sd)sd.style.display='block';
     const id=document.getElementById('m-in-d'),ir=document.getElementById('m-in-r');
     if(id)id.value=r.deliveryQty;if(ir)ir.value=r.reverseQty;
     mUpdateTotal();
+    // Show edit button
+    const editBtn = document.getElementById('m-edit-report-btn');
+    if(editBtn) editBtn.style.display='block';
+    const subBtn = document.getElementById('m-submit-btn');
+    if(subBtn){ subBtn.textContent='✏️ 修改回報'; subBtn.style.display='block'; }
   }
   // Month
   const mSnap=await getDoc(doc(db,'monthlyStats',`${CU.uid}_${MONTH}`));
@@ -6559,6 +6632,27 @@ async function submitReport(){
   const qd=+document.getElementById('m-in-d')?.value||0;
   const qr=+document.getElementById('m-in-r')?.value||0;
   if(qd===0&&qr===0){showToast('請填寫件數','err');return;}
+  // Allow re-submission (edit mode)
+  const existSnap = await getDoc(doc(db,'reports',CU.uid+'_'+TODAY));
+  if(existSnap.exists()){
+    const confirmed = await new Promise(resolve=>{
+      const m=document.createElement('div');
+      m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+      m.innerHTML='<div style="background:#0d0d0d;border:1px solid rgba(245,158,11,0.4);border-radius:12px;padding:24px;max-width:300px;width:100%;text-align:center">'
+        +'<div style="font-size:20px;margin-bottom:10px">✏️</div>'
+        +'<div style="font-weight:700;margin-bottom:8px">修改今日回報</div>'
+        +'<div style="font-size:12px;color:#94a3b8;margin-bottom:20px">今日已回報，確定要修改件數嗎？</div>'
+        +'<div style="display:flex;gap:8px">'
+        +'<button id="edit-cancel" class="btn btn-g" style="flex:1">取消</button>'
+        +'<button id="edit-confirm" class="btn" style="flex:1;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fbbf24">確認修改</button>'
+        +'</div></div>';
+      document.body.appendChild(m);
+      document.getElementById('edit-confirm').onclick=()=>{m.remove();resolve(true);};
+      document.getElementById('edit-cancel').onclick=()=>{m.remove();resolve(false);};
+      m.onclick=e=>{if(e.target===m){m.remove();resolve(false);}};
+    });
+    if(!confirmed) return;
+  }
   try {
     // Save today's report
     // Get photo evidence base64 if captured
