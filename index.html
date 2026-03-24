@@ -76,152 +76,95 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 /* ===== LOGIN ===== */
 #login-screen{
   position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-  background:#000;overflow:hidden;
+  padding:20px;background:#000814;overflow:hidden;
 }
+#login-screen.active,#login-screen[style*="flex"]{display:flex;}
+
+/* 背景動態網格 */
 #login-screen::before{
   content:'';position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,212,255,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 60% at 100% 100%, rgba(124,58,237,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 0% 60%, rgba(0,212,255,0.04) 0%, transparent 50%);
-  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+  background-size:40px 40px;
+  animation:gridMove 20s linear infinite;
 }
-/* Grid overlay */
-#login-screen::after{
-  content:'';position:absolute;inset:0;
-  background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
-  background-size:60px 60px;
-  pointer-events:none;
-}
-.login-screen-bg{
-  position:fixed;inset:0;overflow:hidden;z-index:0;
-  background:#000;
-}
-/* 動態粒子背景 */
-.login-particles{
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 80% 50% at 10% 60%, rgba(0,60,80,0.5) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 90% 20%, rgba(60,0,100,0.4) 0%, transparent 50%),
-    radial-gradient(ellipse 40% 60% at 50% 100%, rgba(0,30,60,0.3) 0%, transparent 50%);
-}
-.login-particles::before{
-  content:'';position:absolute;inset:0;
-  background-image:radial-gradient(circle, rgba(0,212,255,0.15) 1px, transparent 1px);
-  background-size:30px 30px;
-  animation:particleDrift 15s linear infinite;
-}
-.login-particles::after{
-  content:'';position:absolute;inset:0;
-  background-image:radial-gradient(circle, rgba(124,58,237,0.1) 1px, transparent 1px);
-  background-size:50px 50px;
-  animation:particleDrift 25s linear infinite reverse;
-}
-@keyframes particleDrift{
-  0%{transform:translate(0,0);}
-  100%{transform:translate(30px,30px);}
-}
-/* 掃描線效果 */
-.login-scan{
-  position:absolute;inset:0;
-  background:repeating-linear-gradient(
-    0deg,transparent,transparent 2px,
-    rgba(0,212,255,0.015) 2px,rgba(0,212,255,0.015) 4px
-  );
-  pointer-events:none;
-}
-/* 光暈 */
-.login-glow{
-  position:absolute;
-  width:600px;height:600px;
-  top:50%;left:50%;transform:translate(-50%,-50%);
-  background:radial-gradient(circle, rgba(0,212,255,0.04) 0%, transparent 70%);
-  animation:glowPulse 4s ease-in-out infinite;
-}
-@keyframes glowPulse{
-  0%,100%{opacity:0.5;transform:translate(-50%,-50%) scale(1);}
-  50%{opacity:1;transform:translate(-50%,-50%) scale(1.1);}
-}
+@keyframes gridMove{from{background-position:0 0;}to{background-position:40px 40px;}}
+
+.login-screen-bg{position:absolute;inset:0;pointer-events:none;}
+
 .login-box{
-  background:rgba(0,5,15,0.9);
-  border:1px solid rgba(0,212,255,0.25);
-  border-radius:20px;padding:40px 36px;
-  width:100%;max-width:400px;
-  backdrop-filter:blur(40px) saturate(1.5);
-  position:relative;z-index:1;overflow:hidden;
-  box-shadow:
-    0 0 0 1px rgba(0,212,255,0.05),
-    0 0 40px rgba(0,212,255,0.08),
-    0 0 80px rgba(124,58,237,0.05),
-    inset 0 1px 0 rgba(0,212,255,0.1);
-  animation:boxAppear 0.6s ease-out;
+  background:rgba(0,8,20,0.92);
+  border:1px solid rgba(0,212,255,0.2);
+  border-radius:20px;
+  padding:40px 32px;
+  width:100%;max-width:380px;
+  backdrop-filter:blur(20px);
+  position:relative;z-index:1;
+  box-shadow:0 0 60px rgba(0,212,255,0.06), 0 0 120px rgba(124,58,237,0.04);
+  animation:fadeUp 0.5s ease-out;
 }
-@keyframes boxAppear{
-  from{opacity:0;transform:translateY(20px);}
-  to{opacity:1;transform:translateY(0);}
-}
-/* 頂部光條 */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
 .login-box::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent 0%,rgba(0,212,255,0.8) 50%,transparent 100%);
-  animation:scanLine 3s ease-in-out infinite;
+  content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.6),transparent);
 }
-@keyframes scanLine{
-  0%{opacity:0.3;}50%{opacity:1;}100%{opacity:0.3;}
-}
-.login-box::after{
-  content:'';position:absolute;bottom:0;left:20%;right:20%;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(124,58,237,0.5),transparent);
-}
-.login-logo{text-align:center;margin-bottom:32px;}
+
+.login-logo{text-align:center;margin-bottom:28px;}
 .login-logo-icon{
-  width:76px;height:76px;margin:0 auto 16px;
-  background:linear-gradient(135deg,rgba(0,212,255,0.1),rgba(124,58,237,0.1));
-  border:1px solid rgba(0,212,255,0.3);
-  border-radius:20px;display:flex;align-items:center;justify-content:center;
-  font-size:34px;position:relative;
-  box-shadow:0 0 30px rgba(0,212,255,0.15),inset 0 0 20px rgba(0,212,255,0.05);
-  animation:iconFloat 4s ease-in-out infinite;
-}
-@keyframes iconFloat{
-  0%,100%{transform:translateY(0);box-shadow:0 0 30px rgba(0,212,255,0.15);}
-  50%{transform:translateY(-4px);box-shadow:0 8px 40px rgba(0,212,255,0.25);}
+  width:64px;height:64px;margin:0 auto 14px;
+  background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(124,58,237,0.12));
+  border:1px solid rgba(0,212,255,0.25);
+  border-radius:16px;display:flex;align-items:center;justify-content:center;
 }
 .login-title{
-  font-family:'Orbitron',monospace;font-size:24px;font-weight:900;
-  background:linear-gradient(135deg,#00d4ff 0%,#7c3aed 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  letter-spacing:4px;margin-bottom:4px;
+  font-family:'Orbitron',monospace;font-size:20px;font-weight:900;
+  background:linear-gradient(135deg,#00d4ff,#a78bfa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:3px;margin-bottom:4px;
 }
-.login-sub{
-  font-size:9px;color:rgba(0,212,255,0.45);
-  letter-spacing:5px;font-family:'JetBrains Mono',monospace;
-  text-transform:uppercase;
+.login-sub{font-size:10px;color:rgba(0,212,255,0.45);letter-spacing:3px;font-family:'JetBrains Mono',monospace;}
+.login-company{font-size:12px;color:var(--dim);margin-top:6px;}
+.login-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);margin:20px 0;}
+
+/* 輸入框 - 統一大小 */
+.f-grp{margin-bottom:16px;}
+.f-label{font-size:12px;color:#64748b;margin-bottom:6px;display:block;letter-spacing:0.5px;}
+.f-input{
+  width:100%;
+  padding:13px 16px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;
+  color:#e2e8f0;
+  font-size:15px;
+  box-sizing:border-box;
+  outline:none;
+  transition:border-color 0.2s, background 0.2s;
 }
-.login-company{
-  font-size:12px;color:rgba(148,163,184,0.7);
-  margin-top:8px;letter-spacing:1px;
+.f-input:focus{
+  border-color:rgba(0,212,255,0.4);
+  background:rgba(0,212,255,0.04);
 }
-.login-divider{
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.15),transparent);
-  margin:24px 0;
-}
+.f-input::placeholder{color:rgba(255,255,255,0.2);}
+
+.err-box{color:#f87171;font-size:12px;text-align:center;margin-bottom:12px;min-height:16px;}
+
 .btn-login{
   width:100%;padding:14px;margin-top:8px;
   background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.15));
   border:1px solid rgba(0,212,255,0.3);border-radius:10px;
-  color:var(--accent);font-size:14px;font-weight:700;
-  font-family:'Orbitron',monospace;letter-spacing:3px;
-  cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;
+  color:#00d4ff;font-family:'Orbitron',monospace;font-size:13px;
+  font-weight:700;letter-spacing:3px;cursor:pointer;
+  transition:all 0.2s;
+  box-shadow:0 0 20px rgba(0,212,255,0.08);
 }
-.btn-login::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(0,212,255,0.1),rgba(124,58,237,0.1));
-  opacity:0;transition:opacity 0.2s;
+.btn-login:hover{
+  background:linear-gradient(135deg,rgba(0,212,255,0.25),rgba(124,58,237,0.25));
+  box-shadow:0 0 30px rgba(0,212,255,0.15);
+  transform:translateY(-1px);
 }
-.btn-login:hover::before{opacity:1;}
-.btn-login:hover{border-color:rgba(0,212,255,0.6);box-shadow:0 0 20px rgba(0,212,255,0.2);}
 .btn-login:active{transform:scale(0.98);}
 .err-box{color:#f87171;font-size:12px;text-align:center;min-height:18px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;}
 .login-spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
@@ -418,6 +361,17 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 .btn-d{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;}
 .btn-g{background:transparent;border:1px solid var(--border);color:var(--mid);}
 .f-grp{margin-bottom:11px;}
+.f-group{margin-bottom:16px;}
+.f-label{font-size:12px;color:var(--dim);margin-bottom:6px;display:block;letter-spacing:0.5px;}
+.f-input{
+  width:100%;padding:14px 16px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:10px;color:var(--text);
+  font-size:15px;box-sizing:border-box;
+  transition:border-color 0.2s;outline:none;
+}
+.f-input:focus{border-color:rgba(0,212,255,0.5);background:rgba(0,212,255,0.05);}
 .f-lbl{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:4px;display:block;letter-spacing:0.5px;}
 .f-inp{width:100%;padding:8px 11px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:'Noto Sans TC',sans-serif;outline:none;transition:border-color 0.2s;}
 .f-inp:focus{border-color:rgba(0,212,255,0.45);}
@@ -510,48 +464,51 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 
 <!-- LOGIN -->
 <div id="login-screen">
-  <div class="login-screen-bg">
-    <div class="login-particles"></div>
-    <div class="login-scan"></div>
-    <div class="login-glow"></div>
-  </div>
   <div class="login-box">
-    <div class="login-logo">
-      <div class="login-logo-icon">
-  <svg viewBox="0 0 40 40" width="40" height="40" xmlns="http://www.w3.org/2000/svg">
-    <path d="M4 14 L4 28 L22 28 L22 14 Z" fill="#00d4ff" opacity="0.9"/>
-    <path d="M22 18 L22 28 L36 28 L36 22 L30 18 Z" fill="#7c3aed" opacity="0.9"/>
-    <rect x="24" y="19" width="10" height="7" rx="1" fill="#00d4ff" opacity="0.4"/>
-    <circle cx="10" cy="29" r="3.5" fill="#111" stroke="#00d4ff" stroke-width="1.5"/>
-    <circle cx="10" cy="29" r="1.2" fill="#00d4ff"/>
-    <circle cx="29" cy="29" r="3.5" fill="#111" stroke="#7c3aed" stroke-width="1.5"/>
-    <circle cx="29" cy="29" r="1.2" fill="#7c3aed"/>
-    <line x1="1" y1="18" x2="6" y2="18" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
-    <line x1="1" y1="22" x2="5" y2="22" stroke="#00d4ff" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
-  </svg>
-</div>
-      <div class="login-title">在地物流</div>
-      <div class="login-sub">MOBILE OFFICE SYSTEM</div>
-      <div class="login-company">在地物流有限公司</div>
-    </div>
-    <div class="login-divider"></div>
-    <div class="err-box" id="err-box"></div>
-    <div class="f-grp">
-      <label class="f-label">帳號 Email</label>
-      <input class="f-input" type="email" id="l-email" placeholder="your@email.com" autocomplete="email">
-    </div>
-    <div class="f-grp">
-      <label class="f-label">密碼</label>
-      <input class="f-input" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button class="btn-login" id="login-btn">LOGIN</button>
-    <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;">資料加密儲存於 Firebase · 台灣節點</div>
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);text-align:center">
-        <div style="font-size:11px;color:var(--dim);margin-bottom:10px">想加入我們的團隊？</div>
-        <button onclick="window.open('interview.html','_blank')" style="width:100%;padding:11px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);border-radius:8px;color:#a78bfa;font-size:13px;font-family:'Orbitron',monospace;letter-spacing:1px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(124,58,237,0.22)'" onmouseout="this.style.background='rgba(124,58,237,0.12)'">🤖 應徵面試入口</button>
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="width:72px;height:72px;margin:0 auto 16px;background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.15));border:1px solid rgba(0,212,255,0.3);border-radius:18px;display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 40 40" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 14 L4 28 L22 28 L22 14 Z" fill="#00d4ff" opacity="0.9"/>
+          <path d="M22 18 L22 28 L36 28 L36 22 L30 18 Z" fill="#7c3aed" opacity="0.9"/>
+          <rect x="24" y="19" width="10" height="7" rx="1" fill="#00d4ff" opacity="0.4"/>
+          <circle cx="10" cy="29" r="3.5" fill="#111" stroke="#00d4ff" stroke-width="1.5"/>
+          <circle cx="10" cy="29" r="1.2" fill="#00d4ff"/>
+          <circle cx="29" cy="29" r="3.5" fill="#111" stroke="#7c3aed" stroke-width="1.5"/>
+          <circle cx="29" cy="29" r="1.2" fill="#7c3aed"/>
+        </svg>
       </div>
+      <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:linear-gradient(135deg,#00d4ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px;margin-bottom:4px;">在地物流</div>
+      <div style="font-size:10px;color:rgba(0,212,255,0.5);letter-spacing:4px;font-family:'JetBrains Mono',monospace;">MOBILE OFFICE SYSTEM</div>
+      <div style="font-size:12px;color:var(--dim);margin-top:6px;">在地物流有限公司</div>
+    </div>
+
+    <!-- Error -->
+    <div class="err-box" id="err-box"></div>
+
+    <!-- Email -->
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:6px;letter-spacing:0.5px;">帳號 EMAIL</label>
+      <input style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#e2e8f0;font-size:15px;box-sizing:border-box;outline:none;" type="email" id="l-email" placeholder="your@email.com" autocomplete="email">
+    </div>
+
+    <!-- Password -->
+    <div style="margin-bottom:20px">
+      <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:6px;letter-spacing:0.5px;">密碼</label>
+      <input style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#e2e8f0;font-size:15px;box-sizing:border-box;outline:none;" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <!-- Login Button -->
+    <button class="btn-login" id="login-btn">LOGIN</button>
+
+    <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;">資料加密儲存於 Firebase · 台灣節點</div>
+
+    <!-- Interview link -->
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px;justify-content:center;">
+      <button onclick="window.open('./interview.html','_blank')" style="padding:7px 14px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:8px;font-size:12px;color:var(--accent);cursor:pointer">📋 線上面試</button>
+      <button onclick="window.open('./onboard.html','_blank')" style="padding:7px 14px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;font-size:12px;color:#a78bfa;cursor:pointer">📝 入職資料</button>
+    </div>
   </div>
-</div>
 
 <!-- APP -->
 
