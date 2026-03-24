@@ -53,6 +53,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
   position:fixed;inset:0;background:#000;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   z-index:9998;overflow:hidden;
+  transition:opacity 0.3s;
 }
 #loading-screen::before{
   content:'';position:absolute;inset:0;
@@ -942,9 +943,12 @@ onAuthStateChanged(auth, async user => {
     }
     ldMsg('建立介面...');
     await buildApp();
-    document.getElementById('loading-screen').style.display='none';
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app').style.display='block';
+    const _ld = document.getElementById('loading-screen');
+    const _ls = document.getElementById('login-screen');
+    const _ap = document.getElementById('app');
+    if(_ld){ _ld.style.display='none'; _ld.style.opacity='0'; }
+    if(_ls){ _ls.style.display='none'; _ls.style.opacity='0'; }
+    if(_ap){ _ap.style.display='block'; _ap.style.visibility='visible'; }
     _appReady = true;
   // Load shared API key from Firebase for all users
   try {
@@ -980,8 +984,10 @@ onAuthStateChanged(auth, async user => {
             }
             ldMsg('建立介面...');
             await buildApp();
-            document.getElementById('loading-screen').style.display='none';
-            document.getElementById('app').style.display='block';
+            const _ld2 = document.getElementById('loading-screen');
+            const _ap2 = document.getElementById('app');
+            if(_ld2){ _ld2.style.display='none'; }
+            if(_ap2){ _ap2.style.display='block'; }
             _appReady=true;
             clearTimeout(_hardTimeout);
           } else {
@@ -1065,6 +1071,7 @@ window.doLogout = async () => {
 // ── BUILD APP BY ROLE ─────────────────────────────────────
 async function buildApp() {
   const app = document.getElementById('app');
+  try {
   if (ROLE === 'driver') {
     app.innerHTML = buildDriverUI();
     initDriver();
@@ -1072,6 +1079,12 @@ async function buildApp() {
     app.innerHTML = buildDesktopUI();
     initDesktop();
     showPanel('dashboard');
+  }
+  } catch(buildErr) {
+    console.error('[buildApp] FATAL:', buildErr);
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('err-box').textContent = '載入失敗: ' + buildErr.message;
   }
   // Commander can switch to driver view
   if(ROLE === 'commander'){
