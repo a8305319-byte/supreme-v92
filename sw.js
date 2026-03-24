@@ -1,10 +1,11 @@
-const CACHE_NAME = 'v92-ghpages-v1';
+const CACHE_NAME = 'v92-ghpages-v3';
 const CACHED_URLS = [
-  '/',
   '/supreme-v92/',
   '/supreme-v92/interview.html',
   '/supreme-v92/onboard.html',
-  '/supreme-v92/manifest.json'
+  '/supreme-v92/manifest.json',
+  '/supreme-v92/icon-192.svg',
+  '/supreme-v92/icon-512.svg'
 ];
 
 // Install - cache core files
