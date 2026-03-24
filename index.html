@@ -1314,8 +1314,10 @@ window.toggleCard = (id, btn) => {
 };
 
 window.showPanel = function(id) {
-  // Stop realtime listener when leaving driver status panel
+  // Stop realtime listeners when leaving panels
   if(id !== 'driverstatus' && _driversUnsubscribe){ _driversUnsubscribe(); _driversUnsubscribe = null; }
+  if(id !== 'dashboard' && _realtimeUnsub){ _realtimeUnsub(); _realtimeUnsub = null; }
+
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const p = document.getElementById('panel-'+id);
@@ -1327,7 +1329,8 @@ window.showPanel = function(id) {
     vehicle:'車輛管理',announce:'公告管理',audit:'審計模組',commander:'Commander 控制台',profile:'個人設定',files:'檔案管理', driverstatus:'🚗 司機即時狀態'};
   const pt=document.getElementById('page-title');
   if(pt) pt.textContent=names[id]||id;
-  // load dynamic data
+
+  // Load dynamic data
   if(id==='dashboard') loadDashboard();
   if(id==='hr') loadHR();
   if(id==='operations') loadOperations();
@@ -1343,7 +1346,22 @@ window.showPanel = function(id) {
   if(id==='files'){ loadFiles(); loadUploadPersons(); }
   if(id==='attendance') loadAttendance();
   if(id==='driverstatus') loadDriverStatus();
-};
+  if(id==='commander'){
+    buildToggles(); loadInterviewQuestions();
+    setTimeout(()=>{ if(typeof initEmailJSSettings==='function') try{initEmailJSSettings();}catch(e){} initNotifySettings(); loadRatesUI(); }, 300);
+    setTimeout(()=>{
+      const hasKey = !!localStorage.getItem('V92_SECRET_KEY');
+      const status = document.getElementById('butler-status');
+      if(status){
+        if(!hasKey){
+          status.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#f87171"></div><span style="color:#f87171">需設定 API Key ↓</span>';
+        } else {
+          status.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse 2s infinite"></div><span style="color:#34d399">線上</span>';
+        }
+      }
+    }, 300);
+  }
+};;
 
 function initDesktop() {
   const d=new Date();
@@ -4232,27 +4250,7 @@ function setupDriverRealtime(drivers){
 
 // Clean up listener when leaving dashboard
 const _origShowPanel = window.showPanel;
-window.showPanel = function(id){
-  if(id !== 'dashboard' && _realtimeUnsub){
-    _realtimeUnsub();
-    _realtimeUnsub = null;
-  }
-  _origShowPanel(id);
-  if(id==='commander'){
-    setTimeout(()=>{ if(typeof initEmailJSSettings==='function') try{initEmailJSSettings();}catch(e){} initNotifySettings(); loadRatesUI(); }, 300);
-    // Check API key status
-    setTimeout(()=>{
-      const hasKey = !!localStorage.getItem('V92_SECRET_KEY');
-      const status = document.getElementById('butler-status');
-      if(status){
-        if(!hasKey){
-          status.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#f87171"></div><span style="color:#f87171">需設定 API Key ↓</span>';
-        } else {
-          status.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse 2s infinite"></div><span style="color:#34d399">線上</span>';
-        }
-      }
-    }, 300);buildToggles();loadInterviewQuestions();}
-};
+// showPanel merged above;
 
 // ── PDF 薪資明細匯出 ──────────────────────────────────────
 
