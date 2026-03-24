@@ -13,7 +13,7 @@
   
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23000'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='%2300d4ff' font-family='Arial' font-weight='bold'>V</text></svg>">
   <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23000'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='%2300d4ff' font-family='Arial' font-weight='bold'>V</text></svg>">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -40,36 +40,192 @@
   --accent:#0284c7;--accent2:#7c3aed;
 }
 /* 自動主題（依時間）會由 JS 動態切換 */
-body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;overflow-x:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;overflow-x:hidden;
+  padding-top:env(safe-area-inset-top);
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
 canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 
 /* ===== LOADING ===== */
-#loading-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;}
-.ld-logo{font-family:'Orbitron',monospace;font-size:20px;color:var(--accent);letter-spacing:3px;text-shadow:0 0 30px rgba(0,212,255,0.5);margin-bottom:8px;}
-.ld-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:28px;}
-.ld-bar{width:220px;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;overflow:hidden;}
-.ld-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:1px;animation:ldFill 1.8s ease forwards;}
-.ld-msg{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);margin-top:12px;letter-spacing:1px;}
-@keyframes ldFill{from{width:0}to{width:100%}}
-@keyframes ldHide{0%{opacity:1}100%{opacity:0;visibility:hidden;}}
+#loading-screen{
+  position:fixed;inset:0;background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9998;overflow:hidden;
+}
+#loading-screen::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,212,255,0.08) 0%, transparent 70%),
+             radial-gradient(ellipse 40% 40% at 20% 80%, rgba(124,58,237,0.06) 0%, transparent 60%);
+  pointer-events:none;
+}
+.ld-logo{
+  font-family:'Orbitron',monospace;font-size:28px;color:var(--accent);
+  letter-spacing:6px;text-shadow:0 0 40px rgba(0,212,255,0.6),0 0 80px rgba(0,212,255,0.2);
+  margin-bottom:6px;animation:ldPulse 2s ease-in-out infinite;
+}
+@keyframes ldPulse{0%,100%{opacity:1}50%{opacity:0.7}}
+.ld-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:4px;margin-bottom:32px;}
+.ld-bar{width:240px;height:1px;background:rgba(255,255,255,0.06);border-radius:1px;overflow:hidden;margin-bottom:12px;}
+.ld-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent),var(--accent2));background-size:200%;animation:ldFill 1.8s ease-out forwards,ldShimmer 1.5s ease-in-out 0.5s infinite;}
+@keyframes ldFill{from{width:0%}to{width:100%}}
+@keyframes ldShimmer{0%{background-position:100%}100%{background-position:-100%}}
+.ld-msg{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(100,116,139,0.8);letter-spacing:1px;}
 
 /* ===== LOGIN ===== */
-#login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:500;padding:20px;}
-.login-box{background:rgba(0,0,0,0.8);border:1px solid var(--border);border-radius:16px;padding:36px;width:100%;max-width:400px;backdrop-filter:blur(30px);position:relative;overflow:hidden;}
-.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.4),transparent);}
-.login-logo{text-align:center;margin-bottom:28px;}
-.login-title{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--accent);letter-spacing:3px;text-shadow:0 0 20px rgba(0,212,255,0.4);}
-.login-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-top:5px;letter-spacing:2px;}
-.err-box{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:9px 13px;font-size:12px;color:#f87171;margin-bottom:12px;display:none;}
-.f-label{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:4px;display:block;letter-spacing:1px;text-transform:uppercase;}
-.f-input{width:100%;padding:11px 13px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Noto Sans TC',sans-serif;outline:none;transition:all 0.2s;margin-bottom:14px;}
-.f-input:focus{border-color:rgba(0,212,255,0.5);background:rgba(0,212,255,0.04);}
-.btn-login{width:100%;padding:13px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.4);border-radius:8px;color:var(--accent);font-size:13px;font-family:'Orbitron',monospace;letter-spacing:2px;cursor:pointer;transition:all 0.2s;}
-.btn-login:hover{background:rgba(0,212,255,0.22);box-shadow:0 0 20px rgba(0,212,255,0.2);}
-.btn-login:disabled{opacity:0.4;cursor:not-allowed;}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+#login-screen{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  background:#000;overflow:hidden;
+}
+#login-screen::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,212,255,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 100% 100%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 0% 60%, rgba(0,212,255,0.04) 0%, transparent 50%);
+  pointer-events:none;
+}
+/* Grid overlay */
+#login-screen::after{
+  content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
+  background-size:60px 60px;
+  pointer-events:none;
+}
+.login-screen-bg{
+  position:fixed;inset:0;overflow:hidden;z-index:0;
+  background:#000;
+}
+/* 動態粒子背景 */
+.login-particles{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 60%, rgba(0,60,80,0.5) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 20%, rgba(60,0,100,0.4) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 60% at 50% 100%, rgba(0,30,60,0.3) 0%, transparent 50%);
+}
+.login-particles::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle, rgba(0,212,255,0.15) 1px, transparent 1px);
+  background-size:30px 30px;
+  animation:particleDrift 15s linear infinite;
+}
+.login-particles::after{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle, rgba(124,58,237,0.1) 1px, transparent 1px);
+  background-size:50px 50px;
+  animation:particleDrift 25s linear infinite reverse;
+}
+@keyframes particleDrift{
+  0%{transform:translate(0,0);}
+  100%{transform:translate(30px,30px);}
+}
+/* 掃描線效果 */
+.login-scan{
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    0deg,transparent,transparent 2px,
+    rgba(0,212,255,0.015) 2px,rgba(0,212,255,0.015) 4px
+  );
+  pointer-events:none;
+}
+/* 光暈 */
+.login-glow{
+  position:absolute;
+  width:600px;height:600px;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle, rgba(0,212,255,0.04) 0%, transparent 70%);
+  animation:glowPulse 4s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%,100%{opacity:0.5;transform:translate(-50%,-50%) scale(1);}
+  50%{opacity:1;transform:translate(-50%,-50%) scale(1.1);}
+}
+.login-box{
+  background:rgba(0,5,15,0.9);
+  border:1px solid rgba(0,212,255,0.25);
+  border-radius:20px;padding:40px 36px;
+  width:100%;max-width:400px;
+  backdrop-filter:blur(40px) saturate(1.5);
+  position:relative;z-index:1;overflow:hidden;
+  box-shadow:
+    0 0 0 1px rgba(0,212,255,0.05),
+    0 0 40px rgba(0,212,255,0.08),
+    0 0 80px rgba(124,58,237,0.05),
+    inset 0 1px 0 rgba(0,212,255,0.1);
+  animation:boxAppear 0.6s ease-out;
+}
+@keyframes boxAppear{
+  from{opacity:0;transform:translateY(20px);}
+  to{opacity:1;transform:translateY(0);}
+}
+/* 頂部光條 */
+.login-box::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,rgba(0,212,255,0.8) 50%,transparent 100%);
+  animation:scanLine 3s ease-in-out infinite;
+}
+@keyframes scanLine{
+  0%{opacity:0.3;}50%{opacity:1;}100%{opacity:0.3;}
+}
+.login-box::after{
+  content:'';position:absolute;bottom:0;left:20%;right:20%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(124,58,237,0.5),transparent);
+}
+.login-logo{text-align:center;margin-bottom:32px;}
+.login-logo-icon{
+  width:76px;height:76px;margin:0 auto 16px;
+  background:linear-gradient(135deg,rgba(0,212,255,0.1),rgba(124,58,237,0.1));
+  border:1px solid rgba(0,212,255,0.3);
+  border-radius:20px;display:flex;align-items:center;justify-content:center;
+  font-size:34px;position:relative;
+  box-shadow:0 0 30px rgba(0,212,255,0.15),inset 0 0 20px rgba(0,212,255,0.05);
+  animation:iconFloat 4s ease-in-out infinite;
+}
+@keyframes iconFloat{
+  0%,100%{transform:translateY(0);box-shadow:0 0 30px rgba(0,212,255,0.15);}
+  50%{transform:translateY(-4px);box-shadow:0 8px 40px rgba(0,212,255,0.25);}
+}
+.login-title{
+  font-family:'Orbitron',monospace;font-size:24px;font-weight:900;
+  background:linear-gradient(135deg,#00d4ff 0%,#7c3aed 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:4px;margin-bottom:4px;
+}
+.login-sub{
+  font-size:9px;color:rgba(0,212,255,0.45);
+  letter-spacing:5px;font-family:'JetBrains Mono',monospace;
+  text-transform:uppercase;
+}
+.login-company{
+  font-size:12px;color:rgba(148,163,184,0.7);
+  margin-top:8px;letter-spacing:1px;
+}
+.login-divider{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.15),transparent);
+  margin:24px 0;
+}
+.btn-login{
+  width:100%;padding:14px;margin-top:8px;
+  background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.15));
+  border:1px solid rgba(0,212,255,0.3);border-radius:10px;
+  color:var(--accent);font-size:14px;font-weight:700;
+  font-family:'Orbitron',monospace;letter-spacing:3px;
+  cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;
+}
+.btn-login::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(0,212,255,0.1),rgba(124,58,237,0.1));
+  opacity:0;transition:opacity 0.2s;
+}
+.btn-login:hover::before{opacity:1;}
+.btn-login:hover{border-color:rgba(0,212,255,0.6);box-shadow:0 0 20px rgba(0,212,255,0.2);}
+.btn-login:active{transform:scale(0.98);}
+.err-box{color:#f87171;font-size:12px;text-align:center;min-height:18px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;}
+.login-spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg)}}
+
 
 /* ===== APP LAYOUT ===== */
 #app{display:none;position:relative;z-index:1;}
@@ -315,6 +471,19 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 .sr-neg{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);}
 .sr-neu{background:rgba(0,0,0,0.2);border:1px solid var(--border);}
 .sr-tot{background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.2);}
+
+@media(max-width:360px){
+  body{font-size:13px;}
+  .stat-val{font-size:18px!important;}
+  .glass-card{padding:10px!important;}
+  .btn{padding:7px 10px!important;font-size:11px!important;}
+  .login-box{padding:24px 20px!important;}
+}
+@media(min-width:768px){
+  #driver-app .driver-nav{max-width:540px;margin:0 auto;}
+}
+/* 確保手機底部導航不被 home indicator 遮擋 */
+.driver-nav{padding-bottom:calc(8px + env(safe-area-inset-bottom));}
 </style>
 </head>
 <body>
@@ -331,19 +500,28 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 
 <!-- LOADING -->
 <div id="loading-screen" style="display:flex">
+  <div style="font-size:40px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(0,212,255,0.6))">🚛</div>
   <div class="ld-logo">在地物流</div>
-  <div class="ld-sub">ALPHA CORE v3.1.0</div>
+  <div class="ld-sub">SUPREME · V92 · ALPHA CORE</div>
   <div class="ld-bar"><div class="ld-fill"></div></div>
   <div class="ld-msg" id="ld-msg">初始化系統...</div>
 </div>
 
 <!-- LOGIN -->
 <div id="login-screen">
+  <div class="login-screen-bg">
+    <div class="login-particles"></div>
+    <div class="login-scan"></div>
+    <div class="login-glow"></div>
+  </div>
   <div class="login-box">
     <div class="login-logo">
+      <div class="login-logo-icon">🚚</div>
       <div class="login-title">在地物流</div>
-      <div class="login-sub">MOBILE OFFICE · ALPHA CORE</div>
+      <div class="login-sub">MOBILE OFFICE SYSTEM</div>
+      <div class="login-company">在地物流有限公司</div>
     </div>
+    <div class="login-divider"></div>
     <div class="err-box" id="err-box"></div>
     <div class="f-grp">
       <label class="f-label">帳號 Email</label>
@@ -1188,7 +1366,10 @@ window.showPanel = function(id) {
   if(id==='salary') initSalaryCalc();
   if(id==='insurance') initInsurance();
   if(id==='announce') loadAnnounceAdmin();
-  if(id==='audit') loadAudit();
+  if(id==='audit'){
+    if(ROLE !== 'commander'){ showPanel('dashboard'); showToast('審計模組僅限 Commander 存取','err'); return; }
+    loadAudit();
+  }
   if(id==='profile') loadProfile();
   if(id==='recruit'){ loadApplicants(); loadOnboardForms(); }
   if(id==='files'){ loadFiles(); loadUploadPersons(); }
@@ -2487,7 +2668,22 @@ function panelCommander(){return `
   </div>
 
     <!-- Email 設定 -->
-  
+  <div class="glass-card" style="margin-bottom:14px">
+    <div class="sh">
+      <div class="st">📧 面試者 Email 通知（Resend）</div>
+      <a href="https://resend.com" target="_blank" class="btn btn-g btn-sm">免費申請</a>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">
+      面試者建立帳號時自動發 Email（免費 3,000 封/月）<br>
+      申請後取得 <b>re_</b> 開頭的 API Key 填入
+    </div>
+    <div class="f-grp">
+      <label class="f-lbl">Resend API Key</label>
+      <input class="f-inp" id="resend-key" type="password" placeholder="re_xxxxxxxxxxxxxxxxx" autocomplete="off">
+    </div>
+    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveResendKey()">儲存</button>
+    <div id="resend-status" style="font-size:11px;margin-top:6px;color:var(--dim);text-align:center"></div>
+  </div>
 
   <div class="glass-card" style="border-color:rgba(245,158,11,0.2)">
     <div class="st" style="margin-bottom:14px;color:var(--yellow)">🔑 費率設定</div>
@@ -4075,7 +4271,7 @@ window.showPanel = function(id){
   }
   _origShowPanel(id);
   if(id==='commander'){
-    setTimeout(()=>{ initEmailJSSettings(); initNotifySettings(); loadRatesUI(); }, 300);
+    setTimeout(()=>{ if(typeof initEmailJSSettings==='function') try{initEmailJSSettings();}catch(e){} initNotifySettings(); loadRatesUI(); }, 300);
     // Check API key status
     setTimeout(()=>{
       const hasKey = !!localStorage.getItem('V92_SECRET_KEY');
@@ -6300,8 +6496,8 @@ function initNotifySettings(){
   const rk = localStorage.getItem('V92_RESEND_KEY');
   const ri = document.getElementById('resend-key');
   const rs = document.getElementById('resend-status');
-  if(ri && rk) ri.value = rk;
-  if(rs){ rs.style.color = rk?'#34d399':'#f87171'; rs.textContent = rk?'✅ 已設定':'⚠️ 未設定'; }
+  if(ri){ if(rk) ri.value = rk; }
+  if(rs){ rs.style.color = rk?'#34d399':'#f87171'; rs.textContent = rk?'✅ 已設定，可自動發信':'⚠️ 未設定（建立帳號將複製到剪貼板）'; }
   // LINE
   const lt = localStorage.getItem('V92_LINE_TOKEN');
   const li = document.getElementById('line-token');
