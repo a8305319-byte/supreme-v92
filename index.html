@@ -1981,7 +1981,7 @@ async function initInsurance(){
   const snap=await getDocs(collection(db,'users'));
   const sel=document.getElementById('ins-person');
   sel.innerHTML='<option value="">-- 請選擇 --</option>';
-  snap.docs.filter(d=>d.data().role==='driver'&&d.data().type==='employee').forEach(d=>{
+  snap.docs.filter(d=>d.data().role==='driver'&&d.data().status!=='resigned').forEach(d=>{
     sel.innerHTML+=`<option value="${d.id}">${d.data().name}</option>`;
   });
   buildGradeTable();
@@ -2126,7 +2126,7 @@ async function initSalaryCalc(){
   const sel=document.getElementById('sal-person');
   if(!sel)return;
   sel.innerHTML='<option value="">-- 選擇人員 --</option>';
-  snap.docs.filter(d=>d.data().role==='driver').forEach(d=>{
+  snap.docs.filter(d=>d.data().role==='driver'&&d.data().status!=='resigned').forEach(d=>{
     sel.innerHTML+=`<option value="${d.id}">${d.data().name}</option>`;
   });
   await loadSalaryList();
@@ -6849,7 +6849,17 @@ async function submitReport(){
     const mRef=doc(db,'monthlyStats',`${CU.uid}_${MONTH}`);
     const mSnap=await getDoc(mRef);
     if(mSnap.exists()){
-      await updateDoc(mRef,{totalDelivery:increment(qd),totalReverse:increment(qr),lastUpdated:serverTimestamp()});
+      // When editing, replace the counts (don't increment)
+      const prevRep = await getDoc(doc(db,'reports',`${CU.uid}_${TODAY}`));
+      const prevD = prevRep.exists() ? prevRep.data().deliveryQty||0 : 0;
+      const prevR = prevRep.exists() ? prevRep.data().reverseQty||0 : 0;
+      const curTotal = mSnap.data().totalDelivery||0;
+      const curTotalR = mSnap.data().totalReverse||0;
+      await updateDoc(mRef,{
+        totalDelivery: curTotal - prevD + qd,
+        totalReverse: curTotalR - prevR + qr,
+        lastUpdated:serverTimestamp()
+      });
     } else {
       const gross=qd*(CD.priceDelivery||50)+qr*(CD.priceReverse||35)+(CD.allowance||0);
       const net=gross-(CD.labourEmployee||0)-(CD.healthEmployee||0)-(CD.regularDeduct||0);
