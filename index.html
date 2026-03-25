@@ -50,7 +50,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 
 /* ===== LOADING ===== */
 #loading-screen{
-  position:fixed;inset:0;background:#000;
+  position:fixed;inset:0;background:#000;z-index:99;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   z-index:9998;overflow:hidden;
   transition:opacity 0.3s;
@@ -77,7 +77,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 /* ===== LOGIN ===== */
 #login-screen{
   position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-  padding:20px;background:#000814;overflow:hidden;
+  padding:20px;background:#000814;overflow:hidden;z-index:100;
 }
 #login-screen.active,#login-screen[style*="flex"]{display:flex;}
 
@@ -173,7 +173,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 
 
 /* ===== APP LAYOUT ===== */
-#app{display:none;position:relative;z-index:1;}
+#app{display:none;position:relative;z-index:10;min-height:100vh;}
 
 /* --- DESKTOP (Commander/Accountant) --- */
 .desktop-layout{display:flex;min-height:100vh;}
@@ -3283,8 +3283,8 @@ function panelProfile(){return `
   <div class="glass-card">
     <div class="sh"><div class="st">🔑 修改密碼</div></div>
     <div class="g2" style="gap:10px">
-      <div class="f-grp"><label class="f-lbl">新密碼</label><input class="f-inp" id="new-pass" type="password" placeholder="至少8位"></div>
-      <div class="f-grp"><label class="f-lbl">確認新密碼</label><input class="f-inp" id="confirm-pass" type="password" placeholder="再輸入一次"></div>
+      <div class="f-grp"><label class="f-lbl">新密碼</label><input class="f-inp" id="profile-new-pass" type="password" placeholder="至少8位"></div>
+      <div class="f-grp"><label class="f-lbl">確認新密碼</label><input class="f-inp" id="profile-confirm-pass" type="password" placeholder="再輸入一次"></div>
     </div>
     <button class="btn btn-p" style="width:100%" onclick="changePassword()">更新密碼</button>
     <div id="pass-msg" style="margin-top:8px;font-size:12px;font-family:'JetBrains Mono',monospace;display:none"></div>
@@ -3326,8 +3326,10 @@ window.savePhone=async()=>{
 
 window.changePassword=async()=>{
   const {updatePassword,reauthenticateWithCredential,EmailAuthProvider}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-  const newPass=document.getElementById('new-pass')?.value;
-  const confirm=document.getElementById('confirm-pass')?.value;
+  const newPass=document.getElementById('profile-new-pass')?.value||
+    document.getElementById('m-new-pass')?.value;
+  const confirm=document.getElementById('profile-confirm-pass')?.value||
+    document.getElementById('m-confirm-pass')?.value;
   const msgEl=document.getElementById('pass-msg');
   if(newPass!==confirm){showToast('兩次密碼不一致','err');return;}
   if(!newPass||newPass.length<8){showToast('密碼至少需要8位','err');return;}
