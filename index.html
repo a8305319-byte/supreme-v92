@@ -41,7 +41,7 @@
   --accent:#0284c7;--accent2:#7c3aed;
 }
 /* 自動主題（依時間）會由 JS 動態切換 */
-html,html,body{height:100%;width:100%;margin:0;padding:0;}
+html,html,body{height:100%;width:100%;margin:0;padding:0;}*,*::before,*::after{box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;overflow-x:hidden;
   padding-top:env(safe-area-inset-top);
   padding-left:env(safe-area-inset-left);
@@ -208,18 +208,18 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 .chip{display:flex;align-items:center;gap:6px;padding:5px 11px;background:var(--glass);border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'JetBrains Mono',monospace;backdrop-filter:blur(10px);}
 
 /* --- MOBILE (Driver) --- */
-.mobile-layout{max-width:480px;margin:0 auto;padding-bottom:72px;}
+.mobile-layout{width:100%;max-width:100%;margin:0;padding-bottom:calc(72px + env(safe-area-inset-bottom));min-height:100vh;}
 .mobile-topbar{position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;}
 .mobile-logo{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:var(--accent);letter-spacing:2px;}
 .mobile-user{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
 .mobile-logout{font-size:10px;color:var(--dim);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:'JetBrains Mono',monospace;}
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;width:100%;max-width:100%;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;}
 .bnav-tab{flex:1;min-width:0;}
 .bnav-tab{flex:1;padding:10px 0 8px;text-align:center;cursor:pointer;border:none;background:none;color:var(--dim);transition:all 0.2s;}
 .bnav-tab.active{color:var(--accent);}
 .bnav-icon{font-size:18px;display:block;}
 .bnav-label{font-size:9px;font-family:'JetBrains Mono',monospace;margin-top:2px;}
-.mobile-content{padding:14px;}
+.mobile-content{padding:14px;overflow-x:hidden;width:100%;}
 
 /* ===== RESPONSIVE: MOBILE / TABLET / DESKTOP ===== */
 
@@ -441,6 +441,13 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 }
 /* 確保手機底部導航不被 home indicator 遮擋 */
 .driver-nav{padding-bottom:calc(8px + env(safe-area-inset-bottom));}
+@media (max-width: 374px) {
+  .glass-card { padding: 12px; }
+  .g2 { grid-template-columns: 1fr; }
+  .g3 { grid-template-columns: 1fr 1fr; }
+  .bnav-label { font-size: 9px; }
+  .f-inp { font-size: 14px; }
+}
 </style>
 </head>
 <body>
@@ -491,17 +498,23 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
     <!-- Email -->
     <div style="margin-bottom:14px">
       <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:6px;letter-spacing:0.5px;">帳號 EMAIL</label>
-      <input style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#e2e8f0;font-size:15px;box-sizing:border-box;outline:none;" type="email" id="l-email" placeholder="your@email.com" autocomplete="email">
+      <input style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#e2e8f0;font-size:15px;box-sizing:border-box;outline:none;" type="email" id="l-email" placeholder="your@email.com" autocomplete="email" onkeydown="if(event.key==='Enter'){document.getElementById('l-pass').focus();}">
     </div>
 
     <!-- Password -->
     <div style="margin-bottom:20px">
       <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:6px;letter-spacing:0.5px;">密碼</label>
-      <input style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#e2e8f0;font-size:15px;box-sizing:border-box;outline:none;" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+      <div style="position:relative">
+        <input style="width:100%;padding:13px 44px 13px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#e2e8f0;font-size:15px;box-sizing:border-box;outline:none;" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+        <button onclick="const i=document.getElementById('l-pass');i.type=i.type==='password'?'text':'password'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;padding:4px">👁</button>
+      </div>
     </div>
 
     <!-- Login Button -->
     <button class="btn-login" id="login-btn">LOGIN</button>
+    <div style="text-align:center;margin-top:12px">
+      <button onclick="doForgotPassword()" style="background:none;border:none;color:rgba(0,212,255,0.5);font-size:11px;cursor:pointer;text-decoration:underline;font-family:'JetBrains Mono',monospace;">忘記密碼？</button>
+    </div>
 
     <!-- Interview link -->
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px;justify-content:center;">
@@ -1072,9 +1085,20 @@ window.doLogout = async () => {
 async function buildApp() {
   const app = document.getElementById('app');
   try {
+  // 首次登入歡迎引導
+  const isFirstLogin = !localStorage.getItem('v92_welcomed_' + CU.uid);
   if (ROLE === 'driver') {
     app.innerHTML = buildDriverUI();
     initDriver();
+    if(isFirstLogin){
+      localStorage.setItem('v92_welcomed_' + CU.uid, '1');
+      setTimeout(()=>{
+        showToast('👋 歡迎加入在地物流！請先完成打卡與件數設定');
+        // Highlight checkin button
+        const btn = document.getElementById('checkin-btn');
+        if(btn){ btn.style.animation='pulse 1s infinite'; setTimeout(()=>btn.style.animation='',5000); }
+      }, 1000);
+    }
   } else {
     app.innerHTML = buildDesktopUI();
     initDesktop();
@@ -1239,7 +1263,7 @@ window.saveDirectOnboard = async () => {
   const email = document.getElementById('do-email').value.trim();
   const msg = document.getElementById('do-msg');
   
-  if(!uid){ showToast('請填寫 Firebase UID','err'); return; }
+  // UID will be auto-generated by Cloud Function
   if(!name){ showToast('請填寫姓名','err'); return; }
   if(!email){ showToast('請填寫 Email','err'); return; }
 
@@ -1347,7 +1371,12 @@ window.showPanel = function(id) {
   if(id==='dashboard') loadDashboard();
   if(id==='hr') loadHR();
   if(id==='operations') loadOperations();
-  if(id==='salary') initSalaryCalc();
+  if(id==='salary'){
+    initSalaryCalc();
+    // Auto-load current month salary list
+    const finMonth = document.getElementById('fin-month');
+    if(finMonth) finMonth.value = MONTH;
+  }
   if(id==='insurance') initInsurance();
   if(id==='announce') loadAnnounceAdmin();
   if(id==='audit'){
@@ -1502,10 +1531,11 @@ function panelHR(){return `
     <div class="sh">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="st">👤 人員清冊</div>
-        <div style="display:flex;gap:5px">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-p btn-sm" id="hr-tab-active" onclick="loadHR('active')">在職</button>
           <button class="btn btn-g btn-sm" id="hr-tab-resigned" onclick="loadHR('resigned')">已離職</button>
           <button class="btn btn-g btn-sm" id="hr-tab-all" onclick="loadHR('all')">全部</button>
+          <input id="hr-search" class="f-inp" placeholder="搜尋姓名..." style="width:120px;padding:4px 8px;font-size:12px" oninput="filterHRTable(this.value)">
         </div>
       </div>
       ${ROLE==='commander'?`
@@ -1551,8 +1581,8 @@ function panelHR(){return `
             <option value="contractor">承攬</option>
           </select>
         </div>
-        <div class="f-grp"><label class="f-lbl">Firebase UID *</label>
-          <input class="f-inp" id="do-uid" placeholder="從 Firebase Console Authentication 複製">
+        <div class="f-grp" style="display:none"><label class="f-lbl">Firebase UID</label>
+          <input class="f-inp" id="do-uid" placeholder="自動產生">
         </div>
         <div class="f-grp"><label class="f-lbl">配送單價 ($)</label><input class="f-inp" id="do-price-d" type="number" value="50"></div>
         <div class="f-grp"><label class="f-lbl">逆物流單價 ($)</label><input class="f-inp" id="do-price-r" type="number" value="35"></div>
@@ -1776,6 +1806,11 @@ window.processResign = async () => {
       resignProcessedAt: serverTimestamp(),
       active: false
     });
+    // 嘗試透過 Cloud Function 停用帳號
+    try {
+      const disableUser = httpsCallable(fbFunctions, 'disableUser');
+      await disableUser({ uid: _resignUid, secret: 'supreme-v92-2026' });
+    } catch(e){ console.warn('[Resign] CF disable failed, manual disable needed:', e.message); }
 
     // Save resignation record
     await addDoc(collection(db,'resignations'), {
@@ -2553,7 +2588,10 @@ window.publishAnnounce=async()=>{
   if(!title||!body){showToast('請填寫標題和內容','err');return;}
   await addDoc(collection(db,'announcements'),{title,body,target,createdBy:CD.name||CU.email,createdAt:serverTimestamp()});
   await addAudit('PUBLISH',`發布公告：${title}`);
-  showToast('✓ 公告已發布');
+  showToast('📢 公告已發布！所有司機將會看到');
+  // Success animation on button
+  const pubBtn = document.querySelector('#panel-announce .btn-p');
+  if(pubBtn){ const orig=pubBtn.textContent; pubBtn.textContent='✅ 發布成功！'; pubBtn.style.background='rgba(16,185,129,0.2)'; setTimeout(()=>{ pubBtn.textContent=orig; pubBtn.style.background=''; },2000); }
   document.getElementById('ann-title').value='';
   document.getElementById('ann-body').value='';
   await loadAnnounceAdmin();
@@ -3684,11 +3722,27 @@ function buildDriverUI(){
       <!-- HOME -->
       <div class="panel active" id="panel-driver_home">
         <div class="glass-card" style="margin-bottom:14px">
-          <div style="font-size:19px;font-weight:700;margin-bottom:3px">${gstr}，${CD.name||'司機'}！</div>
-          <div style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} 星期${greeting[now.getDay()]}</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
-            <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:6px;font-size:11px;color:#34d399;font-family:'JetBrains Mono',monospace"><span style="width:5px;height:5px;border-radius:50%;background:#34d399;display:inline-block;animation:pulse 2s infinite"></span>在線中</div>
-            ${ROLE==='commander'?`<button onclick="switchToDesktop()" style="padding:5px 12px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer;font-family:'JetBrains Mono',monospace">🖥️ 返回管理端</button>`:''}
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:19px;font-weight:700;margin-bottom:3px">${gstr}，${CD.name||'司機'}！</div>
+              <div style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} 星期${greeting[now.getDay()]}</div>
+            </div>
+            ${ROLE==='commander'?`<button onclick="switchToDesktop()" style="padding:5px 12px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:6px;font-size:11px;color:var(--accent);cursor:pointer">🖥️ 管理端</button>`:''}
+          </div>
+          <!-- 今日進度 -->
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <div id="status-checkin" style="flex:1;text-align:center;padding:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px">
+              <div style="font-size:18px" id="checkin-icon">⏺</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px">打卡</div>
+            </div>
+            <div id="status-report" style="flex:1;text-align:center;padding:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px">
+              <div style="font-size:18px" id="report-icon">⏺</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px">回報</div>
+            </div>
+            <div id="status-payslip" style="flex:1;text-align:center;padding:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px">
+              <div style="font-size:18px" id="payslip-icon">💰</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px">薪資單</div>
+            </div>
           </div>
         </div>
         <!-- 簽到卡片 -->
@@ -3740,9 +3794,11 @@ function buildDriverUI(){
       <div class="panel" id="panel-driver_report">
         <div class="glass-card" style="margin-bottom:14px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-            <span style="font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace">📦 今日件數回報</span>
+            <span style="font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace">📦 件數回報</span>
             <div style="display:flex;gap:8px;align-items:center">
-              <span style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">${TODAY}</span>
+              <input type="date" id="report-date-sel" value="${TODAY}" max="${TODAY}"
+                style="padding:4px 8px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace"
+                onchange="window._reportDate=this.value">
               <button onclick="document.getElementById('report-photo-input').click()" 
                 style="padding:6px 12px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.35);border-radius:7px;color:#a78bfa;font-size:11px;cursor:pointer;font-family:'JetBrains Mono',monospace">
                 📷 掃描截圖
@@ -3778,7 +3834,13 @@ function buildDriverUI(){
       </div>
       <!-- SALARY -->
       <div class="panel" id="panel-driver_salary">
-        <div class="glass-card" id="m-salary-detail">
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+        <label style="font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace">查詢月份</label>
+        <input type="month" id="driver-sal-month" class="f-inp" style="width:150px;padding:6px 10px;font-size:12px">
+        <button class="btn btn-p btn-sm" onclick="loadDriverPayslip(document.getElementById('driver-sal-month').value)">查詢</button>
+      </div>
+      <div id="driver-payslip-detail"></div>
+      <div class="glass-card" id="m-salary-detail">
           <div style="text-align:center;padding:20px;color:var(--dim);font-size:12px;font-family:'JetBrains Mono',monospace">載入中...</div>
         </div>
       </div>
@@ -3882,10 +3944,8 @@ ${CD?.name?.[0]||'?'}
         </span>
         <span class="bnav-label">薪資單</span>
       </button>
-      <button class="bnav-tab" onclick="showDriverPanel('driver_announce',this)"><span class="bnav-icon">📢</span><span class="bnav-label">公告</span></button>
-      <button class="bnav-tab" onclick="showDriverPanel('driver_mission',this)"><span class="bnav-icon">📦</span><span class="bnav-label">任務</span></button>
+      <button class="bnav-tab" onclick="showDriverPanel('driver_announce',this)"><span class="bnav-icon" id="ann-nav-icon">📢</span><span class="bnav-label">公告</span></button>
       <button class="bnav-tab" onclick="showDriverPanel('driver_cs',this)"><span class="bnav-icon">💬</span><span class="bnav-label">客服</span></button>
-      <button class="bnav-tab" onclick="showDriverPanel('driver_profile',this)"><span class="bnav-icon">👤</span><span class="bnav-label">設定</span></button>
     </div>
   </div>`;
 }
@@ -3990,9 +4050,28 @@ const CS_SYSTEM_PROMPT = `你是在地物流有限公司的智慧客服助理，
 async function initCSChat() {
   if (csInitialized) return;
   csInitialized = true;
-  csHistory = [];
+  // 載入本地對話紀錄
+  const savedHistory = localStorage.getItem('v92_cs_history');
+  csHistory = savedHistory ? JSON.parse(savedHistory) : [];
   csRepeatTracker = {};
   csEscalated = false;
+
+  // 如果有歷史紀錄，先還原
+  const box = document.getElementById('cs-chat-box');
+  if(csHistory.length > 0 && box){
+    box.innerHTML = '';
+    csHistory.slice(-10).forEach(msg => {
+      const role = msg.role === 'user' ? 'user' : 'agent';
+      const text = msg.parts?.[0]?.text || '';
+      if(text) addCSMsg(role, text);
+    });
+    const divider = document.createElement('div');
+    divider.style.cssText = 'text-align:center;font-size:10px;color:var(--dim);padding:8px;font-family:JetBrains Mono,monospace';
+    divider.textContent = '── 以上為歷史紀錄 ──';
+    box.appendChild(divider);
+    box.scrollTop = box.scrollHeight;
+    return; // 不再顯示歡迎訊息
+  }
 
   // Welcome message
   const greetings = [
@@ -4111,6 +4190,8 @@ window.sendCSMessage = async function sendCSMessage() {
 
     // Save conversation
     await saveCSSession(text, reply);
+    // 儲存對話紀錄到本地（最近20條）
+    localStorage.setItem('v92_cs_history', JSON.stringify(csHistory.slice(-20)));
   } catch(e) {
     addCSMsg('agent', '不好意思，我這邊網路有點問題，可以稍後再試嗎？');
   }
@@ -4380,6 +4461,11 @@ function updateCheckinUI(isIn, inTime, outTime){
   }
   if(status) status.textContent = isIn ? '● 上班中' : '○ 已下班';
   if(status) status.style.color = isIn ? '#34d399' : '#64748b';
+  // Update status icon
+  const ci = document.getElementById('checkin-icon');
+  const sc = document.getElementById('status-checkin');
+  if(ci) ci.textContent = isIn ? '✅' : (outTime ? '✅' : '⏺');
+  if(sc && isIn){ sc.style.background='rgba(16,185,129,0.1)'; sc.style.borderColor='rgba(16,185,129,0.3)'; }
   if(inEl && inTime) inEl.textContent = '上班：'+inTime;
   if(outEl && outTime) outEl.textContent = '下班：'+outTime;
 }
@@ -4753,6 +4839,10 @@ function listenPayslips(){
           if(ch.type==='added'){
             const d = ch.doc.data();
             showToast('💰 新薪資單到了！'+d.month+' 實發 $'+(d.netIncome||0).toLocaleString());
+            const pi = document.getElementById('payslip-icon');
+            const sp = document.getElementById('status-payslip');
+            if(pi) pi.textContent='🔔';
+            if(sp){ sp.style.background='rgba(248,113,113,0.1)'; sp.style.borderColor='rgba(248,113,113,0.3)'; }
           }
         });
       }
@@ -4901,7 +4991,9 @@ window.acknowledgePayslip = async (month, isOk) => {
         driverNote: note||'',
         read: true
       });
-      showToast('✓ 薪資單已簽收確認');
+      showToast('✅ 薪資單已簽收！謝謝確認');
+      // Reload payslip to show confirmed state
+      setTimeout(()=>loadDriverPayslip(month), 500);
     } else {
       await updateDoc(psRef,{
         disputed: true,
@@ -6722,8 +6814,61 @@ function v92Confirm(title, msg, confirmText='確認', confirmColor='#f87171', ca
   });
 }
 
+window.doForgotPassword = async () => {
+  const email = document.getElementById('l-email')?.value.trim();
+  if(!email){ showErr('請先填寫帳號 Email'); return; }
+  try {
+    const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    await sendPasswordResetEmail(auth, email);
+    const errBox = document.getElementById('err-box');
+    if(errBox){ errBox.style.color='#34d399'; errBox.textContent='✅ 重設密碼信已發送，請查收 Email'; errBox.style.display='block'; }
+  } catch(e) {
+    showErr('發送失敗：' + (e.code==='auth/user-not-found'?'找不到此帳號':e.message));
+  }
+};
+
+window.filterHRTable = (query) => {
+  const rows = document.querySelectorAll('#hr-table tbody tr');
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+  });
+};
+
+// ── 網路狀態監聽 ─────────────────────────────────────────
+window.addEventListener('online', () => {
+  showToast('✅ 網路已恢復連線');
+  // Reload current data
+  if(ROLE === 'driver') loadDriverHome();
+  else loadDashboard();
+});
+window.addEventListener('offline', () => {
+  const t = document.getElementById('toast');
+  if(t){ t.textContent='⚠️ 網路已斷線，部分功能暫時無法使用'; t.className='toast-err'; t.style.opacity=1; }
+});
+
 async function initDriver(){
   await loadDriverHome();
+  // Set salary month picker to current month
+  const salMonthPicker = document.getElementById('driver-sal-month');
+  if(salMonthPicker) salMonthPicker.value = MONTH;
+  // Check unread announcements
+  setTimeout(async()=>{
+    const readKey = 'v92_read_ann_' + (CU?.uid||'');
+    const readIds = JSON.parse(localStorage.getItem(readKey)||'[]');
+    const annSnap = await getDocs(query(collection(db,'announcements'),orderBy('createdAt','desc'),limit(5)));
+    const unread = annSnap.docs.filter(d=>{
+      const t=d.data().target;
+      return (t==='all'||t==='driver') && !readIds.includes(d.id);
+    }).length;
+    if(unread > 0){
+      const icon = document.getElementById('ann-nav-icon');
+      if(icon) icon.textContent = '📢';
+      const tab = document.querySelector('.bnav-tab[onclick*="driver_announce"]');
+      if(tab) tab.style.position = 'relative';
+      showToast('📢 有 '+unread+' 則新公告');
+    }
+  }, 1500);
   checkUnreadPayslips();
   listenPayslips();
   await loadCheckinStatus();
@@ -6748,6 +6893,11 @@ async function loadDriverHome(){
     // Mark confirmed - show edit option
     const sw=document.getElementById('m-slide-wrap'),sd=document.getElementById('m-slide-done');
     if(sw)sw.style.display='none';if(sd)sd.style.display='block';
+    // Update status icon
+    const reportIcon = document.getElementById('report-icon');
+    const statusReport = document.getElementById('status-report');
+    if(reportIcon) reportIcon.textContent='✅';
+    if(statusReport){ statusReport.style.background='rgba(16,185,129,0.1)'; statusReport.style.borderColor='rgba(16,185,129,0.3)'; }
     const id=document.getElementById('m-in-d'),ir=document.getElementById('m-in-r');
     if(id)id.value=r.deliveryQty;if(ir)ir.value=r.reverseQty;
     mUpdateTotal();
@@ -6839,14 +6989,16 @@ async function submitReport(){
     const photoData = window._reportPhotoData || null;
     window._reportPhotoData = null; // clear after use
 
-    await setDoc(doc(db,'reports',`${CU.uid}_${TODAY}`),{
-      uid:CU.uid,name:CD.name,date:TODAY,month:MONTH,
+    const reportDate = window._reportDate || TODAY;
+    const reportMonth = reportDate.slice(0,7);
+    await setDoc(doc(db,'reports',`${CU.uid}_${reportDate}`),{
+      uid:CU.uid,name:CD.name,date:reportDate,month:reportMonth,
       deliveryQty:qd,reverseQty:qr,confirmedAt:serverTimestamp(),
       photoEvidence: photoData ? true : false,
       photoBase64: photoData || null
     });
     // Update monthly stats (upsert)
-    const mRef=doc(db,'monthlyStats',`${CU.uid}_${MONTH}`);
+    const mRef=doc(db,'monthlyStats',`${CU.uid}_${reportMonth}`);
     const mSnap=await getDoc(mRef);
     if(mSnap.exists()){
       // When editing, replace the counts (don't increment)
@@ -6911,15 +7063,29 @@ async function loadDriverSalary(){
 }
 
 async function loadDriverAnnounce(){
+  // Track read announcements
+  const readKey = 'v92_read_ann_' + (CU?.uid||'');
+  const readIds = JSON.parse(localStorage.getItem(readKey)||'[]');
   const snap=await getDocs(query(collection(db,'announcements'),orderBy('createdAt','desc'),limit(10)));
   const el=document.getElementById('m-ann-list');
   if(!el)return;
   if(snap.empty){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--dim);font-size:12px">目前無公告</div>';return;}
-  el.innerHTML=snap.docs.filter(d=>{const t=d.data().target;return t==='all'||t==='driver';}).map(d=>{
+  const filtered = snap.docs.filter(d=>{const t=d.data().target;return t==='all'||t==='driver';});
+  // Mark all as read
+  const newReadIds = [...new Set([...readIds, ...filtered.map(d=>d.id)])];
+  localStorage.setItem(readKey, JSON.stringify(newReadIds));
+  // Update bottom nav badge
+  const annTab = document.querySelector('.bnav-tab[onclick*="driver_announce"]');
+  if(annTab) annTab.querySelector('.bnav-icon').textContent = '📢';
+  el.innerHTML=filtered.map(d=>{
     const a=d.data();
     const date=a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString('zh-TW'):'';
-    return `<div class="glass-card" style="margin-bottom:10px">
-      <div style="font-size:14px;font-weight:600;margin-bottom:6px">${a.title}</div>
+    const isNew = !readIds.includes(d.id);
+    return `<div class="glass-card" style="margin-bottom:10px;${isNew?'border-color:rgba(0,212,255,0.4)':''}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="font-size:14px;font-weight:600;flex:1">${a.title}</div>
+        ${isNew?'<span style="font-size:10px;padding:2px 7px;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);border-radius:4px;color:var(--accent);font-family:JetBrains Mono,monospace">NEW</span>':''}
+      </div>
       <div style="font-size:12.5px;color:var(--mid);line-height:1.7">${a.body}</div>
       <div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:'JetBrains Mono',monospace">${date} · ${a.createdBy||''}</div>
     </div>`;
