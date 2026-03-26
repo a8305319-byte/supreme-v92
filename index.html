@@ -2,11 +2,11 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-  
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+  <script>
     // 初始化 EmailJS
     (function(){
-      const key = localStorage.getItem('V92_EMAILJS_KEY');
-      if(key) emailjs.init({publicKey: key});
+      
     })();
   </script>
   
@@ -50,7 +50,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 
 /* ===== LOADING ===== */
 #loading-screen{
-  position:fixed;inset:0;background:#000;z-index:99;
+  position:fixed;inset:0;background:#000;z-index:9998;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   z-index:9998;overflow:hidden;
   transition:opacity 0.3s;
@@ -77,7 +77,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 /* ===== LOGIN ===== */
 #login-screen{
   position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-  padding:20px;background:#000814;overflow:hidden;z-index:100;
+  padding:20px;background:#000814;overflow:hidden;z-index:9997;
 }
 #login-screen.active,#login-screen[style*="flex"]{display:flex;}
 
@@ -215,7 +215,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;}
 .bnav-tab{flex:1;min-width:0;}
 .bnav-tab{flex:1;padding:10px 0 8px;text-align:center;cursor:pointer;border:none;background:none;color:var(--dim);transition:all 0.2s;}
-.bnav-tab.active{color:var(--accent);background:rgba(0,212,255,0.1);border-top:2px solid var(--accent);}
+.bnav-tab.active{color:var(--accent);}
 .bnav-icon{font-size:18px;display:block;}
 .bnav-label{font-size:9px;font-family:'JetBrains Mono',monospace;margin-top:2px;}
 .mobile-content{padding:14px;}
@@ -638,15 +638,10 @@ window.addEventListener('beforeinstallprompt', (e) => {
   _deferredInstall = e;
   // Show banner after 3s if not dismissed
   if(!localStorage.getItem('pwa-dismissed') && !_appReady){
-    // 第2次使用才提示安裝
-    const visitCount = parseInt(localStorage.getItem('v92_visit_count')||'0') + 1;
-    localStorage.setItem('v92_visit_count', visitCount);
-    if(visitCount >= 2){
-      setTimeout(()=>{
-        const b = document.getElementById('pwa-banner');
-        if(b) b.style.display='block';
-      }, 5000);
-    }
+    setTimeout(()=>{
+      const b = document.getElementById('pwa-banner');
+      if(b) b.style.display='block';
+    }, 3000);
   }
 });
 
@@ -680,12 +675,10 @@ let _pullStartY = 0;
 let _pulling = false;
 const PULL_THRESHOLD = 80;
 
-let _pullStartTime = 0;
 document.addEventListener('touchstart', (e) => {
   const scrollEl = document.querySelector('.mobile-content');
   if(scrollEl && scrollEl.scrollTop === 0){
     _pullStartY = e.touches[0].clientY;
-    _pullStartTime = Date.now();
     _pulling = true;
   }
 }, { passive: true });
@@ -715,9 +708,7 @@ document.addEventListener('touchend', async (e) => {
   const icon = document.getElementById('pull-icon');
   const text = document.getElementById('pull-text');
 
-  const pullDuration = Date.now() - _pullStartTime;
-  const pullSpeed = delta / pullDuration; // px/ms
-  if(delta > PULL_THRESHOLD && pullSpeed > 0.3){ // 需要足夠速度才觸發
+  if(delta > PULL_THRESHOLD){
     // Trigger refresh
     if(pullEl){ pullEl.style.transform='translateY(0)'; pullEl.style.transition='transform 0.2s'; }
     if(icon) icon.textContent = '⟳';
@@ -882,31 +873,31 @@ const MOD_PERMS = {
 const MODS_COMMANDER = [
   {id:'dashboard', icon:'⬡', name:'總覽儀表板', section:'核心'},
   {id:'recruit',   icon:'🤖', name:'招募',    section:'人員管理'},
-  {id:'hr',        icon:'👤', name:'員工管理',   section:'人員管理'},
+  {id:'hr',        icon:'👤', name:'人事模組',   section:'人員管理'},
   {id:'attendance',icon:'📅', name:'出勤模組',   section:'人員管理'},
   {id:'insurance', icon:'🛡️', name:'勞健保',     section:'財務薪資'},
   {id:'salary',    icon:'💰', name:'薪資模組',   section:'財務薪資'},
   {id:'finance',   icon:'📊', name:'財務模組',   section:'財務薪資'},
-  {id:'operations',   icon:'📦', name:'調度管理',   section:'作業'},
+  {id:'operations',   icon:'📦', name:'營運模組',   section:'作業'},
   {id:'driverstatus', icon:'🚗', name:'司機即時狀態', section:'作業'},
   {id:'vehicle',   icon:'🚛', name:'車輛管理',   section:'作業'},
   {id:'announce',  icon:'📢', name:'公告管理',   section:'作業'},
   {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
   {id:'commander', icon:'⚙️', name:'Commander',  section:'系統'},
-  {id:'files',     icon:'📁', name:'文件管理',   section:'系統'},
-  {id:'files',     icon:'📁', name:'文件管理',   section:'系統'},
+  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
+  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
   {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
 
 const MODS_ACCOUNTANT = [
   {id:'dashboard', icon:'⬡', name:'總覽儀表板', section:'核心'},
-  {id:'hr',        icon:'👤', name:'員工管理',   section:'人員管理'},
+  {id:'hr',        icon:'👤', name:'人事模組',   section:'人員管理'},
   {id:'attendance',icon:'📅', name:'出勤模組',   section:'人員管理'},
   {id:'insurance', icon:'🛡️', name:'勞健保',     section:'財務薪資'},
   {id:'salary',    icon:'💰', name:'薪資模組',   section:'財務薪資'},
   {id:'finance',   icon:'📊', name:'財務模組',   section:'財務薪資'},
   {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
-  {id:'files',     icon:'📁', name:'文件管理',   section:'系統'},
+  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
   {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
 
@@ -1268,8 +1259,6 @@ window.saveDirectOnboard = async () => {
   if(!name){ showToast('請填寫姓名','err'); return; }
   if(!email){ showToast('請填寫 Email','err'); return; }
 
-  const gradeIdx = parseInt(document.getElementById('do-grade')?.value ?? -1);
-  const grade = gradeIdx >= 0 ? GRADES[gradeIdx] : null;
   const data = {
     name, email,
     phone: document.getElementById('do-phone').value||'',
@@ -1283,12 +1272,6 @@ window.saveDirectOnboard = async () => {
     licenseType: document.getElementById('do-license-type').value,
     licenseExpiry: document.getElementById('do-license-exp').value,
     insuranceExpiry: document.getElementById('do-ins-exp').value,
-    gradeIdx: gradeIdx >= 0 ? gradeIdx : undefined,
-    labourEmployee: grade ? grade[2] : 0,
-    labourEmployer: grade ? grade[3] : 0,
-    healthEmployee: grade ? grade[4] : 0,
-    healthEmployer: grade ? grade[5] : 0,
-    insuredSalary: grade ? grade[1] : 0,
     onboardedDirectly: true,
     onboardedAt: serverTimestamp(),
     onboardedBy: CD?.name||'Commander',
@@ -1597,12 +1580,6 @@ function panelHR(){return `
         <div class="f-grp"><label class="f-lbl">逆物流單價 ($)</label><input class="f-inp" id="do-price-r" type="number" value="35"></div>
         <div class="f-grp"><label class="f-lbl">津貼 ($)</label><input class="f-inp" id="do-allowance" type="number" value="2000"></div>
         <div class="f-grp"><label class="f-lbl">代扣費用 ($)</label><input class="f-inp" id="do-deduct" type="number" value="500"></div>
-        <div class="f-grp"><label class="f-lbl">勞健保級距</label>
-          <select class="f-inp" id="do-grade">
-            <option value="-1">承攬（免勞健保）</option>
-            ${GRADES.map((g,i)=>`<option value="${i}">第${g[0]}級 $${g[1].toLocaleString()} 員工扣$${g[2]+g[4]}</option>`).join('')}
-          </select>
-        </div>
         <div class="f-grp"><label class="f-lbl">駕照類別</label>
           <select class="f-inp" id="do-license-type">
             <optgroup label="── 職業駕照 ──">
@@ -2464,7 +2441,6 @@ function panelOperations(){return `
         <div style="display:flex;gap:8px">
           <button class="btn btn-p btn-sm" onclick="loadMissionMap()">重新整理地圖</button>
           <button class="btn btn-s btn-sm" onclick="runGlobalRouteOptimize()">⚡ 全域路線優化</button>
-          <button class="btn btn-p btn-sm" onclick="showAssignDriverPicker()">📦 指派任務給司機</button>
         </div>
       </div>
       <!-- Date picker -->
@@ -2731,8 +2707,21 @@ function panelCommander(){return `
       申請後取得 <b>re_</b> 開頭的 API Key 填入
     </div>
     <div class="f-grp">
-      <label class="f-lbl">Resend API Key</label>
-      <input class="f-inp" id="resend-key" type="password" placeholder="re_xxxxxxxxxxxxxxxxx" autocomplete="off">
+      <label class="f-lbl">🌙 靜默時段（防打擾）</label>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:11px;color:var(--dim)">晚上</span>
+            <input class="f-inp" id="silent-start-inp" type="number" min="0" max="23"
+              style="width:56px;padding:6px 8px" placeholder="22"
+              oninput="localStorage.setItem('v92_silent_start',this.value)">
+            <span style="font-size:11px;color:var(--dim)">點 ～ 早上</span>
+            <input class="f-inp" id="silent-end-inp" type="number" min="0" max="23"
+              style="width:56px;padding:6px 8px" placeholder="7"
+              oninput="localStorage.setItem('v92_silent_end',this.value)">
+            <span style="font-size:11px;color:var(--dim)">點 不觸發通知</span>
+          </div>
+        </div>
+        <div class="f-grp"><label class="f-lbl">Resend API Key</label>
+          <input class="f-inp" id="resend-key" type="password" placeholder="re_xxxxxxxxxxxxxxxxx" autocomplete="off">
     </div>
     <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="saveResendKey()">儲存</button>
     <div id="resend-status" style="font-size:11px;margin-top:6px;color:var(--dim);text-align:center"></div>
@@ -4166,7 +4155,27 @@ function detectEscalation(message) {
   return isAngry || isRepeated;
 }
 
-window.sendCSMessage = async function sendCSMessage() {
+window.sendCSMessage = async // 阿智 FAQ 知識庫（可在 Commander 後台擴充）
+const CS_FAQ = [
+  { keywords:['客戶不在','沒人在家','無人在家'], answer:'客戶不在時：請拍照存證後依公司規定重新配送或聯繫客服。若無特殊指示，可依排班系統的備用流程處理。' },
+  { keywords:['油資','油費','怎麼算','補貼'], answer:'油資補貼依月底統計里程計算，請確保每日打卡時有拍攝儀表板里程照片，以便月底核算。' },
+  { keywords:['請假','假','排休','休假'], answer:'請假請提前 3 個工作日在系統中申請，緊急狀況請致電主管。請假不影響已分配的任務，系統會自動重新分派。' },
+  { keywords:['薪資','薪水','領薪','發薪'], answer:'薪資於每月 5 日前發放，電子薪資單會寄送至您的 Email。如有疑問請在薪資單上按「有異議」，行政人員將在 2 個工作日內處理。' },
+  { keywords:['任務','派件','配送','送貨'], answer:'今日任務請在首頁的任務清單查看，按地址旁的🗺可一鍵開啟 Google Maps 導航。完成後請按「已送達」更新狀態。' },
+  { keywords:['帳號','密碼','登入','忘記'], answer:'如忘記密碼請使用登入頁面的「忘記密碼」功能重設，或聯繫行政人員協助。' },
+];
+
+function checkCSFAQ(text) {
+  const lower = text.toLowerCase();
+  for(const faq of CS_FAQ) {
+    if(faq.keywords.some(k => text.includes(k) || lower.includes(k.toLowerCase()))) {
+      return faq.answer;
+    }
+  }
+  return null;
+}
+
+async function sendCSMessage() {
   const input = document.getElementById('cs-input');
   const text = input?.value.trim();
   if (!text) return;
@@ -4174,6 +4183,16 @@ window.sendCSMessage = async function sendCSMessage() {
 
   addCSMsg('user', text);
   csHistory.push({ role: 'user', parts: [{ text }] });
+
+  // ★ 先查 FAQ 知識庫
+  const faqAnswer = checkCSFAQ(text);
+  if(faqAnswer) {
+    setTimeout(() => {
+      addCSMsg('assistant', '📚 ' + faqAnswer + '\n\n_（如需進一步協助，請繼續詢問）_');
+      csHistory.push({ role: 'model', parts: [{ text: faqAnswer }] });
+    }, 400);
+    return;
+  }
 
   // Check escalation (silent)
   if (detectEscalation(text) && !csEscalated) {
@@ -4449,11 +4468,14 @@ async function checkInDriver(){
     showToast('✓ 下班打卡：'+timeStr);
     updateCheckinUI(false, ciSnap.data().checkedInTime, timeStr);
   } else {
-    // Check in
+    // Check in - 先拍車況照片
+    const photoB64 = await captureVehiclePhoto();
     await setDoc(ciRef,{
       uid:CU.uid, name:CD.name, date:TODAY,
       checkedIn:true, checkedInTime:timeStr,
-      checkInAt:serverTimestamp(), status:'working'
+      checkInAt:serverTimestamp(), status:'working',
+      vehiclePhoto: photoB64 || null,
+      vehiclePhotoAt: photoB64 ? serverTimestamp() : null
     });
     await addDoc(collection(db,'auditLog'),{
       action:'CHECKIN', detail:`${CD.name} 上班打卡 ${timeStr}`,
@@ -5462,9 +5484,9 @@ async function loadDriverMissions() {
         <div style="width:28px;height:28px;border-radius:50%;background:${isDone ? 'rgba(16,185,129,0.2)' : 'rgba(0,212,255,0.12)'};border:1px solid ${isDone ? 'rgba(16,185,129,0.4)' : 'rgba(0,212,255,0.3)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Orbitron',monospace;flex-shrink:0;color:${isDone ? '#34d399' : 'var(--accent)'}">${m.seq}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;${isDone ? 'text-decoration:line-through;color:var(--dim)' : ''};word-break:break-all">${m.address}</div>
-          <div style="display:flex;gap:6px;margin-top:5px;align-items:center;flex-wrap:wrap">
-            <a href="${hasCoord ? `https://maps.google.com/?q=${m.coordinate.lat},${m.coordinate.lng}` : `https://maps.google.com/?q=${encodeURIComponent(m.address+',台灣')}`}" target="_blank" style="padding:3px 9px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.3);border-radius:5px;color:var(--accent);font-size:10px;text-decoration:none;flex-shrink:0">🗺 導航</a>
-            <span style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">${hasCoord?'📍':'⚫'}${m.shadowProfit?` · 影$${m.shadowProfit}`:''}</span>
+          <div style="font-size:10px;color:var(--dim);margin-top:3px;font-family:'JetBrains Mono',monospace">
+            ${hasCoord ? `📍 ${m.coordinate.lat.toFixed(4)}, ${m.coordinate.lng.toFixed(4)}` : '⚫ 無座標'}
+            ${m.shadowProfit ? ` · 影子 $${m.shadowProfit}` : ''}
           </div>
         </div>
         ${isDone ?
@@ -5613,47 +5635,6 @@ async function loadAdminMissions() {
     </div>`;
   }).join('');
 }
-
-window.showAssignDriverPicker = async () => {
-  const snap = await getDocs(query(collection(db,'users'), where('role','==','driver'), where('status','!=','resigned')));
-  if(snap.empty){ showToast('沒有可指派的司機','err'); return; }
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
-  const btns = snap.docs.map(d=>`<button onclick="assignMissionsToDriver('${d.id}','${d.data().name}');this.closest('[style*=fixed]').remove()" style="padding:10px 16px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer;text-align:left;width:100%">🚚 ${d.data().name}</button>`).join('');
-  const closeModal = () => modal.remove();
-  const inner = document.createElement('div');
-  inner.style.cssText = 'background:#0d0d0d;border:1px solid rgba(0,212,255,0.3);border-radius:14px;padding:24px;max-width:320px;width:100%';
-  inner.innerHTML = '<div style="font-size:15px;font-weight:700;margin-bottom:16px">選擇要指派的司機</div><div id="assign-btns" style="display:flex;flex-direction:column;gap:8px"></div>';
-  const cancelBtn = document.createElement('button');
-  cancelBtn.textContent = '取消';
-  cancelBtn.style.cssText = 'margin-top:12px;width:100%;padding:9px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--dim);cursor:pointer';
-  cancelBtn.onclick = closeModal;
-  inner.appendChild(cancelBtn);
-  modal.appendChild(inner);
-  modal.onclick = e => { if(e.target===modal) closeModal(); };
-  const btnsContainer = inner.querySelector('#assign-btns');
-  snap.docs.forEach(d => {
-    const btn = document.createElement('button');
-    btn.style.cssText = 'padding:10px 16px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer;text-align:left;width:100%';
-    btn.textContent = '🚚 ' + d.data().name;
-    btn.onclick = () => { assignMissionsToDriver(d.id, d.data().name); closeModal(); };
-    btnsContainer.appendChild(btn);
-  });
-  return; // early return since we appended manually
-  document.body.appendChild(modal);
-};
-
-window.assignMissionsToDriver = async (driverUid, driverName) => {
-  const ok = await v92Confirm('📦 指派任務', `將今日優化後的路線指派給 ${driverName}？`, '確認指派', '#34d399');
-  if(!ok) return;
-  const snap = await getDocs(query(collection(db,'missions'), where('date','==',TODAY), where('status','==','pending')));
-  for(const d of snap.docs){
-    await updateDoc(doc(db,'missions',d.id), { assignedDriver: driverUid, assignedDriverName: driverName });
-  }
-  await addAudit('ASSIGN', `指派今日任務給 ${driverName}`);
-  showToast(`✓ 已指派 ${snap.size} 筆任務給 ${driverName}`);
-  loadMissionMap(); loadAdminMissions();
-};
 
 window.runGlobalRouteOptimize = async () => {
   showToast('路線優化中...');
@@ -6318,9 +6299,6 @@ async function parseAndExecuteTool(userText, aiReply) {
         return '✅ **本月薪資統計 ('+result.month+')**\n共 '+result.driverCount+' 位司機\n薪資總支出：$'+result.totalNet.toLocaleString()+'\n\n'+driverLines;
 
       case 'SEND_PAYSLIPS':
-        { const ok = await v92Confirm('💰 AI 指令：發送薪資單', '確定要發送本月薪資單給所有司機嗎？','確認發送','#34d399');
-          if(!ok) return '❌ 已取消發送薪資單';
-        }
         showToast('AI 正在發送薪資單...');
         result = await CMD_TOOLS.sendAllPayslips();
         return '✅ 已成功發送 '+result.sent+' 張薪資單（'+result.month+'）';
@@ -6351,9 +6329,6 @@ async function parseAndExecuteTool(userText, aiReply) {
 
       case 'RESIGN_EMPLOYEE':
         if(!toolArgs[0]) return '❌ 請提供員工姓名';
-        { const ok = await v92Confirm('⚠️ AI 指令：辦理離職', '確定要讓「'+toolArgs[0]+'」辦理離職嗎？此操作將停用帳號。','確認離職','#f87171');
-          if(!ok) return '❌ 已取消離職操作';
-        }
         result = await CMD_TOOLS.resignEmployee(toolArgs[0], toolArgs[1]||'自願離職');
         if(result.error) return '❌ '+result.error;
         return '✅ '+result.name+' 離職手續已完成\n日期：'+result.date+'\n原因：'+result.reason;
@@ -6496,6 +6471,9 @@ function startButlerReminders(){
   setInterval(async ()=>{
     const hour = new Date().getHours();
     const min  = new Date().getMinutes();
+    
+    // 靜默時段內不觸發提醒
+    if(isInSilentHours()) return;
 
     // 下午5點提醒件數回報
     if(hour===17 && min===0){
@@ -6604,8 +6582,7 @@ window.saveEmailJSConfig = () => {
   localStorage.setItem('V92_EMAILJS_SERVICE',  svc);
   localStorage.setItem('V92_EMAILJS_TEMPLATE', tmpl);
   localStorage.setItem('V92_EMAILJS_KEY',      key);
-  // 立即初始化 EmailJS
-  if(typeof emailjs !== 'undefined') emailjs.init({publicKey: key});
+  // EmailJS removed - using Resend
   const st = document.getElementById('ejs-status');
   if(st){ st.style.color='#34d399'; st.textContent='✅ EmailJS 設定已儲存'; }
   showToast('✅ EmailJS 設定完成，之後建立帳號將自動發信');
@@ -7022,24 +6999,9 @@ function initSlide(){
 }
 
 async function submitReport(){
-  let qd=+document.getElementById('m-in-d')?.value||0;
-  let qr=+document.getElementById('m-in-r')?.value||0;
-  // 如果件數是0，嘗試從今日已完成任務自動帶入
-  if(qd===0&&qr===0){
-    try {
-      const mSnap = await getDocs(query(collection(db,'missions'),
-        where('uid','==',CU.uid), where('date','==',TODAY), where('status','==','done')));
-      if(!mSnap.empty){
-        qd = mSnap.size;
-        const dEl = document.getElementById('m-in-d');
-        if(dEl){ dEl.value = qd; dEl.style.borderColor='rgba(0,212,255,0.5)'; }
-        showToast(`✓ 已從任務清單帶入 ${qd} 件`);
-        mUpdateTotal();
-        return; // Let user confirm before submitting
-      }
-    } catch(e){}
-    showToast('請填寫件數','err'); return;
-  }
+  const qd=+document.getElementById('m-in-d')?.value||0;
+  const qr=+document.getElementById('m-in-r')?.value||0;
+  if(qd===0&&qr===0){showToast('請填寫件數','err');return;}
   // Allow re-submission (edit mode)
   const existSnap = await getDoc(doc(db,'reports',CU.uid+'_'+TODAY));
   if(existSnap.exists()){
@@ -7172,6 +7134,11 @@ async function loadDriverAnnounce(){
 
 // ── TOAST ────────────────────────────────────────────────
 function showToast(msg,type='ok'){
+  // 靜默時段：只記錄，不發聲（不影響 UI 顯示）
+  if(isInSilentHours() && type !== 'err') {
+    console.log('[Silent]', msg);
+    // Still show visual toast but skip any audio
+  }
   const t=document.getElementById('toast');
   t.textContent=msg;t.className=type==='err'?'toast-err':'toast-ok';
   t.style.opacity=1;setTimeout(()=>{t.style.opacity=0;},2800);
