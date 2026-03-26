@@ -2,8 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
-  <script>
+  
     // 初始化 EmailJS
     (function(){
       const key = localStorage.getItem('V92_EMAILJS_KEY');
@@ -41,7 +40,7 @@
   --accent:#0284c7;--accent2:#7c3aed;
 }
 /* 自動主題（依時間）會由 JS 動態切換 */
-html,html,body{height:100%;width:100%;margin:0;padding:0;}*,*::before,*::after{box-sizing:border-box;}
+html,html,body{height:100%;width:100%;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;overflow-x:hidden;
   padding-top:env(safe-area-inset-top);
   padding-left:env(safe-area-inset-left);
@@ -208,18 +207,18 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 .chip{display:flex;align-items:center;gap:6px;padding:5px 11px;background:var(--glass);border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'JetBrains Mono',monospace;backdrop-filter:blur(10px);}
 
 /* --- MOBILE (Driver) --- */
-.mobile-layout{width:100%;max-width:100%;margin:0;padding-bottom:calc(72px + env(safe-area-inset-bottom));min-height:100vh;}
+.mobile-layout{max-width:480px;margin:0 auto;padding-bottom:72px;}
 .mobile-topbar{position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;}
 .mobile-logo{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:var(--accent);letter-spacing:2px;}
 .mobile-user{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
 .mobile-logout{font-size:10px;color:var(--dim);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:'JetBrains Mono',monospace;}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;width:100%;max-width:100%;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;}
 .bnav-tab{flex:1;min-width:0;}
 .bnav-tab{flex:1;padding:10px 0 8px;text-align:center;cursor:pointer;border:none;background:none;color:var(--dim);transition:all 0.2s;}
-.bnav-tab.active{color:var(--accent);}
+.bnav-tab.active{color:var(--accent);background:rgba(0,212,255,0.1);border-top:2px solid var(--accent);}
 .bnav-icon{font-size:18px;display:block;}
 .bnav-label{font-size:9px;font-family:'JetBrains Mono',monospace;margin-top:2px;}
-.mobile-content{padding:14px;overflow-x:hidden;width:100%;}
+.mobile-content{padding:14px;}
 
 /* ===== RESPONSIVE: MOBILE / TABLET / DESKTOP ===== */
 
@@ -441,13 +440,6 @@ select.f-inp{-webkit-appearance:none;cursor:pointer;}
 }
 /* 確保手機底部導航不被 home indicator 遮擋 */
 .driver-nav{padding-bottom:calc(8px + env(safe-area-inset-bottom));}
-@media (max-width: 374px) {
-  .glass-card { padding: 12px; }
-  .g2 { grid-template-columns: 1fr; }
-  .g3 { grid-template-columns: 1fr 1fr; }
-  .bnav-label { font-size: 9px; }
-  .f-inp { font-size: 14px; }
-}
 </style>
 </head>
 <body>
@@ -646,10 +638,15 @@ window.addEventListener('beforeinstallprompt', (e) => {
   _deferredInstall = e;
   // Show banner after 3s if not dismissed
   if(!localStorage.getItem('pwa-dismissed') && !_appReady){
-    setTimeout(()=>{
-      const b = document.getElementById('pwa-banner');
-      if(b) b.style.display='block';
-    }, 3000);
+    // 第2次使用才提示安裝
+    const visitCount = parseInt(localStorage.getItem('v92_visit_count')||'0') + 1;
+    localStorage.setItem('v92_visit_count', visitCount);
+    if(visitCount >= 2){
+      setTimeout(()=>{
+        const b = document.getElementById('pwa-banner');
+        if(b) b.style.display='block';
+      }, 5000);
+    }
   }
 });
 
@@ -683,10 +680,12 @@ let _pullStartY = 0;
 let _pulling = false;
 const PULL_THRESHOLD = 80;
 
+let _pullStartTime = 0;
 document.addEventListener('touchstart', (e) => {
   const scrollEl = document.querySelector('.mobile-content');
   if(scrollEl && scrollEl.scrollTop === 0){
     _pullStartY = e.touches[0].clientY;
+    _pullStartTime = Date.now();
     _pulling = true;
   }
 }, { passive: true });
@@ -716,7 +715,9 @@ document.addEventListener('touchend', async (e) => {
   const icon = document.getElementById('pull-icon');
   const text = document.getElementById('pull-text');
 
-  if(delta > PULL_THRESHOLD){
+  const pullDuration = Date.now() - _pullStartTime;
+  const pullSpeed = delta / pullDuration; // px/ms
+  if(delta > PULL_THRESHOLD && pullSpeed > 0.3){ // 需要足夠速度才觸發
     // Trigger refresh
     if(pullEl){ pullEl.style.transform='translateY(0)'; pullEl.style.transition='transform 0.2s'; }
     if(icon) icon.textContent = '⟳';
@@ -881,31 +882,31 @@ const MOD_PERMS = {
 const MODS_COMMANDER = [
   {id:'dashboard', icon:'⬡', name:'總覽儀表板', section:'核心'},
   {id:'recruit',   icon:'🤖', name:'招募',    section:'人員管理'},
-  {id:'hr',        icon:'👤', name:'人事模組',   section:'人員管理'},
+  {id:'hr',        icon:'👤', name:'員工管理',   section:'人員管理'},
   {id:'attendance',icon:'📅', name:'出勤模組',   section:'人員管理'},
   {id:'insurance', icon:'🛡️', name:'勞健保',     section:'財務薪資'},
   {id:'salary',    icon:'💰', name:'薪資模組',   section:'財務薪資'},
   {id:'finance',   icon:'📊', name:'財務模組',   section:'財務薪資'},
-  {id:'operations',   icon:'📦', name:'營運模組',   section:'作業'},
+  {id:'operations',   icon:'📦', name:'調度管理',   section:'作業'},
   {id:'driverstatus', icon:'🚗', name:'司機即時狀態', section:'作業'},
   {id:'vehicle',   icon:'🚛', name:'車輛管理',   section:'作業'},
   {id:'announce',  icon:'📢', name:'公告管理',   section:'作業'},
   {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
   {id:'commander', icon:'⚙️', name:'Commander',  section:'系統'},
-  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
-  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
+  {id:'files',     icon:'📁', name:'文件管理',   section:'系統'},
+  {id:'files',     icon:'📁', name:'文件管理',   section:'系統'},
   {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
 
 const MODS_ACCOUNTANT = [
   {id:'dashboard', icon:'⬡', name:'總覽儀表板', section:'核心'},
-  {id:'hr',        icon:'👤', name:'人事模組',   section:'人員管理'},
+  {id:'hr',        icon:'👤', name:'員工管理',   section:'人員管理'},
   {id:'attendance',icon:'📅', name:'出勤模組',   section:'人員管理'},
   {id:'insurance', icon:'🛡️', name:'勞健保',     section:'財務薪資'},
   {id:'salary',    icon:'💰', name:'薪資模組',   section:'財務薪資'},
   {id:'finance',   icon:'📊', name:'財務模組',   section:'財務薪資'},
   {id:'audit',     icon:'🔐', name:'審計模組',   section:'系統'},
-  {id:'files',     icon:'📁', name:'檔案管理',   section:'系統'},
+  {id:'files',     icon:'📁', name:'文件管理',   section:'系統'},
   {id:'profile',   icon:'👤', name:'個人設定',   section:'系統'},
 ];
 
@@ -1267,6 +1268,8 @@ window.saveDirectOnboard = async () => {
   if(!name){ showToast('請填寫姓名','err'); return; }
   if(!email){ showToast('請填寫 Email','err'); return; }
 
+  const gradeIdx = parseInt(document.getElementById('do-grade')?.value ?? -1);
+  const grade = gradeIdx >= 0 ? GRADES[gradeIdx] : null;
   const data = {
     name, email,
     phone: document.getElementById('do-phone').value||'',
@@ -1280,6 +1283,12 @@ window.saveDirectOnboard = async () => {
     licenseType: document.getElementById('do-license-type').value,
     licenseExpiry: document.getElementById('do-license-exp').value,
     insuranceExpiry: document.getElementById('do-ins-exp').value,
+    gradeIdx: gradeIdx >= 0 ? gradeIdx : undefined,
+    labourEmployee: grade ? grade[2] : 0,
+    labourEmployer: grade ? grade[3] : 0,
+    healthEmployee: grade ? grade[4] : 0,
+    healthEmployer: grade ? grade[5] : 0,
+    insuredSalary: grade ? grade[1] : 0,
     onboardedDirectly: true,
     onboardedAt: serverTimestamp(),
     onboardedBy: CD?.name||'Commander',
@@ -1588,6 +1597,12 @@ function panelHR(){return `
         <div class="f-grp"><label class="f-lbl">逆物流單價 ($)</label><input class="f-inp" id="do-price-r" type="number" value="35"></div>
         <div class="f-grp"><label class="f-lbl">津貼 ($)</label><input class="f-inp" id="do-allowance" type="number" value="2000"></div>
         <div class="f-grp"><label class="f-lbl">代扣費用 ($)</label><input class="f-inp" id="do-deduct" type="number" value="500"></div>
+        <div class="f-grp"><label class="f-lbl">勞健保級距</label>
+          <select class="f-inp" id="do-grade">
+            <option value="-1">承攬（免勞健保）</option>
+            ${GRADES.map((g,i)=>`<option value="${i}">第${g[0]}級 $${g[1].toLocaleString()} 員工扣$${g[2]+g[4]}</option>`).join('')}
+          </select>
+        </div>
         <div class="f-grp"><label class="f-lbl">駕照類別</label>
           <select class="f-inp" id="do-license-type">
             <optgroup label="── 職業駕照 ──">
@@ -2449,6 +2464,7 @@ function panelOperations(){return `
         <div style="display:flex;gap:8px">
           <button class="btn btn-p btn-sm" onclick="loadMissionMap()">重新整理地圖</button>
           <button class="btn btn-s btn-sm" onclick="runGlobalRouteOptimize()">⚡ 全域路線優化</button>
+          <button class="btn btn-p btn-sm" onclick="showAssignDriverPicker()">📦 指派任務給司機</button>
         </div>
       </div>
       <!-- Date picker -->
@@ -5446,9 +5462,9 @@ async function loadDriverMissions() {
         <div style="width:28px;height:28px;border-radius:50%;background:${isDone ? 'rgba(16,185,129,0.2)' : 'rgba(0,212,255,0.12)'};border:1px solid ${isDone ? 'rgba(16,185,129,0.4)' : 'rgba(0,212,255,0.3)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Orbitron',monospace;flex-shrink:0;color:${isDone ? '#34d399' : 'var(--accent)'}">${m.seq}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;${isDone ? 'text-decoration:line-through;color:var(--dim)' : ''};word-break:break-all">${m.address}</div>
-          <div style="font-size:10px;color:var(--dim);margin-top:3px;font-family:'JetBrains Mono',monospace">
-            ${hasCoord ? `📍 ${m.coordinate.lat.toFixed(4)}, ${m.coordinate.lng.toFixed(4)}` : '⚫ 無座標'}
-            ${m.shadowProfit ? ` · 影子 $${m.shadowProfit}` : ''}
+          <div style="display:flex;gap:6px;margin-top:5px;align-items:center;flex-wrap:wrap">
+            <a href="${hasCoord ? `https://maps.google.com/?q=${m.coordinate.lat},${m.coordinate.lng}` : `https://maps.google.com/?q=${encodeURIComponent(m.address+',台灣')}`}" target="_blank" style="padding:3px 9px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.3);border-radius:5px;color:var(--accent);font-size:10px;text-decoration:none;flex-shrink:0">🗺 導航</a>
+            <span style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">${hasCoord?'📍':'⚫'}${m.shadowProfit?` · 影$${m.shadowProfit}`:''}</span>
           </div>
         </div>
         ${isDone ?
@@ -5597,6 +5613,47 @@ async function loadAdminMissions() {
     </div>`;
   }).join('');
 }
+
+window.showAssignDriverPicker = async () => {
+  const snap = await getDocs(query(collection(db,'users'), where('role','==','driver'), where('status','!=','resigned')));
+  if(snap.empty){ showToast('沒有可指派的司機','err'); return; }
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  const btns = snap.docs.map(d=>`<button onclick="assignMissionsToDriver('${d.id}','${d.data().name}');this.closest('[style*=fixed]').remove()" style="padding:10px 16px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer;text-align:left;width:100%">🚚 ${d.data().name}</button>`).join('');
+  const closeModal = () => modal.remove();
+  const inner = document.createElement('div');
+  inner.style.cssText = 'background:#0d0d0d;border:1px solid rgba(0,212,255,0.3);border-radius:14px;padding:24px;max-width:320px;width:100%';
+  inner.innerHTML = '<div style="font-size:15px;font-weight:700;margin-bottom:16px">選擇要指派的司機</div><div id="assign-btns" style="display:flex;flex-direction:column;gap:8px"></div>';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '取消';
+  cancelBtn.style.cssText = 'margin-top:12px;width:100%;padding:9px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--dim);cursor:pointer';
+  cancelBtn.onclick = closeModal;
+  inner.appendChild(cancelBtn);
+  modal.appendChild(inner);
+  modal.onclick = e => { if(e.target===modal) closeModal(); };
+  const btnsContainer = inner.querySelector('#assign-btns');
+  snap.docs.forEach(d => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:10px 16px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer;text-align:left;width:100%';
+    btn.textContent = '🚚 ' + d.data().name;
+    btn.onclick = () => { assignMissionsToDriver(d.id, d.data().name); closeModal(); };
+    btnsContainer.appendChild(btn);
+  });
+  return; // early return since we appended manually
+  document.body.appendChild(modal);
+};
+
+window.assignMissionsToDriver = async (driverUid, driverName) => {
+  const ok = await v92Confirm('📦 指派任務', `將今日優化後的路線指派給 ${driverName}？`, '確認指派', '#34d399');
+  if(!ok) return;
+  const snap = await getDocs(query(collection(db,'missions'), where('date','==',TODAY), where('status','==','pending')));
+  for(const d of snap.docs){
+    await updateDoc(doc(db,'missions',d.id), { assignedDriver: driverUid, assignedDriverName: driverName });
+  }
+  await addAudit('ASSIGN', `指派今日任務給 ${driverName}`);
+  showToast(`✓ 已指派 ${snap.size} 筆任務給 ${driverName}`);
+  loadMissionMap(); loadAdminMissions();
+};
 
 window.runGlobalRouteOptimize = async () => {
   showToast('路線優化中...');
@@ -6261,6 +6318,9 @@ async function parseAndExecuteTool(userText, aiReply) {
         return '✅ **本月薪資統計 ('+result.month+')**\n共 '+result.driverCount+' 位司機\n薪資總支出：$'+result.totalNet.toLocaleString()+'\n\n'+driverLines;
 
       case 'SEND_PAYSLIPS':
+        { const ok = await v92Confirm('💰 AI 指令：發送薪資單', '確定要發送本月薪資單給所有司機嗎？','確認發送','#34d399');
+          if(!ok) return '❌ 已取消發送薪資單';
+        }
         showToast('AI 正在發送薪資單...');
         result = await CMD_TOOLS.sendAllPayslips();
         return '✅ 已成功發送 '+result.sent+' 張薪資單（'+result.month+'）';
@@ -6291,6 +6351,9 @@ async function parseAndExecuteTool(userText, aiReply) {
 
       case 'RESIGN_EMPLOYEE':
         if(!toolArgs[0]) return '❌ 請提供員工姓名';
+        { const ok = await v92Confirm('⚠️ AI 指令：辦理離職', '確定要讓「'+toolArgs[0]+'」辦理離職嗎？此操作將停用帳號。','確認離職','#f87171');
+          if(!ok) return '❌ 已取消離職操作';
+        }
         result = await CMD_TOOLS.resignEmployee(toolArgs[0], toolArgs[1]||'自願離職');
         if(result.error) return '❌ '+result.error;
         return '✅ '+result.name+' 離職手續已完成\n日期：'+result.date+'\n原因：'+result.reason;
@@ -6959,9 +7022,24 @@ function initSlide(){
 }
 
 async function submitReport(){
-  const qd=+document.getElementById('m-in-d')?.value||0;
-  const qr=+document.getElementById('m-in-r')?.value||0;
-  if(qd===0&&qr===0){showToast('請填寫件數','err');return;}
+  let qd=+document.getElementById('m-in-d')?.value||0;
+  let qr=+document.getElementById('m-in-r')?.value||0;
+  // 如果件數是0，嘗試從今日已完成任務自動帶入
+  if(qd===0&&qr===0){
+    try {
+      const mSnap = await getDocs(query(collection(db,'missions'),
+        where('uid','==',CU.uid), where('date','==',TODAY), where('status','==','done')));
+      if(!mSnap.empty){
+        qd = mSnap.size;
+        const dEl = document.getElementById('m-in-d');
+        if(dEl){ dEl.value = qd; dEl.style.borderColor='rgba(0,212,255,0.5)'; }
+        showToast(`✓ 已從任務清單帶入 ${qd} 件`);
+        mUpdateTotal();
+        return; // Let user confirm before submitting
+      }
+    } catch(e){}
+    showToast('請填寫件數','err'); return;
+  }
   // Allow re-submission (edit mode)
   const existSnap = await getDoc(doc(db,'reports',CU.uid+'_'+TODAY));
   if(existSnap.exists()){
