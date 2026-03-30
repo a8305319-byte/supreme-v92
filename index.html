@@ -3,12 +3,6 @@
 <head>
 <meta charset="UTF-8">
   
-    // 初始化 EmailJS
-    (function(){
-      const key = localStorage.getItem('V92_EMAILJS_KEY');
-      
-    })();
-  </script>
   
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%3C%21--%20Background%20--%3E%0A%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23000%22%2F%3E%0A%20%20%3C%21--%20Glow%20effect%20--%3E%0A%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22url%28%23glow%29%22%20opacity%3D%220.3%22%2F%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22glow%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2300d4ff%22%20stop-opacity%3D%220.4%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%237c3aed%22%20stop-opacity%3D%220.2%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22truck%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2300d4ff%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230099cc%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22cabin%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%237c3aed%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%235b21b6%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3C%21--%20Border%20glow%20--%3E%0A%20%20%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2262%22%20height%3D%2262%22%20rx%3D%2213%22%20fill%3D%22none%22%20stroke%3D%22%2300d4ff%22%20stroke-width%3D%221%22%20opacity%3D%220.4%22%2F%3E%0A%20%20%3C%21--%20Truck%20body%20%28cargo%29%20--%3E%0A%20%20%3Crect%20x%3D%228%22%20y%3D%2222%22%20width%3D%2230%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22url%28%23truck%29%22%2F%3E%0A%20%20%3C%21--%20Truck%20cabin%20--%3E%0A%20%20%3Cpath%20d%3D%22M38%2030%20L38%2044%20L56%2044%20L56%2034%20L50%2030%20Z%22%20fill%3D%22url%28%23cabin%29%22%2F%3E%0A%20%20%3C%21--%20Cabin%20window%20--%3E%0A%20%20%3Cpath%20d%3D%22M41%2031%20L41%2037%20L53%2037%20L53%2034%20L48%2031%20Z%22%20fill%3D%22%2300d4ff%22%20opacity%3D%220.6%22%2F%3E%0A%20%20%3C%21--%20Cargo%20door%20lines%20--%3E%0A%20%20%3Cline%20x1%3D%2223%22%20y1%3D%2222%22%20x2%3D%2223%22%20y2%3D%2244%22%20stroke%3D%22%23000%22%20stroke-width%3D%221%22%20opacity%3D%220.3%22%2F%3E%0A%20%20%3C%21--%20Wheels%20--%3E%0A%20%20%3Ccircle%20cx%3D%2218%22%20cy%3D%2245%22%20r%3D%225%22%20fill%3D%22%231a1a2e%22%20stroke%3D%22%2300d4ff%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2218%22%20cy%3D%2245%22%20r%3D%222%22%20fill%3D%22%2300d4ff%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2246%22%20cy%3D%2245%22%20r%3D%225%22%20fill%3D%22%231a1a2e%22%20stroke%3D%22%237c3aed%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2246%22%20cy%3D%2245%22%20r%3D%222%22%20fill%3D%22%237c3aed%22%20opacity%3D%220.8%22%2F%3E%0A%20%20%3C%21--%20Speed%20lines%20--%3E%0A%20%20%3Cline%20x1%3D%224%22%20y1%3D%2228%22%20x2%3D%2212%22%20y2%3D%2228%22%20stroke%3D%22%2300d4ff%22%20stroke-width%3D%221.5%22%20opacity%3D%220.6%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%224%22%20y1%3D%2233%22%20x2%3D%2210%22%20y2%3D%2233%22%20stroke%3D%22%2300d4ff%22%20stroke-width%3D%221%22%20opacity%3D%220.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cline%20x1%3D%224%22%20y1%3D%2238%22%20x2%3D%228%22%20y2%3D%2238%22%20stroke%3D%22%2300d4ff%22%20stroke-width%3D%220.8%22%20opacity%3D%220.3%22%20stroke-linecap%3D%22round%22%2F%3E%0A%3C%2Fsvg%3E">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
@@ -50,7 +44,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 
 /* ===== LOADING ===== */
 #loading-screen{
-  position:fixed;inset:0;background:#000;z-index:9998;
+  position:fixed;inset:0;background:#000;z-index:99;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   z-index:9998;overflow:hidden;
   transition:opacity 0.3s;
@@ -77,7 +71,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 /* ===== LOGIN ===== */
 #login-screen{
   position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-  padding:20px;background:#000814;overflow:hidden;z-index:9997;
+  padding:20px;background:#000814;overflow:hidden;z-index:100;
 }
 #login-screen.active,#login-screen[style*="flex"]{display:flex;}
 
@@ -150,8 +144,6 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 }
 .f-input::placeholder{color:rgba(255,255,255,0.2);}
 
-@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
-.err-box.shake{animation:shake 0.4s ease;}
 .err-box{color:#f87171;font-size:12px;text-align:center;margin-bottom:12px;min-height:16px;}
 
 .btn-login{
@@ -169,8 +161,6 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
   transform:translateY(-1px);
 }
 .btn-login:active{transform:scale(0.98);}
-@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
-.err-box.shake{animation:shake 0.4s ease;}
 .err-box{color:#f87171;font-size:12px;text-align:center;min-height:18px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;}
 .login-spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -219,7 +209,7 @@ canvas#fw{position:fixed;inset:0;pointer-events:none;z-index:0;}
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;}
 .bnav-tab{flex:1;min-width:0;}
 .bnav-tab{flex:1;padding:10px 0 8px;text-align:center;cursor:pointer;border:none;background:none;color:var(--dim);transition:all 0.2s;}
-.bnav-tab.active{color:var(--accent);background:rgba(0,212,255,0.1);border-top:2px solid var(--accent);}
+.bnav-tab.active{color:var(--accent);background:rgba(0,212,255,0.08);border-top:2px solid var(--accent);}
 .bnav-icon{font-size:18px;display:block;}
 .bnav-label{font-size:9px;font-family:'JetBrains Mono',monospace;margin-top:2px;}
 .mobile-content{padding:14px;}
@@ -556,14 +546,11 @@ _bridgeFns.forEach(function(fn){
     window[fn] = function(){
       var args = arguments;
       setTimeout(function(){
-        if(typeof window[fn]==='function' && !window[fn]._bridge){
-          window[fn].apply(window, args);
-        } else {
-          console.error('[V92] Not implemented:', fn);
-        }
+        if(typeof window[fn]==='function'&&!window[fn]._b) window[fn].apply(window,args);
+        else console.error('[V92] not implemented:', fn);
       }, 300);
     };
-    window[fn]._bridge = true;
+    window[fn]._b=true;
   }
 });
 </script>
@@ -650,14 +637,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
   _deferredInstall = e;
   // Show banner after 3s if not dismissed
   if(!localStorage.getItem('pwa-dismissed') && !_appReady){
-    const visits = parseInt(localStorage.getItem('v92_visit_count')||'0') + 1;
-    localStorage.setItem('v92_visit_count', visits);
-    if(visits >= 2){
-      setTimeout(()=>{
-        const b = document.getElementById('pwa-banner');
-        if(b) b.style.display='block';
-      }, 5000);
-    }
+    const v = parseInt(localStorage.getItem('v92_visits')||'0')+1;
+    localStorage.setItem('v92_visits', v);
+    if(v >= 2) setTimeout(()=>{ const b=document.getElementById('pwa-banner'); if(b)b.style.display='block'; }, 5000);
   }
 });
 
@@ -691,7 +673,7 @@ let _pullStartY = 0;
 let _pulling = false;
 const PULL_THRESHOLD = 80;
 
-let _pullStartTime = 0;
+let _pullStartTime=0;
 document.addEventListener('touchstart', (e) => {
   const scrollEl = document.querySelector('.mobile-content');
   if(scrollEl && scrollEl.scrollTop === 0){
@@ -726,8 +708,8 @@ document.addEventListener('touchend', async (e) => {
   const icon = document.getElementById('pull-icon');
   const text = document.getElementById('pull-text');
 
-  const pullSpeed = delta / Math.max(1, Date.now() - _pullStartTime);
-  if(delta > PULL_THRESHOLD && pullSpeed > 0.3){
+  const _ps = delta / Math.max(1, Date.now()-_pullStartTime);
+  if(delta > PULL_THRESHOLD && _ps > 0.3){
     // Trigger refresh
     if(pullEl){ pullEl.style.transform='translateY(0)'; pullEl.style.transition='transform 0.2s'; }
     if(icon) icon.textContent = '⟳';
@@ -841,7 +823,7 @@ const _hardTimeout = setTimeout(()=>{
 const GEMINI_KEY = ""; // 請在 Commander → 🔐 設定 API Key
 // 主權防禦：優先從 localStorage 讀取，否則用內建備用金鑰
 const GEMINI_API_KEY = localStorage.getItem('V92_SECRET_KEY') || '';
-// Email 發送由 Cloud Function (Resend) 處理，前端不存放任何密碼
+// Email: Cloud Function (Resend)
 
 // ── GLOBALS ──────────────────────────────────────────────
 let CU = null;   // current firebase user
@@ -947,7 +929,7 @@ onAuthStateChanged(auth, async user => {
   }
   CU = user;
   ldMsg('載入使用者資料...');
-  setTimeout(()=>registerDeviceFingerprint(user.uid,user.displayName||user.email||'user'),3000);
+  setTimeout(()=>registerDeviceFingerprint(user.uid, user.displayName||user.email||'user'), 3000);
   try {
     const snap = await getDoc(doc(db,'users', user.uid));
     if (!snap.exists()) { 
@@ -1084,17 +1066,7 @@ if(document.getElementById('l-pass')){
     document.getElementById('login-btn')?.addEventListener('click', doLogin);
   });
 }
-function showErr(m){
-  const e=document.getElementById('err-box');
-  const msgs={'auth/invalid-credential':'❌ 帳號或密碼錯誤','auth/wrong-password':'❌ 密碼錯誤',
-    'auth/user-not-found':'❌ 找不到此帳號','auth/too-many-requests':'⏳ 嘗試次數過多，請稍後',
-    'auth/network-request-failed':'📡 網路連線失敗'};
-  e.textContent = msgs[m] || ('⚠️ '+m);
-  e.style.display='block';
-  e.classList.remove('shake');
-  void e.offsetWidth;
-  e.classList.add('shake');
-}
+function showErr(m){const e=document.getElementById('err-box');e.textContent='⚠ '+m;e.style.display='block';}
 function ldMsg(m){const el=document.getElementById('ld-msg');if(el)el.textContent=m;}
 
 window.doLogout = async () => {
@@ -1289,8 +1261,6 @@ window.saveDirectOnboard = async () => {
   if(!name){ showToast('請填寫姓名','err'); return; }
   if(!email){ showToast('請填寫 Email','err'); return; }
 
-  const gradeIdx = parseInt(document.getElementById('do-grade')?.value ?? -1);
-  const grade = gradeIdx >= 0 ? GRADES[gradeIdx] : null;
   const data = {
     name, email,
     phone: document.getElementById('do-phone').value||'',
@@ -1304,12 +1274,6 @@ window.saveDirectOnboard = async () => {
     licenseType: document.getElementById('do-license-type').value,
     licenseExpiry: document.getElementById('do-license-exp').value,
     insuranceExpiry: document.getElementById('do-ins-exp').value,
-    gradeIdx: gradeIdx >= 0 ? gradeIdx : undefined,
-    labourEmployee: grade ? grade[2] : 0,
-    labourEmployer: grade ? grade[3] : 0,
-    healthEmployee: grade ? grade[4] : 0,
-    healthEmployer: grade ? grade[5] : 0,
-    insuredSalary: grade ? grade[1] : 0,
     onboardedDirectly: true,
     onboardedAt: serverTimestamp(),
     onboardedBy: CD?.name||'Commander',
@@ -1465,10 +1429,6 @@ function panelDashboard(){return `
       <div class="sh"><div class="st">⚡ 警示事項</div></div>
       <div id="dash-alerts"><div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">載入中...</div></div>
     </div>
-    <div class="glass-card" style="border-color:rgba(0,212,255,0.2)">
-      <div class="sh"><div class="st" style="color:var(--accent)">📋 今日待辦</div></div>
-      <div id="today-tasks" style="display:flex;flex-direction:column;gap:6px"><div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">載入中...</div></div>
-    </div>
     <div class="glass-card">
       <div class="sh">
         <div class="st">🚗 即時司機狀態</div>
@@ -1554,8 +1514,7 @@ async function loadDashboard() {
   document.getElementById('dash-drivers').innerHTML = drHTML||'<div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">無司機資料</div>';
   loadRealtimeDriverStatus();
   setupDriverRealtime(drivers);
-  // 今日待辦
-  try { const rp=await getDocs(query(collection(db,'reports'),where('date','==',TODAY))); loadTodayTasks(drivers, rp); } catch(e){}
+  try{const rp=await getDocs(query(collection(db,'reports'),where('date','==',TODAY)));loadTodayTasks(drivers,rp);}catch(e){}
 }
 
 // ── HR ────────────────────────────────────────────────────
@@ -1606,7 +1565,7 @@ function panelHR(){return `
             </optgroup>
           </select>
           <input type="hidden" id="do-role" value="driver">
-          <input type="hidden" id="do-type" value="employee">
+          
           <div style="margin-top:4px;font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace" id="do-pos-desc">正職配送司機，享勞健保</div>
         </div>
         <div class="f-grp"><label class="f-lbl">員工類型</label>
@@ -1622,12 +1581,6 @@ function panelHR(){return `
         <div class="f-grp"><label class="f-lbl">逆物流單價 ($)</label><input class="f-inp" id="do-price-r" type="number" value="35"></div>
         <div class="f-grp"><label class="f-lbl">津貼 ($)</label><input class="f-inp" id="do-allowance" type="number" value="2000"></div>
         <div class="f-grp"><label class="f-lbl">代扣費用 ($)</label><input class="f-inp" id="do-deduct" type="number" value="500"></div>
-        <div class="f-grp"><label class="f-lbl">勞健保級距</label>
-          <select class="f-inp" id="do-grade">
-            <option value="-1">承攬（免勞健保）</option>
-            ${GRADES.map((g,i)=>`<option value="${i}">第${g[0]}級 $${g[1].toLocaleString()}</option>`).join('')}
-          </select>
-        </div>
         <div class="f-grp"><label class="f-lbl">駕照類別</label>
           <select class="f-inp" id="do-license-type">
             <optgroup label="── 職業駕照 ──">
@@ -2489,7 +2442,7 @@ function panelOperations(){return `
         <div style="display:flex;gap:8px">
           <button class="btn btn-p btn-sm" onclick="loadMissionMap()">重新整理地圖</button>
           <button class="btn btn-s btn-sm" onclick="runGlobalRouteOptimize()">⚡ 全域路線優化</button>
-          <button class="btn btn-p btn-sm" onclick="showAssignDriverPicker()">📦 指派任務給司機</button>
+          <button class="btn btn-p btn-sm" onclick="showAssignDriverPicker()">📦 指派任務</button>
         </div>
       </div>
       <!-- Date picker -->
@@ -2783,13 +2736,13 @@ function panelCommander(){return `
 const TOGGLE_DEFS=[
   // ── 核心模組 ──
   {id:'recruit',   icon:'👩‍💼', name:'招募模組',     desc:'面試評測、職缺管理',      section:'core'},
-  {id:'hr',        icon:'👤',  name:'人事模組',     desc:'員工承攬、離職管理',      section:'core'},
+  {id:'hr',        icon:'👤',  name:'員工管理',     desc:'員工承攬、離職管理',      section:'core'},
   {id:'attendance',icon:'📅',  name:'出勤模組',     desc:'班表請假打卡',            section:'core'},
   {id:'insurance', icon:'🛡️', name:'勞健保模組',   desc:'投保薪資、費率計算',      section:'core'},
   {id:'salary',    icon:'💰',  name:'薪資模組',     desc:'薪資試算、電子薪資單',    section:'core'},
   {id:'finance',   icon:'📊',  name:'財務模組',     desc:'損益費用審核',            section:'core'},
   // ── 作業模組 ──
-  {id:'operations',icon:'📦',  name:'營運模組',     desc:'件數回報管理',            section:'ops'},
+  {id:'operations',icon:'📦',  name:'調度管理',     desc:'件數回報管理',            section:'ops'},
   {id:'vehicle',   icon:'🚛',  name:'車輛管理',     desc:'車籍保養追蹤',            section:'ops'},
   {id:'announce',  icon:'📢',  name:'公告管理',     desc:'發布公告通知',            section:'ops'},
   {id:'files',     icon:'🗂️', name:'檔案管理',     desc:'證件上傳、文件管理',      section:'ops'},
@@ -3050,10 +3003,8 @@ function panelRecruit(){
     </div>
   <!-- 待審核入職表單 -->
   <div class="glass-card" style="margin-top:14px;border-color:rgba(16,185,129,0.25)">
-    <div class="sh">
-      <div class="st" style="color:#34d399">📋 待審核入職表單</div>
-      <button class="btn btn-g btn-sm" onclick="loadOnboardReview()">重新整理</button>
-    </div>
+    <div class="sh"><div class="st" style="color:#34d399">📋 待審核入職表單</div>
+      <button class="btn btn-g btn-sm" onclick="loadOnboardReview()">重新整理</button></div>
     <div id="onboard-review-list"><div style="color:var(--dim);font-size:12px;text-align:center;padding:14px">載入中...</div></div>
   </div>
 
@@ -3119,7 +3070,7 @@ async function loadApplicants(){
         +'<td><span class="badge '+bc+'">'+bt2+'</span></td>'
         +'<td style="font-size:10px;color:var(--dim)">'+dt+'</td>'
         +'<td style="display:flex;gap:4px">'
-        +'<button class="btn btn-p btn-sm" onclick="sendOnboardInvite(this.dataset.id)" data-id="'+a.id+'" title="發送入職通知">📨 發入職通知</button>'
+        +'<button class="btn btn-p btn-sm" onclick="sendOnboardInvite(this.dataset.id)" data-id="'+a.id+'">帶入</button>'
         +'<button class="btn btn-g btn-sm" onclick="viewApplicantDetail(this.dataset.id)" data-id="'+a.id+'">詳情</button>'
         
         +'<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171" onclick="deleteApplicant(this.dataset.id,this.dataset.name)" data-id="'+a.id+'" data-name="'+(a.name||'此人')+'">刪除</button>'
@@ -3798,15 +3749,15 @@ function buildDriverUI(){
         <!-- 今日狀態三欄 -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
           <div style="padding:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;text-align:center">
-            <div style="font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:3px">今日狀態</div>
+            <div style="font-size:9px;color:var(--dim);margin-bottom:3px">今日狀態</div>
             <div style="font-size:11px;font-weight:700;color:#fbbf24" id="status-text">● 待上班</div>
           </div>
           <div style="padding:10px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:8px;text-align:center">
-            <div style="font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:3px">今日件數</div>
+            <div style="font-size:9px;color:var(--dim);margin-bottom:3px">今日件數</div>
             <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--accent)" id="status-qty">—</div>
           </div>
           <div style="padding:10px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;text-align:center">
-            <div style="font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:3px">工作時間</div>
+            <div style="font-size:9px;color:var(--dim);margin-bottom:3px">工作時間</div>
             <div style="font-size:11px;font-weight:700;color:#a78bfa" id="status-hours">—</div>
           </div>
         </div>
@@ -4005,7 +3956,7 @@ ${CD?.name?.[0]||'?'}
       <button class="bnav-tab" onclick="showDriverPanel('driver_salary',this)" id="salary-tab-btn" style="position:relative">
         <span class="bnav-icon" style="position:relative;display:inline-block">
           💰
-          <span id="payslip-badge" style="display:none;position:absolute;top:-4px;right:-6px;width:10px;height:10px;border-radius:50%;background:#f87171;animation:pulse 2s infinite;border:2px solid #000;z-index:10"></span>
+          <span id="payslip-badge-nav" style="display:none;position:absolute;top:-4px;right:-6px;width:10px;height:10px;border-radius:50%;background:#f87171;animation:pulse 2s infinite;border:2px solid #000;z-index:10"></span>
         </span>
         <span class="bnav-label">薪資單</span>
       </button>
@@ -4224,11 +4175,11 @@ window.sendCSMessage = async function sendCSMessage() {
   addCSMsg('user', text);
   csHistory.push({ role: 'user', parts: [{ text }] });
 
-  // ★ FAQ 知識庫攔截
-  const faqAns = checkCSFAQ(text);
+  // FAQ 攔截
+  const faqAns=checkCSFAQ(text);
   if(faqAns){
-    setTimeout(()=>{ addCSMsg('assistant','📚 '+faqAns+'\n\n_如需進一步協助，請繼續詢問_');
-      csHistory.push({role:'model',parts:[{text:faqAns}]}); }, 400);
+    setTimeout(()=>{addCSMsg('assistant','📚 '+faqAns+'\n\n如需進一步協助請繼續詢問');
+      csHistory.push({role:'model',parts:[{text:faqAns}]});}, 400);
     return;
   }
 
@@ -4524,22 +4475,6 @@ async function checkInDriver(){
 }
 
 function updateCheckinUI(isIn, inTime, outTime){
-  // Update status card
-  const st = document.getElementById('status-text');
-  if(st){
-    if(outTime){ st.textContent='○ 已下班'; st.style.color='#64748b'; }
-    else if(isIn){ st.textContent='🚚 配送中'; st.style.color='#34d399'; }
-    else { st.textContent='● 待上班'; st.style.color='#fbbf24'; }
-  }
-  if(isIn && inTime){
-    const [h,m] = inTime.split(':').map(Number);
-    const now = new Date();
-    const diff = now.getHours()*60+now.getMinutes() - (h*60+m);
-    if(diff > 0){
-      const hoursEl = document.getElementById('status-hours');
-      if(hoursEl) hoursEl.textContent = Math.floor(diff/60)+'h'+String(diff%60).padStart(2,'0')+'m';
-    }
-  }
   const btn = document.getElementById('checkin-btn');
   const status = document.getElementById('checkin-status');
   const inEl = document.getElementById('checkin-in-time');
@@ -5284,7 +5219,6 @@ window.sendCommanderAI = async () => {
     const { reply: rawReply, model: usedModel } = await callGemini(text + memCtx, ctxHistory, 'text');
     const reply = rawReply || '抱歉，目前無法回應，請稍後再試。';
     model = usedModel;
-    // 嘗試執行工具指令
     const toolResult = await parseAndExecuteTool(text, reply);
     const finalReply = toolResult || reply;
     cmdHistory.push({ role:'model', parts:[{text: finalReply}] });
@@ -5541,8 +5475,8 @@ async function loadDriverMissions() {
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;${isDone ? 'text-decoration:line-through;color:var(--dim)' : ''};word-break:break-all">${m.address}</div>
           <div style="display:flex;gap:6px;margin-top:5px;align-items:center;flex-wrap:wrap">
-            <a href="${hasCoord ? `https://maps.google.com/?q=${m.coordinate.lat},${m.coordinate.lng}` : `https://maps.google.com/?q=${encodeURIComponent(m.address+',台灣')}`}" target="_blank" style="padding:3px 9px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.3);border-radius:5px;color:var(--accent);font-size:10px;text-decoration:none;flex-shrink:0">🗺 導航</a>
-            <span style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace">${hasCoord?'📍':'⚫'}${m.shadowProfit?` · 影$${m.shadowProfit}`:''}</span>
+            <a href="${hasCoord ? `https://maps.google.com/?q=${m.coordinate.lat},${m.coordinate.lng}` : `https://maps.google.com/?q=${encodeURIComponent(m.address+',台灣')}`}" target="_blank" style="padding:3px 9px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.3);border-radius:5px;color:var(--accent);font-size:10px;text-decoration:none">🗺 導航</a>
+            <span style="font-size:10px;color:var(--dim)">${hasCoord?'📍':'⚫'}${m.shadowProfit?` · 影$${m.shadowProfit}`:''}</span>
           </div>
         </div>
         ${isDone ?
@@ -6355,7 +6289,7 @@ async function parseAndExecuteTool(userText, aiReply) {
         return '✅ **本月薪資統計 ('+result.month+')**\n共 '+result.driverCount+' 位司機\n薪資總支出：$'+result.totalNet.toLocaleString()+'\n\n'+driverLines;
 
       case 'SEND_PAYSLIPS':
-        { const ok = await v92Confirm('💰 AI指令：發送薪資單','確定要發送本月薪資單給所有司機？','確認','#34d399');
+        { const ok = await v92Confirm('💰 AI：發送薪資單','確定要發送本月薪資單給所有司機？','確認發送','#34d399');
           if(!ok) return '❌ 已取消'; }
         showToast('AI 正在發送薪資單...');
         result = await CMD_TOOLS.sendAllPayslips();
@@ -6387,7 +6321,7 @@ async function parseAndExecuteTool(userText, aiReply) {
 
       case 'RESIGN_EMPLOYEE':
         if(!toolArgs[0]) return '❌ 請提供員工姓名';
-        { const ok = await v92Confirm('⚠️ AI指令：辦理離職','確定要讓「'+toolArgs[0]+'」辦理離職？','確認','#f87171');
+        { const ok = await v92Confirm('⚠️ AI：辦理離職','確定讓「'+toolArgs[0]+'」離職？','確認','#f87171');
           if(!ok) return '❌ 已取消'; }
         result = await CMD_TOOLS.resignEmployee(toolArgs[0], toolArgs[1]||'自願離職');
         if(result.error) return '❌ '+result.error;
@@ -6638,8 +6572,9 @@ window.saveEmailJSConfig = () => {
   if(!svc||!tmpl||!key){ showToast('請填寫所有欄位','err'); return; }
   localStorage.setItem('V92_EMAILJS_SERVICE',  svc);
   localStorage.setItem('V92_EMAILJS_TEMPLATE', tmpl);
-  localStorage.setItem('V92_EMAILJS_KEY',      key);
-  // EmailJS removed
+  localStorage.setItem('V92_EMAILJS_KEY', key);
+  // 立即初始化 EmailJS
+  if(typeof emailjs !== 'undefined') emailjs.init({publicKey: key});
   const st = document.getElementById('ejs-status');
   if(st){ st.style.color='#34d399'; st.textContent='✅ EmailJS 設定已儲存'; }
   showToast('✅ EmailJS 設定完成，之後建立帳號將自動發信');
@@ -6944,324 +6879,228 @@ window.addEventListener('offline', () => {
   if(t){ t.textContent='⚠️ 網路已斷線，部分功能暫時無法使用'; t.className='toast-err'; t.style.opacity=1; }
 });
 
-// ══════════════════════════════════════════════
-// 設備指紋系統
-// ══════════════════════════════════════════════
+// ══ 設備指紋 ══
 async function getDeviceFingerprint() {
-  const raw = [navigator.userAgent,navigator.language,
+  const raw=[navigator.userAgent,navigator.language,
     Intl.DateTimeFormat().resolvedOptions().timeZone,
-    window.screen.width+'x'+window.screen.height,
+    screen.width+'x'+screen.height,
     navigator.hardwareConcurrency||0].join('|');
-  let h=0;
-  for(let i=0;i<raw.length;i++) h=Math.imul(31,h)+raw.charCodeAt(i)|0;
+  let h=0; for(let i=0;i<raw.length;i++) h=Math.imul(31,h)+raw.charCodeAt(i)|0;
   return Math.abs(h).toString(36);
 }
-function getDeviceLabel(){
-  const ua=navigator.userAgent;
-  if(/iPhone/.test(ua)) return 'iPhone';
-  if(/iPad/.test(ua)) return 'iPad';
-  const m=ua.match(/Android.*?;\s*([^;)]+)/);
-  if(m) return m[1].trim().slice(0,20);
-  if(/Mac/.test(ua)) return 'Mac';
-  if(/Windows/.test(ua)) return 'Windows PC';
-  return '未知設備';
-}
-async function registerDeviceFingerprint(uid, userName) {
-  try {
-    const fp = await getDeviceFingerprint();
-    const label = getDeviceLabel();
-    const today = new Date().toISOString().slice(0,10);
-    const ref = doc(db,'userDevices',uid);
-    const snap = await getDoc(ref);
+async function registerDeviceFingerprint(uid,name){
+  try{
+    const fp=await getDeviceFingerprint();
+    const label=(()=>{const ua=navigator.userAgent;
+      if(/iPhone/.test(ua))return'iPhone';if(/iPad/.test(ua))return'iPad';
+      const m=ua.match(/Android.*?;\s*([^;)]+)/);if(m)return m[1].trim().slice(0,20);
+      return/Mac/.test(ua)?'Mac':/Windows/.test(ua)?'Windows PC':'未知設備';})();
+    const today=new Date().toISOString().slice(0,10);
+    const ref=doc(db,'userDevices',uid);
+    const snap=await getDoc(ref);
     if(!snap.exists()){
-      await setDoc(ref,{uid,name:userName,
-        devices:[{fp,label,firstSeen:today,lastSeen:today,count:1}],
-        updatedAt:serverTimestamp()});
+      await setDoc(ref,{uid,name,devices:[{fp,label,firstSeen:today,lastSeen:today,count:1}],updatedAt:serverTimestamp()});
     } else {
-      const devs = snap.data().devices||[];
-      const known = devs.find(d=>d.fp===fp);
+      const devs=snap.data().devices||[];
+      const known=devs.find(d=>d.fp===fp);
       if(!known){
         devs.push({fp,label,firstSeen:today,lastSeen:today,count:1});
         await updateDoc(ref,{devices:devs,updatedAt:serverTimestamp()});
-        await addDoc(collection(db,'auditLog'),{
-          action:'NEW_DEVICE',detail:`${userName} 從新裝置登入：${label}`,
-          uid,timestamp:serverTimestamp(),hash:fp.slice(0,8)
-        });
-      } else {
-        known.lastSeen=today; known.count=(known.count||0)+1;
-        await updateDoc(ref,{devices:devs,updatedAt:serverTimestamp()});
-      }
+        await addDoc(collection(db,'auditLog'),{action:'NEW_DEVICE',
+          detail:`${name} 從新裝置登入：${label}`,uid,timestamp:serverTimestamp()});
+      } else { known.lastSeen=today; known.count=(known.count||0)+1;
+        await updateDoc(ref,{devices:devs,updatedAt:serverTimestamp()}); }
     }
-  } catch(e){ /* 不阻塞登入 */ }
+  }catch(e){}
 }
 
-// ══════════════════════════════════════════════
-// 靜默時段
-// ══════════════════════════════════════════════
+// ══ 靜默時段 ══
 function isInSilentHours(){
   const h=new Date().getHours();
   const s=parseInt(localStorage.getItem('v92_silent_start')||'22');
   const e=parseInt(localStorage.getItem('v92_silent_end')||'7');
-  return s>e ? (h>=s||h<e) : (h>=s&&h<e);
+  return s>e?(h>=s||h<e):(h>=s&&h<e);
 }
 
-// ══════════════════════════════════════════════
-// 打卡車況拍照
-// ══════════════════════════════════════════════
+// ══ 打卡車況拍照 ══
 function captureVehiclePhoto(){
   return new Promise(resolve=>{
-    const overlay=document.createElement('div');
-    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
     const inner=document.createElement('div');
     inner.style.cssText='background:#0d0d0d;border:1px solid rgba(0,212,255,0.3);border-radius:14px;padding:24px;max-width:320px;width:100%;text-align:center';
     inner.innerHTML=`<div style="font-size:28px;margin-bottom:8px">📸</div>
       <div style="font-size:14px;font-weight:700;margin-bottom:4px">請拍攝車況照片</div>
-      <div style="font-size:11px;color:#64748b;margin-bottom:16px;line-height:1.6">拍攝儀表板里程或車頭<br>作為今日出車的車況存證</div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:16px;line-height:1.6">拍攝儀表板里程或車頭<br>作為今日出車存證</div>
       <input type="file" id="vp-inp" accept="image/*" capture="environment" style="display:none">
       <div style="display:flex;flex-direction:column;gap:8px">
         <button id="vp-take" style="padding:11px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:#00d4ff;font-size:13px;cursor:pointer">📷 拍照</button>
         <button id="vp-skip" style="padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#64748b;font-size:11px;cursor:pointer">略過（不建議）</button>
       </div>
-      <img id="vp-prev" style="display:none;width:100%;max-height:130px;object-fit:cover;border-radius:8px;margin-top:10px;border:1px solid rgba(0,212,255,0.2)">
-      <button id="vp-confirm" style="display:none;margin-top:10px;width:100%;padding:10px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:8px;color:#34d399;font-size:13px;cursor:pointer">✅ 確認使用此照片</button>`;
-    overlay.appendChild(inner);
-    document.body.appendChild(overlay);
+      <img id="vp-prev" style="display:none;width:100%;max-height:130px;object-fit:cover;border-radius:8px;margin-top:10px">
+      <button id="vp-confirm" style="display:none;margin-top:10px;width:100%;padding:10px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:8px;color:#34d399;font-size:13px;cursor:pointer">✅ 確認此照片</button>`;
+    ov.appendChild(inner); document.body.appendChild(ov);
     let photoData=null;
     const inp=inner.querySelector('#vp-inp');
     inner.querySelector('#vp-take').onclick=()=>inp.click();
-    inner.querySelector('#vp-skip').onclick=()=>{overlay.remove();resolve(null);};
-    inp.onchange=e=>{
-      const file=e.target.files[0]; if(!file) return;
-      const r=new FileReader();
-      r.onload=ev=>{
-        photoData=ev.target.result;
-        const prev=inner.querySelector('#vp-prev');
-        prev.src=photoData; prev.style.display='block';
+    inner.querySelector('#vp-skip').onclick=()=>{ov.remove();resolve(null);};
+    inp.onchange=e=>{const f=e.target.files[0];if(!f)return;
+      const r=new FileReader();r.onload=ev=>{photoData=ev.target.result;
+        const p=inner.querySelector('#vp-prev');p.src=photoData;p.style.display='block';
         inner.querySelector('#vp-confirm').style.display='block';
-        inner.querySelector('#vp-take').textContent='🔄 重新拍照';
-      };
-      r.readAsDataURL(file);
-    };
-    inner.querySelector('#vp-confirm').onclick=()=>{overlay.remove();resolve(photoData);};
+        inner.querySelector('#vp-take').textContent='🔄 重拍';};r.readAsDataURL(f);};
+    inner.querySelector('#vp-confirm').onclick=()=>{ov.remove();resolve(photoData);};
   });
 }
 
-// ══════════════════════════════════════════════
-// 客服 FAQ 攔截
-// ══════════════════════════════════════════════
-const CS_FAQ = [
+// ══ CS FAQ 攔截 ══
+const CS_FAQ=[
   {k:['客戶不在','沒人在家','無人在家'],a:'客戶不在時：請拍照存證後依規定重新配送或聯繫客服。'},
-  {k:['油資','油費','補貼'],a:'油資補貼依月底里程計算，請確保每日打卡時有拍攝儀表板里程照片。'},
+  {k:['油資','油費','補貼'],a:'油資補貼依月底里程計算，請確保每日打卡時有拍攝儀表板照片。'},
   {k:['請假','假','排休'],a:'請假請提前 3 個工作日在系統申請，緊急狀況請致電主管。'},
   {k:['薪資','薪水','領薪','發薪'],a:'薪資於每月 5 日前發放，如有疑問請在薪資單上按「有異議」。'},
   {k:['任務','派件','配送'],a:'今日任務請在首頁任務清單查看，按 🗺 可一鍵開啟 Google Maps 導航。'},
-  {k:['帳號','密碼','登入'],a:'如忘記密碼請使用登入頁面的「忘記密碼」功能重設。'},
+  {k:['帳號','密碼','登入'],a:'如忘記密碼請使用登入頁面「忘記密碼」功能重設。'},
 ];
 function checkCSFAQ(text){
-  for(const faq of CS_FAQ){
-    if(faq.k.some(k=>text.includes(k))) return faq.a;
-  }
+  for(const faq of CS_FAQ){if(faq.k.some(k=>text.includes(k)))return faq.a;}
   return null;
 }
 
-// ══════════════════════════════════════════════
-// 面試通過 → 發送入職邀請
-// ══════════════════════════════════════════════
-window.sendOnboardInvite = async (applicantId) => {
-  const snap = await getDoc(doc(db,'applicants',applicantId));
-  if(!snap.exists()){ showToast('找不到應徵者資料','err'); return; }
-  const a = snap.data();
-  if(!a.phone && !a.email){ showToast('應徵者無聯絡方式','err'); return; }
-  const ok = await v92Confirm('📨 發送入職通知',
-    `確認發送入職資料表連結給 ${a.name}？\n聯絡：${a.phone||a.email}`, '確認發送','#34d399');
-  if(!ok) return;
-  try {
-    const token = Math.random().toString(36).slice(2)+Date.now().toString(36);
-    const baseUrl = window.location.href.replace(/index\.html.*$/,'').replace(/\?.*$/,'').replace(/#.*/,'');
-    const onboardUrl = baseUrl+'onboard.html?token='+token+'&aid='+applicantId;
-    await setDoc(doc(db,'onboardTokens',token),{
-      applicantId, applicantData:{name:a.name,phone:a.phone||'',email:a.email||''},
-      onboardUrl, createdAt:serverTimestamp(), used:false
-    });
-    await updateDoc(doc(db,'applicants',applicantId),{
-      status:'invited', invitedAt:serverTimestamp(), onboardToken:token, onboardUrl
-    });
-    // Try email first
-    const resendKey = localStorage.getItem('V92_RESEND_KEY')||'';
-    if(resendKey && a.email){
-      try {
-        const fn = httpsCallable(fbFunctions,'sendOnboardEmail');
-        await fn({to:a.email,name:a.name,url:onboardUrl,secret:'supreme-v92-2026',resendKey});
-        showToast(`✅ 入職通知已發送給 ${a.name}`);
-      } catch(e2){ await _copyOnboardLink(onboardUrl,a.name); }
-    } else {
-      await _copyOnboardLink(onboardUrl,a.name);
-    }
+// ══ 面試通過發入職邀請 ══
+window.sendOnboardInvite=async(applicantId)=>{
+  const snap=await getDoc(doc(db,'applicants',applicantId));
+  if(!snap.exists()){showToast('找不到應徵者','err');return;}
+  const a=snap.data();
+  const ok=await v92Confirm('📨 發送入職通知',`確認發送入職資料表連結給 ${a.name}？`,'確認發送','#34d399');
+  if(!ok)return;
+  try{
+    const token=Math.random().toString(36).slice(2)+Date.now().toString(36);
+    const base=window.location.href.replace(/index\.html.*/,'').replace(/[?#].*/,'');
+    const url=base+'onboard.html?token='+token+'&aid='+applicantId;
+    await setDoc(doc(db,'onboardTokens',token),{applicantId,
+      applicantData:{name:a.name,phone:a.phone||'',email:a.email||''},
+      onboardUrl:url,createdAt:serverTimestamp(),used:false});
+    await updateDoc(doc(db,'applicants',applicantId),{status:'invited',
+      invitedAt:serverTimestamp(),onboardToken:token,onboardUrl:url});
+    try{await navigator.clipboard.writeText(`${a.name} 您好！\n請填寫入職資料表：\n${url}\n（連結有效 48 小時）\n—在地物流`);
+      showToast(`📋 連結已複製，請傳給 ${a.name}`);}
+    catch(e){showToast('連結：'+url.slice(0,40)+'...');}
     await addAudit('INVITE',`發送入職通知給 ${a.name}`);
     loadApplicants();
-  } catch(e){ showToast('發送失敗：'+e.message,'err'); }
+  }catch(e){showToast('發送失敗：'+e.message,'err');}
 };
-async function _copyOnboardLink(url, name){
-  const msg = `${name} 您好！\n恭喜通過面試！請填寫入職資料表：\n${url}\n（連結有效 48 小時）\n—在地物流有限公司`;
-  try { await navigator.clipboard.writeText(msg); showToast(`📋 連結已複製，請手動傳給 ${name}`); }
-  catch(e){ showToast('連結：'+url.slice(0,40)+'...'); }
-}
 
-// ══════════════════════════════════════════════
-// 待審核入職表單
-// ══════════════════════════════════════════════
-window.loadOnboardReview = async () => {
-  const el = document.getElementById('onboard-review-list');
-  if(!el) return;
-  el.innerHTML = '<div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">載入中...</div>';
-  try {
-    const snap = await getDocs(query(collection(db,'onboardingForms'),
+// ══ 審核入職表單 ══
+window.loadOnboardReview=async()=>{
+  const el=document.getElementById('onboard-review-list');
+  if(!el)return;
+  el.innerHTML='<div style="color:var(--dim);font-size:12px;text-align:center;padding:10px">載入中...</div>';
+  try{
+    const snap=await getDocs(query(collection(db,'onboardingForms'),
       where('status','==','pending'),orderBy('submittedAt','desc'),limit(20)));
-    if(snap.empty){ el.innerHTML='<div style="color:var(--dim);font-size:12px;text-align:center;padding:14px">✅ 目前無待審核表單</div>'; return; }
-    el.innerHTML = snap.docs.map(d=>{
-      const f=d.data();
-      const dt=f.submittedAt?.toDate?.()?.toLocaleDateString('zh-TW')||'—';
-      const ph=f.photos||{};
-      const hasP=Object.values(ph).some(v=>v);
-      return `<div style="border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px;margin-bottom:10px;background:rgba(16,185,129,0.03)">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-          <div><div style="font-size:14px;font-weight:700">${f.name||'—'}</div>
+    if(snap.empty){el.innerHTML='<div style="color:var(--dim);font-size:12px;text-align:center;padding:14px">✅ 目前無待審核</div>';return;}
+    el.innerHTML=snap.docs.map(d=>{
+      const f=d.data();const dt=f.submittedAt?.toDate?.()?.toLocaleDateString('zh-TW')||'—';
+      const ph=f.photos||{};const hasP=Object.values(ph).some(v=>v);
+      return `<div style="border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <div><div style="font-weight:700">${f.name||'—'}</div>
           <div style="font-size:11px;color:var(--dim)">${f.phone||''} · ${dt}</div></div>
           <span class="badge ${hasP?'bg':'by'}">${hasP?'有照片':'無照片'}</span>
         </div>
-        <div style="font-size:11px;color:var(--dim);margin-bottom:8px">身分證：${f.idNumber||'—'} · 駕照：${f.licenseType||'—'}</div>
-        ${hasP?`<div style="display:flex;gap:5px;margin-bottom:8px;overflow-x:auto">
+        ${hasP?`<div style="display:flex;gap:4px;margin-bottom:8px;overflow-x:auto">
           ${['idFront','idBack','licFront','passbook','avatar'].map(k=>
-            ph[k]?`<img src="${ph[k]}" style="height:55px;width:75px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);flex-shrink:0">`:''
+            ph[k]?`<img src="${ph[k]}" style="height:50px;width:70px;object-fit:cover;border-radius:5px;flex-shrink:0">`:''
           ).join('')}</div>`:''}
         <div style="display:flex;gap:8px">
-          <button class="btn btn-s" style="flex:2;padding:8px;font-size:12px" onclick="approveOnboard('${d.id}')">✅ 核准入職</button>
-          <button class="btn btn-g" style="flex:1;padding:8px;font-size:12px" onclick="rejectOnboard('${d.id}')">❌ 退回</button>
-        </div>
-      </div>`;
+          <button class="btn btn-s" style="flex:2;font-size:12px" onclick="approveOnboard('${d.id}')">✅ 核准入職</button>
+          <button class="btn btn-g" style="flex:1;font-size:12px" onclick="rejectOnboard('${d.id}')">❌ 退回</button>
+        </div></div>`;
     }).join('');
-  } catch(e){ el.innerHTML=`<div style="color:#f87171;font-size:12px;text-align:center;padding:14px">${e.message}</div>`; }
+  }catch(e){el.innerHTML=`<div style="color:#f87171;padding:14px;font-size:12px">${e.message}</div>`;}
 };
-
-window.approveOnboard = async (formId) => {
-  const snap = await getDoc(doc(db,'onboardingForms',formId));
-  if(!snap.exists()) return;
-  const f = snap.data();
-  const ok = await v92Confirm('✅ 核准入職',
-    `確認核准 ${f.name} 的入職申請？\n系統將自動建立帳號並發送登入資訊。`, '確認核准','#34d399');
-  if(!ok) return;
-  showToast('建立帳號中...');
+window.approveOnboard=async(formId)=>{
+  const snap=await getDoc(doc(db,'onboardingForms',formId));
+  if(!snap.exists())return;
+  const f=snap.data();
+  const ok=await v92Confirm('✅ 核准入職',`確認核准 ${f.name} 的入職申請？\n系統將自動建立帳號。`,'確認核准','#34d399');
+  if(!ok)return;
   const phone=(f.phone||'').replace(/[^0-9]/g,'');
   const email=f.email||(phone+'@zaidi-logistics.com');
-  const idLast4=(f.idNumber||'0000').slice(-4);
-  const phoneLast4=phone.slice(-4)||'0000';
-  const password=idLast4+phoneLast4;
-  try {
+  const pw=(f.idNumber||'0000').slice(-4)+(phone.slice(-4)||'0000');
+  try{
     const fn=httpsCallable(fbFunctions,'createUser');
-    const result=await fn({email,password,name:f.name,phone:f.phone||'',
-      role:'driver',secret:'supreme-v92-2026',
-      resendKey:localStorage.getItem('V92_RESEND_KEY')||''});
+    const result=await fn({email,password:pw,name:f.name,phone:f.phone||'',
+      role:'driver',secret:'supreme-v92-2026',resendKey:localStorage.getItem('V92_RESEND_KEY')||''});
     const uid=result.data.uid;
-    await updateDoc(doc(db,'onboardingForms',formId),{
-      status:'approved',accountCreated:true,uid,approvedAt:serverTimestamp()});
-    if(f.applicantId){
-      try { await updateDoc(doc(db,'applicants',f.applicantId),{status:'hired',uid}); } catch(e){}
-    }
-    await addAudit('APPROVE',`核准入職：${f.name} 帳號：${email}`);
+    await updateDoc(doc(db,'onboardingForms',formId),{status:'approved',uid,approvedAt:serverTimestamp()});
+    if(f.applicantId){try{await updateDoc(doc(db,'applicants',f.applicantId),{status:'hired',uid});}catch(e){}}
+    await addAudit('APPROVE',`核准入職：${f.name}`);
     showToast(`✅ ${f.name} 帳號已建立！`);
-    loadOnboardReview(); loadApplicants();
-  } catch(e){ showToast('建立失敗：'+e.message,'err'); }
+    loadOnboardReview();loadApplicants();
+  }catch(e){showToast('建立失敗：'+e.message,'err');}
 };
-
-window.rejectOnboard = async (formId) => {
-  const snap=await getDoc(doc(db,'onboardingForms',formId));
-  if(!snap.exists()) return;
+window.rejectOnboard=async(formId)=>{
+  const snap=await getDoc(doc(db,'onboardingForms',formId));if(!snap.exists())return;
   const f=snap.data();
   const ok=await v92Confirm('❌ 退回申請',`退回 ${f.name} 的入職申請？`,'確認退回','#f87171');
-  if(!ok) return;
+  if(!ok)return;
   await updateDoc(doc(db,'onboardingForms',formId),{status:'rejected',rejectedAt:serverTimestamp()});
-  showToast(`已退回 ${f.name} 的申請`);
-  loadOnboardReview();
+  showToast('已退回申請'); loadOnboardReview();
 };
 
-// ══════════════════════════════════════════════
-// 任務指派給司機
-// ══════════════════════════════════════════════
-window.showAssignDriverPicker = async () => {
+// ══ 任務指派 ══
+window.showAssignDriverPicker=async()=>{
   const snap=await getDocs(query(collection(db,'users'),
     where('role','==','driver'),where('status','!=','resigned')));
-  if(snap.empty){ showToast('無可指派的司機','err'); return; }
+  if(snap.empty){showToast('無可指派司機','err');return;}
   const modal=document.createElement('div');
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
   const inner=document.createElement('div');
   inner.style.cssText='background:#0d0d0d;border:1px solid rgba(0,212,255,0.3);border-radius:14px;padding:24px;max-width:320px;width:100%';
-  inner.innerHTML='<div style="font-size:15px;font-weight:700;margin-bottom:16px">選擇要指派的司機</div><div id="assign-list" style="display:flex;flex-direction:column;gap:8px"></div>';
+  inner.innerHTML='<div style="font-size:15px;font-weight:700;margin-bottom:16px">選擇要指派的司機</div><div id="ap-list" style="display:flex;flex-direction:column;gap:8px"></div>';
   const cancel=document.createElement('button');
-  cancel.textContent='取消';
-  cancel.style.cssText='margin-top:12px;width:100%;padding:9px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--dim);cursor:pointer';
-  cancel.onclick=()=>modal.remove();
-  inner.appendChild(cancel);
-  modal.appendChild(inner);
-  modal.onclick=e=>{ if(e.target===modal) modal.remove(); };
+  cancel.textContent='取消'; cancel.style.cssText='margin-top:12px;width:100%;padding:9px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--dim);cursor:pointer';
+  cancel.onclick=()=>modal.remove();inner.appendChild(cancel);
+  modal.appendChild(inner);modal.onclick=e=>{if(e.target===modal)modal.remove();};
   document.body.appendChild(modal);
-  const list=inner.querySelector('#assign-list');
+  const list=inner.querySelector('#ap-list');
   snap.docs.forEach(d=>{
     const btn=document.createElement('button');
     btn.style.cssText='padding:10px 16px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:var(--accent);font-size:13px;cursor:pointer;text-align:left;width:100%';
     btn.textContent='🚚 '+d.data().name;
-    btn.onclick=()=>{ assignMissionsToDriver(d.id,d.data().name); modal.remove(); };
+    btn.onclick=()=>{assignMissionsToDriver(d.id,d.data().name);modal.remove();};
     list.appendChild(btn);
   });
 };
-
-window.assignMissionsToDriver = async (driverUid, driverName) => {
-  const ok=await v92Confirm('📦 指派任務',`將今日任務指派給 ${driverName}？`,'確認指派','#34d399');
-  if(!ok) return;
-  const snap=await getDocs(query(collection(db,'missions'),
-    where('date','==',TODAY),where('status','==','pending')));
-  for(const d of snap.docs){
-    await updateDoc(doc(db,'missions',d.id),{assignedDriver:driverUid,assignedDriverName:driverName});
-  }
-  await addAudit('ASSIGN',`指派今日 ${snap.size} 筆任務給 ${driverName}`);
-  showToast(`✅ 已指派 ${snap.size} 筆任務給 ${driverName}`);
+window.assignMissionsToDriver=async(driverUid,driverName)=>{
+  const ok=await v92Confirm('📦 指派任務',`將今日任務指派給 ${driverName}？`,'確認','#34d399');
+  if(!ok)return;
+  const snap=await getDocs(query(collection(db,'missions'),where('date','==',TODAY),where('status','==','pending')));
+  let count=0;
+  for(const d of snap.docs){await updateDoc(doc(db,'missions',d.id),{assignedDriver:driverUid,assignedDriverName:driverName});count++;}
+  await addAudit('ASSIGN',`指派 ${count} 筆任務給 ${driverName}`);
+  showToast(`✅ 已指派 ${count} 筆給 ${driverName}`);
 };
 
-// ══════════════════════════════════════════════
-// Dashboard 今日待辦
-// ══════════════════════════════════════════════
-window.updateReportDateHint = (val) => {
-  const hint = document.getElementById('report-date-hint');
-  if(!hint) return;
-  if(val === TODAY){
-    hint.textContent = '';
-  } else {
-    hint.textContent = '⚠️ 非今日';
-    hint.style.color = '#f87171';
-  }
-};
-
-window.loadTodayTasks = async (drivers, rSnap) => {
-  const taskEl=document.getElementById('today-tasks');
-  if(!taskEl) return;
+// ══ Dashboard 今日待辦 ══
+window.loadTodayTasks=async(drivers,rSnap)=>{
+  const el=document.getElementById('today-tasks');if(!el)return;
   const tasks=[];
-  try {
-    const dispSnap=await getDocs(query(collection(db,'payslipDisputes'),where('status','==','pending')));
-    if(dispSnap.size>0) tasks.push({icon:'⚠️',text:`處理薪資異議 (${dispSnap.size}件)`,action:"showPanel('salary')",urgent:true});
-  } catch(e){}
-  try {
-    const obSnap=await getDocs(query(collection(db,'onboardingForms'),where('accountCreated','==',false),where('status','==','pending')));
-    if(!obSnap.empty) tasks.push({icon:'📋',text:`待審核入職表單 (${obSnap.size}件)`,action:"showPanel('recruit')",urgent:true});
-  } catch(e){}
-  if(drivers && rSnap){
-    const reported=new Set(rSnap.docs.map(r=>r.data().uid));
-    const unreported=drivers.filter(d=>!reported.has(d.id));
-    if(unreported.length>0) tasks.push({icon:'📦',text:`未回報件數司機 (${unreported.length}人)`,action:"showPanel('driverstatus')",urgent:false});
-  }
+  try{const ds=await getDocs(query(collection(db,'payslipDisputes'),where('status','==','pending')));
+    if(ds.size>0)tasks.push({icon:'⚠️',text:`處理薪資異議 (${ds.size}件)`,action:"showPanel('salary')",urgent:true});}catch(e){}
+  try{const ob=await getDocs(query(collection(db,'onboardingForms'),where('status','==','pending')));
+    if(!ob.empty)tasks.push({icon:'📋',text:`待審核入職 (${ob.size}件)`,action:"showPanel('recruit')",urgent:true});}catch(e){}
+  if(drivers&&rSnap){
+    const rep=new Set(rSnap.docs.map(r=>r.data().uid));
+    const un=drivers.filter(d=>!rep.has(d.id));
+    if(un.length)tasks.push({icon:'📦',text:`未回報 (${un.length}人)`,action:"showPanel('driverstatus')",urgent:false});}
   tasks.push({icon:'👀',text:'查看今日出勤',action:"showPanel('driverstatus')",urgent:false});
   tasks.push({icon:'📊',text:'查看本月財務',action:"showPanel('finance')",urgent:false});
-  taskEl.innerHTML=tasks.map((t,i)=>`
-    <div onclick="${t.action}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${t.urgent?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.03)'};border:1px solid ${t.urgent?'rgba(239,68,68,0.2)':'rgba(255,255,255,0.06)'};border-radius:7px;cursor:pointer" onmouseover="this.style.background='rgba(0,212,255,0.06)'" onmouseout="this.style.background='${t.urgent?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.03)'}'">
-      <span style="font-size:16px">${t.icon}</span>
+  el.innerHTML=tasks.map((t,i)=>`
+    <div onclick="${t.action}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${t.urgent?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.03)'};border:1px solid ${t.urgent?'rgba(239,68,68,0.2)':'rgba(255,255,255,0.06)'};border-radius:7px;cursor:pointer">
+      <span style="font-size:15px">${t.icon}</span>
       <span style="font-size:12px;color:${t.urgent?'#fbbf24':'var(--mid)'};flex:1">${i+1}. ${t.text}</span>
       <span style="font-size:10px;color:var(--dim)">→</span>
     </div>`).join('');
@@ -7310,7 +7149,6 @@ async function loadDriverHome(){
     const r=rSnap.data();
     const d=document.getElementById('m-today-d'),rv=document.getElementById('m-today-r');
     if(d)d.textContent=r.deliveryQty;if(rv)rv.textContent=r.reverseQty;
-    const sqty=document.getElementById('status-qty');if(sqty)sqty.textContent=((r.deliveryQty||0)+(r.reverseQty||0))+'件';
     // Mark confirmed - show edit option
     const sw=document.getElementById('m-slide-wrap'),sd=document.getElementById('m-slide-done');
     if(sw)sw.style.display='none';if(sd)sd.style.display='block';
@@ -7380,31 +7218,14 @@ function initSlide(){
 }
 
 async function submitReport(){
-  // 凌晨跨日提醒
-  const now = new Date();
-  if(now.getHours() >= 0 && now.getHours() < 4){
-    const ok = await v92Confirm('⚠️ 凌晨回報提醒',
-      `現在是 ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}\n您的回報將歸屬於「今日」(${TODAY})\n如需回報昨日件數，請手動調整日期。`,
-      '確認是今日', '#fbbf24');
-    if(!ok) return;
+  const now=new Date();
+  if(now.getHours()>=0&&now.getHours()<4){
+    const ok=await v92Confirm('⚠️ 凌晨回報提醒',`現在是凌晨 ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}\n回報將歸屬「今日」(${TODAY})\n如需回報昨日請調整日期`,'確認繼續','#fbbf24');
+    if(!ok)return;
   }
-  let qd=+document.getElementById('m-in-d')?.value||0;
-  let qr=+document.getElementById('m-in-r')?.value||0;
-  if(qd===0&&qr===0){
-    try {
-      const mSnap = await getDocs(query(collection(db,'missions'),
-        where('uid','==',CU.uid), where('date','==',TODAY), where('status','==','done')));
-      if(!mSnap.empty){
-        qd = mSnap.size;
-        const dEl = document.getElementById('m-in-d');
-        if(dEl){ dEl.value = qd; dEl.style.borderColor='rgba(0,212,255,0.5)'; }
-        showToast(`✓ 已從任務帶入 ${qd} 件`);
-        mUpdateTotal();
-        return;
-      }
-    } catch(e){}
-    showToast('請填寫件數','err'); return;
-  }
+  const qd=+document.getElementById('m-in-d')?.value||0;
+  const qr=+document.getElementById('m-in-r')?.value||0;
+  if(qd===0&&qr===0){showToast('請填寫件數','err');return;}
   // Allow re-submission (edit mode)
   const existSnap = await getDoc(doc(db,'reports',CU.uid+'_'+TODAY));
   if(existSnap.exists()){
@@ -7547,7 +7368,7 @@ window.showToast=showToast;
 
 // Init Commander panel when shown
 if(!window._showPanelWrapped){
-  window._showPanelWrapped = true;
+  window._showPanelWrapped=true;
   const origShow=window.showPanel;
   window.showPanel=(id)=>{origShow(id);if(id==='commander'){buildToggles();loadInterviewQuestions();};};
 }
